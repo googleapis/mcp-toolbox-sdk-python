@@ -34,5 +34,5 @@ branchProtectionRules:
 
 # Set team access
 permissionRules:
-  - team: TEAM_NAME
+  - team: senseai-eco
     permission: admin
