@@ -1,0 +1,148 @@
+// Copyright 2024 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+
+// Dependency Update Configuration
+//
+// See https://docs.renovatebot.com/configuration-options/
+// See https://json5.org/ for JSON5 syntax
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:base", // https://docs.renovatebot.com/presets-config/#configbase
+    ":semanticCommits", // https://docs.renovatebot.com/presets-default/#semanticcommits
+    ":ignoreUnstable", // https://docs.renovatebot.com/presets-default/#ignoreunstable
+    "group:allNonMajor", // https://docs.renovatebot.com/presets-group/#groupallnonmajor
+    ":separateMajorReleases", // https://docs.renovatebot.com/presets-default/#separatemajorreleases
+    ":prConcurrentLimitNone", // View complete backlog as PRs. https://docs.renovatebot.com/presets-default/#prconcurrentlimitnone
+    ":prNotPending", // https://docs.renovatebot.com/presets-default/#prnotpending
+    ":prHourlyLimitNone", // https://docs.renovatebot.com/presets-default/#prhourlylimitnone
+    "docker:enableMajor", // https://docs.renovatebot.com/presets-docker/#dockerenablemajor
+  ],
+
+  // Synchronized with a 2 week sprint cycle and outside business hours.
+  // https://docs.renovatebot.com/configuration-options/#schedule
+  "schedule": ["every 2 weeks on Saturday"],
+
+  // Give ecosystem time to catch up.
+  // npm allows maintainers to unpublish a release up to 3 days later.
+  // https://docs.renovatebot.com/configuration-options/#minimumreleaseage
+  "minimumReleaseAge": "3", 
+
+  // Create PRs, but do not update them without manual action.
+  // Reduces spurious retesting in repositories that have many PRs at a time.
+  // https://docs.renovatebot.com/configuration-options/#rebasewhen
+  "rebaseWhen": "never",
+
+  // Organizational processes.
+  // https://docs.renovatebot.com/configuration-options/#dependencydashboardlabels
+  "dependencyDashboardLabels": [
+    "type: process",
+  ],
+  // https://docs.renovatebot.com/configuration-options/#prbodynotes
+  "prBodyNotes": [
+    "Reviewer is responsible for dependency update. Ensure adequate automated or manual testing is performed before merge.",
+  ],
+
+  "packageRules": [
+    // Report impact of a dependency update via PR label.
+    {
+      "matchUpdateTypes": ["patch"],
+       "addLabels": ["semver: patch"],
+    },
+    {
+      "matchUpdateTypes": ["minor"],
+       "addLabels": ["semver: minor"],
+    },
+    {
+      "matchUpdateTypes": ["major"],
+       "addLabels": ["semver: major"],
+    },
+
+    // Language-specific behaviors.
+    {
+      "matchLanguages": ["go"],
+      "postUpdateOptions": ["gomodTidy"],
+    },
+
+    // Tooling & Runtime behaviors.
+    {
+      // Covers Dockerfiles, cloudbuild.yaml, and other docker-based tools.
+      "groupName": "Docker Runtimes",
+      "matchDatasources": ["docker"],
+      // TODO: Uncomment if your Dockerfiles are not included in samples.
+      // Increases build repeatability, image cache use, and supply chain security.
+      // "pinDigests": true,
+    },
+    {
+       "groupName": "GitHub Actions",
+       "matchManagers": ["github-actions"],
+       "pinDigests": true,
+    },
+
+    // Language groupings.
+    // These are separated to facilitate PR review by single-language experts.
+    {
+      "groupName": "go-nonmajor",
+      "matchLanguages": ["go"],
+      "matchUpdateTypes": ["minor", "patch"],
+    },
+    {
+      "groupName": "python-nonmajor",
+      "matchLanguages": ["python"],
+      "matchUpdateTypes": ["minor", "patch"],
+    },
+    {
+      "groupName": "java-nonmajor",
+      "matchLanguages": ["java"],
+      "matchUpdateTypes": ["minor", "patch"],
+    },
+    {
+      "groupName": "js-nonmajor",
+      "matchLanguages": ["js"],
+      "matchUpdateTypes": ["minor", "patch"],
+    },
+    {
+      "groupName": "nodejs-nonmajor",
+      "matchLanguages": ["node"],
+      "matchUpdateTypes": ["minor", "patch"],
+    },
+    {
+      "groupName": "npm-dev",
+      "matchManagers": ["npm"],
+      "matchDepTypes": ["devDependencies"],
+      "separateMajorMinor": false,
+    },
+    {
+      "groupName": "Terraform",
+      "matchManagers": ["terraform"],
+      "separateMajorMinor": false,
+    },
+
+    // Updating coupled ecosystems.
+    {
+      "groupName": "Playwright",
+      "matchPackageNames": [
+        "playwright",
+        "@playwright/test",
+        "mcr.microsoft.com/playwright",
+      ],
+    },
+    {
+      "groupName": "OpenTelemetry",
+      "matchLanguages": ["python"],
+      "matchPackagePrefixes": ["opentelemetry-"],
+    },
+  ],
+}
