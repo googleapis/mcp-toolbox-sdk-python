@@ -1,12 +1,10 @@
-# Project Title
+# Toolbox Langchain SDK
 
-[![Open in Cloud Shell](https://gstatic.com/cloudssh/images/open-btn.svg)](https://ssh.cloud.google.com/cloudshell/editor?cloudshell_git_repo=GITHUB_URL)
+This SDK allows you to seamlessly integrate the functionalities of
+[Toolbox](https://github.com/googleapis/genai-toolbox) into your LLM
+applications, enabling advanced orchestration and interaction with GenAI models.
 
-*Description*
-
-> **🧪 Preview:** Any notes about stability or launch stage.
-
-## Features
+## Table of Contents
 
 ## Getting Started
 
