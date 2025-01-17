@@ -158,7 +158,7 @@ def toolbox_server(toolbox_version: str, tools_file_path: str) -> Generator[None
         # Wait for server to start
         # Retry logic with a timeout
         for _ in range(5):  # retries
-            time.sleep(4)
+            time.sleep(2)
             print("Checking if toolbox is successfully started...")
             if toolbox_server.poll() is None:
                 print("Toolbox server started successfully.")
