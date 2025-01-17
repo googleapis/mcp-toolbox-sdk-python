@@ -80,15 +80,25 @@ def get_toolbox_binary_url(toolbox_version: str) -> str:
 
 def get_auth_token(client_id: str) -> str:
     """Retrieves an authentication token"""
-    request = google.auth.transport.requests.Request()
-    credentials = compute_engine.IDTokenCredentials(
-        request=request,
-        target_audience=client_id,
-        use_metadata_identity_endpoint=True,
-    )
-    if not credentials.valid:
-        credentials.refresh(request)
-    return credentials.token
+    try:
+        # Try getting the token using gcloud (for local development)
+        result = subprocess.run(
+            ["gcloud", "auth", "print-identity-token"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        return result.stdout.strip()
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        request = google.auth.transport.requests.Request()
+        credentials = compute_engine.IDTokenCredentials(
+            request=request,
+            target_audience=client_id,
+            use_metadata_identity_endpoint=True,
+        )
+        if not credentials.valid:
+            credentials.refresh(request)
+        return credentials.token
 
 
 #### Define Fixtures
