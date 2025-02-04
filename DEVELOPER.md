@@ -22,7 +22,7 @@ Below are the details to set up a development environment and run tests.
 > those changes reflected immediately without reinstalling the package.
 
 ## Test
-1. Navigate to the repo directory:
+1. Navigate to the repo directory if needed:
     ```bash
     cd genai-toolbox-langchain-python
     ```
