@@ -1,0 +1,4 @@
+assign_issues:
+  - googleapis/genai-toolbox-langchain-python
+assign_prs:
+  - googleapis/genai-toolbox-langchain-python
