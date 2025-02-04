@@ -1,4 +1,4 @@
-# GenAI Toolbox SDK
+# GenAI Toolbox LangChain SDK
 
 This SDK allows you to seamlessly integrate the functionalities of
 [Toolbox](https://github.com/googleapis/genai-toolbox) into your LLM
