@@ -103,7 +103,6 @@ class TestE2EClient:
 
     ##### Auth tests
     @pytest.mark.asyncio
-    @pytest.mark.skip(reason="b/389574566")
     async def test_run_tool_unauth_with_auth(self, toolbox, auth_token2):
         """Tests running a tool that doesn't require auth, with auth provided."""
         tool = await toolbox.load_tool(
