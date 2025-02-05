@@ -17,8 +17,8 @@ from unittest.mock import AsyncMock, Mock, patch
 import pytest
 from pydantic import BaseModel
 
-from toolbox_langchain_sdk.async_tools import AsyncToolboxTool
-from toolbox_langchain_sdk.tools import ToolboxTool
+from toolbox_langchain.async_tools import AsyncToolboxTool
+from toolbox_langchain.tools import ToolboxTool
 
 
 class TestToolboxTool:

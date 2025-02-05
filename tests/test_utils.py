@@ -23,7 +23,7 @@ import aiohttp
 import pytest
 from pydantic import BaseModel
 
-from toolbox_langchain_sdk.utils import (
+from toolbox_langchain.utils import (
     ParameterSchema,
     _convert_none_to_empty_string,
     _get_auth_headers,

@@ -19,9 +19,9 @@ from warnings import catch_warnings, simplefilter
 import pytest
 from aiohttp import ClientSession
 
-from toolbox_langchain_sdk.async_client import AsyncToolboxClient
-from toolbox_langchain_sdk.async_tools import AsyncToolboxTool
-from toolbox_langchain_sdk.utils import ManifestSchema
+from toolbox_langchain.async_client import AsyncToolboxClient
+from toolbox_langchain.async_tools import AsyncToolboxTool
+from toolbox_langchain.utils import ManifestSchema
 
 URL = "http://test_url"
 MANIFEST_JSON = {
@@ -68,7 +68,7 @@ class TestAsyncToolboxClient:
     async def test_create_with_existing_session(self, mock_client, mock_session):
         assert mock_client._AsyncToolboxClient__session == mock_session
 
-    @patch("toolbox_langchain_sdk.async_client._load_manifest")
+    @patch("toolbox_langchain.async_client._load_manifest")
     async def test_aload_tool(
         self, mock_load_manifest, mock_client, mock_session, manifest_schema
     ):
@@ -83,7 +83,7 @@ class TestAsyncToolboxClient:
         assert isinstance(tool, AsyncToolboxTool)
         assert tool.name == tool_name
 
-    @patch("toolbox_langchain_sdk.async_client._load_manifest")
+    @patch("toolbox_langchain.async_client._load_manifest")
     async def test_aload_tool_auth_headers_deprecated(
         self, mock_load_manifest, mock_client, manifest_schema
     ):
@@ -99,7 +99,7 @@ class TestAsyncToolboxClient:
             assert issubclass(w[-1].category, DeprecationWarning)
             assert "auth_headers" in str(w[-1].message)
 
-    @patch("toolbox_langchain_sdk.async_client._load_manifest")
+    @patch("toolbox_langchain.async_client._load_manifest")
     async def test_aload_tool_auth_headers_and_tokens(
         self, mock_load_manifest, mock_client, manifest_schema
     ):
@@ -117,7 +117,7 @@ class TestAsyncToolboxClient:
             assert issubclass(w[-1].category, DeprecationWarning)
             assert "auth_headers" in str(w[-1].message)
 
-    @patch("toolbox_langchain_sdk.async_client._load_manifest")
+    @patch("toolbox_langchain.async_client._load_manifest")
     async def test_aload_toolset(
         self, mock_load_manifest, mock_client, mock_session, manifest_schema
     ):
@@ -131,7 +131,7 @@ class TestAsyncToolboxClient:
             assert isinstance(tool, AsyncToolboxTool)
             assert tool.name in ["test_tool_1", "test_tool_2"]
 
-    @patch("toolbox_langchain_sdk.async_client._load_manifest")
+    @patch("toolbox_langchain.async_client._load_manifest")
     async def test_aload_toolset_with_toolset_name(
         self, mock_load_manifest, mock_client, mock_session, manifest_schema
     ):
@@ -148,7 +148,7 @@ class TestAsyncToolboxClient:
             assert isinstance(tool, AsyncToolboxTool)
             assert tool.name in ["test_tool_1", "test_tool_2"]
 
-    @patch("toolbox_langchain_sdk.async_client._load_manifest")
+    @patch("toolbox_langchain.async_client._load_manifest")
     async def test_aload_toolset_auth_headers_deprecated(
         self, mock_load_manifest, mock_client, manifest_schema
     ):
@@ -163,7 +163,7 @@ class TestAsyncToolboxClient:
             assert issubclass(w[-1].category, DeprecationWarning)
             assert "auth_headers" in str(w[-1].message)
 
-    @patch("toolbox_langchain_sdk.async_client._load_manifest")
+    @patch("toolbox_langchain.async_client._load_manifest")
     async def test_aload_toolset_auth_headers_and_tokens(
         self, mock_load_manifest, mock_client, manifest_schema
     ):

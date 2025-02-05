@@ -39,7 +39,7 @@ applications, enabling advanced orchestration and interaction with GenAI models.
 Here's a minimal example to get you started:
 
 ```py
-from toolbox_langchain_sdk import ToolboxClient
+from toolbox_langchain import ToolboxClient
 from langchain_google_vertexai import ChatVertexAI
 
 toolbox = ToolboxClient("http://127.0.0.1:5000")
@@ -60,7 +60,7 @@ print(result)
 You can install the Toolbox SDK for LangChain using `pip`.
 
 ```bash
-pip install toolbox-langchain-sdk
+pip install toolbox-langchain
 ```
 
 ## Usage
@@ -68,7 +68,7 @@ pip install toolbox-langchain-sdk
 Import and initialize the toolbox client.
 
 ```py
-from toolbox_langchain_sdk import ToolboxClient
+from toolbox_langchain import ToolboxClient
 
 # Replace with your Toolbox service's URL
 toolbox = ToolboxClient("http://127.0.0.1:5000")
@@ -126,7 +126,7 @@ guide](https://langchain-ai.github.io/langgraph/) with minimal changes.
 Represent each tool as a LangGraph node, encapsulating the tool's execution within the node's functionality:
 
 ```py
-from toolbox_langchain_sdk import ToolboxClient
+from toolbox_langchain import ToolboxClient
 from langgraph.graph import StateGraph, MessagesState
 from langgraph.prebuilt import ToolNode
 
@@ -245,7 +245,8 @@ auth_tools = toolbox.load_toolset(auth_tokens={"my_auth": get_auth_token})
 ### Complete Example
 
 ```py
-from toolbox_langchain_sdk import ToolboxClient
+import asyncio
+from toolbox_langchain import ToolboxClient
 
 async def get_auth_token():
     # ... Logic to retrieve ID token (e.g., from local storage, OAuth flow)
@@ -324,7 +325,7 @@ use the asynchronous interfaces of the `ToolboxClient`.
 
 ```py
 import asyncio
-from toolbox_langchain_sdk import ToolboxClient
+from toolbox_langchain import ToolboxClient
 
 async def main():
     toolbox = ToolboxClient("http://127.0.0.1:5000")
