@@ -1,3 +1,4 @@
+#!/bin/bash
 # Copyright 2025 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,6 +13,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-handleGHRelease: true
-packageName: toolbox-langchain
-releaseType: python
+set -eo pipefail
+
+# Always run the cleanup script, regardless of the success of bouncing into
+# the container.
+function cleanup() {
+    chmod +x ${KOKORO_GFILE_DIR}/trampoline_cleanup.sh
+    ${KOKORO_GFILE_DIR}/trampoline_cleanup.sh
+    echo "cleanup";
+}
+trap cleanup EXIT
+
+$(dirname $0)/populate-secrets.sh # Secret Manager secrets.
+python3 "${KOKORO_GFILE_DIR}/trampoline_v1.py"
