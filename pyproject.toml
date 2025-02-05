@@ -1,6 +1,5 @@
 [project]
 name = "toolbox-langchain"
-version="0.1.0"
 dynamic = ["version"]
 description = "Python SDK for interacting with the Toolbox service with LangChain"
 license = {file = "LICENSE"}
