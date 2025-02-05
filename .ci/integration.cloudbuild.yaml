@@ -1,4 +1,4 @@
-# Copyright 2024 Google LLC
+# Copyright 2025 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,14 +18,14 @@ steps:
     args:
       - install
       - '-r'
-      - 'sdks/langchain/requirements.txt'
+      - './requirements.txt'
       - '--user'
     entrypoint: pip
   - id: Install test requirements
     name: 'python:${_VERSION}'
     args:
       - install
-      - 'sdks/langchain[test]'
+      - '.[test]'
       - '--user'
     entrypoint: pip
   - id: Run integration tests
@@ -37,7 +37,7 @@ steps:
     args:
       - '-c'
       - >-
-        python -m pytest sdks/langchain/tests/
+        python -m pytest ./tests/
     entrypoint: /bin/bash
 options:
   logging: CLOUD_LOGGING_ONLY
