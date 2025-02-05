@@ -13,88 +13,79 @@
 # limitations under the License.
 
 import asyncio
-from typing import Any, Callable, Optional, Union
-from warnings import warn
+from threading import Thread
+from typing import Any, Awaitable, Callable, Optional, TypeVar, Union
 
 from aiohttp import ClientSession
 
+from .async_client import AsyncToolboxClient
 from .tools import ToolboxTool
-from .utils import ManifestSchema, _load_manifest
+
+T = TypeVar("T")
 
 
 class ToolboxClient:
-    def __init__(self, url: str, session: Optional[ClientSession] = None):
+    __session: Optional[ClientSession] = None
+    __loop: Optional[asyncio.AbstractEventLoop] = None
+    __thread: Optional[Thread] = None
+
+    def __init__(
+        self,
+        url: str,
+    ) -> None:
         """
         Initializes the ToolboxClient for the Toolbox service at the given URL.
 
         Args:
             url: The base URL of the Toolbox service.
-            session: An optional HTTP client session. If not provided, a new
-                session will be created.
         """
-        self._url: str = url
-        self._should_close_session: bool = session is None
-        self._session: ClientSession = session or ClientSession()
 
-    async def close(self) -> None:
-        """
-        Closes the HTTP client session if it was created by this client.
-        """
-        # We check whether _should_close_session is set or not since we do not
-        # want to close the session in case the user had passed their own
-        # ClientSession object, since then we expect the user to be owning its
-        # lifecycle.
-        if self._session and self._should_close_session:
-            await self._session.close()
+        # Running a loop in a background thread allows us to support async
+        # methods from non-async environments.
+        if ToolboxClient.__loop is None:
+            loop = asyncio.new_event_loop()
+            thread = Thread(target=loop.run_forever, daemon=True)
+            thread.start()
+            ToolboxClient.__thread = thread
+            ToolboxClient.__loop = loop
 
-    def __del__(self):
-        """
-        Ensures the HTTP client session is closed when the client is garbage
-        collected.
-        """
-        try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                loop.create_task(self.close())
-            else:
-                loop.run_until_complete(self.close())
-        except Exception:
-            # We "pass" assuming that the exception is thrown because the event
-            # loop is no longer running, but at that point the Session should
-            # have been closed already anyway.
-            pass
+        async def __start_session() -> None:
 
-    async def _load_tool_manifest(self, tool_name: str) -> ManifestSchema:
-        """
-        Fetches and parses the manifest schema for the given tool from the
-        Toolbox service.
+            # Use a default session if none is provided. This leverages connection
+            # pooling for better performance by reusing a single session throughout
+            # the application's lifetime.
+            if ToolboxClient.__session is None:
+                ToolboxClient.__session = ClientSession()
 
-        Args:
-            tool_name: The name of the tool to load.
+        coro = __start_session()
 
-        Returns:
-            The parsed Toolbox manifest.
-        """
-        url = f"{self._url}/api/tool/{tool_name}"
-        return await _load_manifest(url, self._session)
+        asyncio.run_coroutine_threadsafe(coro, ToolboxClient.__loop).result()
 
-    async def _load_toolset_manifest(
-        self, toolset_name: Optional[str] = None
-    ) -> ManifestSchema:
-        """
-        Fetches and parses the manifest schema from the Toolbox service.
+        if not ToolboxClient.__session:
+            raise ValueError("Session cannot be None.")
+        self.__async_client = AsyncToolboxClient(url, ToolboxClient.__session)
 
-        Args:
-            toolset_name: The name of the toolset to load. If not provided,
-                the manifest for all available tools is loaded.
+    def __run_as_sync(self, coro: Awaitable[T]) -> T:
+        """Run an async coroutine synchronously"""
+        if not self.__loop:
+            raise Exception(
+                "Cannot call synchronous methods before the background loop is initialized."
+            )
+        return asyncio.run_coroutine_threadsafe(coro, self.__loop).result()
 
-        Returns:
-            The parsed Toolbox manifest.
-        """
-        url = f"{self._url}/api/toolset/{toolset_name or ''}"
-        return await _load_manifest(url, self._session)
+    async def __run_as_async(self, coro: Awaitable[T]) -> T:
+        """Run an async coroutine asynchronously"""
 
-    async def load_tool(
+        # If a loop has not been provided, attempt to run in current thread.
+        if not self.__loop:
+            return await coro
+
+        # Otherwise, run in the background thread.
+        return await asyncio.wrap_future(
+            asyncio.run_coroutine_threadsafe(coro, self.__loop)
+        )
+
+    async def aload_tool(
         self,
         tool_name: str,
         auth_tokens: dict[str, Callable[[], str]] = {},
@@ -119,31 +110,17 @@ class ToolboxClient:
         Returns:
             A tool loaded from the Toolbox.
         """
-        if auth_headers:
-            if auth_tokens:
-                warn(
-                    "Both `auth_tokens` and `auth_headers` are provided. `auth_headers` is deprecated, and `auth_tokens` will be used.",
-                    DeprecationWarning,
-                )
-            else:
-                warn(
-                    "Argument `auth_headers` is deprecated. Use `auth_tokens` instead.",
-                    DeprecationWarning,
-                )
-                auth_tokens = auth_headers
-
-        manifest: ManifestSchema = await self._load_tool_manifest(tool_name)
-        return ToolboxTool(
-            tool_name,
-            manifest.tools[tool_name],
-            self._url,
-            self._session,
-            auth_tokens,
-            bound_params,
-            strict,
+        async_tool = await self.__run_as_async(
+            self.__async_client.aload_tool(
+                tool_name, auth_tokens, auth_headers, bound_params, strict
+            )
         )
 
-    async def load_toolset(
+        if not self.__loop or not self.__thread:
+            raise ValueError("Background loop or thread cannot be None.")
+        return ToolboxTool(async_tool, self.__loop, self.__thread)
+
+    async def aload_toolset(
         self,
         toolset_name: Optional[str] = None,
         auth_tokens: dict[str, Callable[[], str]] = {},
@@ -170,32 +147,91 @@ class ToolboxClient:
         Returns:
             A list of all tools loaded from the Toolbox.
         """
-        if auth_headers:
-            if auth_tokens:
-                warn(
-                    "Both `auth_tokens` and `auth_headers` are provided. `auth_headers` is deprecated, and `auth_tokens` will be used.",
-                    DeprecationWarning,
-                )
-            else:
-                warn(
-                    "Argument `auth_headers` is deprecated. Use `auth_tokens` instead.",
-                    DeprecationWarning,
-                )
-                auth_tokens = auth_headers
+        async_tools = await self.__run_as_async(
+            self.__async_client.aload_toolset(
+                toolset_name, auth_tokens, auth_headers, bound_params, strict
+            )
+        )
 
         tools: list[ToolboxTool] = []
-        manifest: ManifestSchema = await self._load_toolset_manifest(toolset_name)
 
-        for tool_name, tool_schema in manifest.tools.items():
-            tools.append(
-                ToolboxTool(
-                    tool_name,
-                    tool_schema,
-                    self._url,
-                    self._session,
-                    auth_tokens,
-                    bound_params,
-                    strict,
-                )
+        if not self.__loop or not self.__thread:
+            raise ValueError("Background loop or thread cannot be None.")
+        for async_tool in async_tools:
+            tools.append(ToolboxTool(async_tool, self.__loop, self.__thread))
+        return tools
+
+    def load_tool(
+        self,
+        tool_name: str,
+        auth_tokens: dict[str, Callable[[], str]] = {},
+        auth_headers: Optional[dict[str, Callable[[], str]]] = None,
+        bound_params: dict[str, Union[Any, Callable[[], Any]]] = {},
+        strict: bool = True,
+    ) -> ToolboxTool:
+        """
+        Loads the tool with the given tool name from the Toolbox service.
+
+        Args:
+            tool_name: The name of the tool to load.
+            auth_tokens: An optional mapping of authentication source names to
+                functions that retrieve ID tokens.
+            auth_headers: Deprecated. Use `auth_tokens` instead.
+            bound_params: An optional mapping of parameter names to their
+                bound values.
+            strict: If True, raises a ValueError if any of the given bound
+                parameters are missing from the schema or require
+                authentication. If False, only issues a warning.
+
+        Returns:
+            A tool loaded from the Toolbox.
+        """
+        async_tool = self.__run_as_sync(
+            self.__async_client.aload_tool(
+                tool_name, auth_tokens, auth_headers, bound_params, strict
             )
+        )
+
+        if not self.__loop or not self.__thread:
+            raise ValueError("Background loop or thread cannot be None.")
+        return ToolboxTool(async_tool, self.__loop, self.__thread)
+
+    def load_toolset(
+        self,
+        toolset_name: Optional[str] = None,
+        auth_tokens: dict[str, Callable[[], str]] = {},
+        auth_headers: Optional[dict[str, Callable[[], str]]] = None,
+        bound_params: dict[str, Union[Any, Callable[[], Any]]] = {},
+        strict: bool = True,
+    ) -> list[ToolboxTool]:
+        """
+        Loads tools from the Toolbox service, optionally filtered by toolset
+        name.
+
+        Args:
+            toolset_name: The name of the toolset to load. If not provided,
+                all tools are loaded.
+            auth_tokens: An optional mapping of authentication source names to
+                functions that retrieve ID tokens.
+            auth_headers: Deprecated. Use `auth_tokens` instead.
+            bound_params: An optional mapping of parameter names to their
+                bound values.
+            strict: If True, raises a ValueError if any of the given bound
+                parameters are missing from the schema or require
+                authentication. If False, only issues a warning.
+
+        Returns:
+            A list of all tools loaded from the Toolbox.
+        """
+        async_tools = self.__run_as_sync(
+            self.__async_client.aload_toolset(
+                toolset_name, auth_tokens, auth_headers, bound_params, strict
+            )
+        )
+
+        if not self.__loop or not self.__thread:
+            raise ValueError("Background loop or thread cannot be None.")
+        tools: list[ToolboxTool] = []
+        for async_tool in async_tools:
+            tools.append(ToolboxTool(async_tool, self.__loop, self.__thread))
         return tools
