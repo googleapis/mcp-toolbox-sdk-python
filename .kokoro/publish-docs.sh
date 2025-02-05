@@ -28,7 +28,7 @@ python3 -m nox --version
 nox -s docs
 
 python3 -m pip install .
-VERSION=$(python3 -c "import genai_toolbox_langchain_python;print(genai_toolbox_langchain_python.__version__)")
+VERSION=$(python3 -c "import toolbox_langchain;print(toolbox_langchain.__version__)")
 
 # create metadata
 python3 -m docuploader create-metadata \
