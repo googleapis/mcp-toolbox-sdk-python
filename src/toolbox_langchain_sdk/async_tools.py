@@ -30,6 +30,9 @@ from .utils import (
 T = TypeVar("T")
 
 
+# This class is an internal implementation detail and is not exposed to the
+# end-user. It should not be used directly by external code. Changes to this
+# class will not be considered breaking changes to the public API.
 class AsyncToolboxTool(BaseTool):
     """
     A subclass of LangChain's BaseTool that supports features specific to
