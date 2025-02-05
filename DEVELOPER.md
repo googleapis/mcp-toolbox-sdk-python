@@ -5,7 +5,6 @@ Below are the details to set up a development environment and run tests.
 ## Install
 1. Clone the repository:
     ```bash
-    
     git clone https://github.com/googleapis/genai-toolbox-langchain-python
     ```
 1. Navigate to the repo directory:
