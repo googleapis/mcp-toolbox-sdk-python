@@ -1,0 +1,45 @@
+{
+  "extends": [
+    "config:base", // https://docs.renovatebot.com/presets-config/#configbase
+    ":semanticCommits", // https://docs.renovatebot.com/presets-default/#semanticcommits
+    ":ignoreUnstable", // https://docs.renovatebot.com/presets-default/#ignoreunstable
+    "group:allNonMajor", // https://docs.renovatebot.com/presets-group/#groupallnonmajor
+    ":separateMajorReleases", // https://docs.renovatebot.com/presets-default/#separatemajorreleases
+    ":prConcurrentLimitNone", // View complete backlog as PRs. https://docs.renovatebot.com/presets-default/#prconcurrentlimitnone
+    ":prHourlyLimitNone", // https://docs.renovatebot.com/presets-default/#prhourlylimitnone
+    ":preserveSemverRanges"
+  ],
+
+  // Give ecosystem time to catch up.
+  // npm allows maintainers to unpublish a release up to 3 days later.
+  // https://docs.renovatebot.com/configuration-options/#minimumreleaseage
+  "minimumReleaseAge": "3",
+
+  // Create PRs, but do not update them without manual action.
+  // Reduces spurious retesting in repositories that have many PRs at a time.
+  // https://docs.renovatebot.com/configuration-options/#rebasewhen
+  "rebaseWhen": "conflicted",
+
+  // Organizational processes.
+  // https://docs.renovatebot.com/configuration-options/#dependencydashboardlabels
+  "dependencyDashboardLabels": [
+    "type: process"
+  ],
+  "packageRules": [
+    {
+       "groupName": "GitHub Actions",
+       "matchManagers": ["github-actions"],
+       "pinDigests": true
+    },
+    // Python Specific
+    {
+      "matchPackageNames": ["pytest"],
+      "matchUpdateTypes": ["minor", "major"]
+    },
+    {
+      "groupName": "python-nonmajor",
+      "matchLanguages": ["python"],
+      "matchUpdateTypes": ["minor", "patch"]
+    }
+  ]
+}
