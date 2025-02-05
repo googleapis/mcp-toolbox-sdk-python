@@ -17,8 +17,8 @@ from unittest.mock import Mock, patch
 import pytest
 from pydantic import BaseModel
 
-from toolbox_langchain_sdk.client import ToolboxClient
-from toolbox_langchain_sdk.tools import ToolboxTool
+from toolbox_langchain.client import ToolboxClient
+from toolbox_langchain.tools import ToolboxTool
 
 URL = "http://test_url"
 
@@ -36,7 +36,7 @@ class TestToolboxClient:
 
         return client
 
-    @patch("toolbox_langchain_sdk.client.AsyncToolboxClient.aload_tool")
+    @patch("toolbox_langchain.client.AsyncToolboxClient.aload_tool")
     def test_load_tool(self, mock_aload_tool, toolbox_client):
         mock_tool = Mock(spec=ToolboxTool)
         mock_tool.name = "mock-tool"
@@ -51,7 +51,7 @@ class TestToolboxClient:
         assert tool.args_schema == mock_tool.args_schema
         mock_aload_tool.assert_called_once_with("test_tool", {}, None, {}, True)
 
-    @patch("toolbox_langchain_sdk.client.AsyncToolboxClient.aload_toolset")
+    @patch("toolbox_langchain.client.AsyncToolboxClient.aload_toolset")
     def test_load_toolset(self, mock_aload_toolset, toolbox_client):
         mock_tools = [Mock(spec=ToolboxTool), Mock(spec=ToolboxTool)]
         mock_tools[0].name = "mock-tool-0"
@@ -73,7 +73,7 @@ class TestToolboxClient:
         mock_aload_toolset.assert_called_once_with(None, {}, None, {}, True)
 
     @pytest.mark.asyncio
-    @patch("toolbox_langchain_sdk.client.AsyncToolboxClient.aload_tool")
+    @patch("toolbox_langchain.client.AsyncToolboxClient.aload_tool")
     async def test_aload_tool(self, mock_aload_tool, toolbox_client):
         mock_tool = Mock(spec=ToolboxTool)
         mock_tool.name = "mock-tool"
@@ -88,7 +88,7 @@ class TestToolboxClient:
         mock_aload_tool.assert_called_once_with("test_tool", {}, None, {}, True)
 
     @pytest.mark.asyncio
-    @patch("toolbox_langchain_sdk.client.AsyncToolboxClient.aload_toolset")
+    @patch("toolbox_langchain.client.AsyncToolboxClient.aload_toolset")
     async def test_aload_toolset(self, mock_aload_toolset, toolbox_client):
         mock_tools = [Mock(spec=ToolboxTool), Mock(spec=ToolboxTool)]
         mock_tools[0].name = "mock-tool-0"
@@ -109,7 +109,7 @@ class TestToolboxClient:
         )
         mock_aload_toolset.assert_called_once_with(None, {}, None, {}, True)
 
-    @patch("toolbox_langchain_sdk.client.AsyncToolboxClient.aload_tool")
+    @patch("toolbox_langchain.client.AsyncToolboxClient.aload_tool")
     def test_load_tool_with_args(self, mock_aload_tool, toolbox_client):
         mock_tool = Mock(spec=ToolboxTool)
         mock_tool.name = "mock-tool"
@@ -135,7 +135,7 @@ class TestToolboxClient:
             "test_tool_name", auth_tokens, auth_headers, bound_params, False
         )
 
-    @patch("toolbox_langchain_sdk.client.AsyncToolboxClient.aload_toolset")
+    @patch("toolbox_langchain.client.AsyncToolboxClient.aload_toolset")
     def test_load_toolset_with_args(self, mock_aload_toolset, toolbox_client):
         mock_tools = [Mock(spec=ToolboxTool), Mock(spec=ToolboxTool)]
         mock_tools[0].name = "mock-tool-0"
@@ -170,7 +170,7 @@ class TestToolboxClient:
         )
 
     @pytest.mark.asyncio
-    @patch("toolbox_langchain_sdk.client.AsyncToolboxClient.aload_tool")
+    @patch("toolbox_langchain.client.AsyncToolboxClient.aload_tool")
     async def test_aload_tool_with_args(self, mock_aload_tool, toolbox_client):
         mock_tool = Mock(spec=ToolboxTool)
         mock_tool.name = "mock-tool"
@@ -193,7 +193,7 @@ class TestToolboxClient:
         )
 
     @pytest.mark.asyncio
-    @patch("toolbox_langchain_sdk.client.AsyncToolboxClient.aload_toolset")
+    @patch("toolbox_langchain.client.AsyncToolboxClient.aload_toolset")
     async def test_aload_toolset_with_args(self, mock_aload_toolset, toolbox_client):
         mock_tools = [Mock(spec=ToolboxTool), Mock(spec=ToolboxTool)]
         mock_tools[0].name = "mock-tool-0"

@@ -1,5 +1,5 @@
 [project]
-name = "toolbox-langchain-sdk"
+name = "toolbox-langchain"
 version="0.0.1"
 description = "Python SDK for interacting with the Toolbox service with LangChain"
 license = {file = "LICENSE"}

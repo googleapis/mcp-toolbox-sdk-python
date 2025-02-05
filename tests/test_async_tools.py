@@ -18,7 +18,7 @@ import pytest
 import pytest_asyncio
 from pydantic import ValidationError
 
-from toolbox_langchain_sdk.async_tools import AsyncToolboxTool
+from toolbox_langchain.async_tools import AsyncToolboxTool
 
 
 @pytest.mark.asyncio

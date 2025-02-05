@@ -39,7 +39,7 @@ import pytest_asyncio
 from aiohttp import ClientResponseError
 from pydantic import ValidationError
 
-from toolbox_langchain_sdk.client import ToolboxClient
+from toolbox_langchain.client import ToolboxClient
 
 
 @pytest.mark.asyncio
