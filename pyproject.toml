@@ -37,7 +37,7 @@ Changelog = "https://github.com/googleapis/genai-toolbox-langchain-python/blob/m
 
 [project.optional-dependencies]
 test = [
-    "black[jupyter]==24.10.0",
+    "black[jupyter]==25.1.0",
     "isort==5.13.2",
     "mypy==1.13.0",
     "pytest-asyncio==0.24.0",
