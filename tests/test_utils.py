@@ -171,7 +171,7 @@ class TestUtils:
             ("integer", int),
             ("float", float),
             ("boolean", bool),
-            ("array", list),
+            ("array", list[Union[str, int, float, bool]]),
         ],
     )
     def test_parse_type(self, type_string, expected_type):
