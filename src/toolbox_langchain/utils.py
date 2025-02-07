@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import json
-from typing import Any, Callable, Optional, Type, cast
+from typing import Any, Callable, Optional, Type, Union, cast
 from warnings import warn
 
 from aiohttp import ClientSession
@@ -131,7 +131,7 @@ def _parse_type(type_: str) -> Any:
     elif type_ == "boolean":
         return bool
     elif type_ == "array":
-        return list
+        return list[Union[str, int, float, bool]]
     else:
         raise ValueError(f"Unsupported schema type: {type_}")
 
