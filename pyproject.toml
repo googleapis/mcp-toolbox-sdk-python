@@ -1,6 +1,7 @@
 [project]
 name = "toolbox-langchain"
 dynamic = ["version"]
+readme = "README.md"
 description = "Python SDK for interacting with the Toolbox service with LangChain"
 license = {file = "LICENSE"}
 requires-python = ">=3.9"
