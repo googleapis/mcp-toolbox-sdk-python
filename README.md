@@ -36,19 +36,27 @@ applications, enabling advanced orchestration and interaction with GenAI models.
 
 ## Quickstart
 
-Here's a minimal example to get you started:
+Here's a minimal example to get you started using
+[LangGraph](https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent):
 
 ```py
 from toolbox_langchain import ToolboxClient
 from langchain_google_vertexai import ChatVertexAI
+from langgraph.prebuilt import create_react_agent
 
 toolbox = ToolboxClient("http://127.0.0.1:5000")
 tools = toolbox.load_toolset()
 
 model = ChatVertexAI(model="gemini-1.5-pro-002")
-agent = model.bind_tools(tools)
-result = agent.invoke("How's the weather today?")
-print(result)
+agent = create_react_agent(model, tools)
+
+input = {"messages": [("user", "How's the weather today?")]}
+for s in agent.stream(input, stream_mode="values"):
+    message = s["messages"][-1]
+    if isinstance(message, tuple):
+        print(message)
+    else:
+        message.pretty_print()
 ```
 
 ## Installation
