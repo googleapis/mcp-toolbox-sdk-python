@@ -50,8 +50,9 @@ tools = toolbox.load_toolset()
 model = ChatVertexAI(model="gemini-1.5-pro-002")
 agent = create_react_agent(model, tools)
 
-input = {"messages": [("user", "How's the weather today?")]}
-for s in agent.stream(input, stream_mode="values"):
+prompt = "How's the weather today?"
+
+for s in agent.stream({"messages": [("user", prompt)]}, stream_mode="values"):
     message = s["messages"][-1]
     if isinstance(message, tuple):
         print(message)
