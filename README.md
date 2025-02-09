@@ -8,8 +8,8 @@ applications, enabling advanced orchestration and interaction with GenAI models.
 ## Table of Contents
 <!-- TOC -->
 
-- [Quickstart](#quickstart)
 - [Installation](#installation)
+- [Quickstart](#quickstart)
 - [Usage](#usage)
 - [Loading Tools](#loading-tools)
     - [Load a toolset](#load-a-toolset)
@@ -33,6 +33,14 @@ applications, enabling advanced orchestration and interaction with GenAI models.
 - [Asynchronous Usage](#asynchronous-usage)
 
 <!-- /TOC -->
+
+## Installation
+
+Install using `pip`:
+
+```bash
+pip install toolbox-langchain
+```
 
 ## Quickstart
 
@@ -58,18 +66,6 @@ for s in agent.stream({"messages": [("user", prompt)]}, stream_mode="values"):
         print(message)
     else:
         message.pretty_print()
-```
-
-## Installation
-
-> [!IMPORTANT]
-> This SDK is not yet available on PyPI. For now, install it from source by
-> following these [installation instructions](DEVELOPER.md).
-
-You can install the Toolbox SDK for LangChain using `pip`.
-
-```bash
-pip install toolbox-langchain
 ```
 
 ## Usage
