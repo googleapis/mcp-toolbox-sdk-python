@@ -36,8 +36,6 @@ applications, enabling advanced orchestration and interaction with GenAI models.
 
 ## Installation
 
-Install using `pip`:
-
 ```bash
 pip install toolbox-langchain
 ```
