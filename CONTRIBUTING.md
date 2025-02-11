@@ -8,7 +8,7 @@ We'd love to accept your patches and contributions to this project.
 
 Contributions to this project must be accompanied by a
 [Contributor License Agreement](https://cla.developers.google.com/about) (CLA).
-You (or your employer) retain the copyright to your contribution; this simply
+You or your employer retain the copyright to your contribution; this simply
 gives us permission to use and redistribute your contributions as part of the
 project.
 
