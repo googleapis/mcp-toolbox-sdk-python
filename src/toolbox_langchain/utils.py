@@ -21,7 +21,7 @@ from deprecated import deprecated
 from pydantic import BaseModel, Field, create_model
 
 
-class BaseParameterSchema(BaseModel):
+class ParameterSchema(BaseModel):
     """
     Schema for a tool parameter.
     """
@@ -30,14 +30,7 @@ class BaseParameterSchema(BaseModel):
     type: str
     description: str
     authSources: Optional[list[str]] = None
-
-
-class ParameterSchema(BaseParameterSchema):
-    """
-    Schema for a tool parameter with items.
-    """
-
-    items: Optional[BaseParameterSchema] = None
+    items: Optional["ParameterSchema"] = None
 
 
 class ToolSchema(BaseModel):
@@ -116,7 +109,7 @@ def _schema_to_model(model_name: str, schema: list[ParameterSchema]) -> Type[Bas
     return create_model(model_name, **field_definitions)
 
 
-def _parse_type(schema_: Union[ParameterSchema, BaseParameterSchema]) -> Any:
+def _parse_type(schema_: ParameterSchema) -> Any:
     """
     Converts a schema type to a JSON type.
 

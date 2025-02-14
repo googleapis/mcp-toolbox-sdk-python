@@ -24,7 +24,6 @@ import pytest
 from pydantic import BaseModel
 
 from toolbox_langchain.utils import (
-    BaseParameterSchema,
     ParameterSchema,
     _convert_none_to_empty_string,
     _get_auth_headers,
@@ -177,7 +176,7 @@ class TestUtils:
                     name="foo",
                     description="bar",
                     type="array",
-                    items=BaseParameterSchema(
+                    items=ParameterSchema(
                         name="foo", description="bar", type="integer"
                     ),
                 ),
@@ -197,7 +196,7 @@ class TestUtils:
                     name="foo",
                     description="bar",
                     type="array",
-                    items=BaseParameterSchema(
+                    items=ParameterSchema(
                         name="foo", description="bar", type="invalid"
                     ),
                 )
