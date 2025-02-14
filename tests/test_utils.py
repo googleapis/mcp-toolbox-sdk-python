@@ -24,6 +24,7 @@ import pytest
 from pydantic import BaseModel
 
 from toolbox_langchain.utils import (
+    BaseParameterSchema,
     ParameterSchema,
     _convert_none_to_empty_string,
     _get_auth_headers,
@@ -165,21 +166,47 @@ class TestUtils:
         assert len(model.model_fields) == 0
 
     @pytest.mark.parametrize(
-        "type_string, expected_type",
+        "parameter_schema, expected_type",
         [
-            ("string", str),
-            ("integer", int),
-            ("float", float),
-            ("boolean", bool),
-            ("array", list[Union[str, int, float, bool]]),
+            (ParameterSchema(name="foo", description="bar", type="string"), str),
+            (ParameterSchema(name="foo", description="bar", type="integer"), int),
+            (ParameterSchema(name="foo", description="bar", type="float"), float),
+            (ParameterSchema(name="foo", description="bar", type="boolean"), bool),
+            (
+                ParameterSchema(
+                    name="foo",
+                    description="bar",
+                    type="array",
+                    items=BaseParameterSchema(
+                        name="foo", description="bar", type="integer"
+                    ),
+                ),
+                list[int],
+            ),
         ],
     )
-    def test_parse_type(self, type_string, expected_type):
-        assert _parse_type(type_string) == expected_type
+    def test_parse_type(self, parameter_schema, expected_type):
+        assert _parse_type(parameter_schema) == expected_type
 
-    def test_parse_type_invalid(self):
+    @pytest.mark.parametrize(
+        "fail_parameter_schema",
+        [
+            (ParameterSchema(name="foo", description="bar", type="invalid")),
+            (
+                ParameterSchema(
+                    name="foo",
+                    description="bar",
+                    type="array",
+                    items=BaseParameterSchema(
+                        name="foo", description="bar", type="invalid"
+                    ),
+                )
+            ),
+        ],
+    )
+    def test_parse_type_invalid(self, fail_parameter_schema):
         with pytest.raises(ValueError):
-            _parse_type("invalid")
+            _parse_type(fail_parameter_schema)
 
     @pytest.mark.asyncio
     @patch("aiohttp.ClientSession.post")
