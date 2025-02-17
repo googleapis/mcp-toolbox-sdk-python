@@ -8,8 +8,8 @@ applications, enabling advanced orchestration and interaction with GenAI models.
 ## Table of Contents
 <!-- TOC -->
 
-- [Quickstart](#quickstart)
 - [Installation](#installation)
+- [Quickstart](#quickstart)
 - [Usage](#usage)
 - [Loading Tools](#loading-tools)
     - [Load a toolset](#load-a-toolset)
@@ -30,42 +30,40 @@ applications, enabling advanced orchestration and interaction with GenAI models.
     - [Binding Parameters to a Tool](#binding-parameters-to-a-tool)
     - [Binding Parameters While Loading](#binding-parameters-while-loading)
     - [Binding Dynamic Values](#binding-dynamic-values)
-- [Error Handling](#error-handling)
+- [Asynchronous Usage](#asynchronous-usage)
 
 <!-- /TOC -->
 
-## Quickstart
-
-Here's a minimal example to get you started:
-
-```py
-import asyncio
-from toolbox_langchain_sdk import ToolboxClient
-from langchain_google_vertexai import ChatVertexAI
-
-async def main():
-    toolbox = ToolboxClient("http://127.0.0.1:5000")
-    tools = await toolbox.load_toolset()
-    
-    model = ChatVertexAI(model="gemini-1.5-pro-002")
-    agent = model.bind_tools(tools)
-    result = agent.invoke("How's the weather today?")
-    print(result)
-
-if __name__ == "__main__":
-    asyncio.run(main())
-```
-
 ## Installation
 
-> [!IMPORTANT]
-> This SDK is not yet available on PyPI. For now, install it from source by
-> following these [installation instructions](DEVELOPER.md).
-
-You can install the Toolbox SDK for LangChain using `pip`.
-
 ```bash
-pip install toolbox-langchain-sdk
+pip install toolbox-langchain
+```
+
+## Quickstart
+
+Here's a minimal example to get you started using
+[LangGraph](https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent):
+
+```py
+from toolbox_langchain import ToolboxClient
+from langchain_google_vertexai import ChatVertexAI
+from langgraph.prebuilt import create_react_agent
+
+toolbox = ToolboxClient("http://127.0.0.1:5000")
+tools = toolbox.load_toolset()
+
+model = ChatVertexAI(model="gemini-1.5-pro-002")
+agent = create_react_agent(model, tools)
+
+prompt = "How's the weather today?"
+
+for s in agent.stream({"messages": [("user", prompt)]}, stream_mode="values"):
+    message = s["messages"][-1]
+    if isinstance(message, tuple):
+        print(message)
+    else:
+        message.pretty_print()
 ```
 
 ## Usage
@@ -73,23 +71,11 @@ pip install toolbox-langchain-sdk
 Import and initialize the toolbox client.
 
 ```py
-from toolbox_langchain_sdk import ToolboxClient
+from toolbox_langchain import ToolboxClient
 
 # Replace with your Toolbox service's URL
 toolbox = ToolboxClient("http://127.0.0.1:5000")
 ```
-
-> [!IMPORTANT]
-> The toolbox client requires an asynchronous environment.
-> For guidance on running asynchronous Python programs, see
-> [asyncio documentation](https://docs.python.org/3/library/asyncio-runner.html#running-an-asyncio-program).
-
-> [!TIP]
-> You can also pass your own `ClientSession` to reuse the same session:
-> ```py
-> async with ClientSession() as session:
->   toolbox = ToolboxClient("http://localhost:5000", session)
-> ```
 
 ## Loading Tools
 
@@ -100,16 +86,16 @@ or a specific one:
 
 ```py
 # Load all tools
-tools = await toolbox.load_toolset()
+tools = toolbox.load_toolset()
 
 # Load a specific toolset
-tools = await toolbox.load_toolset("my-toolset")
+tools = toolbox.load_toolset("my-toolset")
 ```
 
 ### Load a single tool
 
 ```py
-tool = await toolbox.load_tool("my-tool")
+tool = toolbox.load_tool("my-tool")
 ```
 
 Loading individual tools gives you finer-grained control over which tools are
@@ -143,7 +129,7 @@ guide](https://langchain-ai.github.io/langgraph/) with minimal changes.
 Represent each tool as a LangGraph node, encapsulating the tool's execution within the node's functionality:
 
 ```py
-from toolbox_langchain_sdk import ToolboxClient
+from toolbox_langchain import ToolboxClient
 from langgraph.graph import StateGraph, MessagesState
 from langgraph.prebuilt import ToolNode
 
@@ -190,10 +176,10 @@ graph.invoke({"messages": [HumanMessage(content="Do something with the tools")]}
 
 ## Manual usage
 
-Execute a tool manually using the `ainvoke` method:
+Execute a tool manually using the `invoke` method:
 
 ```py
-result = await tools[0].ainvoke({"name": "Alice", "age": 30})
+result = tools[0].invoke({"name": "Alice", "age": 30})
 ```
 
 This is useful for testing tools or when you need precise control over tool
@@ -235,8 +221,8 @@ async def get_auth_token():
 #### Add Authentication to a Tool
 
 ```py
-toolbox = ToolboxClient("http://localhost:5000")
-tools = await toolbox.load_toolset()
+toolbox = ToolboxClient("http://127.0.0.1:5000")
+tools = toolbox.load_toolset()
 
 auth_tool = tools[0].add_auth_token("my_auth", get_auth_token) # Single token
 
@@ -250,9 +236,9 @@ auth_tools = [tool.add_auth_token("my_auth", get_auth_token) for tool in tools]
 #### Add Authentication While Loading
 
 ```py
-auth_tool = await toolbox.load_tool(auth_tokens={"my_auth": get_auth_token})
+auth_tool = toolbox.load_tool(auth_tokens={"my_auth": get_auth_token})
 
-auth_tools = await toolbox.load_toolset(auth_tokens={"my_auth": get_auth_token})
+auth_tools = toolbox.load_toolset(auth_tokens={"my_auth": get_auth_token})
 ```
 
 > [!NOTE]
@@ -263,23 +249,19 @@ auth_tools = await toolbox.load_toolset(auth_tokens={"my_auth": get_auth_token})
 
 ```py
 import asyncio
-from toolbox_langchain_sdk import ToolboxClient
+from toolbox_langchain import ToolboxClient
 
 async def get_auth_token():
     # ... Logic to retrieve ID token (e.g., from local storage, OAuth flow)
     # This example just returns a placeholder. Replace with your actual token retrieval.
     return "YOUR_ID_TOKEN" # Placeholder
 
-async def main():
-    toolbox = ToolboxClient("http://localhost:5000")
-    tool = await toolbox.load_tool("my-tool")
+toolbox = ToolboxClient("http://127.0.0.1:5000")
+tool = toolbox.load_tool("my-tool")
 
-    auth_tool = tool.add_auth_token("my_auth", get_auth_token)
-    result = await auth_tool.ainvoke({"input": "some input"})
-    print(result)
-
-if __name__ == "__main__":
-    asyncio.run(main())
+auth_tool = tool.add_auth_token("my_auth", get_auth_token)
+result = auth_tool.invoke({"input": "some input"})
+print(result)
 ```
 
 ## Binding Parameter Values
@@ -294,8 +276,8 @@ modified by the LLM. This is useful for:
 ### Binding Parameters to a Tool
 
 ```py
-toolbox = ToolboxClient("http://localhost:5000")
-tools = await toolbox.load_toolset()
+toolbox = ToolboxClient("http://127.0.0.1:5000")
+tools = toolbox.load_toolset()
 
 bound_tool = tool[0].bind_param("param", "value") # Single param
 
@@ -309,9 +291,9 @@ bound_tools = [tool.bind_param("param", "value") for tool in tools]
 ### Binding Parameters While Loading
 
 ```py
-bound_tool = await toolbox.load_tool(bound_params={"param": "value"})
+bound_tool = toolbox.load_tool(bound_params={"param": "value"})
 
-bound_tools = await toolbox.load_toolset(bound_params={"param": "value"})
+bound_tools = toolbox.load_toolset(bound_params={"param": "value"})
 ```
 
 > [!NOTE]
@@ -332,15 +314,28 @@ dynamic_bound_tool = tool.bind_param("param", get_dynamic_value)
 > [!IMPORTANT]
 > You don't need to modify tool configurations to bind parameter values.
 
-## Error Handling
+## Asynchronous Usage
 
-When interacting with the Toolbox service or executing tools, you might
-encounter errors. Handle potential exceptions gracefully:
+For better performance through [cooperative
+multitasking](https://en.wikipedia.org/wiki/Cooperative_multitasking), you can
+use the asynchronous interfaces of the `ToolboxClient`.
+
+> [!Note]
+> Asynchronous interfaces like `aload_tool` and `aload_toolset` require an
+> asynchronous environment. For guidance on running asynchronous Python
+> programs, see [asyncio
+> documentation](https://docs.python.org/3/library/asyncio-runner.html#running-an-asyncio-program).
 
 ```py
-try:
-    result = await tool.ainvoke({"input": "some input"})
-except Exception as e:
-    print(f"An error occurred: {e}")
-    # Implement error recovery logic, e.g., retrying the request or logging the error
+import asyncio
+from toolbox_langchain import ToolboxClient
+
+async def main():
+    toolbox = ToolboxClient("http://127.0.0.1:5000")
+    tool = await client.aload_tool("my-tool")
+    tools = await client.aload_toolset()
+    response = await tool.ainvoke()
+
+if __name__ == "__main__":
+    asyncio.run(main())
 ```

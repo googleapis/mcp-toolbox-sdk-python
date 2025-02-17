@@ -23,7 +23,7 @@ import aiohttp
 import pytest
 from pydantic import BaseModel
 
-from toolbox_langchain_sdk.utils import (
+from toolbox_langchain.utils import (
     ParameterSchema,
     _convert_none_to_empty_string,
     _get_auth_headers,
@@ -171,7 +171,7 @@ class TestUtils:
             ("integer", int),
             ("float", float),
             ("boolean", bool),
-            ("array", list),
+            ("array", list[Union[str, int, float, bool]]),
         ],
     )
     def test_parse_type(self, type_string, expected_type):

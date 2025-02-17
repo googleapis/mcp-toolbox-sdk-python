@@ -1,6 +1,7 @@
 [project]
-name = "toolbox-langchain-sdk"
-version="0.0.1"
+name = "toolbox-langchain"
+dynamic = ["version"]
+readme = "README.md"
 description = "Python SDK for interacting with the Toolbox service with LangChain"
 license = {file = "LICENSE"}
 requires-python = ">=3.9"
@@ -26,10 +27,14 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 
+[tool.setuptools.dynamic]
+version = {attr = "toolbox_langchain.version.__version__"}
+
 [project.urls]
-Homepage = "https://github.com/googleapis/genai-toolbox"
-Repository = "https://github.com/googleapis/genai-toolbox.git"
-"Bug Tracker" = "https://github.com/googleapis/genai-toolbox/issues"
+Homepage = "https://github.com/googleapis/genai-toolbox-langchain-python"
+Repository = "https://github.com/googleapis/genai-toolbox-langchain-python.git"
+"Bug Tracker" = "https://github.com/googleapis/genai-toolbox-langchain-python/issues"
+Changelog = "https://github.com/googleapis/genai-toolbox-langchain-python/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 test = [

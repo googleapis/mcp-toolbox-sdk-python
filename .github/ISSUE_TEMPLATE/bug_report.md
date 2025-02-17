@@ -20,7 +20,7 @@ If you are still having issues, please be sure to include as much information as
   - OS type and version:
   - Python version: `python --version`
   - pip version: `pip --version`
-  - `toolbox-langchain-sdk` version: `pip show toolbox-langchain-sdk`
+  - `toolbox-langchain` version: `pip show toolbox-langchain`
 
 #### Steps to reproduce
 
