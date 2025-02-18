@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Contains pytest fixtures that are accessible from all 
+"""Contains pytest fixtures that are accessible from all
 files present in the same directory."""
 
 from __future__ import annotations
