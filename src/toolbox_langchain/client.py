@@ -98,7 +98,7 @@ class ToolboxClient:
 
         Args:
             tool_name: The name of the tool to load.
-            auth_tokens: An optional mapping of authentication source names to
+            auth_tokens: An optional mapping of authentication service names to
                 functions that retrieve ID tokens.
             auth_headers: Deprecated. Use `auth_tokens` instead.
             bound_params: An optional mapping of parameter names to their
@@ -135,7 +135,7 @@ class ToolboxClient:
         Args:
             toolset_name: The name of the toolset to load. If not provided,
                 all tools are loaded.
-            auth_tokens: An optional mapping of authentication source names to
+            auth_tokens: An optional mapping of authentication service names to
                 functions that retrieve ID tokens.
             auth_headers: Deprecated. Use `auth_tokens` instead.
             bound_params: An optional mapping of parameter names to their
@@ -174,7 +174,7 @@ class ToolboxClient:
 
         Args:
             tool_name: The name of the tool to load.
-            auth_tokens: An optional mapping of authentication source names to
+            auth_tokens: An optional mapping of authentication service names to
                 functions that retrieve ID tokens.
             auth_headers: Deprecated. Use `auth_tokens` instead.
             bound_params: An optional mapping of parameter names to their
@@ -211,7 +211,7 @@ class ToolboxClient:
         Args:
             toolset_name: The name of the toolset to load. If not provided,
                 all tools are loaded.
-            auth_tokens: An optional mapping of authentication source names to
+            auth_tokens: An optional mapping of authentication service names to
                 functions that retrieve ID tokens.
             auth_headers: Deprecated. Use `auth_tokens` instead.
             bound_params: An optional mapping of parameter names to their

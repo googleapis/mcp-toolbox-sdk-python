@@ -29,7 +29,7 @@ class ParameterSchema(BaseModel):
     name: str
     type: str
     description: str
-    authSources: Optional[list[str]] = None
+    authServices: Optional[list[str]] = None
     items: Optional["ParameterSchema"] = None
 
 
@@ -149,19 +149,19 @@ def _get_auth_headers(id_token_getters: dict[str, Callable[[], str]]) -> dict[st
 
 def _get_auth_tokens(id_token_getters: dict[str, Callable[[], str]]) -> dict[str, str]:
     """
-    Gets ID tokens for the given auth sources in the getters map and returns
+    Gets ID tokens for the given auth services in the getters map and returns
     tokens to be included in tool invocation.
 
     Args:
-        id_token_getters: A dict that maps auth source names to the functions
+        id_token_getters: A dict that maps auth service names to the functions
             that return its ID token.
 
     Returns:
         A dictionary of tokens to be included in the tool invocation.
     """
     auth_tokens = {}
-    for auth_source, get_id_token in id_token_getters.items():
-        auth_tokens[f"{auth_source}_token"] = get_id_token()
+    for auth_service, get_id_token in id_token_getters.items():
+        auth_tokens[f"{auth_service}_token"] = get_id_token()
     return auth_tokens
 
 
@@ -180,7 +180,7 @@ async def _invoke_tool(
         session: The HTTP client session.
         tool_name: The name of the tool to invoke.
         data: The input data for the tool.
-        id_token_getters: A dict that maps auth source names to the functions
+        id_token_getters: A dict that maps auth service names to the functions
             that return its ID token.
 
     Returns:
@@ -226,7 +226,7 @@ def _find_auth_params(
     _non_auth_params: list[ParameterSchema] = []
 
     for param in params:
-        if param.authSources:
+        if param.authServices:
             _auth_params.append(param)
         else:
             _non_auth_params.append(param)

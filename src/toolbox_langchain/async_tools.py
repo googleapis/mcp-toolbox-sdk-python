@@ -57,7 +57,7 @@ class AsyncToolboxTool(BaseTool):
             schema: The tool schema.
             url: The base URL of the Toolbox service.
             session: The HTTP client session.
-            auth_tokens: A mapping of authentication source names to functions
+            auth_tokens: A mapping of authentication service names to functions
                 that retrieve ID tokens.
             bound_params: A mapping of parameter names to their bound
                 values.
@@ -157,7 +157,7 @@ class AsyncToolboxTool(BaseTool):
 
         # If the tool had parameters that require authentication, then right
         # before invoking that tool, we check whether all these required
-        # authentication sources have been registered or not.
+        # authentication services have been registered or not.
         self.__validate_auth()
 
         # Evaluate dynamic parameter values if any
@@ -182,28 +182,28 @@ class AsyncToolboxTool(BaseTool):
         A tool is considered authenticated if all of its parameters meet at
         least one of the following conditions:
 
-            * The parameter has at least one registered authentication source.
+            * The parameter has at least one registered authentication service.
             * The parameter requires no authentication.
 
         Args:
             strict: If True, raises a PermissionError if any required
-                authentication sources are not registered. If False, only issues
+                authentication services are not registered. If False, only issues
                 a warning.
 
         Raises:
             PermissionError: If strict is True and any required authentication
-                sources are not registered.
+                services are not registered.
         """
         params_missing_auth: list[str] = []
 
-        # Check each parameter for at least 1 required auth source
+        # Check each parameter for at least 1 required auth service
         for param in self.__auth_params:
-            if not param.authSources:
-                raise ValueError("Auth sources cannot be None.")
+            if not param.authServices:
+                raise ValueError("Auth services cannot be None.")
             has_auth = False
-            for src in param.authSources:
+            for src in param.authServices:
 
-                # Find first auth source that is specified
+                # Find first auth service that is specified
                 if src in self.__auth_tokens:
                     has_auth = True
                     break
@@ -211,7 +211,7 @@ class AsyncToolboxTool(BaseTool):
                 params_missing_auth.append(param.name)
 
         if params_missing_auth:
-            message = f"Parameter(s) `{', '.join(params_missing_auth)}` of tool {self.__name} require authentication, but no valid authentication sources are registered. Please register the required sources before use."
+            message = f"Parameter(s) `{', '.join(params_missing_auth)}` of tool {self.__name} require authentication, but no valid authentication services are registered. Please register the required services before use."
 
             if strict:
                 raise PermissionError(message)
@@ -235,7 +235,7 @@ class AsyncToolboxTool(BaseTool):
         original instance, ensuring immutability.
 
         Args:
-            auth_tokens: A dictionary of auth source names to functions that
+            auth_tokens: A dictionary of auth service names to functions that
                 retrieve ID tokens. These tokens will be merged with the
                 existing auth tokens.
             bound_params: A dictionary of parameter names to their
@@ -273,10 +273,10 @@ class AsyncToolboxTool(BaseTool):
     ) -> "AsyncToolboxTool":
         """
         Registers functions to retrieve ID tokens for the corresponding
-        authentication sources.
+        authentication services.
 
         Args:
-            auth_tokens: A dictionary of authentication source names to the
+            auth_tokens: A dictionary of authentication service names to the
                 functions that return corresponding ID token.
             strict: If True, a ValueError is raised if any of the provided auth
                 tokens are already bound. If False, only a warning is issued.
@@ -291,7 +291,7 @@ class AsyncToolboxTool(BaseTool):
                 is True.
         """
 
-        # Check if the authentication source is already registered.
+        # Check if the authentication service is already registered.
         dupe_tokens: list[str] = []
         for auth_token, _ in auth_tokens.items():
             if auth_token in self.__auth_tokens:
@@ -299,20 +299,20 @@ class AsyncToolboxTool(BaseTool):
 
         if dupe_tokens:
             raise ValueError(
-                f"Authentication source(s) `{', '.join(dupe_tokens)}` already registered in tool `{self.__name}`."
+                f"Authentication service(s) `{', '.join(dupe_tokens)}` already registered in tool `{self.__name}`."
             )
 
         return self.__create_copy(auth_tokens=auth_tokens, strict=strict)
 
     def add_auth_token(
-        self, auth_source: str, get_id_token: Callable[[], str], strict: bool = True
+        self, auth_service: str, get_id_token: Callable[[], str], strict: bool = True
     ) -> "AsyncToolboxTool":
         """
         Registers a function to retrieve an ID token for a given authentication
-        source.
+        service.
 
         Args:
-            auth_source: The name of the authentication source.
+            auth_service: The name of the authentication service.
             get_id_token: A function that returns the ID token.
             strict: If True, a ValueError is raised if any of the provided auth
                 token is already bound. If False, only a warning is issued.
@@ -326,7 +326,7 @@ class AsyncToolboxTool(BaseTool):
             ValueError: If the provided auth token is already bound and strict
                 is True.
         """
-        return self.add_auth_tokens({auth_source: get_id_token}, strict=strict)
+        return self.add_auth_tokens({auth_service: get_id_token}, strict=strict)
 
     def bind_params(
         self,

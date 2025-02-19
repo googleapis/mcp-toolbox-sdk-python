@@ -42,7 +42,7 @@ class TestAsyncToolboxTool:
                     "name": "param1",
                     "type": "string",
                     "description": "Param 1",
-                    "authSources": ["test-auth-source"],
+                    "authServices": ["test-auth-service"],
                 },
                 {"name": "param2", "type": "integer", "description": "Param 2"},
             ],
@@ -154,17 +154,17 @@ class TestAsyncToolboxTool:
         "auth_tokens, expected_auth_tokens",
         [
             (
-                {"test-auth-source": lambda: "test-token"},
-                {"test-auth-source": lambda: "test-token"},
+                {"test-auth-service": lambda: "test-token"},
+                {"test-auth-service": lambda: "test-token"},
             ),
             (
                 {
-                    "test-auth-source": lambda: "test-token",
-                    "another-auth-source": lambda: "another-token",
+                    "test-auth-service": lambda: "test-token",
+                    "another-auth-service": lambda: "another-token",
                 },
                 {
-                    "test-auth-source": lambda: "test-token",
-                    "another-auth-source": lambda: "another-token",
+                    "test-auth-service": lambda: "test-token",
+                    "another-auth-service": lambda: "another-token",
                 },
             ),
         ],
@@ -173,17 +173,17 @@ class TestAsyncToolboxTool:
         self, auth_toolbox_tool, auth_tokens, expected_auth_tokens
     ):
         tool = auth_toolbox_tool.add_auth_tokens(auth_tokens)
-        for source, getter in expected_auth_tokens.items():
-            assert tool._AsyncToolboxTool__auth_tokens[source]() == getter()
+        for service, getter in expected_auth_tokens.items():
+            assert tool._AsyncToolboxTool__auth_tokens[service]() == getter()
 
     async def test_toolbox_tool_add_auth_tokens_duplicate(self, auth_toolbox_tool):
         tool = auth_toolbox_tool.add_auth_tokens(
-            {"test-auth-source": lambda: "test-token"}
+            {"test-auth-service": lambda: "test-token"}
         )
         with pytest.raises(ValueError) as e:
-            tool = tool.add_auth_tokens({"test-auth-source": lambda: "test-token"})
+            tool = tool.add_auth_tokens({"test-auth-service": lambda: "test-token"})
         assert (
-            "Authentication source(s) `test-auth-source` already registered in tool `test_tool`."
+            "Authentication service(s) `test-auth-service` already registered in tool `test_tool`."
             in str(e.value)
         )
 
@@ -224,14 +224,14 @@ class TestAsyncToolboxTool:
 
     async def test_toolbox_tool_call_with_auth_tokens(self, auth_toolbox_tool):
         tool = auth_toolbox_tool.add_auth_tokens(
-            {"test-auth-source": lambda: "test-token"}
+            {"test-auth-service": lambda: "test-token"}
         )
         result = await tool.ainvoke({"param2": 123})
         assert result == {"result": "test-result"}
         auth_toolbox_tool._AsyncToolboxTool__session.post.assert_called_once_with(
             "https://test-url/api/tool/test_tool/invoke",
             json={"param2": 123},
-            headers={"test-auth-source_token": "test-token"},
+            headers={"test-auth-service_token": "test-token"},
         )
 
     async def test_toolbox_tool_call_with_auth_tokens_insecure(self, auth_toolbox_tool):
@@ -241,14 +241,14 @@ class TestAsyncToolboxTool:
         ):
             auth_toolbox_tool._AsyncToolboxTool__url = "http://test-url"
             tool = auth_toolbox_tool.add_auth_tokens(
-                {"test-auth-source": lambda: "test-token"}
+                {"test-auth-service": lambda: "test-token"}
             )
             result = await tool.ainvoke({"param2": 123})
             assert result == {"result": "test-result"}
             auth_toolbox_tool._AsyncToolboxTool__session.post.assert_called_once_with(
                 "http://test-url/api/tool/test_tool/invoke",
                 json={"param2": 123},
-                headers={"test-auth-source_token": "test-token"},
+                headers={"test-auth-service_token": "test-token"},
             )
 
     async def test_toolbox_tool_call_with_invalid_input(self, toolbox_tool):

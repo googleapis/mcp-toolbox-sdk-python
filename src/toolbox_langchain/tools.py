@@ -88,10 +88,10 @@ class ToolboxTool(BaseTool):
     ) -> "ToolboxTool":
         """
         Registers functions to retrieve ID tokens for the corresponding
-        authentication sources.
+        authentication services.
 
         Args:
-            auth_tokens: A dictionary of authentication source names to the
+            auth_tokens: A dictionary of authentication service names to the
                 functions that return corresponding ID token.
             strict: If True, a ValueError is raised if any of the provided auth
                 tokens are already bound. If False, only a warning is issued.
@@ -112,14 +112,14 @@ class ToolboxTool(BaseTool):
         )
 
     def add_auth_token(
-        self, auth_source: str, get_id_token: Callable[[], str], strict: bool = True
+        self, auth_service: str, get_id_token: Callable[[], str], strict: bool = True
     ) -> "ToolboxTool":
         """
         Registers a function to retrieve an ID token for a given authentication
-        source.
+        service.
 
         Args:
-            auth_source: The name of the authentication source.
+            auth_service: The name of the authentication service.
             get_id_token: A function that returns the ID token.
             strict: If True, a ValueError is raised if any of the provided auth
                 token is already bound. If False, only a warning is issued.
@@ -134,7 +134,7 @@ class ToolboxTool(BaseTool):
                 is True.
         """
         return ToolboxTool(
-            self.__async_tool.add_auth_token(auth_source, get_id_token, strict),
+            self.__async_tool.add_auth_token(auth_service, get_id_token, strict),
             self.__loop,
             self.__thread,
         )

@@ -153,7 +153,7 @@ class TestE2EClientAsync:
         tool = await toolbox.aload_tool("get-row-by-email-auth")
         with pytest.raises(
             PermissionError,
-            match="Parameter\(s\) `email` of tool get-row-by-email-auth require authentication\, but no valid authentication sources are registered\. Please register the required sources before use\.",
+            match="Parameter\(s\) `email` of tool get-row-by-email-auth require authentication\, but no valid authentication services are registered\. Please register the required services before use\.",
         ):
             await tool.ainvoke({"email": ""})
 
@@ -287,7 +287,7 @@ class TestE2EClientSync:
         tool = toolbox.load_tool("get-row-by-email-auth")
         with pytest.raises(
             PermissionError,
-            match="Parameter\(s\) `email` of tool get-row-by-email-auth require authentication\, but no valid authentication sources are registered\. Please register the required sources before use\.",
+            match="Parameter\(s\) `email` of tool get-row-by-email-auth require authentication\, but no valid authentication services are registered\. Please register the required services before use\.",
         ):
             tool.invoke({"email": ""})
 

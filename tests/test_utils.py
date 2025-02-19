@@ -288,4 +288,4 @@ class TestUtils:
             DeprecationWarning,
             match=r"Call to deprecated function \(or staticmethod\) _get_auth_headers\. \(Please use `_get_auth_tokens` instead\.\)$",
         ):
-            _get_auth_headers({"auth_source1": lambda: "test_token"})
+            _get_auth_headers({"auth_service1": lambda: "test_token"})
