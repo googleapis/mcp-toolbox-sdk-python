@@ -113,7 +113,7 @@ class TestE2EClientAsync:
             await get_n_rows_tool.ainvoke({"num_rows": 2})
 
     ##### Auth tests
-    @pytest.mark.skip(reason="b/389574566")
+    @pytest.mark.asyncio
     async def test_run_tool_unauth_with_auth(self, toolbox, auth_token2):
         """Tests running a tool that doesn't require auth, with auth provided."""
         tool = await toolbox.aload_tool(
