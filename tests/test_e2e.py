@@ -248,7 +248,6 @@ class TestE2EClientSync:
             get_n_rows_tool.invoke({"num_rows": 2})
 
     #### Auth tests
-    @pytest.mark.skip(reason="b/389574566")
     def test_run_tool_unauth_with_auth(self, toolbox, auth_token2):
         """Tests running a tool that doesn't require auth, with auth provided."""
         tool = toolbox.load_tool(
