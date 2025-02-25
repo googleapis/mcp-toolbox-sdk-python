@@ -136,8 +136,7 @@ class TestE2EClientAsync:
             "get-row-by-id-auth",
         )
         auth_tool = tool.add_auth_token("my-test-auth", lambda: auth_token2)
-        # TODO: Fix error message (b/389577313)
-        with pytest.raises(ClientResponseError, match="400, message='Bad Request'"):
+        with pytest.raises(ClientResponseError, match="401, message='Unauthorized'"):
             await auth_tool.ainvoke({"id": "2"})
 
     async def test_run_tool_auth(self, toolbox, auth_token1):
@@ -272,8 +271,7 @@ class TestE2EClientSync:
             "get-row-by-id-auth",
         )
         auth_tool = tool.add_auth_token("my-test-auth", lambda: auth_token2)
-        # TODO: Fix error message (b/389577313)
-        with pytest.raises(ClientResponseError, match="400, message='Bad Request'"):
+        with pytest.raises(ClientResponseError, match="401, message='Unauthorized'"):
             auth_tool.invoke({"id": "2"})
 
     def test_run_tool_auth(self, toolbox, auth_token1):
