@@ -30,6 +30,7 @@ class ParameterSchema(BaseModel):
     type: str
     description: str
     authSources: Optional[list[str]] = None
+    items: Optional["ParameterSchema"] = None
 
 
 class ToolSchema(BaseModel):
@@ -100,7 +101,7 @@ def _schema_to_model(model_name: str, schema: list[ParameterSchema]) -> Type[Bas
             (
                 # TODO: Remove the hardcoded optional types once optional fields
                 # are supported by Toolbox.
-                Optional[_parse_type(field.type)],
+                Optional[_parse_type(field)],
                 Field(description=field.description),
             ),
         )
@@ -108,12 +109,12 @@ def _schema_to_model(model_name: str, schema: list[ParameterSchema]) -> Type[Bas
     return create_model(model_name, **field_definitions)
 
 
-def _parse_type(type_: str) -> Any:
+def _parse_type(schema_: ParameterSchema) -> Any:
     """
     Converts a schema type to a JSON type.
 
     Args:
-        type_: The type name to convert.
+        schema_: The ParameterSchema to convert.
 
     Returns:
         A valid JSON type.
@@ -121,6 +122,7 @@ def _parse_type(type_: str) -> Any:
     Raises:
         ValueError: If the given type is not supported.
     """
+    type_ = schema_.type
 
     if type_ == "string":
         return str
@@ -131,7 +133,10 @@ def _parse_type(type_: str) -> Any:
     elif type_ == "boolean":
         return bool
     elif type_ == "array":
-        return list[Union[str, int, float, bool]]
+        if isinstance(schema_, ParameterSchema) and schema_.items:
+            return list[_parse_type(schema_.items)]  # type: ignore
+        else:
+            raise ValueError(f"Schema missing field items")
     else:
         raise ValueError(f"Unsupported schema type: {type_}")
 
