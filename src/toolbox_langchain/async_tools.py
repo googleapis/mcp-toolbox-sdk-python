@@ -42,7 +42,7 @@ class AsyncToolboxTool(BaseTool):
     def __init__(
         self,
         name: str,
-        schema: ToolSchema,
+        schema: ToolSchema | dict,
         url: str,
         session: ClientSession,
         auth_tokens: dict[str, Callable[[], str]] = {},
