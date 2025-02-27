@@ -18,6 +18,7 @@ from warnings import warn
 
 from aiohttp import ClientSession
 from deprecated import deprecated
+from langchain_core.tools import ToolException
 from pydantic import BaseModel, Field, create_model
 
 
@@ -186,6 +187,9 @@ async def _invoke_tool(
     Returns:
         A dictionary containing the parsed JSON response from the tool
         invocation.
+
+    Raises:
+        ToolException: If the Toolbox service returns an error.
     """
     url = f"{url}/api/tool/{tool_name}/invoke"
     auth_tokens = _get_auth_tokens(id_token_getters)
@@ -203,9 +207,10 @@ async def _invoke_tool(
         json=data,
         headers=auth_tokens,
     ) as response:
-        # TODO: Remove as it masks error messages.
-        response.raise_for_status()
-        return await response.json()
+        ret = await response.json()
+        if "error" in ret:
+            raise ToolException(ret)
+        return ret.get("result", ret)
 
 
 def _find_auth_params(
