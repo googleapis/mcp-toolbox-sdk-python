@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import json
-from typing import Any, Callable, Optional, Type, Union, cast
+from typing import Any, Callable, Optional, Type, cast
 from warnings import warn
 
 from aiohttp import ClientSession
@@ -99,9 +99,7 @@ def _schema_to_model(model_name: str, schema: list[ParameterSchema]) -> Type[Bas
         field_definitions[field.name] = cast(
             Any,
             (
-                # TODO: Remove the hardcoded optional types once optional fields
-                # are supported by Toolbox.
-                Optional[_parse_type(field)],
+                _parse_type(field),
                 Field(description=field.description),
             ),
         )
@@ -202,35 +200,12 @@ async def _invoke_tool(
 
     async with session.post(
         url,
-        json=_convert_none_to_empty_string(data),
+        json=data,
         headers=auth_tokens,
     ) as response:
         # TODO: Remove as it masks error messages.
         response.raise_for_status()
         return await response.json()
-
-
-def _convert_none_to_empty_string(input_dict):
-    """
-    Temporary fix to convert None values to empty strings in the input data.
-    This is needed because the current version of the Toolbox service does not
-    support optional fields.
-
-    TODO: Remove this once optional fields are supported by Toolbox.
-
-    Args:
-        input_dict: The input data dictionary.
-
-    Returns:
-        A new dictionary with None values replaced by empty strings.
-    """
-    new_dict = {}
-    for key, value in input_dict.items():
-        if value is None:
-            new_dict[key] = ""
-        else:
-            new_dict[key] = value
-    return new_dict
 
 
 def _find_auth_params(
