@@ -46,7 +46,7 @@ class ToolboxTool(BaseTool):
         """
 
         # Due to how pydantic works, we must initialize the underlying
-        # StructuredTool class before assigning values to member variables.
+        # BaseTool class before assigning values to member variables.
         super().__init__(
             name=async_tool.name,
             description=async_tool.description,
@@ -181,8 +181,8 @@ class ToolboxTool(BaseTool):
         parameter.
 
         Args:
-            param_name: The name of the bound parameter. param_value: The value
-            of the bound parameter, or a callable that
+            param_name: The name of the bound parameter.
+            param_value: The value of the bound parameter, or a callable that
                 returns the value.
             strict: If True, a ValueError is raised if any of the provided bound
                 params is not defined in the tool's schema, or requires
