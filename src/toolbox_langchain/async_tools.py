@@ -121,7 +121,7 @@ class AsyncToolboxTool(BaseTool):
         schema.parameters = non_auth_non_bound_params
 
         # Due to how pydantic works, we must initialize the underlying
-        # StructuredTool class before assigning values to member variables.
+        # BaseTool class before assigning values to member variables.
         super().__init__(
             name=name,
             description=schema.description,
