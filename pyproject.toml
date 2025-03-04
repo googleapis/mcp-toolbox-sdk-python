@@ -40,12 +40,12 @@ Changelog = "https://github.com/googleapis/genai-toolbox-langchain-python/blob/m
 test = [
     "black[jupyter]==25.1.0",
     "isort==5.13.2",
-    "mypy==1.13.0",
-    "pytest-asyncio==0.24.0",
-    "pytest==8.3.3",
+    "mypy==1.15.0",
+    "pytest-asyncio==0.25.3",
+    "pytest==8.3.5",
     "pytest-cov==6.0.0",
     "Pillow==11.1.0",
-    "google-cloud-secret-manager==2.22.0",
+    "google-cloud-secret-manager==2.23.1",
     "google-cloud-storage==3.1.0",
 ]
 
