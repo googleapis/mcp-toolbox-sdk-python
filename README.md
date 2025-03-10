@@ -204,7 +204,7 @@ access tokens) for [Google OAuth
 ### Configure Tools
 
 Refer to [these
-instructions](../../docs/tools/README.md#authenticated-parameters) on
+instructions](https://googleapis.github.io/genai-toolbox/resources/tools/#authenticated-parameters) on
 configuring tools for authenticated parameters.
 
 ### Configure SDK
