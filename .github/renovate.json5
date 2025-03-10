@@ -42,7 +42,7 @@
       "matchUpdateTypes": ["minor", "patch"]
     },
     {
-      "groupName": "All .kokoro changes",
+      "groupName": "kokoro dependencies",
       "matchFileNames": [".kokoro/**"],
     }
   ]
