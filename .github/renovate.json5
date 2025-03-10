@@ -40,6 +40,10 @@
       "groupName": "python-nonmajor",
       "matchLanguages": ["python"],
       "matchUpdateTypes": ["minor", "patch"]
+    },
+    {
+      "groupName": "All .kokoro changes",
+      "matchFileNames": [".kokoro/**"],
     }
   ]
 }
