@@ -20,6 +20,10 @@ on:
 
 jobs:
   run_reporter:
+    permissions:
+        issues: 'write'
+        checks: 'read'
+        contents: 'read'
     uses: ./.github/workflows/cloud_build_failure_reporter.yml
     with:
       trigger_names: "langchain-python-sdk-test-nightly,langchain-python-sdk-test-on-merge"
