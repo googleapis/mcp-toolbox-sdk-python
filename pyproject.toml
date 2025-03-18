@@ -35,6 +35,7 @@ Homepage = "https://github.com/googleapis/genai-toolbox-langchain-python"
 Repository = "https://github.com/googleapis/genai-toolbox-langchain-python.git"
 "Bug Tracker" = "https://github.com/googleapis/genai-toolbox-langchain-python/issues"
 Changelog = "https://github.com/googleapis/genai-toolbox-langchain-python/blob/main/CHANGELOG.md"
+readme = "README.md"
 
 [project.optional-dependencies]
 test = [
