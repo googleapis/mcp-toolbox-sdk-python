@@ -36,7 +36,7 @@ This file covers the following use cases:
 
 import pytest
 import pytest_asyncio
-from aiohttp import ClientResponseError
+from langchain_core.tools import ToolException
 from pydantic import ValidationError
 
 from toolbox_langchain.client import ToolboxClient
@@ -90,19 +90,17 @@ class TestE2EClientAsync:
 
     async def test_run_tool_async(self, get_n_rows_tool):
         response = await get_n_rows_tool.ainvoke({"num_rows": "2"})
-        result = response["result"]
 
-        assert "row1" in result
-        assert "row2" in result
-        assert "row3" not in result
+        assert "row1" in response
+        assert "row2" in response
+        assert "row3" not in response
 
     async def test_run_tool_sync(self, get_n_rows_tool):
         response = get_n_rows_tool.invoke({"num_rows": "2"})
-        result = response["result"]
 
-        assert "row1" in result
-        assert "row2" in result
-        assert "row3" not in result
+        assert "row1" in response
+        assert "row2" in response
+        assert "row3" not in response
 
     async def test_run_tool_missing_params(self, get_n_rows_tool):
         with pytest.raises(ValidationError, match="Field required"):
@@ -120,14 +118,17 @@ class TestE2EClientAsync:
             "get-row-by-id", auth_tokens={"my-test-auth": lambda: auth_token2}
         )
         response = await tool.ainvoke({"id": "2"})
-        assert "row2" in response["result"]
+        assert "row2" in response
 
     async def test_run_tool_no_auth(self, toolbox):
         """Tests running a tool requiring auth without providing auth."""
         tool = await toolbox.aload_tool(
             "get-row-by-id-auth",
         )
-        with pytest.raises(ClientResponseError, match="401, message='Unauthorized'"):
+        with pytest.raises(
+            ToolException,
+            match="{'status': 'Unauthorized', 'error': 'tool invocation not authorized. Please make sure your specify correct auth headers'}",
+        ):
             await tool.ainvoke({"id": "2"})
 
     async def test_run_tool_wrong_auth(self, toolbox, auth_token2):
@@ -136,7 +137,10 @@ class TestE2EClientAsync:
             "get-row-by-id-auth",
         )
         auth_tool = tool.add_auth_token("my-test-auth", lambda: auth_token2)
-        with pytest.raises(ClientResponseError, match="401, message='Unauthorized'"):
+        with pytest.raises(
+            ToolException,
+            match="{'status': 'Unauthorized', 'error': 'tool invocation not authorized. Please make sure your specify correct auth headers'}",
+        ):
             await auth_tool.ainvoke({"id": "2"})
 
     async def test_run_tool_auth(self, toolbox, auth_token1):
@@ -146,7 +150,7 @@ class TestE2EClientAsync:
         )
         auth_tool = tool.add_auth_token("my-test-auth", lambda: auth_token1)
         response = await auth_tool.ainvoke({"id": "2"})
-        assert "row2" in response["result"]
+        assert "row2" in response
 
     async def test_run_tool_param_auth_no_auth(self, toolbox):
         """Tests running a tool with a param requiring auth, without auth."""
@@ -163,17 +167,19 @@ class TestE2EClientAsync:
             "get-row-by-email-auth", auth_tokens={"my-test-auth": lambda: auth_token1}
         )
         response = await tool.ainvoke({})
-        result = response["result"]
-        assert "row4" in result
-        assert "row5" in result
-        assert "row6" in result
+        assert "row4" in response
+        assert "row5" in response
+        assert "row6" in response
 
     async def test_run_tool_param_auth_no_field(self, toolbox, auth_token1):
         """Tests running a tool with a param requiring auth, with insufficient auth."""
         tool = await toolbox.aload_tool(
             "get-row-by-content-auth", auth_tokens={"my-test-auth": lambda: auth_token1}
         )
-        with pytest.raises(ClientResponseError, match="400, message='Bad Request'"):
+        with pytest.raises(
+            ToolException,
+            match="{'status': 'Bad Request', 'error': 'provided parameters were invalid: error parsing authenticated parameter \"data\": no field named row_data in claims'}",
+        ):
             await tool.ainvoke({})
 
 
@@ -225,19 +231,17 @@ class TestE2EClientSync:
     @pytest.mark.asyncio
     async def test_run_tool_async(self, get_n_rows_tool):
         response = await get_n_rows_tool.ainvoke({"num_rows": "2"})
-        result = response["result"]
 
-        assert "row1" in result
-        assert "row2" in result
-        assert "row3" not in result
+        assert "row1" in response
+        assert "row2" in response
+        assert "row3" not in response
 
     def test_run_tool_sync(self, get_n_rows_tool):
         response = get_n_rows_tool.invoke({"num_rows": "2"})
-        result = response["result"]
 
-        assert "row1" in result
-        assert "row2" in result
-        assert "row3" not in result
+        assert "row1" in response
+        assert "row2" in response
+        assert "row3" not in response
 
     def test_run_tool_missing_params(self, get_n_rows_tool):
         with pytest.raises(ValidationError, match="Field required"):
@@ -254,14 +258,17 @@ class TestE2EClientSync:
             "get-row-by-id", auth_tokens={"my-test-auth": lambda: auth_token2}
         )
         response = tool.invoke({"id": "2"})
-        assert "row2" in response["result"]
+        assert "row2" in response
 
     def test_run_tool_no_auth(self, toolbox):
         """Tests running a tool requiring auth without providing auth."""
         tool = toolbox.load_tool(
             "get-row-by-id-auth",
         )
-        with pytest.raises(ClientResponseError, match="401, message='Unauthorized'"):
+        with pytest.raises(
+            ToolException,
+            match="{'status': 'Unauthorized', 'error': 'tool invocation not authorized. Please make sure your specify correct auth headers'}",
+        ):
             tool.invoke({"id": "2"})
 
     def test_run_tool_wrong_auth(self, toolbox, auth_token2):
@@ -270,7 +277,10 @@ class TestE2EClientSync:
             "get-row-by-id-auth",
         )
         auth_tool = tool.add_auth_token("my-test-auth", lambda: auth_token2)
-        with pytest.raises(ClientResponseError, match="401, message='Unauthorized'"):
+        with pytest.raises(
+            ToolException,
+            match="{'status': 'Unauthorized', 'error': 'tool invocation not authorized. Please make sure your specify correct auth headers'}",
+        ):
             auth_tool.invoke({"id": "2"})
 
     def test_run_tool_auth(self, toolbox, auth_token1):
@@ -280,7 +290,7 @@ class TestE2EClientSync:
         )
         auth_tool = tool.add_auth_token("my-test-auth", lambda: auth_token1)
         response = auth_tool.invoke({"id": "2"})
-        assert "row2" in response["result"]
+        assert "row2" in response
 
     def test_run_tool_param_auth_no_auth(self, toolbox):
         """Tests running a tool with a param requiring auth, without auth."""
@@ -297,15 +307,17 @@ class TestE2EClientSync:
             "get-row-by-email-auth", auth_tokens={"my-test-auth": lambda: auth_token1}
         )
         response = tool.invoke({})
-        result = response["result"]
-        assert "row4" in result
-        assert "row5" in result
-        assert "row6" in result
+        assert "row4" in response
+        assert "row5" in response
+        assert "row6" in response
 
     def test_run_tool_param_auth_no_field(self, toolbox, auth_token1):
         """Tests running a tool with a param requiring auth, with insufficient auth."""
         tool = toolbox.load_tool(
             "get-row-by-content-auth", auth_tokens={"my-test-auth": lambda: auth_token1}
         )
-        with pytest.raises(ClientResponseError, match="400, message='Bad Request'"):
+        with pytest.raises(
+            ToolException,
+            match="{'status': 'Bad Request', 'error': 'provided parameters were invalid: error parsing authenticated parameter \"data\": no field named row_data in claims'}",
+        ):
             tool.invoke({})
