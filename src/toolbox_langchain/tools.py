@@ -17,17 +17,15 @@ from asyncio import AbstractEventLoop
 from threading import Thread
 from typing import Any, Awaitable, Callable, TypeVar, Union
 
-from langchain_core.tools import BaseTool
-
 from .async_tools import AsyncToolboxTool
 
 T = TypeVar("T")
 
 
-class ToolboxTool(BaseTool):
+class ToolboxTool:
     """
-    A subclass of LangChain's BaseTool that supports features specific to
-    Toolbox, like bound parameters and authenticated tools.
+    A class that supports features specific to Toolbox, like bound parameters
+    and authenticated tools.
     """
 
     def __init__(
@@ -44,14 +42,6 @@ class ToolboxTool(BaseTool):
             loop: The event loop used to run asynchronous tasks.
             thread: The thread to run blocking operations in.
         """
-
-        # Due to how pydantic works, we must initialize the underlying
-        # BaseTool class before assigning values to member variables.
-        super().__init__(
-            name=async_tool.name,
-            description=async_tool.description,
-            args_schema=async_tool.args_schema,
-        )
 
         self.__async_tool = async_tool
         self.__loop = loop
@@ -77,11 +67,8 @@ class ToolboxTool(BaseTool):
             asyncio.run_coroutine_threadsafe(coro, self.__loop)
         )
 
-    def _run(self, **kwargs: Any) -> dict[str, Any]:
-        return self.__run_as_sync(self.__async_tool._arun(**kwargs))
-
-    async def _arun(self, **kwargs: Any) -> dict[str, Any]:
-        return await self.__run_as_async(self.__async_tool._arun(**kwargs))
+    def __call__(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
+        return self.__run_as_sync(self.__async_tool(*args, **kwargs))
 
     def add_auth_tokens(
         self, auth_tokens: dict[str, Callable[[], str]], strict: bool = True

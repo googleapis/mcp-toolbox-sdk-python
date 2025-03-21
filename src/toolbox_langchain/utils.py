@@ -266,3 +266,29 @@ def _find_bound_params(
             _non_bound_params.append(param)
 
     return (_bound_params, _non_bound_params)
+
+
+def _schema_to_docstring(tool_schema: ToolSchema) -> str:
+    """Generates a Google Style docstring from a ToolSchema object.
+
+    If the schema has parameters, the docstring includes an 'Args:' section
+    detailing each parameter's name, type, and description. If no parameters are
+    present, only the tool's description is returned.
+
+    Args:
+        tool_schema: The schema object defining the tool's interface,
+            including its description and parameters.
+
+    Returns:
+        str: A Google Style formatted docstring.
+    """
+
+    if not tool_schema.parameters:
+        return tool_schema.description
+
+    docstring = f"{tool_schema.description}\n\nArgs:"
+    for param in tool_schema.parameters:
+        docstring += (
+            f"\n    {param.name} ({_parse_type(param).__name__}): {param.description}"
+        )
+    return docstring
