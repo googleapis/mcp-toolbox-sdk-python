@@ -41,6 +41,7 @@ class ToolSchema(BaseModel):
 
     description: str
     parameters: list[ParameterSchema]
+    authRequired: list[str] = []
 
 
 class ManifestSchema(BaseModel):

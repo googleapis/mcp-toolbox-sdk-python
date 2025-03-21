@@ -194,7 +194,14 @@ class AsyncToolboxTool(BaseTool):
             PermissionError: If strict is True and any required authentication
                 sources are not registered.
         """
+        is_authenticated: bool = not self.__schema.authRequired
         params_missing_auth: list[str] = []
+
+        # Check tool for at least 1 required auth source
+        for src in self.__schema.authRequired:
+            if src in self.__auth_tokens:
+                is_authenticated = True
+                break
 
         # Check each parameter for at least 1 required auth source
         for param in self.__auth_params:
@@ -210,9 +217,20 @@ class AsyncToolboxTool(BaseTool):
             if not has_auth:
                 params_missing_auth.append(param.name)
 
-        if params_missing_auth:
-            message = f"Parameter(s) `{', '.join(params_missing_auth)}` of tool {self.__name} require authentication, but no valid authentication sources are registered. Please register the required sources before use."
+        messages: list[str] = []
 
+        if not is_authenticated:
+            messages.append(
+                f"Tool {self.__name} requires authentication, but no valid authentication sources are registered. Please register the required sources before use."
+            )
+
+        if params_missing_auth:
+            messages.append(
+                f"Parameter(s) `{', '.join(params_missing_auth)}` of tool {self.__name} require authentication, but no valid authentication sources are registered. Please register the required sources before use."
+            )
+
+        if messages:
+            message = "\n\n".join(messages)
             if strict:
                 raise PermissionError(message)
             warn(message)
