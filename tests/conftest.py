@@ -25,6 +25,7 @@ import time
 from typing import Generator
 
 import google
+import pytest
 import pytest_asyncio
 from google.auth import compute_engine
 from google.cloud import secretmanager, storage
@@ -130,21 +131,37 @@ def auth_token2(project_id: str) -> str:
 
 
 @pytest_asyncio.fixture(scope="session")
-def toolbox_server(toolbox_version: str, tools_file_path: str) -> Generator[None]:
+def toolbox_server(
+    tmp_path_factory: pytest.TempPathFactory, toolbox_version: str, tools_file_path: str
+) -> Generator[None]:
     """Starts the toolbox server as a subprocess."""
-    print("Downloading toolbox binary from gcs bucket...")
-    source_blob_name = get_toolbox_binary_url(toolbox_version)
-    download_blob("genai-toolbox", source_blob_name, "toolbox")
-    print("Toolbox binary downloaded successfully.")
+    # Get a temp dir for toolbox data
+    tmp_path = tmp_path_factory.mktemp("toolbox_data")
+    toolbox_binary_path = str(tmp_path) + "/toolbox"
+
+    # Get toolbox binary
+    if toolbox_version == "dev":
+        print("Compiling the current dev toolbox version...")
+        subprocess.Popen(["go", "get", "./..."])
+        subprocess.Popen(["go", "build", "-o", toolbox_binary_path])
+        # Wait for compilation
+        time.sleep(5)
+        print("Toolbox binary compiled successfully.")
+    else:
+        print("Downloading toolbox binary from gcs bucket...")
+        source_blob_name = get_toolbox_binary_url(toolbox_version)
+        download_blob("genai-toolbox", source_blob_name, toolbox_binary_path)
+        print("Toolbox binary downloaded successfully.")
+
+    # Run toolbox binary
     try:
         print("Opening toolbox server process...")
         # Make toolbox executable
-        os.chmod("toolbox", 0o700)
+        os.chmod(toolbox_binary_path, 0o700)
         # Run toolbox binary
         toolbox_server = subprocess.Popen(
-            ["./toolbox", "--tools_file", tools_file_path]
+            [toolbox_binary_path, "--tools_file", tools_file_path]
         )
-
         # Wait for server to start
         # Retry logic with a timeout
         for _ in range(5):  # retries
