@@ -12,9 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: lint
+name: langchain
 on:
   pull_request:
+    paths:
+      - 'packages/toolbox-langchain/**'
+      - '!packages/toolbox-langchain/**/*.md'
   pull_request_target:
     types: [labeled]
 
@@ -29,6 +32,9 @@ jobs:
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}
       cancel-in-progress: true
+    defaults:
+      run:
+        working-directory: ./packages/toolbox-langchain
     permissions:
       contents: 'read'
       issues: 'write'
