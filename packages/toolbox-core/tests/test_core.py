@@ -13,7 +13,6 @@
 # limitations under the License.
 from toolbox_core import DummyClass
 
-
 class TestToolboxCore:
     def test_dummy(self):
         dummy_variable = DummyClass()
