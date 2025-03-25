@@ -16,7 +16,6 @@ import asyncio
 import json
 import re
 import warnings
-from typing import Union
 from unittest.mock import AsyncMock, Mock, patch
 
 import aiohttp

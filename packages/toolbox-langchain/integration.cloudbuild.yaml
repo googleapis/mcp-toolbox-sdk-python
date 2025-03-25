@@ -18,14 +18,14 @@ steps:
     args:
       - install
       - '-r'
-      - './requirements.txt'
+      - 'packages/toolbox-langchain/requirements.txt'
       - '--user'
     entrypoint: pip
   - id: Install test requirements
     name: 'python:${_VERSION}'
     args:
       - install
-      - '.[test]'
+      - 'packages/toolbox-langchain[test]'
       - '--user'
     entrypoint: pip
   - id: Run integration tests
@@ -37,10 +37,10 @@ steps:
     args:
       - '-c'
       - >-
-        python -m pytest ./tests/
+        python -m pytest packages/toolbox-langchain/tests/
     entrypoint: /bin/bash
 options:
   logging: CLOUD_LOGGING_ONLY
 substitutions:
   _VERSION: '3.13'
-  _TOOLBOX_VERSION: '0.1.0'
+  _TOOLBOX_VERSION: '0.2.1'
