@@ -35,10 +35,10 @@ package-dir = {"" = "src"}
 version = {attr = "toolbox_langchain.version.__version__"}
 
 [project.urls]
-Homepage = "https://github.com/googleapis/genai-toolbox-langchain-python"
+Homepage = "https://github.com/googleapis/genai-toolbox-langchain-python/blob/main/packages/toolbox-langchain"
 Repository = "https://github.com/googleapis/genai-toolbox-langchain-python.git"
 "Bug Tracker" = "https://github.com/googleapis/genai-toolbox-langchain-python/issues"
-Changelog = "https://github.com/googleapis/genai-toolbox-langchain-python/blob/main/CHANGELOG.md"
+Changelog = "https://github.com/googleapis/genai-toolbox-langchain-python/blob/main/packages/toolbox-langchain/CHANGELOG.md"
 
 [project.optional-dependencies]
 test = [
