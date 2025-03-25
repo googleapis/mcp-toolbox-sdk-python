@@ -35,6 +35,7 @@ branchProtectionRules:
       - "langchain-python-sdk-pr-py311 (toolbox-testing-438616)"
       - "langchain-python-sdk-pr-py310 (toolbox-testing-438616)"
       - "langchain-python-sdk-pr-py39 (toolbox-testing-438616)"
+      - "core-python-sdk-pr-py313 (toolbox-testing-438616)"
     requiredApprovingReviewCount: 1
     requiresCodeOwnerReviews: true
     requiresStrictStatusChecks: true

@@ -1,0 +1,60 @@
+[project]
+name = "toolbox-core"
+dynamic = ["version"]
+readme = "README.md"
+description = "Python Base SDK for interacting with the Toolbox service"
+license = {file = "LICENSE"}
+requires-python = ">=3.9"
+authors = [
+    {name = "Google LLC", email = "googleapis-packages@google.com"}
+]
+
+# TODO: Add deps
+#dependencies = [
+#]
+
+classifiers = [
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+# Tells setuptools that packages are under the 'src' directory
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.dynamic]
+version = {attr = "toolbox_core.version.__version__"}
+
+[project.urls]
+Homepage = "https://github.com/googleapis/genai-toolbox-langchain-python/blob/main/packages/toolbox-core"
+Repository = "https://github.com/googleapis/genai-toolbox-langchain-python.git"
+"Bug Tracker" = "https://github.com/googleapis/genai-toolbox-langchain-python/issues"
+Changelog = "https://github.com/googleapis/genai-toolbox-langchain-python/blob/main/packages/toolbox-core/CHANGELOG.md"
+
+[project.optional-dependencies]
+test = [
+    "black[jupyter]==25.1.0",
+    "isort==6.0.1",
+    "mypy==1.15.0",
+    "pytest==8.3.5",
+]
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.black]
+target-version = ['py39']
+
+[tool.isort]
+profile = "black"
+
+[tool.mypy]
+python_version = "3.9"
+warn_unused_configs = true
+disallow_incomplete_defs = true
