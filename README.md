@@ -1,3 +1,4 @@
-# A template readme for the BASE SDK repo.
-
-TODO: Update
+# Libraries
+| Package           | Version |
+|-------------------|---------|
+| toolbox-langchain | 0.1.0   |
