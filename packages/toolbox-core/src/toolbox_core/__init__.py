@@ -12,6 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .client import DummyClass
+from .client import ToolboxClient
 
-__all__ = ["DummyClass"]
+__all__ = ["ToolboxClient"]
