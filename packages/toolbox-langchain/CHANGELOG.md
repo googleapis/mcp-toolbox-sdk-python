@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.0](https://github.com/googleapis/genai-toolbox-langchain-python/compare/toolbox-langchain-v0.1.0...toolbox-langchain-v0.1.0) (2025-03-26)
+
+
+### Miscellaneous Chores
+
+* release 0.1.0 ([#24](https://github.com/googleapis/genai-toolbox-langchain-python/issues/24)) ([6fff8e2](https://github.com/googleapis/genai-toolbox-langchain-python/commit/6fff8e2ea18bd6df9f30d7790b6076cf0b32cc75))
+
 ## 0.1.0 (2025-02-05)
 
 
@@ -24,4 +31,3 @@
 ### Bug Fixes
 
 * Deprecate 'add_auth_headers' in favor of 'add_auth_tokens' ([c5c699c](https://github.com/googleapis/genai-toolbox-langchain-python/commit/c5c699cc29bcc0708a31bff90e8cec489982fe2a))
-
