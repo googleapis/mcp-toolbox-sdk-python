@@ -7,7 +7,8 @@
         "extra-files": [
           "src/toolbox_core/version.py"
         ],
-        "release-type": "python"
+        "release-type": "python",
+        "bootstrap-sha": "ac43090822fbf19a8920732e2ec3aa8b9c3130c1"
       },
       "packages/toolbox-langchain": {
         "bump-minor-pre-major": true,
@@ -16,7 +17,8 @@
         "extra-files": [
           "src/toolbox_langchain/version.py"
         ],
-        "release-type": "python"
+        "release-type": "python",
+        "bootstrap-sha": "ac43090822fbf19a8920732e2ec3aa8b9c3130c1"
       }
     }
 }
