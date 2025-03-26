@@ -1,0 +1,22 @@
+{
+    "packages": {
+      "packages/toolbox-core": {
+        "bump-minor-pre-major": true,
+        "bump-patch-for-minor-pre-major": true,
+        "component": "toolbox-core",
+        "extra-files": [
+          "src/toolbox_core/version.py"
+        ],
+        "release-type": "python"
+      },
+      "packages/toolbox-langchain": {
+        "bump-minor-pre-major": true,
+        "bump-patch-for-minor-pre-major": true,
+        "component": "toolbox-langchain",
+        "extra-files": [
+          "src/toolbox_langchain/version.py"
+        ],
+        "release-type": "python"
+      }
+    }
+}
