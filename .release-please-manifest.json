@@ -1,3 +1,4 @@
 {
-  "packages/toolbox-langchain": "0.1.0"
+  "packages/toolbox-langchain": "0.1.0",
+  "packages/toolbox-core": "0.1.0"
 }
