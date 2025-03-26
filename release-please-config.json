@@ -11,7 +11,7 @@
         "bootstrap-sha": "ac43090822fbf19a8920732e2ec3aa8b9c3130c1",
         "include-component-in-tag": "false",
         "include-v-in-tag": "false",
-        "initial-version": "0.1.0",
+        "initial-version": "0.1.0"
       },
       "packages/toolbox-langchain": {
         "bump-minor-pre-major": true,
@@ -24,7 +24,7 @@
         "bootstrap-sha": "ac43090822fbf19a8920732e2ec3aa8b9c3130c1",
         "include-component-in-tag": "false",
         "include-v-in-tag": "false",
-        "initial-version": "0.1.1",
+        "initial-version": "0.1.1"
       }
     }
 }
