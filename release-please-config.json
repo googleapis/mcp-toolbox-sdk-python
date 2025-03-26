@@ -6,6 +6,11 @@
     "bump-minor-pre-major": true,
     "bump-patch-for-minor-pre-major": true,
     "draft": true,
+    "changelog-sections": [
+      { "type": "feat", "section": "Features" },
+      { "type": "fix", "section": "Bug Fixes" },
+      { "type": "chore", "section": "Miscellaneous Chores", "hidden": false }
+    ],
     "packages": {
       "packages/toolbox-core": {
         "extra-files": [
