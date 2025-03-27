@@ -49,7 +49,7 @@ class ToolboxTool:
         name: str,
         desc: str,
         params: list[Parameter],
-        bound_params: dict[str, Union[Any, Callable[[], Any]]] | None = None,
+        bound_params: Union[dict[str, Union[Any, Callable[[], Any]]], None] = None,
     ):
         """
         Initializes a callable that will trigger the tool invocation through the Toolbox server.
@@ -201,7 +201,7 @@ class ToolboxTool:
     def _copy_with_updates(
         self: T,
         *,
-        add_bound_params: dict[str, Union[Any, Callable[[], Any]]] | None = None,
+        add_bound_params: Union[dict[str, Union[Any, Callable[[], Any]]], None] = None,
     ) -> T:
         """Creates a new instance with updated bound params."""
         new_bound_params = self.__bound_params.copy()
