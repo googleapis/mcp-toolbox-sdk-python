@@ -85,16 +85,16 @@ class ToolboxTool:
         # TODO: self.__qualname__ ??
 
     def _evaluate_param_vals(
-        self, parameters_to_resolve: dict[str, Union[Any, Callable[[], Any]]]
+        self, params: dict[str, Union[Any, Callable[[], Any]]]
     ) -> dict[str, Any]:
         """
-        Resolves parameter values, evaluating any callables.
+        Evaluate any callable parameter values.
 
         Iterates through the input dictionary, calling any callable values
         to get their actual result. Non-callable values are kept as is.
 
         Args:
-            parameters_to_resolve: A dictionary where keys are parameter names
+            params: A dictionary where keys are parameter names
                 and values are either static values or callables returning a value.
 
         Returns:
@@ -104,7 +104,7 @@ class ToolboxTool:
             RuntimeError: If evaluating a callable parameter value fails.
         """
         resolved_parameters: dict[str, Any] = {}
-        for param_name, param_value in parameters_to_resolve.items():
+        for param_name, param_value in params.items():
             try:
                 resolved_parameters[param_name] = (
                     param_value() if callable(param_value) else param_value
@@ -117,7 +117,7 @@ class ToolboxTool:
 
     def _prepare_arguments(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
         """
-        Resolves bound parameters, merges with call arguments, and binds them
+        Evaluates parameters, merges with call arguments, and binds them
         to the tool's full signature.
 
         Args:
@@ -132,16 +132,15 @@ class ToolboxTool:
                        or if arguments don't match the tool's signature.
             RuntimeError: If evaluating a bound parameter fails.
         """
-        evaluated_bound_params = self._evaluate_param_vals(self.__bound_params)
-
         # Check for conflicts between resolved bound params and keyword arguments
-        conflicts = evaluated_bound_params.keys() & kwargs.keys()
+        conflicts = self.__bound_params.keys() & kwargs.keys()
         if conflicts:
             raise TypeError(
                 f"Tool '{self.__name__}': Cannot provide value during call for already bound argument(s): {', '.join(conflicts)}"
             )
 
-        # Merge resolved bound parameters with provided keyword arguments
+        evaluated_bound_params = self._evaluate_param_vals(self.__bound_params)
+        # Merge params with provided keyword arguments
         merged_kwargs = {**evaluated_bound_params, **kwargs}
 
         # Bind *args and merged_kwargs using the *original* full signature
