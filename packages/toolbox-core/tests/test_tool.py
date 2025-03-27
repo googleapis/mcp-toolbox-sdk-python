@@ -196,7 +196,7 @@ class TestToolboxTool:
 
     @pytest.fixture
     def tool_with_bound_arg2(self, tool: ToolboxTool) -> ToolboxTool:
-        new_tool = tool.bind_params({"opt_arg": 88})
+        new_tool = tool.bind_params({"opt_arg": lambda: 88})
         return new_tool
 
     @pytest.mark.asyncio
