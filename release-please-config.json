@@ -4,6 +4,7 @@
     "bump-minor-pre-major": true,
     "bump-patch-for-minor-pre-major": true,
     "separate-pull-requests": true,
+    "include-component-in-tag": true,
     "changelog-sections": [
       { "type": "feat", "section": "Features" },
       { "type": "fix", "section": "Bug Fixes" },
