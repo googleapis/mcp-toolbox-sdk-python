@@ -84,6 +84,76 @@ class ToolboxTool:
         self.__annotations__ = {p.name: p.annotation for p in visible_params}
         # TODO: self.__qualname__ ??
 
+    def _resolve_callable_args(
+        self, callable_args: dict[str, Union[Any, Callable[[], Any]]]
+    ) -> dict[str, Any]:
+        """
+        Evaluates any callable arguments.
+
+        Returns:
+            A dictionary containing all args with callables resolved.
+
+        Raises:
+            RuntimeError: If evaluating a callable argument fails.
+        """
+        resolved_params: dict[str, Any] = {}
+        for name, value_or_callable in callable_args.items():
+            try:
+                resolved_params[name] = (
+                    value_or_callable()
+                    if callable(value_or_callable)
+                    else value_or_callable
+                )
+            except Exception as e:
+                raise RuntimeError(
+                    f"Error evaluating argument '{name}' for tool '{self.__name__}': {e}"
+                ) from e
+        return resolved_params
+
+    def _prepare_arguments(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
+        """
+        Resolves bound parameters, merges with call arguments, and binds them
+        to the tool's full signature.
+
+        Args:
+            *args: Positional arguments provided at call time.
+            **kwargs: Keyword arguments provided at call time.
+
+        Returns:
+            A dictionary of all arguments ready to be sent to the API.
+
+        Raises:
+            TypeError: If call-time arguments conflict with bound parameters,
+                       or if arguments don't match the tool's signature.
+            RuntimeError: If evaluating a bound parameter fails.
+        """
+        resolved_bound_params = self._resolve_callable_args(self.__bound_params)
+
+        # Check for conflicts between resolved bound params and keyword arguments
+        conflicts = resolved_bound_params.keys() & kwargs.keys()
+        if conflicts:
+            raise TypeError(
+                f"Tool '{self.__name__}': Cannot provide value during call for already bound argument(s): {', '.join(conflicts)}"
+            )
+
+        # Merge resolved bound parameters with provided keyword arguments
+        merged_kwargs = {**resolved_bound_params, **kwargs}
+
+        # Bind *args and merged_kwargs using the *original* full signature
+        full_signature = Signature(
+            parameters=self.__original_params, return_annotation=str
+        )
+        try:
+            bound_args = full_signature.bind(*args, **merged_kwargs)
+        except TypeError as e:
+            raise TypeError(
+                f"Argument binding error for tool '{self.__name__}' (check arguments against signature {full_signature} and bound params {list(self.__bound_params.keys())}): {e}"
+            ) from e
+
+        # Apply default values for any missing arguments
+        bound_args.apply_defaults()
+        return bound_args.arguments
+
     async def __call__(self, *args: Any, **kwargs: Any) -> str:
         """
         Asynchronously calls the remote tool with the provided arguments and bound parameters.
@@ -102,51 +172,12 @@ class ToolboxTool:
             TypeError: If a bound parameter conflicts with a parameter provided at call time.
             Exception: If the remote tool call results in an error.
         """
-        # Resolve bound parameters by evaluating callables
-        resolved_bound_params: dict[str, Any] = {}
-        for name, value_or_callable in self.__bound_params.items():
-            try:
-                resolved_bound_params[name] = (
-                    value_or_callable()
-                    if callable(value_or_callable)
-                    else value_or_callable
-                )
-            except Exception as e:
-                raise RuntimeError(
-                    f"Error evaluating bound parameter '{name}' for tool '{self.__name__}': {e}"
-                ) from e
-
-        # Check for conflicts between resolved bound params and kwargs
-        conflicts = resolved_bound_params.keys() & kwargs.keys()
-        if conflicts:
-            raise TypeError(
-                f"Tool '{self.__name__}': Cannot provide value during call for already bound argument(s): {', '.join(conflicts)}"
-            )
-        merged_kwargs = {**resolved_bound_params, **kwargs}
-
-        # Bind *args and merged_kwargs using the *original* full signature
-        # This ensures all parameters (bound and call-time) are accounted for.
-        full_signature = Signature(
-            parameters=self.__original_params, return_annotation=str
-        )
-        try:
-            # We use merged_kwargs here; args fill positional slots first.
-            # Bound parameters passed positionally via *args is complex and less intuitive,
-            # so we primarily expect bound params to be treated like pre-filled keywords.
-            # If a user *really* wanted to bind a purely positional param, they could,
-            # but providing it again via *args at call time would be an error caught by bind().
-            all_args = full_signature.bind(*args, **merged_kwargs)
-        except TypeError as e:
-            raise TypeError(
-                f"Argument binding error for tool '{self.__name__}' (check bound params and call arguments): {e}"
-            ) from e
-
-        all_args.apply_defaults()
+        arguments_payload = self._prepare_arguments(*args, **kwargs)
 
         # Make the API call
         async with self.__session.post(
             self.__url,
-            payload=all_args.arguments,
+            payload=arguments_payload,
         ) as resp:
             try:
                 ret = await resp.json()
