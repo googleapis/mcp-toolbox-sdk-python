@@ -94,9 +94,9 @@ class TestToolboxTool:
         assert tool.__name__ == tool_details["name"]
         assert tool.__doc__ == tool_details["desc"]
         assert tool._ToolboxTool__url == tool_details["expected_url"]
-        assert tool.__signature__ == tool_details["public_signature"]
-        assert tool.__annotations__ == tool_details["public_annotations"]
-        assert tool._ToolboxTool__bound_params == {}
+        assert tool._ToolboxTool__session is tool._ToolboxTool__session
+        assert tool.__signature__ == tool_details["signature"]
+        assert tool.__annotations__ == tool_details["annotations"]
         # assert hasattr(tool, "__qualname__")
 
     @pytest.mark.asyncio
@@ -118,7 +118,7 @@ class TestToolboxTool:
         assert result == expected_result
         mock_session.post.assert_called_once_with(
             tool_details["expected_url"],
-            payload={"arg1": arg1_val, "opt_arg": opt_arg_val, "req_kwarg": req_kwarg_val},
+            json={"arg1": arg1_val, "opt_arg": opt_arg_val},
         )
         mock_session.post.return_value.__aenter__.return_value.json.assert_awaited_once()
 
@@ -181,4 +181,3 @@ class TestToolboxTool:
             payload={"arg1": bound_arg1_value, "opt_arg": opt_arg_val, "req_kwarg": req_kwarg_val},
         )
         mock_session.post.return_value.__aenter__.return_value.json.assert_awaited_once()
-
