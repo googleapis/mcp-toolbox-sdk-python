@@ -12,12 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pytest
-from unittest.mock import AsyncMock, MagicMock
 from inspect import Parameter, Signature
-from typing import Any, Optional, Callable
+from typing import Any, Callable, Optional
+from unittest.mock import AsyncMock, MagicMock
+
+import pytest
 
 from toolbox_core.tool import ToolboxTool
+
 
 class TestToolboxTool:
     @pytest.fixture
@@ -32,7 +34,12 @@ class TestToolboxTool:
         tool_name = "test_tool"
         params = [
             Parameter("arg1", Parameter.POSITIONAL_OR_KEYWORD, annotation=str),
-            Parameter("opt_arg", Parameter.POSITIONAL_OR_KEYWORD, default=123, annotation=Optional[int]),
+            Parameter(
+                "opt_arg",
+                Parameter.POSITIONAL_OR_KEYWORD,
+                default=123,
+                annotation=Optional[int],
+            ),
         ]
         return {
             "base_url": base_url,
@@ -63,10 +70,13 @@ class TestToolboxTool:
             mock_resp.__aenter__.return_value = mock_resp
             mock_resp.__aexit__.return_value = None
             mock_session.post.return_value = mock_resp
+
         return _configure
 
     @pytest.mark.asyncio
-    async def test_initialization_and_introspection(self, tool: ToolboxTool, tool_details: dict):
+    async def test_initialization_and_introspection(
+        self, tool: ToolboxTool, tool_details: dict
+    ):
         """Verify attributes are set correctly during initialization."""
         assert tool.__name__ == tool_details["name"]
         assert tool.__doc__ == tool_details["desc"]
@@ -82,7 +92,7 @@ class TestToolboxTool:
         tool: ToolboxTool,
         mock_session: MagicMock,
         tool_details: dict,
-        configure_mock_response: Callable
+        configure_mock_response: Callable,
     ):
         expected_result = "Operation successful!"
         configure_mock_response({"result": expected_result})
@@ -104,7 +114,7 @@ class TestToolboxTool:
         tool: ToolboxTool,
         mock_session: MagicMock,
         tool_details: dict,
-        configure_mock_response: Callable
+        configure_mock_response: Callable,
     ):
         expected_result = "Default success!"
         configure_mock_response({"result": expected_result})
@@ -126,7 +136,7 @@ class TestToolboxTool:
         tool: ToolboxTool,
         mock_session: MagicMock,
         tool_details: dict,
-        configure_mock_response: Callable
+        configure_mock_response: Callable,
     ):
         error_message = "Tool execution failed on server"
         configure_mock_response({"error": error_message})
@@ -148,7 +158,7 @@ class TestToolboxTool:
         tool: ToolboxTool,
         mock_session: MagicMock,
         tool_details: dict,
-        configure_mock_response: Callable
+        configure_mock_response: Callable,
     ):
         fallback_response = {"status": "completed", "details": "some info"}
         configure_mock_response(fallback_response)
@@ -165,9 +175,7 @@ class TestToolboxTool:
 
     @pytest.mark.asyncio
     async def test_call_invalid_arguments_type_error(
-        self,
-        tool: ToolboxTool,
-        mock_session: MagicMock
+        self, tool: ToolboxTool, mock_session: MagicMock
     ):
         with pytest.raises(TypeError):
             await tool("val1", 2, 3)
