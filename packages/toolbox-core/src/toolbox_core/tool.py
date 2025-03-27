@@ -177,7 +177,7 @@ class ToolboxTool:
         # Make the API call
         async with self.__session.post(
             self.__url,
-            payload=arguments_payload,
+            json=arguments_payload,
         ) as resp:
             try:
                 ret = await resp.json()

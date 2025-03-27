@@ -118,7 +118,7 @@ class TestToolboxTool:
         assert result == expected_result
         mock_session.post.assert_called_once_with(
             tool_details["expected_url"],
-            payload={"arg1": arg1_val, "opt_arg": opt_arg_val, "req_kwarg": req_kwarg_val},
+            json={"arg1": arg1_val, "opt_arg": opt_arg_val, "req_kwarg": req_kwarg_val},
         )
         mock_session.post.return_value.__aenter__.return_value.json.assert_awaited_once()
 
@@ -178,6 +178,6 @@ class TestToolboxTool:
         mock_session.post.assert_called_once_with(
             tool_details["expected_url"],
             # Payload should include the bound value for arg1
-            payload={"arg1": bound_arg1_value, "opt_arg": opt_arg_val, "req_kwarg": req_kwarg_val},
+            json={"arg1": bound_arg1_value, "opt_arg": opt_arg_val, "req_kwarg": req_kwarg_val},
         )
         mock_session.post.return_value.__aenter__.return_value.json.assert_awaited_once()
