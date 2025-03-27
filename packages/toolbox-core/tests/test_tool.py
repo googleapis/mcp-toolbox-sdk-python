@@ -195,21 +195,18 @@ class TestToolboxTool:
         mock_session.post.return_value.__aenter__.return_value.json.assert_awaited_once()
 
     @pytest.fixture
-    def tool_with_bound_arg2(
-            self,
-            tool: ToolboxTool
-    ) -> ToolboxTool:
+    def tool_with_bound_arg2(self, tool: ToolboxTool) -> ToolboxTool:
         new_tool = tool.bind_params({"opt_arg": 88})
         return new_tool
 
     @pytest.mark.asyncio
     async def test_bound_parameter_static_value_call2(
-            self,
-            tool_with_bound_arg2: ToolboxTool,
-            mock_session: MagicMock,
-            tool_details: dict[str, Any],
-            configure_mock_response: Callable,
-            bound_arg1_value: str,
+        self,
+        tool_with_bound_arg2: ToolboxTool,
+        mock_session: MagicMock,
+        tool_details: dict[str, Any],
+        configure_mock_response: Callable,
+        bound_arg1_value: str,
     ):
         """Test calling a tool with a statically bound parameter."""
         expected_result = "Bound call success!"
@@ -218,9 +215,7 @@ class TestToolboxTool:
         req_kwarg_val = True  # The only remaining required arg
 
         # Call *without* providing arg1, but provide the others
-        result = await tool_with_bound_arg2(
-            arg1="random_val", req_kwarg=req_kwarg_val
-        )
+        result = await tool_with_bound_arg2(arg1="random_val", req_kwarg=req_kwarg_val)
 
         assert result == expected_result
         mock_session.post.assert_called_once_with(
@@ -233,5 +228,3 @@ class TestToolboxTool:
             },
         )
         mock_session.post.return_value.__aenter__.return_value.json.assert_awaited_once()
-
-
