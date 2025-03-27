@@ -197,112 +197,112 @@ class ToolboxTool:
             "result", str(ret)
         )  # Return string representation if 'result' key missing
 
-    # # --- Methods for adding state (return new instances) ---
-    # def _copy_with_updates(
-    #     self: T,
-    #     *,
-    #     add_bound_params: dict[str, Union[Any, Callable[[], Any]]] | None = None,
-    # ) -> T:
-    #     """Creates a new instance with updated bound params."""
-    #     new_bound_params = self.__bound_params.copy()
-    #     if add_bound_params:
-    #         new_bound_params.update(add_bound_params)
-    #
-    #     return self.__class__(
-    #         session=self.__session,
-    #         base_url=self.__base_url,
-    #         name=self.__name__,
-    #         desc=self.__doc__ or "",
-    #         params=self.__original_params,
-    #         _bound_params=new_bound_params,
-    #     )
-    #
-    # def bind_params(
-    #     self: T,
-    #     params_to_bind: dict[str, Union[Any, Callable[[], Any]]],
-    #     strict: bool = True,
-    # ) -> T:
-    #     """
-    #     Returns a *new* tool instance with the provided parameters bound.
-    #
-    #     Bound parameters are pre-filled values or callables that resolve to values
-    #     when the tool is called. They are not part of the signature of the
-    #     returned tool instance.
-    #
-    #     Args:
-    #         params_to_bind: A dictionary mapping parameter names to their
-    #             values or callables that return the value.
-    #         strict: If True (default), raises ValueError if attempting to bind
-    #             a parameter that doesn't exist in the original tool signature
-    #             or is already bound in this instance. If False, issues a warning.
-    #
-    #     Returns:
-    #         A new ToolboxTool instance with the specified parameters bound.
-    #
-    #     Raises:
-    #         ValueError: If strict is True and a parameter name is invalid or
-    #             already bound.
-    #     """
-    #     invalid_params: list[str] = []
-    #     duplicate_params: list[str] = []
-    #     original_param_names = {p.name for p in self.__original_params}
-    #
-    #     for name in params_to_bind:
-    #         if name not in original_param_names:
-    #             invalid_params.append(name)
-    #         elif name in self.__bound_params:
-    #             duplicate_params.append(name)
-    #
-    #     messages: list[str] = []
-    #     if invalid_params:
-    #         messages.append(
-    #             f"Parameter(s) {', '.join(invalid_params)} do not exist in the signature for tool '{self.__name__}'."
-    #         )
-    #     if duplicate_params:
-    #         messages.append(
-    #             f"Parameter(s) {', '.join(duplicate_params)} are already bound in this instance of tool '{self.__name__}'."
-    #         )
-    #
-    #     if messages:
-    #         message = "\n".join(messages)
-    #         if strict:
-    #             raise ValueError(message)
-    #         else:
-    #             warnings.warn(message)
-    #             # Filter out problematic params if not strict
-    #             params_to_bind = {
-    #                 k: v
-    #                 for k, v in params_to_bind.items()
-    #                 if k not in invalid_params and k not in duplicate_params
-    #             }
-    #
-    #     if not params_to_bind:
-    #         return self
-    #
-    #     return self._copy_with_updates(add_bound_params=params_to_bind)
-    #
-    # def bind_param(
-    #     self: T,
-    #     param_name: str,
-    #     param_value: Union[Any, Callable[[], Any]],
-    #     strict: bool = True,
-    # ) -> T:
-    #     """
-    #     Returns a *new* tool instance with the provided parameter bound.
-    #
-    #     Convenience method for binding a single parameter.
-    #
-    #     Args:
-    #         param_name: The name of the parameter to bind.
-    #         param_value: The value or callable for the parameter.
-    #         strict: If True (default), raises ValueError if the parameter name
-    #             is invalid or already bound. If False, issues a warning.
-    #
-    #     Returns:
-    #         A new ToolboxTool instance with the specified parameter bound.
-    #
-    #     Raises:
-    #         ValueError: If strict is True and the parameter name is invalid or
-    #             already bound.
-    #     """
-    #     return self.bind_params({param_name: param_value}, strict=strict)
+    # --- Methods for adding state (return new instances) ---
+    def _copy_with_updates(
+        self: T,
+        *,
+        add_bound_params: dict[str, Union[Any, Callable[[], Any]]] | None = None,
+    ) -> T:
+        """Creates a new instance with updated bound params."""
+        new_bound_params = self.__bound_params.copy()
+        if add_bound_params:
+            new_bound_params.update(add_bound_params)
+
+        return self.__class__(
+            session=self.__session,
+            base_url=self.__base_url,
+            name=self.__name__,
+            desc=self.__doc__ or "",
+            params=self.__original_params,
+            bound_params=new_bound_params,
+        )
+
+    def bind_params(
+        self: T,
+        params_to_bind: dict[str, Union[Any, Callable[[], Any]]],
+        strict: bool = True,
+    ) -> T:
+        """
+        Returns a *new* tool instance with the provided parameters bound.
+
+        Bound parameters are pre-filled values or callables that resolve to values
+        when the tool is called. They are not part of the signature of the
+        returned tool instance.
+
+        Args:
+            params_to_bind: A dictionary mapping parameter names to their
+                values or callables that return the value.
+            strict: If True (default), raises ValueError if attempting to bind
+                a parameter that doesn't exist in the original tool signature
+                or is already bound in this instance. If False, issues a warning.
+
+        Returns:
+            A new ToolboxTool instance with the specified parameters bound.
+
+        Raises:
+            ValueError: If strict is True and a parameter name is invalid or
+                already bound.
+        """
+        invalid_params: list[str] = []
+        duplicate_params: list[str] = []
+        original_param_names = {p.name for p in self.__original_params}
+
+        for name in params_to_bind:
+            if name not in original_param_names:
+                invalid_params.append(name)
+            elif name in self.__bound_params:
+                duplicate_params.append(name)
+
+        messages: list[str] = []
+        if invalid_params:
+            messages.append(
+                f"Parameter(s) {', '.join(invalid_params)} do not exist in the signature for tool '{self.__name__}'."
+            )
+        if duplicate_params:
+            messages.append(
+                f"Parameter(s) {', '.join(duplicate_params)} are already bound in this instance of tool '{self.__name__}'."
+            )
+
+        if messages:
+            message = "\n".join(messages)
+            if strict:
+                raise ValueError(message)
+            else:
+                warnings.warn(message)
+                # Filter out problematic params if not strict
+                params_to_bind = {
+                    k: v
+                    for k, v in params_to_bind.items()
+                    if k not in invalid_params and k not in duplicate_params
+                }
+
+        if not params_to_bind:
+            return self
+
+        return self._copy_with_updates(add_bound_params=params_to_bind)
+
+    def bind_param(
+        self: T,
+        param_name: str,
+        param_value: Union[Any, Callable[[], Any]],
+        strict: bool = True,
+    ) -> T:
+        """
+        Returns a *new* tool instance with the provided parameter bound.
+
+        Convenience method for binding a single parameter.
+
+        Args:
+            param_name: The name of the parameter to bind.
+            param_value: The value or callable for the parameter.
+            strict: If True (default), raises ValueError if the parameter name
+                is invalid or already bound. If False, issues a warning.
+
+        Returns:
+            A new ToolboxTool instance with the specified parameter bound.
+
+        Raises:
+            ValueError: If strict is True and the parameter name is invalid or
+                already bound.
+        """
+        return self.bind_params({param_name: param_value}, strict=strict)
