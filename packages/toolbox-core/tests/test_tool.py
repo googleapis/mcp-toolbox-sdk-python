@@ -38,7 +38,9 @@ class TestToolboxTool:
                 default=123,
                 annotation=Optional[int],
             ),
-            Parameter("req_kwarg", Parameter.KEYWORD_ONLY, annotation=bool),  # Added back
+            Parameter(
+                "req_kwarg", Parameter.KEYWORD_ONLY, annotation=bool
+            ),  # Added back
         ]
 
     @pytest.fixture
@@ -144,7 +146,10 @@ class TestToolboxTool:
 
     @pytest.fixture
     def tool_with_bound_arg1(
-            self, mock_session: MagicMock, tool_details: dict[str, Any], bound_arg1_value: str
+        self,
+        mock_session: MagicMock,
+        tool_details: dict[str, Any],
+        bound_arg1_value: str,
     ) -> ToolboxTool:
         bound_params = {"arg1": bound_arg1_value}
         return ToolboxTool(
@@ -155,14 +160,15 @@ class TestToolboxTool:
             params=tool_details["params"],  # Use corrected params
             bound_params=bound_params,
         )
+
     @pytest.mark.asyncio
     async def test_bound_parameter_static_value_call(
-            self,
-            tool_with_bound_arg1: ToolboxTool,
-            mock_session: MagicMock,
-            tool_details: dict[str, Any],
-            configure_mock_response: Callable,
-            bound_arg1_value: str,
+        self,
+        tool_with_bound_arg1: ToolboxTool,
+        mock_session: MagicMock,
+        tool_details: dict[str, Any],
+        configure_mock_response: Callable,
+        bound_arg1_value: str,
     ):
         """Test calling a tool with a statically bound parameter."""
         expected_result = "Bound call success!"
@@ -172,12 +178,18 @@ class TestToolboxTool:
         req_kwarg_val = True  # The only remaining required arg
 
         # Call *without* providing arg1, but provide the others
-        result = await tool_with_bound_arg1(opt_arg=opt_arg_val, req_kwarg=req_kwarg_val)
+        result = await tool_with_bound_arg1(
+            opt_arg=opt_arg_val, req_kwarg=req_kwarg_val
+        )
 
         assert result == expected_result
         mock_session.post.assert_called_once_with(
             tool_details["expected_url"],
             # Payload should include the bound value for arg1
-            json={"arg1": bound_arg1_value, "opt_arg": opt_arg_val, "req_kwarg": req_kwarg_val},
+            json={
+                "arg1": bound_arg1_value,
+                "opt_arg": opt_arg_val,
+                "req_kwarg": req_kwarg_val,
+            },
         )
         mock_session.post.return_value.__aenter__.return_value.json.assert_awaited_once()
