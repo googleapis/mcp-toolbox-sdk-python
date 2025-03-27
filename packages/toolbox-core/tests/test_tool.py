@@ -196,7 +196,9 @@ class TestToolboxTool:
 
     @pytest.fixture
     def tool_with_bound_arg2(self, tool: ToolboxTool) -> ToolboxTool:
-        new_tool = tool.bind_params({"opt_arg": lambda: 88}) # Tried passing a string callable and it failed
+        new_tool = tool.bind_params(
+            {"opt_arg": lambda: 88}
+        )  # Tried passing a string callable and it failed
         return new_tool
 
     @pytest.mark.asyncio

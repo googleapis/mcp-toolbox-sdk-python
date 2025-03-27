@@ -84,31 +84,36 @@ class ToolboxTool:
         self.__annotations__ = {p.name: p.annotation for p in visible_params}
         # TODO: self.__qualname__ ??
 
-    def _resolve_callable_args(
-        self, callable_args: dict[str, Union[Any, Callable[[], Any]]]
+    def _evaluate_param_vals(
+        self, parameters_to_resolve: dict[str, Union[Any, Callable[[], Any]]]
     ) -> dict[str, Any]:
         """
-        Evaluates any callable arguments.
+        Resolves parameter values, evaluating any callables.
+
+        Iterates through the input dictionary, calling any callable values
+        to get their actual result. Non-callable values are kept as is.
+
+        Args:
+            parameters_to_resolve: A dictionary where keys are parameter names
+                and values are either static values or callables returning a value.
 
         Returns:
-            A dictionary containing all args with callables resolved.
+            A dictionary containing all parameter names with their resolved, static values.
 
         Raises:
-            RuntimeError: If evaluating a callable argument fails.
+            RuntimeError: If evaluating a callable parameter value fails.
         """
-        resolved_params: dict[str, Any] = {}
-        for name, value_or_callable in callable_args.items():
+        resolved_parameters: dict[str, Any] = {}
+        for param_name, param_value in parameters_to_resolve.items():
             try:
-                resolved_params[name] = (
-                    value_or_callable()
-                    if callable(value_or_callable)
-                    else value_or_callable
+                resolved_parameters[param_name] = (
+                    param_value() if callable(param_value) else param_value
                 )
             except Exception as e:
                 raise RuntimeError(
-                    f"Error evaluating argument '{name}' for tool '{self.__name__}': {e}"
+                    f"Error evaluating parameter '{param_name}' for tool '{self.__name__}': {e}"
                 ) from e
-        return resolved_params
+        return resolved_parameters
 
     def _prepare_arguments(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
         """
@@ -127,17 +132,17 @@ class ToolboxTool:
                        or if arguments don't match the tool's signature.
             RuntimeError: If evaluating a bound parameter fails.
         """
-        resolved_bound_params = self._resolve_callable_args(self.__bound_params)
+        evaluated_bound_params = self._evaluate_param_vals(self.__bound_params)
 
         # Check for conflicts between resolved bound params and keyword arguments
-        conflicts = resolved_bound_params.keys() & kwargs.keys()
+        conflicts = evaluated_bound_params.keys() & kwargs.keys()
         if conflicts:
             raise TypeError(
                 f"Tool '{self.__name__}': Cannot provide value during call for already bound argument(s): {', '.join(conflicts)}"
             )
 
         # Merge resolved bound parameters with provided keyword arguments
-        merged_kwargs = {**resolved_bound_params, **kwargs}
+        merged_kwargs = {**evaluated_bound_params, **kwargs}
 
         # Bind *args and merged_kwargs using the *original* full signature
         full_signature = Signature(
