@@ -91,7 +91,7 @@ class ToolboxTool:
         params: Optional[list[Parameter]] = None,
         required_authn_params: Optional[Mapping[str, list[str]]] = None,
         auth_service_token_getters: Optional[Mapping[str, Callable[[], str]]] = None,
-    ):
+    ) -> "ToolboxTool":
         """
         Creates a copy of the ToolboxTool, overriding specific fields.
 
