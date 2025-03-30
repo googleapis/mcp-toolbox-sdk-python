@@ -164,7 +164,7 @@ class TestAuth:
             return expected_header
 
         tool = await client.load_tool(tool_name)
-        tool = await client.add_auth_token_getters({"my-auth-service": token_handler})
+        tool = tool.add_auth_token_getters({"my-auth-service": token_handler})
         res = await tool(5)
 
     @pytest.mark.asyncio
