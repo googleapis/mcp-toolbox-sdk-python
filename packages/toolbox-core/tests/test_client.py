@@ -150,7 +150,7 @@ class TestAuth:
             return expected_header
 
         tool = await client.load_tool(
-            tool_name, auth_service_tokens={"my-auth-service": token_handler}
+            tool_name, auth_token_getters={"my-auth-service": token_handler}
         )
         res = await tool(5)
 
