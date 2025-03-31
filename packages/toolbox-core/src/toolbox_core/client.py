@@ -119,7 +119,7 @@ class ToolboxClient:
     async def load_tool(
         self,
         name: str,
-        auth_service_tokens: dict[str, Callable[[], str]] = {},
+        auth_token_getters: dict[str, Callable[[], str]] = {},
     ) -> ToolboxTool:
         """
         Asynchronously loads a tool from the server.
@@ -130,6 +130,8 @@ class ToolboxClient:
 
         Args:
             name: The unique name or identifier of the tool to load.
+            auth_token_getters: A mapping of authentication service names to
+                callables that return the corresponding authentication token.
 
         Returns:
             ToolboxTool: A callable object representing the loaded tool, ready
@@ -148,7 +150,7 @@ class ToolboxClient:
         if name not in manifest.tools:
             # TODO: Better exception
             raise Exception(f"Tool '{name}' not found!")
-        tool = self.__parse_tool(name, manifest.tools[name], auth_service_tokens)
+        tool = self.__parse_tool(name, manifest.tools[name], auth_token_getters)
 
         return tool
 
@@ -162,6 +164,9 @@ class ToolboxClient:
 
         Args:
             name: Name of the toolset to load tools.
+            auth_token_getters: A mapping of authentication service names to
+                callables that return the corresponding authentication token.
+
 
         Returns:
             list[ToolboxTool]: A list of callables, one for each tool defined
