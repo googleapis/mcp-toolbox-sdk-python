@@ -13,10 +13,20 @@
 # limitations under the License.
 
 
+import asyncio
 import types
 from collections import defaultdict
 from inspect import Parameter, Signature
-from typing import Any, Callable, DefaultDict, Iterable, Mapping, Optional, Sequence
+from typing import (
+    Any,
+    Callable,
+    DefaultDict,
+    Iterable,
+    Mapping,
+    Optional,
+    Sequence,
+    Union,
+)
 
 from aiohttp import ClientSession
 from pytest import Session
@@ -44,6 +54,7 @@ class ToolboxTool:
         params: Sequence[Parameter],
         required_authn_params: Mapping[str, list[str]],
         auth_service_token_getters: Mapping[str, Callable[[], str]],
+        bound_params: Mapping[str, Union[Callable[[], Any], Any]] = {},
     ):
         """
         Initializes a callable that will trigger the tool invocation through the
@@ -81,6 +92,8 @@ class ToolboxTool:
         self.__required_authn_params = required_authn_params
         # map of authService -> token_getter
         self.__auth_service_token_getters = auth_service_token_getters
+        # map of parameter name to value or Callable
+        self.__bound_parameters = bound_params
 
     def __copy(
         self,
@@ -91,6 +104,7 @@ class ToolboxTool:
         params: Optional[list[Parameter]] = None,
         required_authn_params: Optional[Mapping[str, list[str]]] = None,
         auth_service_token_getters: Optional[Mapping[str, Callable[[], str]]] = None,
+        bound_params: Optional[Mapping[str, Union[Callable[[], Any], Any]]] = None,
     ) -> "ToolboxTool":
         """
         Creates a copy of the ToolboxTool, overriding specific fields.
@@ -121,6 +135,7 @@ class ToolboxTool:
             auth_service_token_getters=check(
                 auth_service_token_getters, self.__auth_service_token_getters
             ),
+            bound_params=check(bound_params, self.__bound_parameters),
         )
 
     async def __call__(self, *args: Any, **kwargs: Any) -> str:
@@ -152,6 +167,14 @@ class ToolboxTool:
         all_args = self.__signature__.bind(*args, **kwargs)
         all_args.apply_defaults()  # Include default values if not provided
         payload = all_args.arguments
+
+        # apply bounded parameters
+        for param, value in self.__bound_parameters.items():
+            if asyncio.iscoroutinefunction(value):
+                value = await value()
+            elif callable(value):
+                value = value()
+            payload[param] = value
 
         # create headers for auth services
         headers = {}
@@ -211,13 +234,41 @@ class ToolboxTool:
             required_authn_params=new_req_authn_params,
         )
 
+    def bind_parameters(
+        self, bound_params: Mapping[str, Callable[[], str]]
+    ) -> "ToolboxTool":
+        """
+        Binds parameters to values or callables that produce values.
+
+         Args:
+             bound_params: A mapping of parameter names to values or callables that
+                 produce values.
+
+         Returns:
+             A new ToolboxTool instance with the specified parameters bound.
+        """
+        all_params = set(p.name for p in self.__params)
+        for name in bound_params.keys():
+            if name not in all_params:
+                raise Exception(f"unable to bind parameters: no parameter named {name}")
+
+        new_params = []
+        for p in self.__params:
+            if p.name not in bound_params:
+                new_params.append(p)
+
+        return self.__copy(
+            params=new_params,
+            bound_params=bound_params,
+        )
+
 
 def identify_required_authn_params(
     req_authn_params: Mapping[str, list[str]], auth_service_names: Iterable[str]
 ) -> dict[str, list[str]]:
     """
-    Identifies authentication parameters that are still required; or not covered by
-        the provided `auth_service_names`.
+    Identifies authentication parameters that are still required; because they
+        not covered by the provided `auth_service_names`.
 
     Args:
         req_authn_params: A mapping of parameter names to sets of required
@@ -226,8 +277,8 @@ def identify_required_authn_params(
             token getters are available.
 
     Returns:
-        A new dictionary representing the subset of required authentication
-        parameters that are not covered by the provided `auth_service_names`.
+        A new dictionary representing the subset of required authentication parameters
+        that are not covered by the provided `auth_services`.
     """
     required_params = {}  # params that are still required with provided auth_services
     for param, services in req_authn_params.items():
