@@ -59,18 +59,22 @@ class ToolboxClient:
         name: str,
         schema: ToolSchema,
         auth_token_getters: dict[str, Callable[[], str]],
+        all_bound_params: dict[str, Callable[[], str]],
     ) -> ToolboxTool:
         """Internal helper to create a callable tool from its schema."""
-        # sort into authenticated and reg params
+        # sort into reg, authn, and bound params
         params = []
         authn_params: dict[str, list[str]] = {}
+        bound_params: dict[str, Callable[[], str]] = {}
         auth_sources: set[str] = set()
         for p in schema.parameters:
-            if not p.authSources:
-                params.append(p)
-            else:
+            if p.authSources:  # authn parameter
                 authn_params[p.name] = p.authSources
                 auth_sources.update(p.authSources)
+            elif p.name in all_bound_params:  # bound parameter
+                bound_params[p.name] = all_bound_params[p.name]
+            else:  # regular parameter
+                params.append(p)
 
         authn_params = identify_required_authn_params(
             authn_params, auth_token_getters.keys()
@@ -85,6 +89,7 @@ class ToolboxClient:
             # create a read-only values for the maps to prevent mutation
             required_authn_params=types.MappingProxyType(authn_params),
             auth_service_token_getters=types.MappingProxyType(auth_token_getters),
+            bound_params=types.MappingProxyType(bound_params),
         )
         return tool
 
@@ -124,6 +129,7 @@ class ToolboxClient:
         self,
         name: str,
         auth_token_getters: dict[str, Callable[[], str]] = {},
+        bound_params: dict[str, Callable[[], str]] = {},
     ) -> ToolboxTool:
         """
         Asynchronously loads a tool from the server.
@@ -154,7 +160,9 @@ class ToolboxClient:
         if name not in manifest.tools:
             # TODO: Better exception
             raise Exception(f"Tool '{name}' not found!")
-        tool = self.__parse_tool(name, manifest.tools[name], auth_token_getters)
+        tool = self.__parse_tool(
+            name, manifest.tools[name], auth_token_getters, bound_params
+        )
 
         return tool
 
@@ -162,6 +170,7 @@ class ToolboxClient:
         self,
         name: str,
         auth_token_getters: dict[str, Callable[[], str]] = {},
+        bound_params: dict[str, Callable[[], str]] = {},
     ) -> list[ToolboxTool]:
         """
         Asynchronously fetches a toolset and loads all tools defined within it.
@@ -170,6 +179,7 @@ class ToolboxClient:
             name: Name of the toolset to load tools.
             auth_token_getters: A mapping of authentication service names to
                 callables that return the corresponding authentication token.
+
 
 
         Returns:
@@ -184,7 +194,7 @@ class ToolboxClient:
 
         # parse each tools name and schema into a list of ToolboxTools
         tools = [
-            self.__parse_tool(n, s, auth_token_getters)
+            self.__parse_tool(n, s, auth_token_getters, bound_params)
             for n, s in manifest.tools.items()
         ]
         return tools
