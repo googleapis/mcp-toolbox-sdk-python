@@ -14,6 +14,7 @@
 
 
 import inspect
+import json
 
 import pytest
 import pytest_asyncio
@@ -100,6 +101,31 @@ async def test_load_tool_success(aioresponses, test_tool_str):
         assert await loaded_tool("some value") == "ok"
 
 
+@pytest.mark.asyncio
+async def test_load_toolset_success(aioresponses, test_tool_str, test_tool_int_bool):
+    """Tests successfully loading a toolset with multiple tools."""
+    TOOLSET_NAME = "my_toolset"
+    TOOL1 = "tool1"
+    TOOL2 = "tool2"
+    manifest = ManifestSchema(
+        serverVersion="0.0.0", tools={TOOL1: test_tool_str, TOOL2: test_tool_int_bool}
+    )
+    aioresponses.get(
+        f"{TEST_BASE_URL}/api/toolset/{TOOLSET_NAME}",
+        payload=manifest.model_dump(),
+        status=200,
+    )
+
+    async with ToolboxClient(TEST_BASE_URL) as client:
+        tools = await client.load_toolset(TOOLSET_NAME)
+
+        assert isinstance(tools, list)
+        assert len(tools) == len(manifest.tools)
+
+        # Check if tools were created correctly
+        assert {t.__name__ for t in tools} == manifest.tools.keys()
+
+
 class TestAuth:
 
     @pytest.fixture
@@ -181,26 +207,93 @@ class TestAuth:
             res = await tool(5)
 
 
-@pytest.mark.asyncio
-async def test_load_toolset_success(aioresponses, test_tool_str, test_tool_int_bool):
-    """Tests successfully loading a toolset with multiple tools."""
-    TOOLSET_NAME = "my_toolset"
-    TOOL1 = "tool1"
-    TOOL2 = "tool2"
-    manifest = ManifestSchema(
-        serverVersion="0.0.0", tools={TOOL1: test_tool_str, TOOL2: test_tool_int_bool}
-    )
-    aioresponses.get(
-        f"{TEST_BASE_URL}/api/toolset/{TOOLSET_NAME}",
-        payload=manifest.model_dump(),
-        status=200,
-    )
+class TestBoundParameter:
 
-    async with ToolboxClient(TEST_BASE_URL) as client:
-        tools = await client.load_toolset(TOOLSET_NAME)
+    @pytest.fixture
+    def tool_name(self):
+        return "tool1"
 
-        assert isinstance(tools, list)
-        assert len(tools) == len(manifest.tools)
+    @pytest_asyncio.fixture
+    async def client(self, aioresponses, test_tool_int_bool, tool_name):
+        manifest = ManifestSchema(
+            serverVersion="0.0.0", tools={tool_name: test_tool_int_bool}
+        )
 
-        # Check if tools were created correctly
-        assert {t.__name__ for t in tools} == manifest.tools.keys()
+        # mock toolset GET call
+        aioresponses.get(
+            f"{TEST_BASE_URL}/api/toolset/",
+            payload=manifest.model_dump(),
+            status=200,
+        )
+
+        # mock tool GET call
+        aioresponses.get(
+            f"{TEST_BASE_URL}/api/tool/{tool_name}",
+            payload=manifest.model_dump(),
+            status=200,
+        )
+
+        # mock tool INVOKE call
+        def reflect_parameters(url, **kwargs):
+            body = {"result": kwargs["json"]}
+            return CallbackResult(status=200, body=json.dumps(body))
+
+        aioresponses.post(
+            f"{TEST_BASE_URL}/api/tool/{tool_name}/invoke",
+            payload=manifest.model_dump(),
+            callback=reflect_parameters,
+            status=200,
+        )
+
+        async with ToolboxClient(TEST_BASE_URL) as client:
+            yield client
+
+    @pytest.mark.asyncio
+    async def test_load_tool_success(self, tool_name, client):
+        """Tests 'load_tool' with a bound parameter specified."""
+        tool = await client.load_tool(tool_name, bound_params={"argA": lambda: 5})
+
+        assert len(tool.__signature__.parameters) == 1
+        assert "argA" not in tool.__signature__.parameters
+
+        res = await tool(True)
+        assert "argA" in res
+
+    @pytest.mark.asyncio
+    async def test_load_toolset_success(self, tool_name, client):
+        """Tests 'load_toolset' with a bound parameter specified."""
+        tools = await client.load_toolset("", bound_params={"argB": lambda: "hello"})
+        tool = tools[0]
+
+        assert len(tool.__signature__.parameters) == 1
+        assert "argB" not in tool.__signature__.parameters
+
+        res = await tool(True)
+        assert "argB" in res
+
+    @pytest.mark.asyncio
+    async def test_bind_param_success(self, tool_name, client):
+        """Tests 'bind_param' with a bound parameter specified."""
+        tool = await client.load_tool(tool_name)
+
+        assert len(tool.__signature__.parameters) == 2
+        assert "argA" in tool.__signature__.parameters
+
+        tool = tool.bind_parameters({"argA": lambda: 5})
+
+        assert len(tool.__signature__.parameters) == 1
+        assert "argA" not in tool.__signature__.parameters
+
+        res = await tool(True)
+        assert "argA" in res
+
+    @pytest.mark.asyncio
+    async def test_bind_param_fail(self, tool_name, client):
+        """Tests 'bind_param' with a bound parameter that doesn't exist."""
+        tool = await client.load_tool(tool_name)
+
+        assert len(tool.__signature__.parameters) == 2
+        assert "argA" in tool.__signature__.parameters
+
+        with pytest.raises(Exception):
+            tool = tool.bind_parameters({"argC": lambda: 5})
