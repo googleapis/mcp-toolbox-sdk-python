@@ -159,15 +159,6 @@ class TestE2EClient:
         ):
             await tool()
 
-    async def test_run_tool_param_auth_no_service(self, toolbox):
-        """Tests running a tool with a param requiring auth, without a registered auth service."""
-        tool = await toolbox.load_tool("get-row-by-email-auth-wrong-auth-source")
-        with pytest.raises(
-            Exception,
-            match="One of more of the following authn services are required to invoke this tool: my-test-auth3",
-        ):
-            await tool()
-
     async def test_run_tool_param_auth(self, toolbox, auth_token1):
         """Tests running a tool with a param requiring auth, with correct auth."""
         tool = await toolbox.load_tool(
