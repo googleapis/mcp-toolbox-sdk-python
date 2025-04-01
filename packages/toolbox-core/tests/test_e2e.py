@@ -95,7 +95,7 @@ class TestE2EClient:
             Exception,
             match='provided parameters were invalid: unable to parse value for "num_rows": .* not type "string"',
         ):
-            await get_n_rows_tool(num_rows=2)  # Pass the integer value
+            await get_n_rows_tool(num_rows=2)
 
     ##### Auth tests
     @pytest.mark.asyncio
