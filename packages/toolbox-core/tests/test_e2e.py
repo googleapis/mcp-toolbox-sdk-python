@@ -143,7 +143,8 @@ class TestE2EClient:
         tool = await toolbox.load_tool("get-row-by-email-auth")
         with pytest.raises(
             Exception,
-            match="One of more of the following authn services are required to invoke this tool: my-test-auth",
+            match="provided parameters were invalid: error parsing authenticated parameter "
+            '"email": missing or invalid authentication header',
         ):
             await tool()
 
