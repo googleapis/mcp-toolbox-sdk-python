@@ -32,7 +32,6 @@ This file covers the following use cases:
     a. No auth provided.
     b. Correct auth provided.
     c. Auth provided does not contain the required claim.
-    d. Auth Service not registered in manifest
 """
 import pytest
 import pytest_asyncio
