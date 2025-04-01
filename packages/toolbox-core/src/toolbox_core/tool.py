@@ -21,18 +21,18 @@ from typing import (
     Any,
     Callable,
     DefaultDict,
-    TypeVar,
     Iterable,
     Mapping,
     Optional,
     Sequence,
+    TypeVar,
     Union,
 )
 
 from aiohttp import ClientSession
 from pytest import Session
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class ToolboxTool:
@@ -136,8 +136,12 @@ class ToolboxTool:
             name=_resolve_value(name, self.__name__),
             desc=_resolve_value(desc, self.__desc),
             params=_resolve_value(params, self.__params),
-            required_authn_params=_resolve_value(required_authn_params, self.__required_authn_params),
-            auth_service_token_getters=_resolve_value(auth_service_token_getters, self.__auth_service_token_getters),
+            required_authn_params=_resolve_value(
+                required_authn_params, self.__required_authn_params
+            ),
+            auth_service_token_getters=_resolve_value(
+                auth_service_token_getters, self.__auth_service_token_getters
+            ),
             bound_params=_resolve_value(bound_params, self.__bound_parameters),
         )
 
