@@ -32,6 +32,7 @@ This file covers the following use cases:
     a. No auth provided.
     b. Correct auth provided.
     c. Auth provided does not contain the required claim.
+    d. Auth Service not registered in manifest
 """
 import pytest
 import pytest_asyncio
@@ -145,6 +146,15 @@ class TestE2EClient:
             Exception,
             match="provided parameters were invalid: error parsing authenticated parameter "
             '"email": missing or invalid authentication header',
+        ):
+            await tool()
+
+    async def test_run_tool_param_auth_no_service(self, toolbox):
+        """Tests running a tool with a param requiring auth, without a correctly registered auth service."""
+        tool = await toolbox.load_tool("get-row-by-email-auth-wrong-auth-source")
+        with pytest.raises(
+            Exception,
+            match="One of more of the following authn services are required to invoke this tool: my-test-auth3",
         ):
             await tool()
 
