@@ -97,8 +97,18 @@ class TestE2EClient:
         ):
             await get_n_rows_tool(num_rows=2)
 
+    ##### Bind param tests
+    async def test_bind_params(self, toolbox, get_n_rows_tool):
+        new_tool = get_n_rows_tool.bind_parameters({"num_rows": "3"})
+        response = await new_tool()
+
+        assert isinstance(response, str)
+        assert "row1" in response
+        assert "row2" in response
+        assert "row3" in response
+        assert "row4" not in response
+
     ##### Auth tests
-    @pytest.mark.asyncio
     async def test_run_tool_unauth_with_auth(self, toolbox, auth_token2):
         """Tests running a tool that doesn't require auth, with auth provided."""
         tool = await toolbox.load_tool(
