@@ -46,6 +46,8 @@ test = [
     "pytest==8.3.5",
     "pytest-aioresponses==0.3.0",
     "pytest-asyncio==0.25.3",
+    "google-cloud-secret-manager==2.23.2",
+    "google-cloud-storage==3.1.0",
 ]
 [build-system]
 requires = ["setuptools"]
