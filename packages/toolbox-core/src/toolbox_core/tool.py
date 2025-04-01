@@ -21,6 +21,7 @@ from typing import (
     Any,
     Callable,
     DefaultDict,
+    TypeVar,
     Iterable,
     Mapping,
     Optional,
@@ -30,6 +31,8 @@ from typing import (
 
 from aiohttp import ClientSession
 from pytest import Session
+
+T = TypeVar('T')
 
 
 class ToolboxTool:
@@ -122,16 +125,20 @@ class ToolboxTool:
                 that produce a token)
 
         """
+
+        def _resolve_value(override_value: Optional[T], default_value: T) -> T:
+            """Returns the override_value if it's not None, otherwise the default_value."""
+            return override_value if override_value is not None else default_value
+
         return ToolboxTool(
-            session=session or self.__session,
-            base_url=base_url or self.__base_url,
-            name=name or self.__name__,
-            desc=desc or self.__desc,
-            params=params or self.__params,
-            required_authn_params=required_authn_params or self.__required_authn_params,
-            auth_service_token_getters=auth_service_token_getters
-            or self.__auth_service_token_getters,
-            bound_params=bound_params or self.__bound_parameters,
+            session=_resolve_value(session, self.__session),
+            base_url=_resolve_value(base_url, self.__base_url),
+            name=_resolve_value(name, self.__name__),
+            desc=_resolve_value(desc, self.__desc),
+            params=_resolve_value(params, self.__params),
+            required_authn_params=_resolve_value(required_authn_params, self.__required_authn_params),
+            auth_service_token_getters=_resolve_value(auth_service_token_getters, self.__auth_service_token_getters),
+            bound_params=_resolve_value(bound_params, self.__bound_parameters),
         )
 
     async def __call__(self, *args: Any, **kwargs: Any) -> str:
