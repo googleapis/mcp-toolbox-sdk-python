@@ -9,9 +9,10 @@ authors = [
     {name = "Google LLC", email = "googleapis-packages@google.com"}
 ]
 
-# TODO: Add deps
-#dependencies = [
-#]
+dependencies = [
+    "pydantic>=2.7.0,<3.0.0",
+    "aiohttp>=3.8.6,<4.0.0",
+]
 
 classifiers = [
     "Intended Audience :: Developers",
@@ -43,6 +44,7 @@ test = [
     "isort==6.0.1",
     "mypy==1.15.0",
     "pytest==8.3.5",
+    "pytest-aioresponses==0.3.0"
 ]
 [build-system]
 requires = ["setuptools"]

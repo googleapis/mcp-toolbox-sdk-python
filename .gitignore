@@ -3,3 +3,12 @@
 
 # vscode
 .vscode/
+
+# python
+env
+venv
+*.pyc
+.python-version
+**.egg-info/
+__pycache__/** 
+
