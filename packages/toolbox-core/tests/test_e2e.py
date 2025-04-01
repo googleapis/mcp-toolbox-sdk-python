@@ -113,7 +113,7 @@ class TestE2EClient:
         )
         with pytest.raises(
             Exception,
-            match="One of more of the following authn services are required to invoke this tool: my-test-auth",
+            match="tool invocation not authorized. Please make sure your specify correct auth headers",
         ):
             await tool(id="2")
 
@@ -122,7 +122,7 @@ class TestE2EClient:
         tool = await toolbox.load_tool(
             "get-row-by-id-auth",
         )
-        auth_tool = tool.add_auth_token_getters("my-test-auth", lambda: auth_token2)
+        auth_tool = tool.add_auth_token_getters({"my-test-auth": lambda: auth_token2})
         with pytest.raises(
             Exception,
             match="tool invocation not authorized",
@@ -134,7 +134,7 @@ class TestE2EClient:
         tool = await toolbox.load_tool(
             "get-row-by-id-auth",
         )
-        auth_tool = tool.add_auth_token_getters("my-test-auth", lambda: auth_token1)
+        auth_tool = tool.add_auth_token_getters({"my-test-auth": lambda: auth_token1})
         response = await auth_tool(id="2")
         assert "row2" in response
 
