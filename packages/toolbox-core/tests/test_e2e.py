@@ -145,7 +145,7 @@ class TestE2EClient:
             Exception,
             match="One of more of the following authn services are required to invoke this tool: my-test-auth",
         ):
-            await tool(email="")
+            await tool()
 
     async def test_run_tool_param_auth(self, toolbox, auth_token1):
         """Tests running a tool with a param requiring auth, with correct auth."""
