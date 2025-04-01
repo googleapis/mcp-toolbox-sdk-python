@@ -99,7 +99,7 @@ class TestE2EClient:
 
     ##### Bind param tests
     async def test_bind_params(self, toolbox, get_n_rows_tool):
-        new_tool = get_n_rows_tool.bind_parameters({"num_rows": "3"})
+        new_tool = get_n_rows_tool.bind_parameters({"num_rows": lambda: "3"})
         response = await new_tool()
 
         assert isinstance(response, str)
