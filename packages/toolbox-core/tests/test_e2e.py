@@ -35,9 +35,9 @@ This file covers the following test cases:
 """
 import pytest
 import pytest_asyncio
+from pydantic import ValidationError
 
 from toolbox_core.client import ToolboxClient
-from pydantic import ValidationError
 from toolbox_core.tool import ToolboxTool
 
 
