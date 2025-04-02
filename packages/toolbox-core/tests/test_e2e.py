@@ -92,7 +92,8 @@ class TestE2EClient:
     async def test_run_tool_wrong_param_type(self, get_n_rows_tool: ToolboxTool):
         with pytest.raises(
             Exception,
-            match='provided parameters were invalid: unable to parse value for "num_rows": .* not type "string"',
+            match="1 validation error for get-n-rows\nnum_rows\n  Input should "
+            "be a valid string [type=string_type, input_value=2, input_type=int]",
         ):
             await get_n_rows_tool(num_rows=2)
 
