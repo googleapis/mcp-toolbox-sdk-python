@@ -17,20 +17,10 @@ import asyncio
 import copy
 import types
 from inspect import Signature
-from pydantic import BaseModel, Field, create_model
-
-from typing import (
-    Any,
-    Callable,
-    Iterable,
-    Mapping,
-    Optional,
-    Union,
-    cast,
-    Type
-)
+from typing import Any, Callable, Iterable, Mapping, Optional, Type, Union, cast
 
 from aiohttp import ClientSession
+from pydantic import BaseModel, Field, create_model
 
 from toolbox_core.protocol import ToolSchema
 
@@ -314,6 +304,7 @@ def identify_required_authn_params(
         if required:
             required_params[param] = services
     return required_params
+
 
 def _schema_to_model(model_name: str, tool_schema: ToolSchema) -> Type[BaseModel]:
     """Converts the given manifest schema to a Pydantic BaseModel class."""
