@@ -17,10 +17,9 @@ import asyncio
 import copy
 import types
 from inspect import Signature
-from typing import Any, Callable, Iterable, Mapping, Optional, Type, Union, cast
+from typing import Any, Callable, Iterable, Mapping, Optional, Union
 
 from aiohttp import ClientSession
-from pydantic import BaseModel, Field, create_model
 
 from toolbox_core.protocol import ToolSchema
 

@@ -13,10 +13,9 @@
 # limitations under the License.
 
 from inspect import Parameter
-from typing import Optional, Type, Any, cast
+from typing import Any, Optional, Type, cast
 
 from pydantic import BaseModel, Field, create_model
-
 
 
 class ParameterSchema(BaseModel):
@@ -75,6 +74,7 @@ class ToolSchema(BaseModel):
                 ),
             )
         return create_model("tool_model", **field_definitions)
+
 
 class ManifestSchema(BaseModel):
     """
