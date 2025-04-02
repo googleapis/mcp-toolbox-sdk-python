@@ -37,6 +37,7 @@ import pytest
 import pytest_asyncio
 
 from toolbox_core.client import ToolboxClient
+from pydantic import ValidationError
 from toolbox_core.tool import ToolboxTool
 
 
@@ -91,9 +92,8 @@ class TestE2EClient:
 
     async def test_run_tool_wrong_param_type(self, get_n_rows_tool: ToolboxTool):
         with pytest.raises(
-            Exception,
-            match="1 validation error for get-n-rows * num_rows *  Input should "
-            "be a valid string [type=string_type, input_value=2, input_type=int]*",
+            ValidationError,
+            match=r"num_rows\s+Input should be a valid string\s+\[type=string_type,\s+input_value=2,\s+input_type=int\]",
         ):
             await get_n_rows_tool(num_rows=2)
 
