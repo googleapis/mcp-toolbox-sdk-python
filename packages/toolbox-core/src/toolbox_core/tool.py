@@ -25,8 +25,10 @@ from typing import (
     Optional,
     Union,
 )
-from toolbox_core.protocol import ToolSchema
+
 from aiohttp import ClientSession
+
+from toolbox_core.protocol import ToolSchema
 
 
 class ToolboxTool:
@@ -93,9 +95,7 @@ class ToolboxTool:
         self.__bound_parameters = bound_params
 
     @staticmethod
-    def _schema_to_docstring(
-        schema: ToolSchema
-    ) -> str:
+    def _schema_to_docstring(schema: ToolSchema) -> str:
         """Convert a tool schema into its function docstring"""
         docstring = schema.description
         if not schema.parameters:
@@ -275,7 +275,9 @@ class ToolboxTool:
 
         return self.__copy(
             schema=new_schema,
-            bound_params=types.MappingProxyType(dict(self.__bound_parameters, **bound_params))
+            bound_params=types.MappingProxyType(
+                dict(self.__bound_parameters, **bound_params)
+            ),
         )
 
 
