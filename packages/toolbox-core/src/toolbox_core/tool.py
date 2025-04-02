@@ -17,6 +17,8 @@ import asyncio
 import copy
 import types
 from inspect import Signature
+from pydantic import BaseModel, Field, create_model
+
 from typing import (
     Any,
     Callable,
@@ -24,6 +26,8 @@ from typing import (
     Mapping,
     Optional,
     Union,
+    cast,
+    Type
 )
 
 from aiohttp import ClientSession
@@ -176,6 +180,10 @@ class ToolboxTool:
         all_args.apply_defaults()  # Include default values if not provided
         payload = all_args.arguments
 
+        # Perform argument type checks using pydantic
+        model = _schema_to_model(self.__name__, self.__schema)
+        model.model_validate(payload)
+
         # apply bounded parameters
         for param, value in self.__bound_parameters.items():
             if asyncio.iscoroutinefunction(value):
@@ -306,3 +314,17 @@ def identify_required_authn_params(
         if required:
             required_params[param] = services
     return required_params
+
+def _schema_to_model(model_name: str, tool_schema: ToolSchema) -> Type[BaseModel]:
+    """Converts the given manifest schema to a Pydantic BaseModel class."""
+    field_definitions = {}
+    for field in tool_schema.parameters:
+        field_definitions[field.name] = cast(
+            Any,
+            (
+                field.to_param().annotation,
+                Field(description=field.description),
+            ),
+        )
+
+    return create_model(model_name, **field_definitions)
