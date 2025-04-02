@@ -98,6 +98,16 @@ class TestE2EClient:
 
     ##### Bind param tests
     async def test_bind_params(self, toolbox, get_n_rows_tool):
+        new_tool = get_n_rows_tool.bind_parameters({"num_rows": "3"})
+        response = await new_tool()
+
+        assert isinstance(response, str)
+        assert "row1" in response
+        assert "row2" in response
+        assert "row3" in response
+        assert "row4" not in response
+
+    async def test_bind_params_callable(self, toolbox, get_n_rows_tool):
         new_tool = get_n_rows_tool.bind_parameters({"num_rows": lambda: "3"})
         response = await new_tool()
 
