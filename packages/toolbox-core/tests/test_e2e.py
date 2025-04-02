@@ -14,7 +14,7 @@
 
 """End-to-end tests for the toolbox SDK interacting with the toolbox server.
 
-This file covers the following use cases:
+This file covers the following test cases:
 
 1. Loading a tool.
 2. Loading a specific toolset.
