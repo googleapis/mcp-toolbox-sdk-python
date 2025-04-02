@@ -11,15 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-import re
 import types
-from typing import Any, Callable, Mapping, Optional, Union
+from typing import Any, Callable, Optional
 
 from aiohttp import ClientSession
 
 from .protocol import ManifestSchema, ToolSchema
-from .tool import ToolboxTool, identify_required_authn_params
+from .tool import ToolboxTool, filter_required_authn_params
 
 
 class ToolboxClient:
@@ -60,7 +58,7 @@ class ToolboxClient:
         name: str,
         schema: ToolSchema,
         auth_token_getters: dict[str, Callable[[], str]],
-        all_bound_params: Mapping[str, Union[Callable[[], Any], Any]],
+        all_bound_params: dict[str, Callable[[], str]],
     ) -> ToolboxTool:
         """Internal helper to create a callable tool from its schema."""
         # sort into reg, authn, and bound params
@@ -77,9 +75,7 @@ class ToolboxClient:
             else:  # regular parameter
                 params.append(p)
 
-        authn_params = identify_required_authn_params(
-            authn_params, auth_token_getters.keys()
-        )
+        authn_params = filter_required_authn_params(authn_params, auth_sources)
 
         tool = ToolboxTool(
             session=self.__session,
@@ -87,8 +83,6 @@ class ToolboxClient:
             name=name,
             desc=schema.description,
             params=[p.to_param() for p in params],
-
-            # create a read-only values for the maps to prevent mutation
             required_authn_params=types.MappingProxyType(authn_params),
             auth_service_token_getters=types.MappingProxyType(auth_token_getters),
             bound_params=types.MappingProxyType(bound_params),
@@ -131,7 +125,7 @@ class ToolboxClient:
         self,
         name: str,
         auth_token_getters: dict[str, Callable[[], str]] = {},
-        bound_params: Mapping[str, Union[Callable[[], Any], Any]] = {},
+        bound_params: dict[str, Callable[[], str]] = {},
     ) -> ToolboxTool:
         """
         Asynchronously loads a tool from the server.
@@ -144,8 +138,6 @@ class ToolboxClient:
             name: The unique name or identifier of the tool to load.
             auth_token_getters: A mapping of authentication service names to
                 callables that return the corresponding authentication token.
-            bound_params: A mapping of parameter names to bind to specific values or
-                callables that are called to produce values as needed.
 
         Returns:
             ToolboxTool: A callable object representing the loaded tool, ready
@@ -174,7 +166,7 @@ class ToolboxClient:
         self,
         name: str,
         auth_token_getters: dict[str, Callable[[], str]] = {},
-        bound_params: Mapping[str, Union[Callable[[], Any], Any]] = {},
+        bound_params: dict[str, Callable[[], str]] = {},
     ) -> list[ToolboxTool]:
         """
         Asynchronously fetches a toolset and loads all tools defined within it.
@@ -183,8 +175,6 @@ class ToolboxClient:
             name: Name of the toolset to load tools.
             auth_token_getters: A mapping of authentication service names to
                 callables that return the corresponding authentication token.
-            bound_params: A mapping of parameter names to bind to specific values or
-                callables that are called to produce values as needed.
 
 
 
