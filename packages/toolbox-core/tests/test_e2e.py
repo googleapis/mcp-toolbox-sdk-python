@@ -151,10 +151,9 @@ class TestE2EClient:
     async def test_run_tool_param_auth_no_auth(self, toolbox):
         """Tests running a tool with a param requiring auth, without auth."""
         tool = await toolbox.load_tool("get-row-by-email-auth")
-        # TODO: Change match to {my-auth-service3} instead of email after fix in PR
         with pytest.raises(
             Exception,
-            match="One of more of the following authn services are required to invoke this tool: my-test-auth",
+            match="One or more of the following authn services are required to invoke this tool: my-test-auth",
         ):
             await tool()
 
