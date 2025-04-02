@@ -171,7 +171,7 @@ class ToolboxTool:
         payload = all_args.arguments
 
         # Perform argument type checks using pydantic
-        model = _schema_to_model(self.__name__, self.__schema)
+        model = self.__schema.to_pydantic_model()
         model.model_validate(payload)
 
         # apply bounded parameters
@@ -304,18 +304,3 @@ def identify_required_authn_params(
         if required:
             required_params[param] = services
     return required_params
-
-
-def _schema_to_model(model_name: str, tool_schema: ToolSchema) -> Type[BaseModel]:
-    """Converts the given manifest schema to a Pydantic BaseModel class."""
-    field_definitions = {}
-    for field in tool_schema.parameters:
-        field_definitions[field.name] = cast(
-            Any,
-            (
-                field.to_param().annotation,
-                Field(description=field.description),
-            ),
-        )
-
-    return create_model(model_name, **field_definitions)
