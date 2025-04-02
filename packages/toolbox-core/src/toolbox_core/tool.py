@@ -15,12 +15,10 @@
 
 import asyncio
 import types
-from collections import defaultdict
 from inspect import Parameter, Signature
 from typing import (
     Any,
     Callable,
-    DefaultDict,
     Iterable,
     Mapping,
     Optional,
@@ -29,8 +27,6 @@ from typing import (
 )
 
 from aiohttp import ClientSession
-from pytest import Session
-
 
 class ToolboxTool:
     """
@@ -52,6 +48,7 @@ class ToolboxTool:
         name: str,
         desc: str,
         params: Sequence[Parameter],
+        params_metadata: Mapping[str, tuple[str, str]],
         required_authn_params: Mapping[str, list[str]],
         auth_service_token_getters: Mapping[str, Callable[[], str]],
         bound_params: Mapping[str, Union[Callable[[], Any], Any]],
@@ -83,10 +80,11 @@ class ToolboxTool:
 
         self.__desc = desc
         self.__params = params
+        self.__params_metadata = params_metadata
 
         # the following properties are set to help anyone that might inspect it determine usage
         self.__name__ = name
-        self.__doc__ = desc
+        self.__doc__ = self._schema_to_docstring(desc, params, params_metadata)
         self.__signature__ = Signature(parameters=params, return_annotation=str)
         self.__annotations__ = {p.name: p.annotation for p in params}
         # TODO: self.__qualname__ ??
@@ -97,6 +95,21 @@ class ToolboxTool:
         self.__auth_service_token_getters = auth_service_token_getters
         # map of parameter name to value (or callable that produces that value)
         self.__bound_parameters = bound_params
+
+    @staticmethod
+    def _schema_to_docstring(
+        tool_description: str,
+        params: Sequence[Parameter],
+        params_metadata: Mapping[str, tuple[str, str]],
+    ):
+        docstring = tool_description
+        if not params:
+            return docstring
+        docstring += "\n\nArgs:"
+        for p in params:
+            param_metadata = params_metadata[p.name]
+            docstring += f"\n{p.name} ({param_metadata[0]}): {param_metadata[1]}"
+        return docstring
 
     def __copy(
         self,
@@ -134,6 +147,7 @@ class ToolboxTool:
             name=check(name, self.__name__),
             desc=check(desc, self.__desc),
             params=check(params, self.__params),
+            params_metadata=self.__params_metadata,
             required_authn_params=check(
                 required_authn_params, self.__required_authn_params
             ),
