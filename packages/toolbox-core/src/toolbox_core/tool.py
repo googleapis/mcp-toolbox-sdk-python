@@ -54,7 +54,7 @@ class ToolboxTool:
         params: Sequence[Parameter],
         required_authn_params: Mapping[str, list[str]],
         auth_service_token_getters: Mapping[str, Callable[[], str]],
-        bound_params: Mapping[str, Union[Callable[[], Any], Any]] = {},
+        bound_params: Mapping[str, Union[Callable[[], Any], Any]],
     ):
         """
         Initializes a callable that will trigger the tool invocation through the
@@ -67,10 +67,13 @@ class ToolboxTool:
             desc: The description of the remote tool (used as its docstring).
             params: A list of `inspect.Parameter` objects defining the tool's
                 arguments and their types/defaults.
-            required_authn_params: A dict of required authenticated parameters that
-                need a auth_service_token_getter set for them yet.
-            auth_service_tokens: A dict of authService -> token (or callables that
+            required_authn_params: A dict of required authenticated parameters to a list
+                of services that provide values for them.
+            auth_service_token_getters: A dict of authService -> token (or callables that
                 produce a token)
+            bound_params: A mapping of parameter names to bind to specific values or
+                callables that are called to produce values as needed.
+
         """
 
         # used to invoke the toolbox API
@@ -92,7 +95,7 @@ class ToolboxTool:
         self.__required_authn_params = required_authn_params
         # map of authService -> token_getter
         self.__auth_service_token_getters = auth_service_token_getters
-        # map of parameter name to value or Callable
+        # map of parameter name to value (or callable that produces that value)
         self.__bound_parameters = bound_params
 
     def __copy(
@@ -120,18 +123,24 @@ class ToolboxTool:
                 a auth_service_token_getter set for them yet.
             auth_service_token_getters: A dict of authService -> token (or callables
                 that produce a token)
+            bound_params: A mapping of parameter names to bind to specific values or
+                callables that are called to produce values as needed.
 
         """
+        check = lambda val, default: val if val is not None else default
         return ToolboxTool(
-            session=session or self.__session,
-            base_url=base_url or self.__base_url,
-            name=name or self.__name__,
-            desc=desc or self.__desc,
-            params=params or self.__params,
-            required_authn_params=required_authn_params or self.__required_authn_params,
-            auth_service_token_getters=auth_service_token_getters
-            or self.__auth_service_token_getters,
-            bound_params=bound_params or self.__bound_parameters,
+            session=check(session, self.__session),
+            base_url=check(base_url, self.__base_url),
+            name=check(name, self.__name__),
+            desc=check(desc, self.__desc),
+            params=check(params, self.__params),
+            required_authn_params=check(
+                required_authn_params, self.__required_authn_params
+            ),
+            auth_service_token_getters=check(
+                auth_service_token_getters, self.__auth_service_token_getters
+            ),
+            bound_params=check(bound_params, self.__bound_parameters),
         )
 
     async def __call__(self, *args: Any, **kwargs: Any) -> str:
@@ -151,9 +160,12 @@ class ToolboxTool:
 
         # check if any auth services need to be specified yet
         if len(self.__required_authn_params) > 0:
-            req_auth_services = set(l for l in self.__required_authn_params.keys())
+            # Gather all the required auth services into a set
+            req_auth_services = set()
+            for s in self.__required_authn_params.values():
+                req_auth_services.update(s)
             raise Exception(
-                f"One of more of the following authn services are required to invoke this tool: {','.join(req_auth_services)}"
+                f"One or more of the following authn services are required to invoke this tool: {','.join(req_auth_services)}"
             )
 
         # validate inputs to this call using the signature
@@ -190,7 +202,7 @@ class ToolboxTool:
         auth_token_getters: Mapping[str, Callable[[], str]],
     ) -> "ToolboxTool":
         """
-        Registers a auth token getter function that is used for AuthServices when tools
+        Registers an auth token getter function that is used for AuthServices when tools
         are invoked.
 
         Args:
@@ -203,10 +215,12 @@ class ToolboxTool:
         """
 
         # throw an error if the authentication source is already registered
-        dupes = auth_token_getters.keys() & self.__auth_service_token_getters.keys()
-        if dupes:
+        existing_services = self.__auth_service_token_getters.keys()
+        incoming_services = auth_token_getters.keys()
+        duplicates = existing_services & incoming_services
+        if duplicates:
             raise ValueError(
-                f"Authentication source(s) `{', '.join(dupes)}` already registered in tool `{self.__name__}`."
+                f"Authentication source(s) `{', '.join(duplicates)}` already registered in tool `{self.__name__}`."
             )
 
         # create a read-only updated value for new_getters
@@ -215,7 +229,7 @@ class ToolboxTool:
         )
         # create a read-only updated for params that are still required
         new_req_authn_params = types.MappingProxyType(
-            filter_required_authn_params(
+            identify_required_authn_params(
                 self.__required_authn_params, auth_token_getters.keys()
             )
         )
@@ -226,7 +240,7 @@ class ToolboxTool:
         )
 
     def bind_parameters(
-        self, bound_params: Mapping[str, Callable[[], str]]
+        self, bound_params: Mapping[str, Union[Callable[[], Any], Any]]
     ) -> "ToolboxTool":
         """
         Binds parameters to values or callables that produce values.
@@ -238,9 +252,9 @@ class ToolboxTool:
          Returns:
              A new ToolboxTool instance with the specified parameters bound.
         """
-        all_params = set(p.name for p in self.__params)
+        param_names = set(p.name for p in self.__params)
         for name in bound_params.keys():
-            if name not in all_params:
+            if name not in param_names:
                 raise Exception(f"unable to bind parameters: no parameter named {name}")
 
         new_params = []
@@ -254,27 +268,28 @@ class ToolboxTool:
         )
 
 
-def filter_required_authn_params(
-    req_authn_params: Mapping[str, list[str]], auth_services: Iterable[str]
+def identify_required_authn_params(
+    req_authn_params: Mapping[str, list[str]], auth_service_names: Iterable[str]
 ) -> dict[str, list[str]]:
     """
-    Utility function for reducing 'req_authn_params' to a subset of parameters that
-    aren't supplied by a least one service in auth_services.
+    Identifies authentication parameters that are still required; because they
+        not covered by the provided `auth_service_names`.
 
-    Args:
-        req_authn_params: A mapping of parameter names to sets of required
-            authentication services.
-        auth_services: An iterable of authentication service names for which
-            token getters are available.
+        Args:
+            req_authn_params: A mapping of parameter names to sets of required
+                authentication services.
+            auth_service_names: An iterable of authentication service names for which
+                token getters are available.
 
     Returns:
         A new dictionary representing the subset of required authentication parameters
         that are not covered by the provided `auth_services`.
     """
-    req_params = {}
+    required_params = {}  # params that are still required with provided auth_services
     for param, services in req_authn_params.items():
-        # if we don't have a token_getter for any of the services required by the param, the param is still required
-        required = not any(s in services for s in auth_services)
+        # if we don't have a token_getter for any of the services required by the param,
+        # the param is still required
+        required = not any(s in services for s in auth_service_names)
         if required:
-            req_params[param] = services
-    return req_params
+            required_params[param] = services
+    return required_params
