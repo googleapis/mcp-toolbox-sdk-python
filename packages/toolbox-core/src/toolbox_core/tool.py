@@ -108,7 +108,7 @@ class ToolboxTool:
         docstring += "\n\nArgs:"
         for p in params:
             param_metadata = params_metadata[p.name]
-            docstring += f"\n{p.name} ({param_metadata[0]}): {param_metadata[1]}"
+            docstring += f"\n    {p.name} ({param_metadata[0]}): {param_metadata[1]}"
         return docstring
 
     def __copy(
