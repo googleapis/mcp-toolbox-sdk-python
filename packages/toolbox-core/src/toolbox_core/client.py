@@ -86,7 +86,9 @@ class ToolboxClient:
             name=name,
             desc=schema.description,
             params=[p.to_param() for p in params],
-            params_metadata=types.MappingProxyType({p.name: (p.type, p.description) for p in schema.parameters}),
+            params_metadata=types.MappingProxyType(
+                {p.name: (p.type, p.description) for p in schema.parameters}
+            ),
             # create a read-only values for the maps to prevent mutation
             required_authn_params=types.MappingProxyType(authn_params),
             auth_service_token_getters=types.MappingProxyType(auth_token_getters),
