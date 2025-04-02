@@ -4,7 +4,6 @@
     "bump-minor-pre-major": true,
     "bump-patch-for-minor-pre-major": true,
     "separate-pull-requests": true,
-    "include-component-in-tag": true,
     "changelog-sections": [
       { "type": "feat", "section": "Features" },
       { "type": "fix", "section": "Bug Fixes" },
@@ -12,11 +11,13 @@
     ],
     "packages": {
       "packages/toolbox-core": {
+        "component": "toolbox-core",
         "extra-files": [
           "src/toolbox_core/version.py"
         ]
       },
       "packages/toolbox-langchain": {
+        "component": "toolbox-langchain",
         "extra-files": [
           "src/toolbox_langchain/version.py"
         ]
