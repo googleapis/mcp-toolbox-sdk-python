@@ -18,7 +18,7 @@ from typing import Any, Callable, Optional
 from aiohttp import ClientSession
 
 from .protocol import ManifestSchema, ToolSchema
-from .tool import ToolboxTool, filter_required_authn_params
+from .tool import ToolboxTool, identify_required_authn_params
 
 
 class ToolboxClient:
@@ -72,7 +72,9 @@ class ToolboxClient:
                 authn_params[p.name] = p.authSources
                 auth_sources.update(p.authSources)
 
-        authn_params = filter_required_authn_params(authn_params, auth_sources)
+        authn_params = identify_required_authn_params(
+            authn_params, auth_token_getters.keys()
+        )
 
         tool = ToolboxTool(
             session=self.__session,

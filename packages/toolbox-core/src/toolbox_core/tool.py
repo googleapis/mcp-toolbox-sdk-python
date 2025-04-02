@@ -140,7 +140,10 @@ class ToolboxTool:
 
         # check if any auth services need to be specified yet
         if len(self.__required_authn_params) > 0:
-            req_auth_services = set(l for l in self.__required_authn_params.keys())
+            # Gather all the required auth services into a set
+            req_auth_services = set()
+            for s in self.__required_authn_params.values():
+                req_auth_services.update(s)
             raise Exception(
                 f"One or more of the following authn services are required to invoke this tool: {','.join(req_auth_services)}"
             )
@@ -184,10 +187,12 @@ class ToolboxTool:
         """
 
         # throw an error if the authentication source is already registered
-        dupes = auth_token_getters.keys() & self.__auth_service_token_getters.keys()
-        if dupes:
+        existing_services = self.__auth_service_token_getters.keys()
+        incoming_services = auth_token_getters.keys()
+        duplicates = existing_services & incoming_services
+        if duplicates:
             raise ValueError(
-                f"Authentication source(s) `{', '.join(dupes)}` already registered in tool `{self.__name__}`."
+                f"Authentication source(s) `{', '.join(duplicates)}` already registered in tool `{self.__name__}`."
             )
 
         # create a read-only updated value for new_getters
@@ -196,7 +201,7 @@ class ToolboxTool:
         )
         # create a read-only updated for params that are still required
         new_req_authn_params = types.MappingProxyType(
-            filter_required_authn_params(
+            identify_required_authn_params(
                 self.__required_authn_params, auth_token_getters.keys()
             )
         )
@@ -207,12 +212,12 @@ class ToolboxTool:
         )
 
 
-def filter_required_authn_params(
+def identify_required_authn_params(
     req_authn_params: Mapping[str, list[str]], auth_service_names: Iterable[str]
 ) -> dict[str, list[str]]:
     """
-    Utility function for reducing 'req_authn_params' to a subset of parameters that
-    aren't supplied by at least one service in auth_services.
+    Identifies authentication parameters that are still required; or not covered by
+        the provided `auth_service_names`.
 
     Args:
         req_authn_params: A mapping of parameter names to sets of required
