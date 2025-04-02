@@ -32,6 +32,9 @@ This file covers the following test cases:
     a. No auth provided.
     b. Correct auth provided.
     c. Auth provided does not contain the required claim.
+8. Bind params to a tool
+    a. Static param
+    b. Callable param value
 """
 import pytest
 import pytest_asyncio
