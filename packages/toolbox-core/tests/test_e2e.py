@@ -154,7 +154,7 @@ class TestE2EClient:
         # TODO: Change match to {my-auth-service3} instead of email after fix in PR
         with pytest.raises(
             Exception,
-            match="One of more of the following authn services are required to invoke this tool: email",
+            match="One of more of the following authn services are required to invoke this tool: my-test-auth",
         ):
             await tool()
 
