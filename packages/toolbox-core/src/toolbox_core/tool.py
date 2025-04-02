@@ -54,7 +54,7 @@ class ToolboxTool:
         params: Sequence[Parameter],
         required_authn_params: Mapping[str, list[str]],
         auth_service_token_getters: Mapping[str, Callable[[], str]],
-        bound_params: Mapping[str, Union[Callable[[], Any], Any]] = {},
+        bound_params: Mapping[str, Union[Callable[[], Any], Any]],
     ):
         """
         Initializes a callable that will trigger the tool invocation through the
@@ -71,6 +71,9 @@ class ToolboxTool:
                 of services that provide values for them.
             auth_service_token_getters: A dict of authService -> token (or callables that
                 produce a token)
+            bound_params: A mapping of parameter names to bind to specific values or
+                callables that are called to produce values as needed.
+
         """
 
         # used to invoke the toolbox API
@@ -92,7 +95,7 @@ class ToolboxTool:
         self.__required_authn_params = required_authn_params
         # map of authService -> token_getter
         self.__auth_service_token_getters = auth_service_token_getters
-        # map of parameter name to value or Callable
+        # map of parameter name to value (or callable that produces that value)
         self.__bound_parameters = bound_params
 
     def __copy(
@@ -120,6 +123,8 @@ class ToolboxTool:
                 a auth_service_token_getter set for them yet.
             auth_service_token_getters: A dict of authService -> token (or callables
                 that produce a token)
+            bound_params: A mapping of parameter names to bind to specific values or
+                callables that are called to produce values as needed.
 
         """
         check = lambda val, default: val if val is not None else default
@@ -235,7 +240,7 @@ class ToolboxTool:
         )
 
     def bind_parameters(
-        self, bound_params: Mapping[str, Callable[[], str]]
+        self, bound_params: Mapping[str, Union[Callable[[], Any], Any]]
     ) -> "ToolboxTool":
         """
         Binds parameters to values or callables that produce values.
@@ -247,9 +252,9 @@ class ToolboxTool:
          Returns:
              A new ToolboxTool instance with the specified parameters bound.
         """
-        all_params = set(p.name for p in self.__params)
+        param_names = set(p.name for p in self.__params)
         for name in bound_params.keys():
-            if name not in all_params:
+            if name not in param_names:
                 raise Exception(f"unable to bind parameters: no parameter named {name}")
 
         new_params = []
@@ -270,11 +275,11 @@ def identify_required_authn_params(
     Identifies authentication parameters that are still required; because they
         not covered by the provided `auth_service_names`.
 
-    Args:
-        req_authn_params: A mapping of parameter names to sets of required
-            authentication services.
-        auth_service_names: An iterable of authentication service names for which
-            token getters are available.
+        Args:
+            req_authn_params: A mapping of parameter names to sets of required
+                authentication services.
+            auth_service_names: An iterable of authentication service names for which
+                token getters are available.
 
     Returns:
         A new dictionary representing the subset of required authentication parameters
