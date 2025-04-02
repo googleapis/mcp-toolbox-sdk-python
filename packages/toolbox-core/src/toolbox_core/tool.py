@@ -102,7 +102,7 @@ class ToolboxTool:
         tool_description: str,
         params: Sequence[Parameter],
         params_metadata: Mapping[str, tuple[str, str]],
-    ):
+    ) -> str:
         docstring = tool_description
         if not params:
             return docstring
