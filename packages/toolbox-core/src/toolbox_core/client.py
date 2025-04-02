@@ -79,16 +79,13 @@ class ToolboxClient:
         authn_params = identify_required_authn_params(
             authn_params, auth_token_getters.keys()
         )
+        schema.parameters = params
 
         tool = ToolboxTool(
             session=self.__session,
             base_url=self.__base_url,
             name=name,
-            desc=schema.description,
-            params=[p.to_param() for p in params],
-            params_metadata=types.MappingProxyType(
-                {p.name: (p.type, p.description) for p in schema.parameters}
-            ),
+            schema=schema,
             # create a read-only values for the maps to prevent mutation
             required_authn_params=types.MappingProxyType(authn_params),
             auth_service_token_getters=types.MappingProxyType(auth_token_getters),
