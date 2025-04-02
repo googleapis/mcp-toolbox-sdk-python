@@ -110,7 +110,7 @@ class ToolboxTool:
         session: Optional[ClientSession] = None,
         base_url: Optional[str] = None,
         name: Optional[str] = None,
-        schema: ToolSchema = None,
+        schema: Optional[ToolSchema] = None,
         required_authn_params: Optional[Mapping[str, list[str]]] = None,
         auth_service_token_getters: Optional[Mapping[str, Callable[[], str]]] = None,
         bound_params: Optional[Mapping[str, Union[Callable[[], Any], Any]]] = None,
