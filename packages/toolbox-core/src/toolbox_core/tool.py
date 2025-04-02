@@ -65,6 +65,7 @@ class ToolboxTool:
             desc: The description of the remote tool (used as its docstring).
             params: A list of `inspect.Parameter` objects defining the tool's
                 arguments and their types/defaults.
+            params_metadata: A mapping of param names to their types and descriptions.
             required_authn_params: A dict of required authenticated parameters to a list
                 of services that provide values for them.
             auth_service_token_getters: A dict of authService -> token (or callables that
@@ -103,6 +104,7 @@ class ToolboxTool:
         params: Sequence[Parameter],
         params_metadata: Mapping[str, tuple[str, str]],
     ) -> str:
+        """Creates a python function docstring from a tool and it's params."""
         docstring = tool_description
         if not params:
             return docstring
