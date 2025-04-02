@@ -13,10 +13,13 @@
 # limitations under the License.
 
 
+import types
+from collections import defaultdict
 from inspect import Parameter, Signature
-from typing import Any
+from typing import Any, Callable, DefaultDict, Iterable, Mapping, Optional, Sequence
 
 from aiohttp import ClientSession
+from pytest import Session
 
 
 class ToolboxTool:
@@ -32,20 +35,19 @@ class ToolboxTool:
     and `inspect` work as expected.
     """
 
-    __url: str
-    __session: ClientSession
-    __signature__: Signature
-
     def __init__(
         self,
         session: ClientSession,
         base_url: str,
         name: str,
         desc: str,
-        params: list[Parameter],
+        params: Sequence[Parameter],
+        required_authn_params: Mapping[str, list[str]],
+        auth_service_token_getters: Mapping[str, Callable[[], str]],
     ):
         """
-        Initializes a callable that will trigger the tool invocation through the Toolbox server.
+        Initializes a callable that will trigger the tool invocation through the
+        Toolbox server.
 
         Args:
             session: The `aiohttp.ClientSession` used for making API requests.
@@ -54,18 +56,72 @@ class ToolboxTool:
             desc: The description of the remote tool (used as its docstring).
             params: A list of `inspect.Parameter` objects defining the tool's
                 arguments and their types/defaults.
+            required_authn_params: A dict of required authenticated parameters to a list
+                of services that provide values for them.
+            auth_service_token_getters: A dict of authService -> token (or callables that
+                produce a token)
         """
 
         # used to invoke the toolbox API
-        self.__session = session
+        self.__session: ClientSession = session
+        self.__base_url: str = base_url
         self.__url = f"{base_url}/api/tool/{name}/invoke"
 
-        # the following properties are set to help anyone that might inspect it determine
+        self.__desc = desc
+        self.__params = params
+
+        # the following properties are set to help anyone that might inspect it determine usage
         self.__name__ = name
         self.__doc__ = desc
         self.__signature__ = Signature(parameters=params, return_annotation=str)
         self.__annotations__ = {p.name: p.annotation for p in params}
         # TODO: self.__qualname__ ??
+
+        # map of parameter name to auth service required by it
+        self.__required_authn_params = required_authn_params
+        # map of authService -> token_getter
+        self.__auth_service_token_getters = auth_service_token_getters
+
+    def __copy(
+        self,
+        session: Optional[ClientSession] = None,
+        base_url: Optional[str] = None,
+        name: Optional[str] = None,
+        desc: Optional[str] = None,
+        params: Optional[list[Parameter]] = None,
+        required_authn_params: Optional[Mapping[str, list[str]]] = None,
+        auth_service_token_getters: Optional[Mapping[str, Callable[[], str]]] = None,
+    ) -> "ToolboxTool":
+        """
+        Creates a copy of the ToolboxTool, overriding specific fields.
+
+        Args:
+            session: The `aiohttp.ClientSession` used for making API requests.
+            base_url: The base URL of the Toolbox server API.
+            name: The name of the remote tool.
+            desc: The description of the remote tool (used as its docstring).
+            params: A list of `inspect.Parameter` objects defining the tool's
+                arguments and their types/defaults.
+            required_authn_params: A dict of required authenticated parameters that need
+                a auth_service_token_getter set for them yet.
+            auth_service_token_getters: A dict of authService -> token (or callables
+                that produce a token)
+
+        """
+        check = lambda val, default: val if val is not None else default
+        return ToolboxTool(
+            session=check(session, self.__session),
+            base_url=check(base_url, self.__base_url),
+            name=check(name, self.__name__),
+            desc=check(desc, self.__desc),
+            params=check(params, self.__params),
+            required_authn_params=check(
+                required_authn_params, self.__required_authn_params
+            ),
+            auth_service_token_getters=check(
+                auth_service_token_getters, self.__auth_service_token_getters
+            ),
+        )
 
     async def __call__(self, *args: Any, **kwargs: Any) -> str:
         """
@@ -81,16 +137,103 @@ class ToolboxTool:
         Returns:
             The string result returned by the remote tool execution.
         """
+
+        # check if any auth services need to be specified yet
+        if len(self.__required_authn_params) > 0:
+            # Gather all the required auth services into a set
+            req_auth_services = set()
+            for s in self.__required_authn_params.values():
+                req_auth_services.update(s)
+            raise Exception(
+                f"One or more of the following authn services are required to invoke this tool: {','.join(req_auth_services)}"
+            )
+
+        # validate inputs to this call using the signature
         all_args = self.__signature__.bind(*args, **kwargs)
         all_args.apply_defaults()  # Include default values if not provided
         payload = all_args.arguments
 
+        # create headers for auth services
+        headers = {}
+        for auth_service, token_getter in self.__auth_service_token_getters.items():
+            headers[f"{auth_service}_token"] = token_getter()
+
         async with self.__session.post(
             self.__url,
             json=payload,
+            headers=headers,
         ) as resp:
-            ret = await resp.json()
-            if "error" in ret:
-                # TODO: better error
-                raise Exception(ret["error"])
-        return ret.get("result", ret)
+            body = await resp.json()
+            if resp.status < 200 or resp.status >= 300:
+                err = body.get("error", f"unexpected status from server: {resp.status}")
+                raise Exception(err)
+        return body.get("result", body)
+
+    def add_auth_token_getters(
+        self,
+        auth_token_getters: Mapping[str, Callable[[], str]],
+    ) -> "ToolboxTool":
+        """
+        Registers an auth token getter function that is used for AuthServices when tools
+        are invoked.
+
+        Args:
+            auth_token_getters: A mapping of authentication service names to
+                callables that return the corresponding authentication token.
+
+        Returns:
+            A new ToolboxTool instance with the specified authentication token
+            getters registered.
+        """
+
+        # throw an error if the authentication source is already registered
+        existing_services = self.__auth_service_token_getters.keys()
+        incoming_services = auth_token_getters.keys()
+        duplicates = existing_services & incoming_services
+        if duplicates:
+            raise ValueError(
+                f"Authentication source(s) `{', '.join(duplicates)}` already registered in tool `{self.__name__}`."
+            )
+
+        # create a read-only updated value for new_getters
+        new_getters = types.MappingProxyType(
+            dict(self.__auth_service_token_getters, **auth_token_getters)
+        )
+        # create a read-only updated for params that are still required
+        new_req_authn_params = types.MappingProxyType(
+            identify_required_authn_params(
+                self.__required_authn_params, auth_token_getters.keys()
+            )
+        )
+
+        return self.__copy(
+            auth_service_token_getters=new_getters,
+            required_authn_params=new_req_authn_params,
+        )
+
+
+def identify_required_authn_params(
+    req_authn_params: Mapping[str, list[str]], auth_service_names: Iterable[str]
+) -> dict[str, list[str]]:
+    """
+    Identifies authentication parameters that are still required; or not covered by
+        the provided `auth_service_names`.
+
+    Args:
+        req_authn_params: A mapping of parameter names to sets of required
+            authentication services.
+        auth_service_names: An iterable of authentication service names for which
+            token getters are available.
+
+    Returns:
+        A new dictionary representing the subset of required authentication
+        parameters that are not covered by the provided `auth_service_names`.
+    """
+    required_params = {}  # params that are still required with provided auth_services
+    for param, services in req_authn_params.items():
+        # if we don't have a token_getter for any of the services required by the param,
+        # the param is still required
+        required = not any(s in services for s in auth_service_names)
+        if required:
+            required_params[param] = services
+    return required_params
