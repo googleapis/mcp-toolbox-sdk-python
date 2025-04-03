@@ -163,4 +163,4 @@ def toolbox_server(toolbox_version: str, tools_file_path: str) -> Generator[None
 
     # Clean up toolbox server
     toolbox_server.terminate()
-    toolbox_server.wait()
+    toolbox_server.wait(timeout=5)
