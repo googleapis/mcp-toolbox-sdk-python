@@ -64,7 +64,7 @@ class ToolboxSyncClient:
 
         coro = __start_session()
 
-        asyncio.run_coroutine_threadsafe(coro, ToolboxSyncClient.__loop).result()
+        asyncio.run_coroutine_threadsafe(__start_session(), ToolboxSyncClient.__loop).result()
 
         if not ToolboxSyncClient.__session:
             raise ValueError("Session cannot be None.")
@@ -127,6 +127,7 @@ class ToolboxSyncClient:
                 for execution. The specific arguments and behavior of the callable
                 depend on the tool itself.
         """
+
         async_tool = self.__run_as_sync(
             self.__async_client.load_tool(name, auth_token_getters, bound_params)
         )
@@ -155,6 +156,7 @@ class ToolboxSyncClient:
             list[ToolboxSyncTool]: A list of callables, one for each tool defined
             in the toolset.
         """
+
         async_tools = self.__run_as_sync(
             self.__async_client.load_toolset(
                 name, auth_token_getters, bound_params

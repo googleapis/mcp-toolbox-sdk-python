@@ -47,6 +47,7 @@ class ToolboxSyncTool:
             loop: The event loop used to run asynchronous tasks.
             thread: The thread to run blocking operations in.
         """
+
         if not isinstance(async_tool, ToolboxTool):
             raise TypeError("async_tool must be an instance of ToolboxTool")
 
@@ -113,6 +114,7 @@ class ToolboxSyncTool:
             A new ToolboxSyncTool instance with the specified authentication token
             getters registered.
         """
+
         new_async_tool = self.__async_tool.add_auth_token_getters(auth_token_getters)
         return ToolboxSyncTool(new_async_tool, self.__loop, self.__thread)
 
@@ -129,5 +131,6 @@ class ToolboxSyncTool:
          Returns:
              A new ToolboxSyncTool instance with the specified parameters bound.
         """
+
         new_async_tool = self.__async_tool.bind_parameters(bound_params)
         return ToolboxSyncTool(new_async_tool, self.__loop, self.__thread)
