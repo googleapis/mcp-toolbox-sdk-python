@@ -56,6 +56,15 @@ class ToolboxSyncTool:
         self.__loop = loop
         self.__thread = thread
 
+        # NOTE: We cannot define __qualname__ as a @property here.
+        # Properties are designed to compute values dynamically when accessed on an *instance* (using 'self').
+        # However, Python needs the class's __qualname__ attribute to be a plain string
+        # *before* any instances exist, specifically when the 'class ToolboxSyncTool:' statement
+        # itself is being processed during module import or class definition.
+        # Defining __qualname__ as a property leads to a TypeError because the class object needs
+        # a string value immediately, not a descriptor that evaluates later.
+        self.__qualname__ = f"{self.__class__.__qualname__}.{self.__name__}"
+
     @property
     def __name__(self) -> str:
         return self.__async_tool.__name__
@@ -77,10 +86,6 @@ class ToolboxSyncTool:
         # But not defining a setter function makes this a read-only property.
         # Mypy flags this issue in the type checks.
         return self.__async_tool.__annotations__
-
-    @property
-    def __qualname__(self) -> str:
-        return f"{self.__class__.__qualname__}.{self.__name__}"
 
     def __call__(self, *args: Any, **kwargs: Any) -> str:
         """
