@@ -110,7 +110,7 @@ class ToolboxSyncClient:
         coro = self.__async_client.load_tool(name, auth_token_getters, bound_params)
 
         # We have already created a new loop in the init method in case it does not already exist
-        async_tool = asyncio.run_coroutine_threadsafe(coro, self.__loop).result() # type: ignore
+        async_tool = asyncio.run_coroutine_threadsafe(coro, self.__loop).result()  # type: ignore
 
         if not self.__loop or not self.__thread:
             raise ValueError("Background loop or thread cannot be None.")
@@ -139,7 +139,7 @@ class ToolboxSyncClient:
         coro = self.__async_client.load_toolset(name, auth_token_getters, bound_params)
 
         # We have already created a new loop in the init method in case it does not already exist
-        async_tools = asyncio.run_coroutine_threadsafe(coro, self.__loop).result() # type: ignore
+        async_tools = asyncio.run_coroutine_threadsafe(coro, self.__loop).result()  # type: ignore
 
         if not self.__loop or not self.__thread:
             raise ValueError("Background loop or thread cannot be None.")
