@@ -40,7 +40,7 @@ class ToolboxSyncClient:
         url: str,
     ):
         """
-        Initializes the ToolboxClient.
+        Initializes the ToolboxSyncClient.
 
         Args:
             url: The base URL for the Toolbox service API (e.g., "http://localhost:5000").
@@ -59,7 +59,7 @@ class ToolboxSyncClient:
 
         # Ignoring type since we're already checking the existing of a loop above.
         self.__async_client = asyncio.run_coroutine_threadsafe(
-            create_client(), ToolboxSyncClient.__loop  # type: ignore
+            create_client(), self.__class__.__loop  # type: ignore
         ).result()
 
     def close(self):
