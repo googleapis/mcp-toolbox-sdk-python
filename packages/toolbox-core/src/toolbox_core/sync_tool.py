@@ -24,7 +24,7 @@ T = TypeVar("T")
 
 class ToolboxSyncTool:
     """
-    A synchronous wrapper around an asynchronous ToolboxTool instance.
+    A synchronous wrapper proxying asynchronous ToolboxTool instance.
 
     This class allows calling the underlying async tool synchronously.
     It also proxies methods like `add_auth_token_getters` and
