@@ -33,8 +33,6 @@ from pydantic import BaseModel, Field, create_model
 
 from toolbox_core.protocol import ParameterSchema
 
-from toolbox_core.protocol import ParameterSchema
-
 
 class ToolboxTool:
     """
