@@ -81,7 +81,7 @@ class ToolboxTool:
         self.__url = f"{base_url}/api/tool/{name}/invoke"
         self.__description = description
         self.__params = params
-        self.__pydantic_model = self._to_pydantic_model()
+        self.__pydantic_model = to_pydantic_model(self.__params)
 
         inspect_type_params = [param.to_param() for param in self.__params]
 
@@ -101,19 +101,6 @@ class ToolboxTool:
         self.__auth_service_token_getters = auth_service_token_getters
         # map of parameter name to value (or callable that produces that value)
         self.__bound_parameters = bound_params
-
-    def _to_pydantic_model(self) -> Type[BaseModel]:
-        """Converts the given manifest schema to a Pydantic BaseModel class."""
-        field_definitions = {}
-        for field in self.__params:
-            field_definitions[field.name] = cast(
-                Any,
-                (
-                    field.to_param().annotation,
-                    Field(description=field.description),
-                ),
-            )
-        return create_model("tool_model", **field_definitions)
 
     def __copy(
         self,
@@ -327,3 +314,16 @@ def identify_required_authn_params(
         if required:
             required_params[param] = services
     return required_params
+
+def to_pydantic_model(params: Sequence[ParameterSchema]) -> Type[BaseModel]:
+    """Converts the given parameters to a Pydantic BaseModel class."""
+    field_definitions = {}
+    for field in params:
+        field_definitions[field.name] = cast(
+            Any,
+            (
+                field.to_param().annotation,
+                Field(description=field.description),
+            ),
+        )
+    return create_model("tool_model", **field_definitions)
