@@ -87,7 +87,7 @@ class ToolboxTool:
             parameters=inspect_type_params, return_annotation=str
         )
         self.__annotations__ = {p.name: p.annotation for p in inspect_type_params}
-        self.__qualname__ = f"{self.__class__.__qualname__}.{name}"
+        self.__qualname__ = f"{self.__class__.__qualname__}.{self.__name__}"
 
         # map of parameter name to auth service required by it
         self.__required_authn_params = required_authn_params
