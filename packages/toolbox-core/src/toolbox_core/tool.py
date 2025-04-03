@@ -28,6 +28,7 @@ from typing import (
 
 from aiohttp import ClientSession
 
+
 class ToolboxTool:
     """
     A callable proxy object representing a specific tool on a remote Toolbox server.
