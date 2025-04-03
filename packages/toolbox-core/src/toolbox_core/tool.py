@@ -83,7 +83,9 @@ class ToolboxTool:
         # the following properties are set to help anyone that might inspect it determine usage
         self.__name__ = name
         self.__doc__ = self._create_docstring()
-        self.__signature__ = Signature(parameters=inspect_type_params, return_annotation=str)
+        self.__signature__ = Signature(
+            parameters=inspect_type_params, return_annotation=str
+        )
         self.__annotations__ = {p.name: p.annotation for p in inspect_type_params}
         # TODO: self.__qualname__ ??
 
@@ -275,6 +277,7 @@ class ToolboxTool:
             params=new_params,
             bound_params=types.MappingProxyType(all_bound_params),
         )
+
 
 def identify_required_authn_params(
     req_authn_params: Mapping[str, list[str]], auth_service_names: Iterable[str]
