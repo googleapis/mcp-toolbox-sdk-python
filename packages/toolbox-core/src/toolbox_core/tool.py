@@ -33,6 +33,8 @@ from pydantic import BaseModel, Field, create_model
 
 from toolbox_core.protocol import ParameterSchema
 
+from toolbox_core.protocol import ParameterSchema
+
 
 class ToolboxTool:
     """
@@ -82,6 +84,7 @@ class ToolboxTool:
         self.__description = description
         self.__params = params
         self.__pydantic_model = self._to_pydantic_model()
+
         inspect_type_params = [param.to_param() for param in self.__params]
 
         # the following properties are set to help anyone that might inspect it determine usage
