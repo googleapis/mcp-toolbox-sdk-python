@@ -11,12 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 import pytest
 import pytest_asyncio
 
 from toolbox_core.client import ToolboxClient
 from toolbox_core.tool import ToolboxTool
+
 
 # --- Shared Fixtures Defined at Module Level ---
 @pytest_asyncio.fixture(scope="function")
@@ -110,6 +110,7 @@ class TestBindParams:
         assert "row3" in response
         assert "row4" not in response
 
+
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("toolbox_server")
 class TestAuth:
@@ -122,7 +123,6 @@ class TestAuth:
         )
         response = await tool(id="2")
         assert "row2" in response
-
 
     async def test_run_tool_no_auth(self, toolbox: ToolboxClient):
         """Tests running a tool requiring auth without providing auth."""
@@ -151,7 +151,6 @@ class TestAuth:
         response = await auth_tool(id="2")
         assert "row2" in response
 
-
     async def test_run_tool_param_auth_no_auth(self, toolbox: ToolboxClient):
         """Tests running a tool with a param requiring auth, without auth."""
         tool = await toolbox.load_tool("get-row-by-email-auth")
@@ -160,7 +159,6 @@ class TestAuth:
             match="One or more of the following authn services are required to invoke this tool: my-test-auth",
         ):
             await tool()
-
 
     async def test_run_tool_param_auth(self, toolbox: ToolboxClient, auth_token1: str):
         """Tests running a tool with a param requiring auth, with correct auth."""
