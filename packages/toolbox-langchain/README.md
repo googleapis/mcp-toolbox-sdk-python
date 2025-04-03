@@ -291,7 +291,7 @@ bound_tools = [tool.bind_param("param", "value") for tool in tools]
 ### Binding Parameters While Loading
 
 ```py
-bound_tool = toolbox.load_tool(bound_params={"param": "value"})
+bound_tool = toolbox.load_tool("my-tool", bound_params={"param": "value"})
 
 bound_tools = toolbox.load_toolset(bound_params={"param": "value"})
 ```
