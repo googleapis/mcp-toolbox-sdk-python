@@ -32,7 +32,6 @@ class ToolboxSyncClient:
     service endpoint.
     """
 
-    __session: Optional[ClientSession] = None
     __loop: Optional[asyncio.AbstractEventLoop] = None
     __thread: Optional[Thread] = None
 
@@ -55,20 +54,12 @@ class ToolboxSyncClient:
             self.__class__.__thread = thread
             self.__class__.__loop = loop
 
-        async def __start_session() -> None:
-            # Use a default session if none is provided. This leverages connection
-            # pooling for better performance by reusing a single session throughout
-            # the application's lifetime.
-            if self.__class__.__session is None:
-                self.__class__.__session = ClientSession()
+        async def create_client():
+            return ToolboxClient(url)
 
-        asyncio.run_coroutine_threadsafe(
-            __start_session(), self.__class__.__loop
+        self.__async_client = asyncio.run_coroutine_threadsafe(
+            create_client(), ToolboxSyncClient.__loop
         ).result()
-
-        if not self.__class__.__session:
-            raise ValueError("Session cannot be None.")
-        self.__async_client = ToolboxClient(url, self.__class__.__session)
 
     def close(self):
         """
@@ -79,7 +70,7 @@ class ToolboxSyncClient:
         is responsible for its lifecycle, but calling close here will still
         attempt to close it.
         """
-        coro = self.__session.close()
+        coro = self.__async_client.close()
         asyncio.run_coroutine_threadsafe(coro, self.__loop).result()
 
     def load_tool(
