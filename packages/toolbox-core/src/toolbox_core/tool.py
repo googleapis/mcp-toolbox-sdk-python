@@ -14,15 +14,15 @@
 
 
 import asyncio
+import copy
 import types
-from inspect import Parameter, Signature
+from inspect import Signature
 from typing import (
     Any,
     Callable,
     Iterable,
     Mapping,
     Optional,
-    Sequence,
     Union,
 )
 
