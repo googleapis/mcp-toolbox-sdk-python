@@ -36,7 +36,7 @@ def get_n_rows_tool(toolbox: ToolboxSyncClient) -> ToolboxSyncTool:
     return tool
 
 
-# @pytest.mark.usefixtures("toolbox_server")
+@pytest.mark.usefixtures("toolbox_server")
 class TestBasicE2E:
     @pytest.mark.parametrize(
         "toolset_name, expected_length, expected_tools",
