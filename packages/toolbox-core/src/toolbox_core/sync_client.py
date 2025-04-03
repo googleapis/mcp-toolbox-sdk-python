@@ -70,26 +70,6 @@ class ToolboxSyncClient:
             raise ValueError("Session cannot be None.")
         self.__async_client = ToolboxClient(url, self.__class__.__session)
 
-    def __run_as_sync(self, coro: Awaitable[T]) -> T:
-        """Run an async coroutine synchronously"""
-        if not self.__loop:
-            raise Exception(
-                "Cannot call synchronous methods before the background loop is initialized."
-            )
-        return asyncio.run_coroutine_threadsafe(coro, self.__loop).result()
-
-    async def __run_as_async(self, coro: Awaitable[T]) -> T:
-        """Run an async coroutine asynchronously"""
-
-        # If a loop has not been provided, attempt to run in current thread.
-        if not self.__loop:
-            return await coro
-
-        # Otherwise, run in the background thread.
-        return await asyncio.wrap_future(
-            asyncio.run_coroutine_threadsafe(coro, self.__loop)
-        )
-
     def close(self):
         """
         Synchronously closes the underlying client session. Doing so will cause
@@ -100,7 +80,7 @@ class ToolboxSyncClient:
         attempt to close it.
         """
         coro = self.__session.close()
-        self.__run_as_sync(coro)
+        asyncio.run_coroutine_threadsafe(coro, self.__loop).result()
 
     def load_tool(
         self,
@@ -127,10 +107,8 @@ class ToolboxSyncClient:
                 for execution. The specific arguments and behavior of the callable
                 depend on the tool itself.
         """
-
-        async_tool = self.__run_as_sync(
-            self.__async_client.load_tool(name, auth_token_getters, bound_params)
-        )
+        coro = self.__async_client.load_tool(name, auth_token_getters, bound_params)
+        async_tool = asyncio.run_coroutine_threadsafe(coro, self.__loop).result()
 
         if not self.__loop or not self.__thread:
             raise ValueError("Background loop or thread cannot be None.")
@@ -156,10 +134,8 @@ class ToolboxSyncClient:
             list[ToolboxSyncTool]: A list of callables, one for each tool defined
             in the toolset.
         """
-
-        async_tools = self.__run_as_sync(
-            self.__async_client.load_toolset(name, auth_token_getters, bound_params)
-        )
+        coro = self.__async_client.load_toolset(name, auth_token_getters, bound_params)
+        async_tools = asyncio.run_coroutine_threadsafe(coro, self.__loop).result()
 
         if not self.__loop or not self.__thread:
             raise ValueError("Background loop or thread cannot be None.")

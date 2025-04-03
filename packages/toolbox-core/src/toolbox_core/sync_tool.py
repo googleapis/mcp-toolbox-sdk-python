@@ -62,26 +62,6 @@ class ToolboxSyncTool:
         self.__annotations__ = self.__async_tool.__annotations__
         # TODO: self.__qualname__ ?? (Consider if needed)
 
-    def __run_as_sync(self, coro: Awaitable[T]) -> T:
-        """Run an async coroutine synchronously"""
-        if not self.__loop:
-            raise Exception(
-                "Cannot call synchronous methods before the background loop is initialized."
-            )
-        return asyncio.run_coroutine_threadsafe(coro, self.__loop).result()
-
-    async def __run_as_async(self, coro: Awaitable[T]) -> T:
-        """Run an async coroutine asynchronously"""
-
-        # If a loop has not been provided, attempt to run in current thread.
-        if not self.__loop:
-            return await coro
-
-        # Otherwise, run in the background thread.
-        return await asyncio.wrap_future(
-            asyncio.run_coroutine_threadsafe(coro, self.__loop)
-        )
-
     def __call__(self, *args: Any, **kwargs: Any) -> str:
         """
         Synchronously calls the remote tool with the provided arguments.
@@ -96,7 +76,8 @@ class ToolboxSyncTool:
         Returns:
             The string result returned by the remote tool execution.
         """
-        return self.__run_as_sync(self.__async_tool(*args, **kwargs))
+        coro = self.__async_tool(*args, **kwargs)
+        return asyncio.run_coroutine_threadsafe(coro, self.__loop).result()
 
     def add_auth_token_getters(
         self,
