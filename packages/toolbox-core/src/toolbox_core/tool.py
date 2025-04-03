@@ -86,7 +86,7 @@ class ToolboxTool:
 
         # the following properties are set to help anyone that might inspect it determine usage
         self.__name__ = name
-        self.__doc__ = self._create_docstring()
+        self.__doc__ = create_docstring(self.__description, self.__params)
         self.__signature__ = Signature(
             parameters=inspect_type_params, return_annotation=str
         )
@@ -100,18 +100,6 @@ class ToolboxTool:
         self.__auth_service_token_getters = auth_service_token_getters
         # map of parameter name to value (or callable that produces that value)
         self.__bound_parameters = bound_params
-
-    def _create_docstring(self) -> str:
-        """Convert a tool schema into its function docstring"""
-        docstring = self.__description
-        if not self.__params:
-            return docstring
-        docstring += "\n\nArgs:"
-        for p in self.__params:
-            docstring += (
-                f"\n    {p.name} ({p.to_param().annotation.__name__}): {p.description}"
-            )
-        return docstring
 
     def _to_pydantic_model(self) -> Type[BaseModel]:
         """Converts the given manifest schema to a Pydantic BaseModel class."""
@@ -298,6 +286,19 @@ class ToolboxTool:
             params=new_params,
             bound_params=types.MappingProxyType(all_bound_params),
         )
+
+
+def create_docstring(description: str, params: Sequence[ParameterSchema]) -> str:
+    """Convert tool description and params into its function docstring"""
+    docstring = description
+    if not params:
+        return docstring
+    docstring += "\n\nArgs:"
+    for p in params:
+        docstring += (
+            f"\n    {p.name} ({p.to_param().annotation.__name__}): {p.description}"
+        )
+    return docstring
 
 
 def identify_required_authn_params(
