@@ -45,7 +45,7 @@ class ToolboxSyncClient:
         Initializes the ToolboxSyncClient.
 
         Args:
-            url: The base URL for the Toolbox service API (e.g., "http://localhost:8000").
+            url: The base URL for the Toolbox service API (e.g., "http://localhost:5000").
         """
         # Running a loop in a background thread allows us to support async
         # methods from non-async environments.
