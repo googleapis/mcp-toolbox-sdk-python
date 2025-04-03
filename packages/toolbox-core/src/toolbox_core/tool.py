@@ -316,7 +316,9 @@ def identify_required_authn_params(
     return required_params
 
 
-def params_to_pydantic_model(tool_name: str, params: Sequence[ParameterSchema]) -> Type[BaseModel]:
+def params_to_pydantic_model(
+    tool_name: str, params: Sequence[ParameterSchema]
+) -> Type[BaseModel]:
     """Converts the given parameters to a Pydantic BaseModel class."""
     field_definitions = {}
     for field in params:
