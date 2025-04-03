@@ -96,7 +96,7 @@ class ToolboxSyncTool:
         Returns:
             The string result returned by the remote tool execution.
         """
-        return self.__run_as_sync(self.__async_tool(**kwargs))
+        return self.__run_as_sync(self.__async_tool(*args, **kwargs))
 
     def add_auth_token_getters(
         self,
