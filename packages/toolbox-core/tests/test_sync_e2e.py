@@ -77,7 +77,7 @@ class TestBasicE2E:
         """Invoke a tool with wrong param type."""
         with pytest.raises(
             Exception,
-            match='provided parameters were invalid: unable to parse value for "num_rows": .* not type "string"',
+            match=r"num_rows\s+Input should be a valid string\s+\[type=string_type,\s+input_value=2,\s+input_type=int\]",
         ):
             get_n_rows_tool(num_rows=2)
 
