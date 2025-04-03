@@ -92,11 +92,11 @@ async def test_load_tool_success(aioresponses, test_tool_str):
         assert callable(loaded_tool)
         # Assert introspection attributes are set correctly
         assert loaded_tool.__name__ == TOOL_NAME
-        assert (
-            loaded_tool.__doc__
-            == test_tool_str.description
-            + f"\n\nArgs:\n    param1 (string): Description of Param1"
+        expected_description = (
+            test_tool_str.description
+            + f"\n\nArgs:\n    param1 (str): Description of Param1"
         )
+        assert loaded_tool.__doc__ == expected_description
 
         # Assert signature inspection
         sig = inspect.signature(loaded_tool)

@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import re
 import types
 from typing import Any, Callable, Mapping, Optional, Union
 
@@ -79,13 +78,13 @@ class ToolboxClient:
         authn_params = identify_required_authn_params(
             authn_params, auth_token_getters.keys()
         )
-        schema.parameters = params
 
         tool = ToolboxTool(
             session=self.__session,
             base_url=self.__base_url,
             name=name,
-            schema=schema,
+            description=schema.description,
+            params=params,
             # create a read-only values for the maps to prevent mutation
             required_authn_params=types.MappingProxyType(authn_params),
             auth_service_token_getters=types.MappingProxyType(auth_token_getters),
