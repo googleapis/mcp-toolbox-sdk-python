@@ -266,6 +266,7 @@ class ToolboxTool:
             bound_params=types.MappingProxyType(all_bound_params),
         )
 
+
 def create_docstring(description: str, params: Sequence[ParameterSchema]) -> str:
     """Convert tool description and params into its function docstring"""
     docstring = description
@@ -277,6 +278,7 @@ def create_docstring(description: str, params: Sequence[ParameterSchema]) -> str
             f"\n    {p.name} ({p.to_param().annotation.__name__}): {p.description}"
         )
     return docstring
+
 
 def identify_required_authn_params(
     req_authn_params: Mapping[str, list[str]], auth_service_names: Iterable[str]
