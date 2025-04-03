@@ -95,7 +95,7 @@ async def test_load_tool_success(aioresponses, test_tool_str):
         assert (
             loaded_tool.__doc__
             == test_tool_str.description
-            + f"\n\nArgs:\n    param1 (string): Description of Param1"
+            + f"\n\nArgs:\n    param1 (str): Description of Param1"
         )
 
         # Assert signature inspection

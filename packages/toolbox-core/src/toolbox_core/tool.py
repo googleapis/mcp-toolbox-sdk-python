@@ -102,7 +102,9 @@ class ToolboxTool:
             return docstring
         docstring += "\n\nArgs:"
         for p in schema.parameters:
-            docstring += f"\n    {p.name} ({p.type}): {p.description}"
+            docstring += (
+                f"\n    {p.name} ({p.to_param().annotation.__name__}): {p.description}"
+            )
         return docstring
 
     def __copy(
