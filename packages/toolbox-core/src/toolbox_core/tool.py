@@ -23,13 +23,14 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
+    Type,
     Union,
     cast,
-    Type
 )
 
 from aiohttp import ClientSession
 from pydantic import BaseModel, Field, create_model
+
 from toolbox_core.protocol import ParameterSchema
 
 
