@@ -40,7 +40,7 @@ class ToolboxClient:
         Initializes the ToolboxClient.
 
         Args:
-            url: The base URL for the Toolbox service API (e.g., "http://localhost:8000").
+            url: The base URL for the Toolbox service API (e.g., "http://localhost:5000").
             session: An optional existing `aiohttp.ClientSession` to use.
                 If None (default), a new session is created internally. Note that
                 if a session is provided, its lifecycle (including closing)

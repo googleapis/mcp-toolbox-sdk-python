@@ -214,7 +214,7 @@ class TestUtils:
         mock_post.return_value.__aenter__.return_value = mock_response
 
         result = await _invoke_tool(
-            "http://localhost:8000",
+            "http://localhost:5000",
             aiohttp.ClientSession(),
             "tool_name",
             {"input": "data"},
@@ -222,7 +222,7 @@ class TestUtils:
         )
 
         mock_post.assert_called_once_with(
-            "http://localhost:8000/api/tool/tool_name/invoke",
+            "http://localhost:5000/api/tool/tool_name/invoke",
             json={"input": "data"},
             headers={},
         )
@@ -241,7 +241,7 @@ class TestUtils:
             match="Sending ID token over HTTP. User data may be exposed. Use HTTPS for secure communication.",
         ):
             result = await _invoke_tool(
-                "http://localhost:8000",
+                "http://localhost:5000",
                 aiohttp.ClientSession(),
                 "tool_name",
                 {"input": "data"},
@@ -249,7 +249,7 @@ class TestUtils:
             )
 
         mock_post.assert_called_once_with(
-            "http://localhost:8000/api/tool/tool_name/invoke",
+            "http://localhost:5000/api/tool/tool_name/invoke",
             json={"input": "data"},
             headers={"my_test_auth_token": "fake_id_token"},
         )
@@ -267,7 +267,7 @@ class TestUtils:
         with warnings.catch_warnings():
             warnings.simplefilter("error")
             result = await _invoke_tool(
-                "https://localhost:8000",
+                "https://localhost:5000",
                 session,
                 "tool_name",
                 {"input": "data"},
@@ -275,7 +275,7 @@ class TestUtils:
             )
 
         mock_post.assert_called_once_with(
-            "https://localhost:8000/api/tool/tool_name/invoke",
+            "https://localhost:5000/api/tool/tool_name/invoke",
             json={"input": "data"},
             headers={"my_test_auth_token": "fake_id_token"},
         )
