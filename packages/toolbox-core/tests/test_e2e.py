@@ -13,6 +13,7 @@
 # limitations under the License.
 import pytest
 import pytest_asyncio
+from pydantic import ValidationError
 
 from toolbox_core.client import ToolboxClient
 from toolbox_core.tool import ToolboxTool
@@ -77,8 +78,8 @@ class TestBasicE2E:
     async def test_run_tool_wrong_param_type(self, get_n_rows_tool: ToolboxTool):
         """Invoke a tool with wrong param type."""
         with pytest.raises(
-            Exception,
-            match='provided parameters were invalid: unable to parse value for "num_rows": .* not type "string"',
+            ValidationError,
+            match=r"num_rows\s+Input should be a valid string\s+\[type=string_type,\s+input_value=2,\s+input_type=int\]",
         ):
             await get_n_rows_tool(num_rows=2)
 
