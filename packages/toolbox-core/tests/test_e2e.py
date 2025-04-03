@@ -11,31 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-"""End-to-end tests for the toolbox SDK interacting with the toolbox server.
-
-This file covers the following test cases:
-
-1. Loading a tool.
-2. Loading a specific toolset.
-3. Loading the default toolset (contains all tools).
-4. Running a tool with
-    a. Missing params.
-    b. Wrong param type.
-5. Running a tool with no required auth, with auth provided.
-6. Running a tool with required auth:
-    a. No auth provided.
-    b. Wrong auth provided: The tool requires a different authentication
-                            than the one provided.
-    c. Correct auth provided.
-7. Running a tool with a parameter that requires auth:
-    a. No auth provided.
-    b. Correct auth provided.
-    c. Auth provided does not contain the required claim.
-8. Bind params to a tool
-    a. Static param
-    b. Callable param value
-"""
 import pytest
 import pytest_asyncio
 
@@ -56,6 +31,7 @@ class TestE2EClient:
 
     @pytest_asyncio.fixture(scope="function")
     async def get_n_rows_tool(self, toolbox: ToolboxClient) -> ToolboxTool:
+        """Load a tool."""
         tool = await toolbox.load_tool("get-n-rows")
         assert tool.__name__ == "get-n-rows"
         return tool
@@ -75,12 +51,14 @@ class TestE2EClient:
         expected_length: int,
         expected_tools: list[str],
     ):
+        """Load a specific toolset"""
         toolset = await toolbox.load_toolset(toolset_name)
         assert len(toolset) == expected_length
         tool_names = {tool.__name__ for tool in toolset}
         assert tool_names == set(expected_tools)
 
     async def test_run_tool(self, get_n_rows_tool: ToolboxTool):
+        """Invoke a tool."""
         response = await get_n_rows_tool(num_rows="2")
 
         assert isinstance(response, str)
@@ -89,10 +67,12 @@ class TestE2EClient:
         assert "row3" not in response
 
     async def test_run_tool_missing_params(self, get_n_rows_tool):
+        """Invoke a tool with missing params."""
         with pytest.raises(TypeError, match="missing a required argument: 'num_rows'"):
             await get_n_rows_tool()
 
     async def test_run_tool_wrong_param_type(self, get_n_rows_tool: ToolboxTool):
+        """Invoke a tool with wrong param type."""
         with pytest.raises(
             Exception,
             match='provided parameters were invalid: unable to parse value for "num_rows": .* not type "string"',
@@ -101,6 +81,7 @@ class TestE2EClient:
 
     ##### Bind param tests
     async def test_bind_params(self, toolbox, get_n_rows_tool):
+        """Bind a param to an existing tool."""
         new_tool = get_n_rows_tool.bind_parameters({"num_rows": "3"})
         response = await new_tool()
 
@@ -111,6 +92,7 @@ class TestE2EClient:
         assert "row4" not in response
 
     async def test_bind_params_callable(self, toolbox, get_n_rows_tool):
+        """Bind a callable param to an existing tool."""
         new_tool = get_n_rows_tool.bind_parameters({"num_rows": lambda: "3"})
         response = await new_tool()
 
@@ -141,7 +123,8 @@ class TestE2EClient:
             await tool(id="2")
 
     async def test_run_tool_wrong_auth(self, toolbox, auth_token2):
-        """Tests running a tool with incorrect auth."""
+        """Tests running a tool with incorrect auth. The tool
+        requires a different authentication than the one provided."""
         tool = await toolbox.load_tool(
             "get-row-by-id-auth",
         )
