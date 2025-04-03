@@ -15,12 +15,10 @@
 
 import asyncio
 import types
-from collections import defaultdict
 from inspect import Parameter, Signature
 from typing import (
     Any,
     Callable,
-    DefaultDict,
     Iterable,
     Mapping,
     Optional,
@@ -29,7 +27,6 @@ from typing import (
 )
 
 from aiohttp import ClientSession
-from pytest import Session
 
 
 class ToolboxTool:
