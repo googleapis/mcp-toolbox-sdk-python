@@ -51,6 +51,16 @@ involving Large Language Models (LLMs).
 pip install toolbox-core
 ```
 
+> [!NOTE]
+> * The primary `ToolboxClient` is asynchronous and requires using `await` for
+>   loading and invoking tools, as shown in most examples.
+> * Asynchronous code needs to run within an event loop (e.g., using
+>   `asyncio.run()` or in an async framework). See the [Python `asyncio`
+>   documentation](https://docs.python.org/3/library/asyncio-task.html) for more
+>   details.
+> * If you prefer synchronous execution, refer to the [Synchronous
+>   Usage](#synchronous-usage) section below.
+
 ## Quickstart
 
 Here's a minimal example to get you started. Ensure your Toolbox service is
@@ -83,16 +93,6 @@ toolbox = ToolboxClient("http://127.0.0.1:5000")
 ```
 
 All interactions for loading and invoking tools happen through this client.
-
-> [!NOTE]
-> * The primary `ToolboxClient` is asynchronous and requires using `await` for
->   loading and invoking tools, as shown in most examples.
-> * Asynchronous code needs to run within an event loop (e.g., using
->   `asyncio.run()` or in an async framework). See the [Python `asyncio`
->   documentation](https://docs.python.org/3/library/asyncio-task.html) for more
->   details.
-> * If you prefer synchronous execution, refer to the [Synchronous
->   Usage](#synchronous-usage) section below.
 
 ## Loading Tools
 
