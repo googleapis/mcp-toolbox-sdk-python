@@ -163,10 +163,10 @@ class ToolboxSyncClient:
 
         if not self.__loop or not self.__thread:
             raise ValueError("Background loop or thread cannot be None.")
-        tools: list[ToolboxSyncTool] = []
-        for async_tool in async_tools:
-            tools.append(ToolboxSyncTool(async_tool, self.__loop, self.__thread))
-        return tools
+        return [
+            ToolboxSyncTool(async_tool, self.__loop, self.__thread)
+            for async_tool in async_tools
+        ]
 
     def __enter__(self):
         """Enter the runtime context related to this client instance."""
