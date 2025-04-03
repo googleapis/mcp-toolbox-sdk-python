@@ -64,7 +64,9 @@ class ToolboxSyncClient:
 
         coro = __start_session()
 
-        asyncio.run_coroutine_threadsafe(__start_session(), ToolboxSyncClient.__loop).result()
+        asyncio.run_coroutine_threadsafe(
+            __start_session(), ToolboxSyncClient.__loop
+        ).result()
 
         if not ToolboxSyncClient.__session:
             raise ValueError("Session cannot be None.")
@@ -158,9 +160,7 @@ class ToolboxSyncClient:
         """
 
         async_tools = self.__run_as_sync(
-            self.__async_client.load_toolset(
-                name, auth_token_getters, bound_params
-            )
+            self.__async_client.load_toolset(name, auth_token_getters, bound_params)
         )
 
         if not self.__loop or not self.__thread:
@@ -169,7 +169,6 @@ class ToolboxSyncClient:
         for async_tool in async_tools:
             tools.append(ToolboxSyncTool(async_tool, self.__loop, self.__thread))
         return tools
-
 
     def __enter__(self):
         """Enter the runtime context related to this client instance."""
