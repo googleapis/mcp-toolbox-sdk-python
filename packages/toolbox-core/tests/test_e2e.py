@@ -18,25 +18,28 @@ from toolbox_core.client import ToolboxClient
 from toolbox_core.tool import ToolboxTool
 
 
+# --- Shared Fixtures Defined at Module Level ---
+@pytest_asyncio.fixture(scope="function")
+async def toolbox():
+    """Creates a ToolboxClient instance shared by all tests in this module."""
+    toolbox = ToolboxClient("http://localhost:5000")
+    try:
+        yield toolbox
+    finally:
+        await toolbox.close()
+
+
+@pytest_asyncio.fixture(scope="function")
+async def get_n_rows_tool(toolbox: ToolboxClient) -> ToolboxTool:
+    """Load the 'get-n-rows' tool using the shared toolbox client."""
+    tool = await toolbox.load_tool("get-n-rows")
+    assert tool.__name__ == "get-n-rows"
+    return tool
+
+
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("toolbox_server")
-class TestE2EClient:
-    @pytest_asyncio.fixture(scope="function")
-    async def toolbox(self):
-        toolbox = ToolboxClient("http://localhost:5000")
-        try:
-            yield toolbox
-        finally:
-            await toolbox.close()
-
-    @pytest_asyncio.fixture(scope="function")
-    async def get_n_rows_tool(self, toolbox: ToolboxClient) -> ToolboxTool:
-        """Load a tool."""
-        tool = await toolbox.load_tool("get-n-rows")
-        assert tool.__name__ == "get-n-rows"
-        return tool
-
-    #### Basic e2e tests
+class TestBasicE2E:
     @pytest.mark.parametrize(
         "toolset_name, expected_length, expected_tools",
         [
@@ -66,7 +69,7 @@ class TestE2EClient:
         assert "row2" in response
         assert "row3" not in response
 
-    async def test_run_tool_missing_params(self, get_n_rows_tool):
+    async def test_run_tool_missing_params(self, get_n_rows_tool: ToolboxTool):
         """Invoke a tool with missing params."""
         with pytest.raises(TypeError, match="missing a required argument: 'num_rows'"):
             await get_n_rows_tool()
@@ -79,31 +82,41 @@ class TestE2EClient:
         ):
             await get_n_rows_tool(num_rows=2)
 
-    ##### Bind param tests
-    async def test_bind_params(self, toolbox, get_n_rows_tool):
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("toolbox_server")
+class TestBindParams:
+    async def test_bind_params(
+        self, toolbox: ToolboxClient, get_n_rows_tool: ToolboxTool
+    ):
         """Bind a param to an existing tool."""
         new_tool = get_n_rows_tool.bind_parameters({"num_rows": "3"})
         response = await new_tool()
-
         assert isinstance(response, str)
         assert "row1" in response
         assert "row2" in response
         assert "row3" in response
         assert "row4" not in response
 
-    async def test_bind_params_callable(self, toolbox, get_n_rows_tool):
+    async def test_bind_params_callable(
+        self, toolbox: ToolboxClient, get_n_rows_tool: ToolboxTool
+    ):
         """Bind a callable param to an existing tool."""
         new_tool = get_n_rows_tool.bind_parameters({"num_rows": lambda: "3"})
         response = await new_tool()
-
         assert isinstance(response, str)
         assert "row1" in response
         assert "row2" in response
         assert "row3" in response
         assert "row4" not in response
 
-    ##### Auth tests
-    async def test_run_tool_unauth_with_auth(self, toolbox, auth_token2):
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("toolbox_server")
+class TestAuth:
+    async def test_run_tool_unauth_with_auth(
+        self, toolbox: ToolboxClient, auth_token2: str
+    ):
         """Tests running a tool that doesn't require auth, with auth provided."""
         tool = await toolbox.load_tool(
             "get-row-by-id", auth_token_getters={"my-test-auth": lambda: auth_token2}
@@ -111,7 +124,7 @@ class TestE2EClient:
         response = await tool(id="2")
         assert "row2" in response
 
-    async def test_run_tool_no_auth(self, toolbox):
+    async def test_run_tool_no_auth(self, toolbox: ToolboxClient):
         """Tests running a tool requiring auth without providing auth."""
         tool = await toolbox.load_tool("get-row-by-id-auth")
         with pytest.raises(
@@ -120,7 +133,7 @@ class TestE2EClient:
         ):
             await tool(id="2")
 
-    async def test_run_tool_wrong_auth(self, toolbox, auth_token2):
+    async def test_run_tool_wrong_auth(self, toolbox: ToolboxClient, auth_token2: str):
         """Tests running a tool with incorrect auth. The tool
         requires a different authentication than the one provided."""
         tool = await toolbox.load_tool("get-row-by-id-auth")
@@ -131,14 +144,14 @@ class TestE2EClient:
         ):
             await auth_tool(id="2")
 
-    async def test_run_tool_auth(self, toolbox, auth_token1):
+    async def test_run_tool_auth(self, toolbox: ToolboxClient, auth_token1: str):
         """Tests running a tool with correct auth."""
         tool = await toolbox.load_tool("get-row-by-id-auth")
         auth_tool = tool.add_auth_token_getters({"my-test-auth": lambda: auth_token1})
         response = await auth_tool(id="2")
         assert "row2" in response
 
-    async def test_run_tool_param_auth_no_auth(self, toolbox):
+    async def test_run_tool_param_auth_no_auth(self, toolbox: ToolboxClient):
         """Tests running a tool with a param requiring auth, without auth."""
         tool = await toolbox.load_tool("get-row-by-email-auth")
         with pytest.raises(
@@ -147,7 +160,7 @@ class TestE2EClient:
         ):
             await tool()
 
-    async def test_run_tool_param_auth(self, toolbox, auth_token1):
+    async def test_run_tool_param_auth(self, toolbox: ToolboxClient, auth_token1: str):
         """Tests running a tool with a param requiring auth, with correct auth."""
         tool = await toolbox.load_tool(
             "get-row-by-email-auth",
@@ -158,7 +171,9 @@ class TestE2EClient:
         assert "row5" in response
         assert "row6" in response
 
-    async def test_run_tool_param_auth_no_field(self, toolbox, auth_token1):
+    async def test_run_tool_param_auth_no_field(
+        self, toolbox: ToolboxClient, auth_token1: str
+    ):
         """Tests running a tool with a param requiring auth, with insufficient auth."""
         tool = await toolbox.load_tool(
             "get-row-by-content-auth",
