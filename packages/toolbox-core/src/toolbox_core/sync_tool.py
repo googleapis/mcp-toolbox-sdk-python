@@ -26,8 +26,8 @@ class ToolboxSyncTool:
     """
     A synchronous wrapper around an asynchronous ToolboxTool instance.
 
-    This class allows calling the underlying async tool's __call__ method
-    synchronously. It also wraps methods like `add_auth_token_getters` and
+    This class allows calling the underlying async tool synchronously.
+    It also proxies methods like `add_auth_token_getters` and
     `bind_parameters` to ensure they return new instances of this synchronous
     wrapper.
     """
@@ -79,7 +79,7 @@ class ToolboxSyncTool:
         """
         Synchronously calls the underlying remote tool.
 
-        This method blocks until the asynchronous call completes and returns
+        This method blocks until the tool call completes and returns
         the result.
 
         Args:
