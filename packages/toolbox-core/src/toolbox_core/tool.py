@@ -86,7 +86,7 @@ class ToolboxTool:
         self.__doc__ = desc
         self.__signature__ = Signature(parameters=params, return_annotation=str)
         self.__annotations__ = {p.name: p.annotation for p in params}
-        # TODO: self.__qualname__ ??
+        self.__qualname__ = f"{self.__class__.__qualname__}.{name}"
 
         # map of parameter name to auth service required by it
         self.__required_authn_params = required_authn_params
