@@ -24,10 +24,12 @@ from typing import (
     Optional,
     Sequence,
     Union,
+    cast,
+    Type
 )
 
 from aiohttp import ClientSession
-
+from pydantic import BaseModel, Field, create_model
 from toolbox_core.protocol import ParameterSchema
 
 
@@ -78,6 +80,7 @@ class ToolboxTool:
         self.__url = f"{base_url}/api/tool/{name}/invoke"
         self.__description = description
         self.__params = params
+        self.__pydantic_model = self._to_pydantic_model()
         inspect_type_params = [param.to_param() for param in self.__params]
 
         # the following properties are set to help anyone that might inspect it determine usage
@@ -86,6 +89,7 @@ class ToolboxTool:
         self.__signature__ = Signature(
             parameters=inspect_type_params, return_annotation=str
         )
+
         self.__annotations__ = {p.name: p.annotation for p in inspect_type_params}
         # TODO: self.__qualname__ ??
 
@@ -107,6 +111,19 @@ class ToolboxTool:
                 f"\n    {p.name} ({p.to_param().annotation.__name__}): {p.description}"
             )
         return docstring
+
+    def _to_pydantic_model(self) -> Type[BaseModel]:
+        """Converts the given manifest schema to a Pydantic BaseModel class."""
+        field_definitions = {}
+        for field in self.__params:
+            field_definitions[field.name] = cast(
+                Any,
+                (
+                    field.to_param().annotation,
+                    Field(description=field.description),
+                ),
+            )
+        return create_model("tool_model", **field_definitions)
 
     def __copy(
         self,
@@ -183,8 +200,7 @@ class ToolboxTool:
         payload = all_args.arguments
 
         # Perform argument type checks using pydantic
-        model = self.__schema.to_pydantic_model()
-        model.model_validate(payload)
+        self.__pydantic_model.model_validate(payload)
 
         # apply bounded parameters
         for param, value in self.__bound_parameters.items():

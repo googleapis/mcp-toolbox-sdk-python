@@ -13,9 +13,9 @@
 # limitations under the License.
 
 from inspect import Parameter
-from typing import Any, Optional, Type, cast
+from typing import Optional, Type
 
-from pydantic import BaseModel, Field, create_model
+from pydantic import BaseModel
 
 
 class ParameterSchema(BaseModel):
@@ -61,19 +61,6 @@ class ToolSchema(BaseModel):
     description: str
     parameters: list[ParameterSchema]
     authRequired: list[str] = []
-
-    def to_pydantic_model(self) -> Type[BaseModel]:
-        """Converts the given manifest schema to a Pydantic BaseModel class."""
-        field_definitions = {}
-        for field in self.parameters:
-            field_definitions[field.name] = cast(
-                Any,
-                (
-                    field.to_param().annotation,
-                    Field(description=field.description),
-                ),
-            )
-        return create_model("tool_model", **field_definitions)
 
 
 class ManifestSchema(BaseModel):
