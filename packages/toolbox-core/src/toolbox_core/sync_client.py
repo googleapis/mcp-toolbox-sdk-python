@@ -25,9 +25,6 @@ T = TypeVar("T")
 
 
 class ToolboxSyncClient:
-    __session: Optional[ClientSession] = None
-    __loop: Optional[asyncio.AbstractEventLoop] = None
-    __thread: Optional[Thread] = None
     """
     A synchronous client for interacting with a Toolbox service.
 
@@ -35,6 +32,9 @@ class ToolboxSyncClient:
     service endpoint, returning synchronous tool wrappers (`SyncToolboxTool`).
     It manages an underlying asynchronous `ToolboxClient`.
     """
+    __session: Optional[ClientSession] = None
+    __loop: Optional[asyncio.AbstractEventLoop] = None
+    __thread: Optional[Thread] = None
 
     def __init__(
         self,
@@ -56,7 +56,6 @@ class ToolboxSyncClient:
             ToolboxSyncClient.__loop = loop
 
         async def __start_session() -> None:
-
             # Use a default session if none is provided. This leverages connection
             # pooling for better performance by reusing a single session throughout
             # the application's lifetime.
@@ -105,7 +104,7 @@ class ToolboxSyncClient:
         tool remotely.
 
         Args:
-            tool_name: The unique name or identifier of the tool to load.
+            tool_name: Name of the tool to load.
             auth_token_getters: A mapping of authentication service names to
                 callables that return the corresponding authentication token.
             bound_params: A mapping of parameter names to bind to specific values or
@@ -162,7 +161,7 @@ class ToolboxSyncClient:
         bound_params: Mapping[str, Union[Callable[[], Any], Any]] = {},
     ) -> ToolboxSyncTool:
         """
-        Synchronously loads a tool from the server.
+        Asynchronously loads a tool from the server.
 
         Retrieves the schema for the specified tool and returns a callable,
         synchronous object (`SyncToolboxTool`) that can be used to invoke the
@@ -193,7 +192,7 @@ class ToolboxSyncClient:
         bound_params: Mapping[str, Union[Callable[[], Any], Any]] = {},
     ) -> list[ToolboxSyncTool]:
         """
-        Synchronously fetches a toolset and loads all tools defined within it.
+        Asynchronously fetches a toolset and loads all tools defined within it.
 
         Args:
             toolset_name: Name of the toolset to load tools.
@@ -221,12 +220,9 @@ class ToolboxSyncClient:
 
     def close(self):
         """
-        Synchronously closes the underlying asynchronous client session if it
-        was created internally by the client.
+        Synchronously closes the client session if it was created internally by the client.
         """
-        # Create the coroutine for closing the async client
         coro = self.__session.close()
-        # Run it synchronously
         self.__run_as_sync(coro)
 
     def __enter__(self):
