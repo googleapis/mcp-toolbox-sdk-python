@@ -41,6 +41,7 @@ class ToolboxSyncTool:
         Args:
             async_tool: An instance of the asynchronous ToolboxTool.
         """
+
         if not isinstance(async_tool, ToolboxTool):
             raise TypeError("async_tool must be an instance of ToolboxTool")
 
@@ -109,6 +110,7 @@ class ToolboxSyncTool:
         Returns:
             A new SyncToolboxTool instance wrapping the updated async tool.
         """
+
         new_async_tool = self.__async_tool.add_auth_token_getters(auth_token_getters)
         return ToolboxSyncTool(new_async_tool, self.__loop, self.__thread)
 
@@ -125,5 +127,6 @@ class ToolboxSyncTool:
          Returns:
              A new SyncToolboxTool instance wrapping the updated async tool.
         """
+
         new_async_tool = self.__async_tool.bind_parameters(bound_params)
         return ToolboxSyncTool(new_async_tool, self.__loop, self.__thread)
