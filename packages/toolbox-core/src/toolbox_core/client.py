@@ -40,7 +40,7 @@ class ToolboxClient:
         Initializes the ToolboxClient.
 
         Args:
-            url: The base URL for the Toolbox service API (e.g., "http://localhost:8000").
+            url: The base URL for the Toolbox service API (e.g., "http://localhost:5000").
             session: An optional existing `aiohttp.ClientSession` to use.
                 If None (default), a new session is created internally. Note that
                 if a session is provided, its lifecycle (including closing)
@@ -83,8 +83,8 @@ class ToolboxClient:
             session=self.__session,
             base_url=self.__base_url,
             name=name,
-            desc=schema.description,
-            params=[p.to_param() for p in params],
+            description=schema.description,
+            params=params,
             # create a read-only values for the maps to prevent mutation
             required_authn_params=types.MappingProxyType(authn_params),
             auth_service_token_getters=types.MappingProxyType(auth_token_getters),
