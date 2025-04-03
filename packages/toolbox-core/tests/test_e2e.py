@@ -113,9 +113,7 @@ class TestE2EClient:
 
     async def test_run_tool_no_auth(self, toolbox):
         """Tests running a tool requiring auth without providing auth."""
-        tool = await toolbox.load_tool(
-            "get-row-by-id-auth",
-        )
+        tool = await toolbox.load_tool("get-row-by-id-auth")
         with pytest.raises(
             Exception,
             match="tool invocation not authorized. Please make sure your specify correct auth headers",
@@ -125,9 +123,7 @@ class TestE2EClient:
     async def test_run_tool_wrong_auth(self, toolbox, auth_token2):
         """Tests running a tool with incorrect auth. The tool
         requires a different authentication than the one provided."""
-        tool = await toolbox.load_tool(
-            "get-row-by-id-auth",
-        )
+        tool = await toolbox.load_tool("get-row-by-id-auth")
         auth_tool = tool.add_auth_token_getters({"my-test-auth": lambda: auth_token2})
         with pytest.raises(
             Exception,
@@ -137,9 +133,7 @@ class TestE2EClient:
 
     async def test_run_tool_auth(self, toolbox, auth_token1):
         """Tests running a tool with correct auth."""
-        tool = await toolbox.load_tool(
-            "get-row-by-id-auth",
-        )
+        tool = await toolbox.load_tool("get-row-by-id-auth")
         auth_tool = tool.add_auth_token_getters({"my-test-auth": lambda: auth_token1})
         response = await auth_tool(id="2")
         assert "row2" in response
