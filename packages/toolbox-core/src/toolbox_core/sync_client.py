@@ -26,11 +26,10 @@ T = TypeVar("T")
 
 class ToolboxSyncClient:
     """
-    A synchronous client for interacting with a Toolbox service.
+    An synchronous client for interacting with a Toolbox service.
 
     Provides methods to discover and load tools defined by a remote Toolbox
-    service endpoint, returning synchronous tool wrappers (`ToolboxSyncTool`).
-    It manages an underlying asynchronous `ToolboxClient`.
+    service endpoint.
     """
 
     __session: Optional[ClientSession] = None
@@ -42,7 +41,7 @@ class ToolboxSyncClient:
         url: str,
     ):
         """
-        Initializes the ToolboxSyncClient.
+        Initializes the ToolboxClient.
 
         Args:
             url: The base URL for the Toolbox service API (e.g., "http://localhost:5000").
@@ -91,31 +90,45 @@ class ToolboxSyncClient:
             asyncio.run_coroutine_threadsafe(coro, self.__loop)
         )
 
+    def close(self):
+        """
+        Synchronously closes the underlying client session. Doing so will cause
+        any tools created by this Client to cease to function.
+
+        If the session was provided externally during initialization, the caller
+        is responsible for its lifecycle, but calling close here will still
+        attempt to close it.
+        """
+        coro = self.__session.close()
+        self.__run_as_sync(coro)
+
     def load_tool(
         self,
-        tool_name: str,
+        name: str,
         auth_token_getters: dict[str, Callable[[], str]] = {},
         bound_params: Mapping[str, Union[Callable[[], Any], Any]] = {},
     ) -> ToolboxSyncTool:
         """
         Synchronously loads a tool from the server.
 
-        Retrieves the schema for the specified tool and returns a callable,
-        synchronous object (`ToolboxSyncTool`) that can be used to invoke the
+        Retrieves the schema for the specified tool from the Toolbox server and
+        returns a callable object (`ToolboxSyncTool`) that can be used to invoke the
         tool remotely.
 
         Args:
-            tool_name: Name of the tool to load.
+            name: The unique name or identifier of the tool to load.
             auth_token_getters: A mapping of authentication service names to
                 callables that return the corresponding authentication token.
             bound_params: A mapping of parameter names to bind to specific values or
                 callables that are called to produce values as needed.
 
         Returns:
-            ToolboxSyncTool: A synchronous callable object representing the loaded tool.
+            ToolboxSyncTool: A callable object representing the loaded tool, ready
+                for execution. The specific arguments and behavior of the callable
+                depend on the tool itself.
         """
         async_tool = self.__run_as_sync(
-            self.__async_client.load_tool(tool_name, auth_token_getters, bound_params)
+            self.__async_client.load_tool(name, auth_token_getters, bound_params)
         )
 
         if not self.__loop or not self.__thread:
@@ -124,7 +137,7 @@ class ToolboxSyncClient:
 
     def load_toolset(
         self,
-        toolset_name: str,
+        name: str,
         auth_token_getters: dict[str, Callable[[], str]] = {},
         bound_params: Mapping[str, Union[Callable[[], Any], Any]] = {},
     ) -> list[ToolboxSyncTool]:
@@ -132,19 +145,19 @@ class ToolboxSyncClient:
         Synchronously fetches a toolset and loads all tools defined within it.
 
         Args:
-            toolset_name: Name of the toolset to load tools from.
+            name: Name of the toolset to load tools.
             auth_token_getters: A mapping of authentication service names to
                 callables that return the corresponding authentication token.
             bound_params: A mapping of parameter names to bind to specific values or
                 callables that are called to produce values as needed.
 
         Returns:
-            list[ToolboxSyncTool]: A list of synchronous callables, one for each
-            tool defined in the toolset.
+            list[ToolboxSyncTool]: A list of callables, one for each tool defined
+            in the toolset.
         """
         async_tools = self.__run_as_sync(
             self.__async_client.load_toolset(
-                toolset_name, auth_token_getters, bound_params
+                name, auth_token_getters, bound_params
             )
         )
 
@@ -155,12 +168,6 @@ class ToolboxSyncClient:
             tools.append(ToolboxSyncTool(async_tool, self.__loop, self.__thread))
         return tools
 
-    def close(self):
-        """
-        Synchronously closes the client session if it was created internally by the client.
-        """
-        coro = self.__session.close()
-        self.__run_as_sync(coro)
 
     def __enter__(self):
         """Enter the runtime context related to this client instance."""

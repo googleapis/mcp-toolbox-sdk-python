@@ -24,22 +24,28 @@ T = TypeVar("T")
 
 class ToolboxSyncTool:
     """
-    A synchronous wrapper proxying asynchronous ToolboxTool instance.
+    A callable proxy object representing a specific tool on a remote Toolbox server.
 
-    This class allows calling the underlying async tool synchronously.
-    It also proxies methods like `add_auth_token_getters` and
-    `bind_parameters` to ensure they return new instances of this synchronous
-    wrapper.
+    Instances of this class behave like synchronous functions. When called, they
+    send a request to the corresponding tool's endpoint on the Toolbox server with
+    the provided arguments.
+
+    It utilizes Python's introspection features (`__name__`, `__doc__`,
+    `__signature__`, `__annotations__`) so that standard tools like `help()`
+    and `inspect` work as expected.
     """
 
     def __init__(
         self, async_tool: ToolboxTool, loop: AbstractEventLoop, thread: Thread
     ):
         """
-        Initializes the synchronous wrapper.
+        Initializes a callable that will trigger the tool invocation through the
+        Toolbox server.
 
         Args:
             async_tool: An instance of the asynchronous ToolboxTool.
+            loop: The event loop used to run asynchronous tasks.
+            thread: The thread to run blocking operations in.
         """
         if not isinstance(async_tool, ToolboxTool):
             raise TypeError("async_tool must be an instance of ToolboxTool")
@@ -77,10 +83,10 @@ class ToolboxSyncTool:
 
     def __call__(self, *args: Any, **kwargs: Any) -> str:
         """
-        Synchronously calls the underlying remote tool.
+        Synchronously calls the remote tool with the provided arguments.
 
-        This method blocks until the tool call completes and returns
-        the result.
+        Validates arguments against the tool's signature, then sends them
+        as a JSON payload in a POST request to the tool's invoke URL.
 
         Args:
             *args: Positional arguments for the tool.
@@ -88,10 +94,6 @@ class ToolboxSyncTool:
 
         Returns:
             The string result returned by the remote tool execution.
-
-        Raises:
-            Any exception raised by the underlying async tool's __call__ method
-            or during asyncio execution.
         """
         return self.__run_as_sync(self.__async_tool(**kwargs))
 
@@ -100,14 +102,16 @@ class ToolboxSyncTool:
         auth_token_getters: Mapping[str, Callable[[], str]],
     ) -> "ToolboxSyncTool":
         """
-        Registers auth token getters and returns a new SyncToolboxTool instance.
+        Registers an auth token getter function that is used for AuthServices when tools
+        are invoked.
 
         Args:
             auth_token_getters: A mapping of authentication service names to
                 callables that return the corresponding authentication token.
 
         Returns:
-            A new SyncToolboxTool instance wrapping the updated async tool.
+            A new ToolboxSyncTool instance with the specified authentication token
+            getters registered.
         """
         new_async_tool = self.__async_tool.add_auth_token_getters(auth_token_getters)
         return ToolboxSyncTool(new_async_tool, self.__loop, self.__thread)
@@ -116,14 +120,14 @@ class ToolboxSyncTool:
         self, bound_params: Mapping[str, Union[Callable[[], Any], Any]]
     ) -> "ToolboxSyncTool":
         """
-        Binds parameters and returns a new SyncToolboxTool instance.
+        Binds parameters to values or callables that produce values.
 
          Args:
              bound_params: A mapping of parameter names to values or callables that
                  produce values.
 
          Returns:
-             A new SyncToolboxTool instance wrapping the updated async tool.
+             A new ToolboxSyncTool instance with the specified parameters bound.
         """
         new_async_tool = self.__async_tool.bind_parameters(bound_params)
         return ToolboxSyncTool(new_async_tool, self.__loop, self.__thread)
