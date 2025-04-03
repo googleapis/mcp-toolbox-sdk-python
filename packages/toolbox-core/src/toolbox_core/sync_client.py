@@ -12,13 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, Callable, Mapping, Optional, Union, Awaitable, TypeVar
 import asyncio
-from aiohttp import ClientSession
 from threading import Thread
+from typing import Any, Awaitable, Callable, Mapping, Optional, TypeVar, Union
 
-from .sync_tool import ToolboxSyncTool
+from aiohttp import ClientSession
+
 from .client import ToolboxClient
+from .sync_tool import ToolboxSyncTool
 
 T = TypeVar("T")
 
