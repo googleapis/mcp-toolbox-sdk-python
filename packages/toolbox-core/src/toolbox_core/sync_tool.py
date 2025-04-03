@@ -55,7 +55,6 @@ class ToolboxSyncTool:
         self.__async_tool = async_tool
         self.__loop = loop
         self.__thread = thread
-        # TODO: self.__qualname__ ?? (Consider if needed)
 
     @property
     def __name__(self) -> str:
@@ -78,6 +77,10 @@ class ToolboxSyncTool:
         # But not defining a setter function makes this a read-only property.
         # Mypy flags this issue in the type checks.
         return self.__async_tool.__annotations__
+
+    @property
+    def __qualname__(self) -> str:
+        return f"{self.__class__.__qualname__}.{self.__name__}"
 
     def __call__(self, *args: Any, **kwargs: Any) -> str:
         """
