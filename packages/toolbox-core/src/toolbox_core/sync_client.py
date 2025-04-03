@@ -29,7 +29,7 @@ class ToolboxSyncClient:
     A synchronous client for interacting with a Toolbox service.
 
     Provides methods to discover and load tools defined by a remote Toolbox
-    service endpoint, returning synchronous tool wrappers (`SyncToolboxTool`).
+    service endpoint, returning synchronous tool wrappers (`ToolboxSyncTool`).
     It manages an underlying asynchronous `ToolboxClient`.
     """
 
@@ -42,7 +42,7 @@ class ToolboxSyncClient:
         url: str,
     ):
         """
-        Initializes the SyncToolboxClient.
+        Initializes the ToolboxSyncClient.
 
         Args:
             url: The base URL for the Toolbox service API (e.g., "http://localhost:8000").
@@ -101,7 +101,7 @@ class ToolboxSyncClient:
         Synchronously loads a tool from the server.
 
         Retrieves the schema for the specified tool and returns a callable,
-        synchronous object (`SyncToolboxTool`) that can be used to invoke the
+        synchronous object (`ToolboxSyncTool`) that can be used to invoke the
         tool remotely.
 
         Args:
