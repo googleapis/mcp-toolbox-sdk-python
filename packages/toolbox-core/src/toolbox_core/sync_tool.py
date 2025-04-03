@@ -62,22 +62,22 @@ class ToolboxSyncTool:
         return self.__async_tool.__name__
 
     @property
-    def __doc__(self) -> Union[str, None]:
+    def __doc__(self) -> Union[str, None]: # type: ignore[override]
         # Standard Python object attributes like __doc__ are technically "writable".
         # But not defining a setter function makes this a read-only property.
         # Mypy flags this issue in the type checks.
-        return self.__async_tool.__doc__  # type: ignore[override]
+        return self.__async_tool.__doc__
 
     @property
     def __signature__(self) -> Signature:
         return self.__async_tool.__signature__
 
     @property
-    def __annotations__(self) -> dict[str, Any]:
+    def __annotations__(self) -> dict[str, Any]: # type: ignore[override]
         # Standard Python object attributes like __doc__ are technically "writable".
         # But not defining a setter function makes this a read-only property.
         # Mypy flags this issue in the type checks.
-        return self.__async_tool.__annotations__  # type: ignore[override]
+        return self.__async_tool.__annotations__
 
     def __call__(self, *args: Any, **kwargs: Any) -> str:
         """
