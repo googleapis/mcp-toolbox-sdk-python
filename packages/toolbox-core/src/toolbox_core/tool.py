@@ -81,7 +81,7 @@ class ToolboxTool:
         self.__url = f"{base_url}/api/tool/{name}/invoke"
         self.__description = description
         self.__params = params
-        self.__pydantic_model = params_to_pydantic_model(self.__params)
+        self.__pydantic_model = params_to_pydantic_model(name, self.__params)
 
         inspect_type_params = [param.to_param() for param in self.__params]
 
@@ -316,7 +316,7 @@ def identify_required_authn_params(
     return required_params
 
 
-def params_to_pydantic_model(params: Sequence[ParameterSchema]) -> Type[BaseModel]:
+def params_to_pydantic_model(tool_name: str, params: Sequence[ParameterSchema]) -> Type[BaseModel]:
     """Converts the given parameters to a Pydantic BaseModel class."""
     field_definitions = {}
     for field in params:
@@ -327,4 +327,4 @@ def params_to_pydantic_model(params: Sequence[ParameterSchema]) -> Type[BaseMode
                 Field(description=field.description),
             ),
         )
-    return create_model("tool_model", **field_definitions)
+    return create_model(tool_name, **field_definitions)
