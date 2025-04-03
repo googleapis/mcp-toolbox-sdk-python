@@ -262,9 +262,12 @@ class ToolboxTool:
             if p.name not in bound_params:
                 new_params.append(p)
 
+        all_bound_params = dict(self.__bound_parameters)
+        all_bound_params.update(bound_params)
+
         return self.__copy(
             params=new_params,
-            bound_params=bound_params,
+            bound_params=types.MappingProxyType(all_bound_params),
         )
 
 
