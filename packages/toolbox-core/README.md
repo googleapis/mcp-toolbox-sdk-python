@@ -1,7 +1,8 @@
-![logo](../../logo.png)
+![GenAI Toolbox Logo](https://raw.githubusercontent.com/googleapis/genai-toolbox/main/logo.png)
 # GenAI Toolbox Core SDK
 
-[![PyPI version](https://badge.fury.io/py/toolbox-core.svg)](https://badge.fury.io/py/toolbox-core) [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![PyPI version](https://badge.fury.io/py/toolbox-core.svg)](https://badge.fury.io/py/toolbox-core) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/toolbox-core)](https://pypi.org/project/toolbox-core/) [![Coverage Status](https://coveralls.io/repos/github/googleapis/genai-toolbox/badge.svg?branch=main)](https://coveralls.io/github/googleapis/genai-toolbox?branch=main)
+ [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 This SDK allows you to seamlessly integrate the functionalities of
 [Toolbox](https://github.com/googleapis/genai-toolbox) allowing you to load and
@@ -13,7 +14,6 @@ custom logic) managed by the Toolbox into your workflows, especially those
 involving Large Language Models (LLMs).
 
 <!-- TOC ignore:true -->
-## Table of Contents
 <!-- TOC -->
 
 - [Installation](#installation)
@@ -53,13 +53,14 @@ pip install toolbox-core
 
 ## Quickstart
 
-Here's a minimal example to get you started:
-
+Here's a minimal example to get you started. Ensure your Toolbox service is
+running and accessible.
 ```py
 import asyncio
 from toolbox_core import ToolboxClient
 
 async def main():
+    # Replace with the actual URL where your Toolbox service is running
     toolbox = ToolboxClient("http://127.0.0.1:5000")
     weather_tool = await toolbox.load_tool("get_weather")
     result = await weather_tool(location="London")
@@ -71,7 +72,8 @@ if __name__ == "__main__":
 
 ## Usage
 
-Import and initialize a Toolbox client.
+Import and initialize a Toolbox client, pointing it to the URL of your running
+Toolbox service.
 
 ```py
 from toolbox_core import ToolboxClient
@@ -95,7 +97,9 @@ All interactions for loading and invoking tools happen through this client.
 ## Loading Tools
 
 You can load tools individually or in groups (toolsets) as defined in your
-Toolbox service configuration.
+Toolbox service configuration. Loading a toolset is convenient when working with
+multiple related functions, while loading a single tool offers more granular
+control.
 
 ### Load a toolset
 
@@ -157,7 +161,7 @@ print(result)
 > [!TIP]
 > While synchronous invocation is available for convenience, it's generally
 > considered best practice to use asynchronous operations (like those provided
-> by the default `ToolboxClient` and `ToolboxTool`) for I/O-bound tasks like
+> by the default `ToolboxClient` and `ToolboxTool`) for an I/O-bound task like
 > tool invocation. Asynchronous programming allows for cooperative multitasking,
 > often leading to better performance and resource utilization, especially in
 > applications handling concurrent requests.
@@ -170,12 +174,16 @@ The Toolbox Core SDK integrates smoothly with frameworks like LangGraph,
 allowing you to incorporate tools managed by the Toolbox service into your
 agentic workflows.
 
-The loaded tools are directly compatible with LangChain/LangGraph expectations
-(e.g., for use in `ToolNode` or binding to models).
+> [!TIP]
+> The loaded tools (both async `ToolboxTool` and sync `ToolboxSyncTool`) are
+> callable and can often be used directly. However, to ensure parameter
+> descriptions from Google-style docstrings are accurately parsed and made
+> available to the LLM (via `bind_tools()`) and LangGraph internals, it's
+> recommended to wrap the loaded tools using LangChain's
+> [`StructuredTool`](https://python.langchain.com/api_reference/core/tools/langchain_core.tools.structured.StructuredTool.html).
 
-You can follow the [official
-guide](https://langchain-ai.github.io/langgraph/how-tos/tool-calling) with
-minimal changes.
+Here's a conceptual example adapting the [official LangGraph tool calling
+guide](https://langchain-ai.github.io/langgraph/how-tos/tool-calling):
 
 ```py
 from toolbox_core import ToolboxClient
@@ -185,7 +193,8 @@ from langgraph.prebuilt import ToolNode
 
 toolbox = ToolboxClient("http://127.0.0.1:5000")
 tools = await toolbox.load_toolset()
-model_with_tools = ChatVertexAI(model="gemini-1.5-pro-002").bind_tools(tools)
+wrapped_tools = [StructuredTool.from_function(tool, parse_docstring=True) for tool in tools]
+model_with_tools = ChatVertexAI(model="gemini-1.5-pro-002").bind_tools(wrapped_tools)
 
 def call_model(state: MessagesState):
     messages = state["messages"]
@@ -202,7 +211,7 @@ def should_continue(state: MessagesState):
 workflow = StateGraph(MessagesState)
 
 workflow.add_node("agent", call_model)
-workflow.add_node("tools", ToolNode(tools))
+workflow.add_node("tools", ToolNode(wrapped_tools))
 
 workflow.add_edge(START, "agent")
 workflow.add_conditional_edges("agent", should_continue, ["tools", END])
@@ -249,14 +258,14 @@ retrieving this token *when the tool is invoked*.
 
 #### Provide an ID Token Retriever Function
 
-This function's implementation depends entirely on your application's
-authentication flow. It might retrieve a token stored securely after user login,
-initiate an OAuth flow if needed, or fetch/refresh it from secure storage.
+You must provide the SDK with a function (sync or async) that returns the
+necessary token when called. The implementation depends on your application's
+authentication flow (e.g., retrieving a stored token, initiating an OAuth flow).
 
-> [!NOTE]
-> This function can be either an asynchronous function (`async def`) or a
-> synchronous function (`async def`); the SDK will handle calling it
-> appropriately.
+> [!IMPORTANT]
+> The name used when registering the getter function with the SDK (e.g.,
+> `"my_api_token"`) must exactly match the `name` of the corresponding
+> `authServices` defined in the tool's configuration within the Toolbox service.
 
 ```py
 async def get_auth_token():
@@ -342,7 +351,12 @@ fixed and will not be requested or modified by the LLM during tool use.
 * **Pre-filling known data:**  Providing defaults or context.
 
 > [!IMPORTANT]
-> You **do not** need to modify the tool's configuration in the Toolbox service to
+> The parameter names used for binding (e.g., `"api_key"`) must exactly match the
+> parameter names defined in the tool's configuration within the Toolbox
+> service.
+
+> [!NOTE]
+> You do not need to modify the tool's configuration in the Toolbox service to
 > bind parameter values using the SDK.
 
 ### Option A: Binding Parameters to a Loaded Tool
@@ -399,7 +413,7 @@ file for guidelines on how to set up a development environment and run tests.
 # License
 
 This project is licensed under the Apache License 2.0. See the
-[LICENSE](../../LICENSE) file for details.
+[LICENSE](https://github.com/googleapis/genai-toolbox/blob/main/LICENSE) file for details.
 
 # Support
 
