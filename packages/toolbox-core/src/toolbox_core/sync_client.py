@@ -47,28 +47,28 @@ class ToolboxSyncClient:
         """
         # Running a loop in a background thread allows us to support async
         # methods from non-async environments.
-        if ToolboxClient.__loop is None:
+        if ToolboxSyncClient.__loop is None:
             loop = asyncio.new_event_loop()
             thread = Thread(target=loop.run_forever, daemon=True)
             thread.start()
-            ToolboxClient.__thread = thread
-            ToolboxClient.__loop = loop
+            ToolboxSyncClient.__thread = thread
+            ToolboxSyncClient.__loop = loop
 
         async def __start_session() -> None:
 
             # Use a default session if none is provided. This leverages connection
             # pooling for better performance by reusing a single session throughout
             # the application's lifetime.
-            if ToolboxClient.__session is None:
-                ToolboxClient.__session = ClientSession()
+            if ToolboxSyncClient.__session is None:
+                ToolboxSyncClient.__session = ClientSession()
 
         coro = __start_session()
 
-        asyncio.run_coroutine_threadsafe(coro, ToolboxClient.__loop).result()
+        asyncio.run_coroutine_threadsafe(coro, ToolboxSyncClient.__loop).result()
 
-        if not ToolboxClient.__session:
+        if not ToolboxSyncClient.__session:
             raise ValueError("Session cannot be None.")
-        self.__async_client = ToolboxClient(url, ToolboxClient.__session)
+        self.__async_client = ToolboxClient(url, ToolboxSyncClient.__session)
 
     def __run_as_sync(self, coro: Awaitable[T]) -> T:
         """Run an async coroutine synchronously"""
@@ -224,7 +224,7 @@ class ToolboxSyncClient:
         was created internally by the client.
         """
         # Create the coroutine for closing the async client
-        coro = self.__async_client.close()
+        coro = self.__session.close()
         # Run it synchronously
         self.__run_as_sync(coro)
 
