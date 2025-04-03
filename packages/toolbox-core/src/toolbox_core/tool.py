@@ -189,7 +189,7 @@ class ToolboxTool:
         all_args.apply_defaults()  # Include default values if not provided
         payload = all_args.arguments
 
-        # Perform argument type checks using pydantic
+        # Perform argument type validations using pydantic
         self.__pydantic_model.model_validate(payload)
 
         # apply bounded parameters
