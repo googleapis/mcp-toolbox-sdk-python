@@ -14,8 +14,9 @@
 
 import asyncio
 from asyncio import AbstractEventLoop
+from inspect import Signature
 from threading import Thread
-from typing import Any, Awaitable, Callable, Mapping, TypeVar, Union
+from typing import Any, Callable, Mapping, TypeVar, Union
 
 from .tool import ToolboxTool
 
@@ -54,13 +55,23 @@ class ToolboxSyncTool:
         self.__async_tool = async_tool
         self.__loop = loop
         self.__thread = thread
-
-        # Delegate introspection attributes to the wrapped async tool
-        self.__name__ = self.__async_tool.__name__
-        self.__doc__ = self.__async_tool.__doc__
-        self.__signature__ = self.__async_tool.__signature__
-        self.__annotations__ = self.__async_tool.__annotations__
         # TODO: self.__qualname__ ?? (Consider if needed)
+
+    @property
+    def __name__(self) -> str:
+        return self.__async_tool.__name__
+
+    @property
+    def __doc__(self) -> str | None:  # Docstring can be None
+        return self.__async_tool.__doc__
+
+    @property
+    def __signature__(self) -> Signature:
+        return self.__async_tool.__signature__
+
+    @property
+    def __annotations__(self) -> dict[str, Any]:
+        return self.__async_tool.__annotations__
 
     def __call__(self, *args: Any, **kwargs: Any) -> str:
         """
