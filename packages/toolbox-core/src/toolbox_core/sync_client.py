@@ -32,6 +32,7 @@ class ToolboxSyncClient:
     service endpoint, returning synchronous tool wrappers (`SyncToolboxTool`).
     It manages an underlying asynchronous `ToolboxClient`.
     """
+
     __session: Optional[ClientSession] = None
     __loop: Optional[asyncio.AbstractEventLoop] = None
     __thread: Optional[Thread] = None
