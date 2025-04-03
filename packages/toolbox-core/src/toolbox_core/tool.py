@@ -14,7 +14,6 @@
 
 
 import asyncio
-import copy
 import types
 from inspect import Signature
 from typing import (
@@ -23,12 +22,13 @@ from typing import (
     Iterable,
     Mapping,
     Optional,
+    Sequence,
     Union,
 )
 
 from aiohttp import ClientSession
 
-from toolbox_core.protocol import ToolSchema
+from toolbox_core.protocol import ParameterSchema
 
 
 class ToolboxTool:
@@ -49,7 +49,8 @@ class ToolboxTool:
         session: ClientSession,
         base_url: str,
         name: str,
-        schema: ToolSchema,
+        description: str,
+        params: Sequence[ParameterSchema],
         required_authn_params: Mapping[str, list[str]],
         auth_service_token_getters: Mapping[str, Callable[[], str]],
         bound_params: Mapping[str, Union[Callable[[], Any], Any]],
@@ -62,29 +63,28 @@ class ToolboxTool:
             session: The `aiohttp.ClientSession` used for making API requests.
             base_url: The base URL of the Toolbox server API.
             name: The name of the remote tool.
-            schema: The schema of the tool.
+            description: The description of the remote tool.
+            params: The args of the tool.
             required_authn_params: A dict of required authenticated parameters to a list
                 of services that provide values for them.
             auth_service_token_getters: A dict of authService -> token (or callables that
                 produce a token)
             bound_params: A mapping of parameter names to bind to specific values or
                 callables that are called to produce values as needed.
-
         """
-
         # used to invoke the toolbox API
         self.__session: ClientSession = session
         self.__base_url: str = base_url
         self.__url = f"{base_url}/api/tool/{name}/invoke"
-
-        self.__params = [param.to_param() for param in schema.parameters]
-        self.__schema = schema
+        self.__description = description
+        self.__params = params
+        inspect_type_params = [param.to_param() for param in self.__params]
 
         # the following properties are set to help anyone that might inspect it determine usage
         self.__name__ = name
-        self.__doc__ = self._schema_to_docstring(self.__schema)
-        self.__signature__ = Signature(parameters=self.__params, return_annotation=str)
-        self.__annotations__ = {p.name: p.annotation for p in self.__params}
+        self.__doc__ = self._create_docstring()
+        self.__signature__ = Signature(parameters=inspect_type_params, return_annotation=str)
+        self.__annotations__ = {p.name: p.annotation for p in inspect_type_params}
         # TODO: self.__qualname__ ??
 
         # map of parameter name to auth service required by it
@@ -94,14 +94,13 @@ class ToolboxTool:
         # map of parameter name to value (or callable that produces that value)
         self.__bound_parameters = bound_params
 
-    @staticmethod
-    def _schema_to_docstring(schema: ToolSchema) -> str:
+    def _create_docstring(self) -> str:
         """Convert a tool schema into its function docstring"""
-        docstring = schema.description
-        if not schema.parameters:
+        docstring = self.__description
+        if not self.__params:
             return docstring
         docstring += "\n\nArgs:"
-        for p in schema.parameters:
+        for p in self.__params:
             docstring += (
                 f"\n    {p.name} ({p.to_param().annotation.__name__}): {p.description}"
             )
@@ -112,7 +111,8 @@ class ToolboxTool:
         session: Optional[ClientSession] = None,
         base_url: Optional[str] = None,
         name: Optional[str] = None,
-        schema: Optional[ToolSchema] = None,
+        description: Optional[str] = None,
+        params: Optional[Sequence[ParameterSchema]] = None,
         required_authn_params: Optional[Mapping[str, list[str]]] = None,
         auth_service_token_getters: Optional[Mapping[str, Callable[[], str]]] = None,
         bound_params: Optional[Mapping[str, Union[Callable[[], Any], Any]]] = None,
@@ -124,7 +124,8 @@ class ToolboxTool:
             session: The `aiohttp.ClientSession` used for making API requests.
             base_url: The base URL of the Toolbox server API.
             name: The name of the remote tool.
-            schema: The schema of the tool.
+            description: The description of the remote tool.
+            params: The args of the tool.
             required_authn_params: A dict of required authenticated parameters that need
                 a auth_service_token_getter set for them yet.
             auth_service_token_getters: A dict of authService -> token (or callables
@@ -138,7 +139,8 @@ class ToolboxTool:
             session=check(session, self.__session),
             base_url=check(base_url, self.__base_url),
             name=check(name, self.__name__),
-            schema=check(schema, self.__schema),
+            description=check(description, self.__description),
+            params=check(params, self.__params),
             required_authn_params=check(
                 required_authn_params, self.__required_authn_params
             ),
@@ -239,14 +241,7 @@ class ToolboxTool:
             )
         )
 
-        # Update tool params in schema
-        new_schema = copy.deepcopy(self.__schema)
-        for param in new_schema.parameters:
-            if param.name in auth_token_getters.keys():
-                new_schema.parameters.remove(param)
-
         return self.__copy(
-            schema=new_schema,
             auth_service_token_getters=new_getters,
             required_authn_params=new_req_authn_params,
         )
@@ -264,24 +259,22 @@ class ToolboxTool:
          Returns:
              A new ToolboxTool instance with the specified parameters bound.
         """
-        param_names = set(p.name for p in self.__schema.parameters)
+        param_names = set(p.name for p in self.__params)
         for name in bound_params.keys():
             if name not in param_names:
                 raise Exception(f"unable to bind parameters: no parameter named {name}")
 
-        # Update tool params in schema
-        new_schema = copy.deepcopy(self.__schema)
-        for param in new_schema.parameters:
-            if param.name in bound_params:
-                new_schema.parameters.remove(param)
+        new_params = []
+        for p in self.__params:
+            if p.name not in bound_params:
+                new_params.append(p)
+        all_bound_params = dict(self.__bound_parameters)
+        all_bound_params.update(bound_params)
 
         return self.__copy(
-            schema=new_schema,
-            bound_params=types.MappingProxyType(
-                dict(self.__bound_parameters, **bound_params)
-            ),
+            params=new_params,
+            bound_params=types.MappingProxyType(all_bound_params),
         )
-
 
 def identify_required_authn_params(
     req_authn_params: Mapping[str, list[str]], auth_service_names: Iterable[str]
