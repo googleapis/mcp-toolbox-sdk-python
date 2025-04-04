@@ -7,7 +7,8 @@
     "changelog-sections": [
       { "type": "feat", "section": "Features" },
       { "type": "fix", "section": "Bug Fixes" },
-      { "type": "chore", "section": "Miscellaneous Chores", "hidden": false }
+      { "type": "chore", "section": "Miscellaneous Chores", "hidden": false },
+      { "type": "docs", "section": "Documentation", "hidden": false },
     ],
     "packages": {
       "packages/toolbox-core": {
