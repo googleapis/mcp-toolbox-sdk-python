@@ -181,16 +181,12 @@ class ToolboxTool:
 
         # apply bounded parameters
         for param, value in self.__bound_parameters.items():
-            if asyncio.iscoroutinefunction(value):
-                value = await value()
-            elif callable(value):
-                value = value()
-            payload[param] = value
+            payload[param] = await get_value(value)
 
         # create headers for auth services
         headers = {}
         for auth_service, token_getter in self.__auth_service_token_getters.items():
-            headers[f"{auth_service}_token"] = token_getter()
+            headers[f"{auth_service}_token"] = await get_value(token_getter)
 
         async with self.__session.post(
             self.__url,
@@ -330,3 +326,12 @@ def params_to_pydantic_model(
             ),
         )
     return create_model(tool_name, **field_definitions)
+
+
+async def get_value(func: Callable[[], Any]) -> Any:
+    """Asynchronously or synchronously gets the value from a callable."""
+    if asyncio.iscoroutinefunction(func):
+        return await func()
+    elif callable(func):
+        return func()
+    return func
