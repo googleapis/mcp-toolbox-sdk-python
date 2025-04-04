@@ -1,9 +1,7 @@
 {
-    "bootstrap-sha": "ac43090822fbf19a8920732e2ec3aa8b9c3130c1",
     "release-type": "python",
     "bump-minor-pre-major": true,
     "bump-patch-for-minor-pre-major": true,
-    "separate-pull-requests": true,
     "changelog-sections": [
       { "type": "feat", "section": "Features" },
       { "type": "fix", "section": "Bug Fixes" },
