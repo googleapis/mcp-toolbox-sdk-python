@@ -1,26 +1,37 @@
 {
-    "bootstrap-sha": "ac43090822fbf19a8920732e2ec3aa8b9c3130c1",
-    "release-type": "python",
-    "bump-minor-pre-major": true,
-    "bump-patch-for-minor-pre-major": true,
-    "separate-pull-requests": true,
-    "changelog-sections": [
-      { "type": "feat", "section": "Features" },
-      { "type": "fix", "section": "Bug Fixes" },
-      { "type": "chore", "section": "Miscellaneous Chores", "hidden": false },
-      { "type": "docs", "section": "Documentation", "hidden": false }
-    ],
     "packages": {
       "packages/toolbox-core": {
         "component": "toolbox-core",
         "extra-files": [
           "src/toolbox_core/version.py"
+        ],
+        "bootstrap-sha": "ac43090822fbf19a8920732e2ec3aa8b9c3130c1",
+        "release-type": "python",
+        "bump-minor-pre-major": true,
+        "bump-patch-for-minor-pre-major": true,
+        "separate-pull-requests": true,
+        "changelog-sections": [
+          { "type": "feat", "section": "Features" },
+          { "type": "fix", "section": "Bug Fixes" },
+          { "type": "chore", "section": "Miscellaneous Chores", "hidden": false },
+          { "type": "docs", "section": "Documentation", "hidden": false }
         ]
       },
       "packages/toolbox-langchain": {
         "component": "toolbox-langchain",
         "extra-files": [
           "src/toolbox_langchain/version.py"
+        ],
+        "bootstrap-sha": "ac43090822fbf19a8920732e2ec3aa8b9c3130c1",
+        "release-type": "python",
+        "bump-minor-pre-major": true,
+        "bump-patch-for-minor-pre-major": true,
+        "separate-pull-requests": true,
+        "changelog-sections": [
+          { "type": "feat", "section": "Features" },
+          { "type": "fix", "section": "Bug Fixes" },
+          { "type": "chore", "section": "Miscellaneous Chores", "hidden": false },
+          { "type": "docs", "section": "Documentation", "hidden": false }
         ]
       }
     }
