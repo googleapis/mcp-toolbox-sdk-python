@@ -13,5 +13,4 @@
 # limitations under the License.
 
 handleGHRelease: true
-packageName: toolbox-langchain
 releaseType: python
