@@ -12,6 +12,9 @@
 * **toolbox-core:** updated generated docstring to include parameters and their descriptions ([#127](https://github.com/googleapis/genai-toolbox-langchain-python/issues/127)) ([eafe2e9](https://github.com/googleapis/genai-toolbox-langchain-python/commit/eafe2e9cb1e2f84e3b2ba5bee5c469ae5754ade9))
 * **toolbox-core:** add basic implementation  ([#103](https://github.com/googleapis/genai-toolbox-langchain-python/issues/103)) ([4f992d8](https://github.com/googleapis/genai-toolbox-langchain-python/commit/4f992d8b2d3cc75692d030b67d13f90c36c49ac9))
 
+### Documentation
+* **toolbox-core:** add README ([#132](https://github.com/googleapis/genai-toolbox-langchain-python/issues/132)) ([839ed94](https://github.com/googleapis/genai-toolbox-langchain-python/commit/839ed940b5d8de31a83a98b375a7fd24402f5267))
+
 
 ### Bug Fixes
 
