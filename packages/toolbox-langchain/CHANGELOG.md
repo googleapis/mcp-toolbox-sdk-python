@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.1.1](https://github.com/googleapis/genai-toolbox-langchain-python/compare/toolbox-langchain-v0.1.0...toolbox-langchain-v0.1.1) (2025-04-04)
+
+
+### Bug Fixes
+
+* **deps:** update python-nonmajor ([#98](https://github.com/googleapis/genai-toolbox-langchain-python/issues/98)) ([f03e7ec](https://github.com/googleapis/genai-toolbox-langchain-python/commit/f03e7ec986eddfb1e0adc81b8be8e9140dcbd530))
+
+
+### Miscellaneous Chores
+
+* change port number to default toolbox port ([#135](https://github.com/googleapis/genai-toolbox-langchain-python/issues/135)) ([6164b09](https://github.com/googleapis/genai-toolbox-langchain-python/commit/6164b09d60412a0e3faf95c1b2e8df13b5ab7782))
+* fix urls in pyproject.toml ([#101](https://github.com/googleapis/genai-toolbox-langchain-python/issues/101)) ([6e5875e](https://github.com/googleapis/genai-toolbox-langchain-python/commit/6e5875eb5c3dbce9c9efb00418716577f90e4d05))
+
 ## 0.1.0 (2025-02-05)
 
 
@@ -24,4 +37,3 @@
 ### Bug Fixes
 
 * Deprecate 'add_auth_headers' in favor of 'add_auth_tokens' ([c5c699c](https://github.com/googleapis/genai-toolbox-langchain-python/commit/c5c699cc29bcc0708a31bff90e8cec489982fe2a))
-
