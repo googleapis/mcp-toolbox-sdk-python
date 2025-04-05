@@ -335,6 +335,10 @@ async def resolve_value(
     """
     Asynchronously or synchronously resolves a given source to its value.
 
+    If the `source` is a coroutine function, it will be awaited.
+    If the `source` is a regular callable, it will be called.
+    Otherwise (if it's not a callable), the `source` itself is returned directly.
+
     Args:
         source: The value, a callable returning a value, or a callable
                 returning an awaitable value.
@@ -342,6 +346,7 @@ async def resolve_value(
     Returns:
         The resolved value.
     """
+
     if asyncio.iscoroutinefunction(source):
         return await source()
     elif callable(source):
