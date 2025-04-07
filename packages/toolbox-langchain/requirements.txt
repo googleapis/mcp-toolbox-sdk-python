@@ -1,4 +1,4 @@
-langchain-core==0.3.50
+langchain-core==0.3.51
 PyYAML==6.0.2
 pydantic==2.11.2
 aiohttp==3.11.16
