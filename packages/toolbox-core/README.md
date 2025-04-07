@@ -190,6 +190,7 @@ from toolbox_core import ToolboxClient
 from langchain_google_vertexai import ChatVertexAI
 from langgraph.graph import StateGraph, MessagesState, START, END
 from langgraph.prebuilt import ToolNode
+from langchain.tools import StructuredTool
 
 toolbox = ToolboxClient("http://127.0.0.1:5000")
 tools = await toolbox.load_toolset()
