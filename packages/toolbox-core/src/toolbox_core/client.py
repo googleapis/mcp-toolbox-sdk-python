@@ -171,7 +171,7 @@ class ToolboxClient:
 
     async def load_toolset(
         self,
-        name: str,
+        name: Optional[str] = None,
         auth_token_getters: dict[str, Callable[[], str]] = {},
         bound_params: Mapping[str, Union[Callable[[], Any], Any]] = {},
     ) -> list[ToolboxTool]:
@@ -192,7 +192,7 @@ class ToolboxClient:
             in the toolset.
         """
         # Request the definition of the tool from the server
-        url = f"{self.__base_url}/api/toolset/{name}"
+        url = f"{self.__url}/api/toolset/{toolset_name or ''}"
         async with self.__session.get(url) as response:
             json = await response.json()
         manifest: ManifestSchema = ManifestSchema(**json)
