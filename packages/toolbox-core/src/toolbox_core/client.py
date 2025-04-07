@@ -192,7 +192,7 @@ class ToolboxClient:
             in the toolset.
         """
         # Request the definition of the tool from the server
-        url = f"{self.__url}/api/toolset/{toolset_name or ''}"
+        url = f"{self.__base_url}/api/toolset/{name or ''}"
         async with self.__session.get(url) as response:
             json = await response.json()
         manifest: ManifestSchema = ManifestSchema(**json)
