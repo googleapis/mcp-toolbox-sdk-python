@@ -41,7 +41,7 @@ class ParameterSchema(BaseModel):
         elif self.type == "array":
             if self.items is None:
                 raise Exception("Unexpected value: type is 'list' but items is None")
-            return list[self._items.to_type()]  # type: ignore
+            return list[self.items.__get_type()]  # type: ignore
 
         raise ValueError(f"Unsupported schema type: {self.type}")
 
