@@ -61,6 +61,20 @@ class TestBasicE2E:
         tool_names = {tool.__name__ for tool in toolset}
         assert tool_names == set(expected_tools)
 
+    async def test_load_toolset_default(self, toolbox: ToolboxClient):
+        """Load the default toolset, i.e. all tools."""
+        toolset = await toolbox.load_toolset()
+        assert len(toolset) == "5"
+        tool_names = {tool.__name__ for tool in toolset}
+        expected_tools = [
+            "get-row-by-content-auth",
+            "get-row-by-email-auth",
+            "get-row-by-id-auth",
+            "get-row-by-id",
+            "get-n-rows",
+        ]
+        assert tool_names == set(expected_tools)
+
     async def test_run_tool(self, get_n_rows_tool: ToolboxTool):
         """Invoke a tool."""
         response = await get_n_rows_tool(num_rows="2")
