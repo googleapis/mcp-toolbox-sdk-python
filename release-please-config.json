@@ -9,7 +9,6 @@
       { "type": "chore", "section": "Miscellaneous Chores", "hidden": false },
       { "type": "docs", "section": "Documentation", "hidden": false }
     ],
-    "versioning": "linked",
     "packages": {
       "packages/toolbox-core": {
         "component": "toolbox-core",
