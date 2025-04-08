@@ -22,5 +22,14 @@
           "src/toolbox_langchain/version.py"
         ]
       }
+    },
+    "plugins": [
+    {
+      "type": "linked-versions",
+      "groupName": "python-core-sdks",
+      "components": [
+        "toolbox-core", "toolbox-langchain"
+      ]
     }
+  ]
 }
