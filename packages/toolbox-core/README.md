@@ -1,5 +1,5 @@
-![GenAI Toolbox Logo](https://raw.githubusercontent.com/googleapis/genai-toolbox/main/logo.png)
-# GenAI Toolbox Core SDK
+![MCP Toolbox Logo](https://raw.githubusercontent.com/googleapis/genai-toolbox/main/logo.png)
+# MCP Toolbox Core SDK
 
 [![PyPI version](https://badge.fury.io/py/toolbox-core.svg)](https://badge.fury.io/py/toolbox-core) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/toolbox-core)](https://pypi.org/project/toolbox-core/) [![Coverage Status](https://coveralls.io/repos/github/googleapis/genai-toolbox/badge.svg?branch=main)](https://coveralls.io/github/googleapis/genai-toolbox?branch=main)
  [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
