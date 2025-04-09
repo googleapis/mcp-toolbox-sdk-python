@@ -4,7 +4,6 @@ Below are the details to set up a development environment and run tests.
 
 ## Install
 1. Clone the repository:
-   TODO: Correct repo URL
     ```bash
     git clone https://github.com/googleapis/mcp-toolbox-sdk-python
     ```
