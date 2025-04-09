@@ -6,11 +6,11 @@ Below are the details to set up a development environment and run tests.
 1. Clone the repository:
    TODO: Correct repo URL
     ```bash
-    git clone https://github.com/googleapis/genai-toolbox-langchain-python
+    git clone https://github.com/googleapis/mcp-toolbox-python-sdk
     ```
 1. Navigate to the package directory:
     ```bash
-    cd genai-toolbox-langchain-python/packages/toolbox-core
+    cd mcp-toolbox-python-sdk/packages/toolbox-core
     ```
 1. Install the package in editable mode, so changes are reflected without
    reinstall:
@@ -25,7 +25,7 @@ Below are the details to set up a development environment and run tests.
 ## Test
 1. Navigate to the package directory if needed:
     ```bash
-    cd genai-toolbox-langchain-python/packages/toolbox-core
+    cd mcp-toolbox-python-sdk/packages/toolbox-core
     ```
 1. Install the SDK and test dependencies:
     ```bash

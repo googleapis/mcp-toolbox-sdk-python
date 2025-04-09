@@ -16,7 +16,7 @@
 set -eo pipefail
 
 if [[ -z "${PROJECT_ROOT:-}" ]]; then
-    PROJECT_ROOT="github/genai-toolbox-langchain-python"
+    PROJECT_ROOT="github/mcp-toolbox-python-sdk"
 fi
 
 cd "${PROJECT_ROOT}"
