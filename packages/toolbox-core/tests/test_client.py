@@ -15,12 +15,11 @@
 
 import inspect
 import json
+from unittest.mock import AsyncMock
 
 import pytest
 import pytest_asyncio
 from aioresponses import CallbackResult
-from unittest.mock import AsyncMock
-
 from toolbox_core import ToolboxClient
 from toolbox_core.protocol import ManifestSchema, ParameterSchema, ToolSchema
 
@@ -331,16 +330,21 @@ async def test_new_invoke_tool_server_error(aioresponses, test_tool_str):
 
 
 @pytest.mark.asyncio
-async def test_bind_param_async_callable_value_success(aioresponses, test_tool_int_bool):
+async def test_bind_param_async_callable_value_success(
+    aioresponses, test_tool_int_bool
+):
     """
     Tests bind_parameters method with an async callable value.
     """
     TOOL_NAME = "async_bind_tool"
-    manifest = ManifestSchema(serverVersion="0.0.0", tools={TOOL_NAME: test_tool_int_bool})
+    manifest = ManifestSchema(
+        serverVersion="0.0.0", tools={TOOL_NAME: test_tool_int_bool}
+    )
 
     aioresponses.get(
         f"{TEST_BASE_URL}/api/tool/{TOOL_NAME}",
-        payload=manifest.model_dump(), status=200
+        payload=manifest.model_dump(),
+        status=200,
     )
 
     def reflect_parameters(url, **kwargs):
@@ -381,7 +385,8 @@ async def test_new_add_auth_token_getters_duplicate_fail(aioresponses, test_tool
 
     aioresponses.get(
         f"{TEST_BASE_URL}/api/tool/{TOOL_NAME}",
-        payload=manifest.model_dump(), status=200
+        payload=manifest.model_dump(),
+        status=200,
     )
 
     def token_handler_1():
@@ -396,5 +401,8 @@ async def test_new_add_auth_token_getters_duplicate_fail(aioresponses, test_tool
         authed_tool = tool.add_auth_token_getters({AUTH_SERVICE: token_handler_1})
         assert AUTH_SERVICE in authed_tool._ToolboxTool__auth_service_token_getters
 
-        with pytest.raises(ValueError, match=f"Authentication source\\(s\\) `{AUTH_SERVICE}` already registered in tool `{TOOL_NAME}`."):
-             authed_tool.add_auth_token_getters({AUTH_SERVICE: token_handler_2})
+        with pytest.raises(
+            ValueError,
+            match=f"Authentication source\\(s\\) `{AUTH_SERVICE}` already registered in tool `{TOOL_NAME}`.",
+        ):
+            authed_tool.add_auth_token_getters({AUTH_SERVICE: token_handler_2})
