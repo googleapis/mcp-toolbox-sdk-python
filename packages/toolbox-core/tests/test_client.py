@@ -390,20 +390,43 @@ async def test_new_add_auth_token_getters_duplicate_fail(aioresponses, test_tool
         status=200,
     )
 
-    def token_handler_1():
-        return "token1"
-
-    def token_handler_2():
-        return "token2"
-
     async with ToolboxClient(TEST_BASE_URL) as client:
         tool = await client.load_tool(TOOL_NAME)
 
-        authed_tool = tool.add_auth_token_getters({AUTH_SERVICE: token_handler_1})
+        authed_tool = tool.add_auth_token_getters({AUTH_SERVICE: {}})
         assert AUTH_SERVICE in authed_tool._ToolboxTool__auth_service_token_getters
 
         with pytest.raises(
             ValueError,
             match=f"Authentication source\\(s\\) `{AUTH_SERVICE}` already registered in tool `{TOOL_NAME}`.",
         ):
-            authed_tool.add_auth_token_getters({AUTH_SERVICE: token_handler_2})
+            authed_tool.add_auth_token_getters({AUTH_SERVICE: {}})
+
+
+@pytest.mark.asyncio
+async def test_load_tool_not_found_in_manifest(aioresponses, test_tool_str):
+    """
+    Tests that load_tool raises an Exception when the requested tool name
+    is not found in the manifest returned by the server, using existing fixtures.
+    """
+    ACTUAL_TOOL_IN_MANIFEST = "actual_tool_abc"
+    REQUESTED_TOOL_NAME = "non_existent_tool_xyz"
+
+    manifest = ManifestSchema(
+        serverVersion="0.0.0",
+        tools={ACTUAL_TOOL_IN_MANIFEST: test_tool_str}
+    )
+
+    aioresponses.get(
+        f"{TEST_BASE_URL}/api/tool/{REQUESTED_TOOL_NAME}",
+        payload=manifest.model_dump(),
+        status=200,
+    )
+
+    async with ToolboxClient(TEST_BASE_URL) as client:
+        with pytest.raises(Exception, match=f"Tool '{REQUESTED_TOOL_NAME}' not found!"):
+            await client.load_tool(REQUESTED_TOOL_NAME)
+
+    aioresponses.assert_called_once_with(
+        f"{TEST_BASE_URL}/api/tool/{REQUESTED_TOOL_NAME}", method='GET'
+    )
