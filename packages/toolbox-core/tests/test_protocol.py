@@ -16,7 +16,6 @@
 from inspect import Parameter
 
 import pytest
-
 from toolbox_core.protocol import ParameterSchema
 
 
@@ -51,9 +50,7 @@ def test_parameter_schema_boolean():
 
 def test_parameter_schema_array_string():
     """Tests ParameterSchema with type 'array' containing strings."""
-    item_schema = ParameterSchema(
-        name="", type="string", description=""
-    )
+    item_schema = ParameterSchema(name="", type="string", description="")
     schema = ParameterSchema(
         name="tags", type="array", description="List of tags", items=item_schema
     )
