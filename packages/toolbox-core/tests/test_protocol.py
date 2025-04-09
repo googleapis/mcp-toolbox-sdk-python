@@ -16,6 +16,7 @@
 from inspect import Parameter
 
 import pytest
+
 from toolbox_core.protocol import ParameterSchema
 
 
