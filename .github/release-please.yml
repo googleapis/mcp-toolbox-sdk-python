@@ -13,4 +13,4 @@
 # limitations under the License.
 
 handleGHRelease: true
-releaseType: python
+manifest: true
