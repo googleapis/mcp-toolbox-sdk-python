@@ -21,8 +21,6 @@ Databases or APIs) managed by Toolbox into your GenAI applications.
 
 - [Overview](#overview)
 - [Available Packages](#available-packages)
-    - [toolbox-core](#toolbox-core)
-    - [toolbox-langchain](#toolbox-langchain)
 - [Quickstart](#quickstart)
 - [Core Concepts](#core-concepts)
     - [Connecting to Toolbox](#connecting-to-toolbox)
@@ -31,64 +29,54 @@ Databases or APIs) managed by Toolbox into your GenAI applications.
     - [Synchronous vs. Asynchronous Usage](#synchronous-vs-asynchronous-usage)
     - [Authenticating Tools](#authenticating-tools)
         - [When is Authentication Needed?](#when-is-authentication-needed)
-        - [Supported Authentication
-          Mechanisms](#supported-authentication-mechanisms)
+        - [Supported Authentication Mechanisms](#supported-authentication-mechanisms)
         - [SDK Configuration](#sdk-configuration)
     - [Binding Parameter Values](#binding-parameter-values)
         - [Why Bind Parameters?](#why-bind-parameters)
         - [SDK Configuration](#sdk-configuration)
-- [Framework-Specific Usage](#framework-specific-usage)
-    - [Using toolbox-core](#using-toolbox-core)
-    - [Using toolbox-langchain](#using-toolbox-langchain)
+- [Usage Comparison](#usage-comparison)
 - [Contributing](#contributing)
 - [License](#license)
 - [Support](#support)
 
 <!-- /TOC -->
-
 ## Overview
 
 The Toolbox service provides a centralized way to manage and expose tools for
-use by LLMs. These SDKs act as clients for that service, abstracting away the
+use by LLMs. <!-- TOC -->
+
+- [MCP Toolbox SDKs for Python](#mcp-toolbox-sdks-for-python)
+    - [Overview](#overview)
+    - [Available Packages](#available-packages)
+    - [Quickstart](#quickstart)
+    - [Core Concepts](#core-concepts)
+        - [Connecting to Toolbox](#connecting-to-toolbox)
+        - [Loading Tools](#loading-tools)
+        - [Invoking Tools](#invoking-tools)
+        - [Synchronous vs. Asynchronous Usage](#synchronous-vs-asynchronous-usage)
+        - [Authenticating Tools](#authenticating-tools)
+            - [When is Authentication Needed?](#when-is-authentication-needed)
+            - [Supported Authentication Mechanisms](#supported-authentication-mechanisms)
+            - [SDK Configuration](#sdk-configuration)
+        - [Binding Parameter Values](#binding-parameter-values)
+            - [Why Bind Parameters?](#why-bind-parameters)
+            - [SDK Configuration](#sdk-configuration)
+    - [Usage Comparison](#usage-comparison)
+    - [Contributing](#contributing)
+    - [License](#license)
+    - [Support](#support)
+
+<!-- /TOC -->These SDKs act as clients for that service, abstracting away the
 API calls needed to fetch tool definitions and invoke them.
 
 ## Available Packages
 
 This repository hosts the following Python packages:
 
-### `toolbox-core`
-
-[![PyPI
-version](https://badge.fury.io/py/toolbox-core.svg)](https://badge.fury.io/py/toolbox-core)
-
-* **Path:** `packages/toolbox-core/`
-* **Description:** A framework-agnostic SDK. Provides core functionality
-  (`ToolboxClient` and `ToolboxTool`) to load and invoke tools. Can be used
-  directly, with custom frameworks.
-* **Details:** [See `toolbox-core`
-  README](https://github.com/googleapis/mcp-toolbox-sdk-python/blob/main/packages/toolbox-core/README.md)
-
-### `toolbox-langchain`
-
-[![PyPI
-version](https://badge.fury.io/py/toolbox-langchain.svg)](https://badge.fury.io/py/toolbox-langchain)
-
-* **Path:** `packages/toolbox-langchain/`
-* **Description:** Integrates Toolbox tools seamlessly with the
-  [LangChain](https://python.langchain.com/) ecosystem. Loaded tools are
-  compatible with LangGraph agents.
-* **Details:** [See `toolbox-langchain`
-  README](https://github.com/googleapis/mcp-toolbox-sdk-python/blob/main/packages/toolbox-langchain/README.md)
-
-Install the desired package(s) using pip:
-
-```bash
-# For the core, framework-agnostic SDK
-pip install toolbox-core
-
-# For LangChain/LangGraph integration
-pip install toolbox-langchain
-```
+| Package | Key Purpose | Integration | Path | Details (README) | PyPI Status |
+| :------ | :---------- | :---------- | :---------------------- | :---------- | :--------- 
+| `toolbox-core` | Provides core, framework-agnostic tool handling | Use directly / Custom | `packages/toolbox-core/` | 📄 [View README](https://github.com/googleapis/mcp-toolbox-sdk-python/blob/main/packages/toolbox-core/README.md) | [![PyPI version](https://badge.fury.io/py/toolbox-core.svg)](https://badge.fury.io/py/toolbox-core) |
+| `toolbox-langchain` | Integrates Toolbox tools with the LangChain ecoystem | LangChain / LangGraph | `packages/toolbox-langchain/` | 📄 [View README](https://github.com/googleapis/mcp-toolbox-sdk-python/blob/main/packages/toolbox-langchain/README.md) | [![PyPI version](https://badge.fury.io/py/toolbox-langchain.svg)](https://badge.fury.io/py/toolbox-langchain) |
 
 ## Quickstart
 
@@ -105,7 +93,12 @@ To get started using Toolbox tools with an application, follow these general ste
     Install the appropriate Python SDK package:
 
     ```bash
+    # For the core, framework-agnostic SDK
     pip install toolbox-core
+
+    # OR
+    
+    # For LangChain/LangGraph integration
     # pip install toolbox-langchain
     ```
 
@@ -309,37 +302,19 @@ bound_tool = tool.bind_parameters({"param": "value"})
 bound_tool = await toolbox.load_tool("my-tool", bound_params={"param": "value"})
 ```
 
-## Framework-Specific Usage
+## Usage Comparison
 
 While the core concepts are similar, the way you integrate and use the tools
 varies depending on the chosen SDK package and framework.
 
-### Using `toolbox-core`
-
-  * Ideal for framework-agnostic applications or custom orchestration logic.
-  * Use `ToolboxClient` (async) or `ToolboxSyncClient` (sync).
-  * Loaded tools (`ToolboxTool`/`ToolboxSyncTool`) are directly
-    callable/awaitable.
-  * For integration with frameworks like LangGraph that expect specific tool
-    formats (e.g., with parsed docstrings for LLM use), you might need to wrap
-    the loaded tools (e.g., using LangChain's
-    `StructuredTool.from_function(tool, parse_docstring=True)` as shown in the
-    `toolbox-core` README).
-  * See the [toolbox-core
-    README](https://github.com/googleapis/mcp-toolbox-sdk-python/tree/main/packages/toolbox-core#use-with-langgraph)
-    for detailed examples.
-
-### Using `toolbox-langchain`
-
-  * Designed for seamless use within the LangChain/LangGraph ecosystem.
-  * Use `ToolboxClient` (provides both sync `load_*` and async `aload_*`
-    methods).
-  * Loaded tools are LangChain `BaseTool` compatible objects.
-  * Directly usable with LangGraph agents (`model.bind_tools(tools)` and
-    `ToolNode(tools)`).
-  * See the [toolbox-langchain
-    README](https://github.com/googleapis/mcp-toolbox-sdk-python/blob/main/packages/toolbox-langchain#use-with-langgraph)
-    for specific LangGraph integration examples.
+| Feature                 | `toolbox-core`                                                                                                   | `toolbox-langchain`                                                                        |
+| :---------------------- | :--------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------- |
+| **Target Scenario** | Framework-agnostic applications or custom orchestration logic.                                                   | Applications within the LangChain / LangGraph ecosystem.                                   |
+| **Client Class(es)** | `ToolboxClient` (async)<br>`ToolboxSyncClient` (sync)                                                             | `ToolboxClient` (provides both sync `load_*` and async `aload_*` methods)                  |
+| **Loaded Tool Type** | `ToolboxTool` (async) /<br>`ToolboxSyncTool` (sync)                                                               | `ToolboxTool` instances (compatible with LangChain `BaseTool`)                             |
+| **Tool Invocation** | Directly callable / awaitable.                                                                                   | Standard LangChain tool usage patterns.                                                    |
+| **LangGraph Integration** | **Requires wrapping:** Tools may need manual wrapping (e.g., `StructuredTool.from_function`) for full LLM use. | **Seamless:** Designed for direct use with `model.bind_tools(tools)` and `ToolNode(tools)`.   |
+| **Detailed Examples** | [Core README Section](https://github.com/googleapis/mcp-toolbox-sdk-python/tree/main/packages/toolbox-core#use-with-langgraph)     | [LangChain README Section](https://github.com/googleapis/mcp-toolbox-sdk-python/blob/main/packages/toolbox-langchain#use-with-langgraph) |
 
 ## Contributing
 
