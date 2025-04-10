@@ -9,7 +9,7 @@ Below are the details to set up a development environment and run tests.
     ```
 1. Navigate to the package directory:
     ```bash
-    cd mcp-toolbox-sdk-python/packages/toolbox-core
+    cd mcp-toolbox-sdk-python/packages/<PACKAGE_NAME>
     ```
 1. Install the package in editable mode, so changes are reflected without
    reinstall:
@@ -24,7 +24,7 @@ Below are the details to set up a development environment and run tests.
 ## Test
 1. Navigate to the package directory if needed:
     ```bash
-    cd mcp-toolbox-sdk-python/packages/toolbox-core
+    cd mcp-toolbox-sdk-python/packages/<PACKAGE_NAME>
     ```
 1. Install the SDK and test dependencies:
     ```bash

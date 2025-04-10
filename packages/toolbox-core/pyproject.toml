@@ -33,10 +33,10 @@ package-dir = {"" = "src"}
 version = {attr = "toolbox_core.version.__version__"}
 
 [project.urls]
-Homepage = "https://github.com/googleapis/genai-toolbox-langchain-python/blob/main/packages/toolbox-core"
-Repository = "https://github.com/googleapis/genai-toolbox-langchain-python.git"
-"Bug Tracker" = "https://github.com/googleapis/genai-toolbox-langchain-python/issues"
-Changelog = "https://github.com/googleapis/genai-toolbox-langchain-python/blob/main/packages/toolbox-core/CHANGELOG.md"
+Homepage = "https://github.com/googleapis/mcp-toolbox-sdk-python/blob/main/packages/toolbox-core"
+Repository = "https://github.com/googleapis/mcp-toolbox-sdk-python.git"
+"Bug Tracker" = "https://github.com/googleapis/mcp-toolbox-sdk-python/issues"
+Changelog = "https://github.com/googleapis/mcp-toolbox-sdk-python/blob/main/packages/toolbox-core/CHANGELOG.md"
 
 [project.optional-dependencies]
 test = [
