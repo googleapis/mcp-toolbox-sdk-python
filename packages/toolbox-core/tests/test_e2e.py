@@ -166,6 +166,20 @@ class TestAuth:
         response = await auth_tool(id="2")
         assert "row2" in response
 
+    @pytest.mark.asyncio
+    async def test_run_tool_async_auth(toolbox: ToolboxClient, auth_token1: str):
+        """Tests running a tool with correct auth using an async token getter."""
+        tool = await toolbox.load_tool("get-row-by-id-auth")
+
+        async def get_token_asynchronously():
+            return auth_token1
+
+        auth_tool = tool.add_auth_token_getters(
+            {"my-test-auth": get_token_asynchronously}
+        )
+        response = await auth_tool(id="2")
+        assert "row2" in response
+
     async def test_run_tool_param_auth_no_auth(self, toolbox: ToolboxClient):
         """Tests running a tool with a param requiring auth, without auth."""
         tool = await toolbox.load_tool("get-row-by-email-auth")
