@@ -181,16 +181,12 @@ result = await tool.ainvoke({"param1": "value1", "param2": "value2"})
 
 ### Synchronous vs. Asynchronous Usage
 
-  * **Asynchronous (Recommended for I/O):** Most SDKs prioritize asynchronous
-    operations (`async`/`await`) for better performance in I/O-bound tasks like
-    network calls to the Toolbox service. This requires running your code within
-    an async event loop (e.g., using `asyncio.run()`). The default
-    `toolbox-core` `ToolboxClient` is async. The `toolbox-langchain` package
-    provides async methods like `aload_tool`, `aload_toolset`, `ainvoke`.
-  * **Synchronous:** For simpler scripts or applications not built around
-    asyncio, synchronous alternatives are provided. `toolbox-core` offers
-    `ToolboxSyncClient` and `ToolboxSyncTool`. `toolbox-langchain` provides
-    synchronous methods like `load_tool`, `load_toolset`, and `invoke`.
+| Package                 | Loading Tools                                                                                                                                                                                                                            | Invoking Tools                                                                                                                                                                 | Docs                                                                                                              |
+| :---------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------- |
+| **`toolbox-core`** | **Async:**<br/>* &nbsp;**Class:** `ToolboxClient`<br/>* &nbsp;**Methods:**<br/>&nbsp;&nbsp;&nbsp;* &nbsp;`await client.load_tool()`<br/>&nbsp;&nbsp;&nbsp;* &nbsp;`await client.load_toolset()`<br/><br/>**Sync:**<br/>* &nbsp;**Class:** `ToolboxSyncClient`<br/>* &nbsp;**Methods:**<br/>&nbsp;&nbsp;&nbsp;* &nbsp;`client.load_tool()`<br/>&nbsp;&nbsp;&nbsp;* &nbsp;`client.load_toolset()` | **Async:**<br/>* &nbsp;**Class:** `ToolboxTool`<br/>* &nbsp;**Invocation:** `await tool(...)`<br/><br/>**Sync:**<br/>* &nbsp;**Class:** `ToolboxSyncTool`<br/>* &nbsp;**Invocation:** `tool(...)`       | [`toolbox-core` README](./packages/toolbox-core/README.md)                                                     |
+| **`toolbox-langchain`** | **Unified Class:** `ToolboxClient`<br/><br/>* &nbsp;**Async Methods:**<br/>&nbsp;&nbsp;&nbsp;* &nbsp;`await client.aload_tool()`<br/>&nbsp;&nbsp;&nbsp;* &nbsp;`await client.aload_toolset()`<br/><br/>* &nbsp;**Sync Methods:**<br/>&nbsp;&nbsp;&nbsp;* &nbsp;`client.load_tool()`<br/>&nbsp;&nbsp;&nbsp;* &nbsp;`client.load_toolset()` | **Unified Class:** `ToolboxTool`<br/><br/>* &nbsp;**Async Method:** `await tool.ainvoke()`<br/><br/>* &nbsp;**Sync Method:** `tool.invoke()`                                                   | [`toolbox-langchain` README](./packages/toolbox-langchain/README.md#synchronous-and-asynchronous-usage) |
+
+The `ToolboxSyncClient` handles communication with the Toolbox service *synchronously* and produces `ToolboxSyncTool` instances when you load tools. You do not use the `await` keyword when interacting with these synchronous versions.
 
 ```py
 from toolbox_core import ToolboxSyncClient
@@ -272,7 +268,7 @@ result = auth_tool(input="some input")
 ### Binding Parameter Values
 
 Pre-set specific parameter values for a tool *before* it's invoked or passed to
-an LLM. Bound values are fixed and won't be requested from the LLM.
+an LLM. Bound parameter values are fixed and won't be requested from the LLM.
 
 #### Why Bind Parameters?
 
