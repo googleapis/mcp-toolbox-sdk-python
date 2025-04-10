@@ -157,6 +157,10 @@ tools = await client.load_toolset("my-toolset")
 all_tools = await client.load_toolset()
 ```
 
+> [!NOTE]
+> **Upcoming Feature (`v0.2.0`+):** Support for calling `toolbox.load_toolset()`
+> without arguments will be introduced in `v0.2.0`.
+
 ### Invoking Tools
 
 Loaded tools behave like callable Python objects or functions.
