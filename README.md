@@ -332,5 +332,6 @@ for details.
 
 If you encounter issues or have questions, please check the existing [GitHub
 Issues](https://github.com/googleapis/genai-toolbox/issues) for the main Toolbox
-project. If your issue is specific to one of the SDKs and not found, feel free
-to open a new issue in that repository.
+project. If your issue is specific to one of the SDKs, please look for existing
+issues [here](https://github.com/googleapis/mcp-toolbox-sdk-python/issues) or
+open a new issue in that repository.
