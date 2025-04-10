@@ -240,6 +240,7 @@ the Toolbox service (matched by name).
 
 ```python
 from toolbox_core import ToolboxClient
+# from toolbox_langchain import ToolboxClient
 
 async def get_auth_token():
     # ... Logic to retrieve ID token (e.g., from local storage, OAuth flow)
@@ -248,14 +249,18 @@ async def get_auth_token():
 
 toolbox = ToolboxClient("http://127.0.0.1:5000")
 tool = await toolbox.load_tool("my-tool")
+# tool = await toolbox.aload_tool("my-tool")
 
 auth_tool = tool.add_auth_token_getters({"my_auth": get_auth_token})
+# auth_tool = tool.add_auth_tokens({"my_auth": get_auth_token})
 
 # OR
 
 auth_tool = await toolbox.load_tool("my-tool", auth_token_getters={"my_auth": get_auth_token})
+# auth_tool = await toolbox.aload_tool("my-tool", auth_tokens={"my_auth": get_auth_token})
 
-result = auth_tool(input="some input")
+result = await auth_tool(input="some input")
+# result = await auth_tool.ainvoke({"input": "some input"})
 ```
 
 > [!TIP]
@@ -291,15 +296,19 @@ during the loading process.
 
 ```py
 from toolbox_core import ToolboxClient
+# from toolbox_langchain import ToolboxClient
 
 toolbox = ToolboxClient("http://127.0.0.1:5000")
 tool = await toolbox.load_tool("my-tool")
+# tool = await toolbox.aload_tool("my-tool")
 
 bound_tool = tool.bind_parameters({"param": "value"})
+# bound_tool = tool.bind_params({"param": "value"})
 
 # OR
 
 bound_tool = await toolbox.load_tool("my-tool", bound_params={"param": "value"})
+# bound_tool = await toolbox.aload_tool("my-tool", bound_params={"param": "value"})
 ```
 
 ## Usage Comparison
