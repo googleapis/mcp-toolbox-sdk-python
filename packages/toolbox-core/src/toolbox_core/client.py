@@ -65,11 +65,9 @@ class ToolboxClient:
         params = []
         authn_params: dict[str, list[str]] = {}
         bound_params: dict[str, Callable[[], str]] = {}
-        auth_sources: set[str] = set()
         for p in schema.parameters:
             if p.authSources:  # authn parameter
                 authn_params[p.name] = p.authSources
-                auth_sources.update(p.authSources)
             elif p.name in all_bound_params:  # bound parameter
                 bound_params[p.name] = all_bound_params[p.name]
             else:  # regular parameter
