@@ -40,33 +40,11 @@ Databases or APIs) managed by Toolbox into your GenAI applications.
 - [Support](#support)
 
 <!-- /TOC -->
+
 ## Overview
 
 The Toolbox service provides a centralized way to manage and expose tools for
-use by LLMs. <!-- TOC -->
-
-- [MCP Toolbox SDKs for Python](#mcp-toolbox-sdks-for-python)
-    - [Overview](#overview)
-    - [Available Packages](#available-packages)
-    - [Quickstart](#quickstart)
-    - [Core Concepts](#core-concepts)
-        - [Connecting to Toolbox](#connecting-to-toolbox)
-        - [Loading Tools](#loading-tools)
-        - [Invoking Tools](#invoking-tools)
-        - [Synchronous vs. Asynchronous Usage](#synchronous-vs-asynchronous-usage)
-        - [Authenticating Tools](#authenticating-tools)
-            - [When is Authentication Needed?](#when-is-authentication-needed)
-            - [Supported Authentication Mechanisms](#supported-authentication-mechanisms)
-            - [SDK Configuration](#sdk-configuration)
-        - [Binding Parameter Values](#binding-parameter-values)
-            - [Why Bind Parameters?](#why-bind-parameters)
-            - [SDK Configuration](#sdk-configuration)
-    - [Usage Comparison](#usage-comparison)
-    - [Contributing](#contributing)
-    - [License](#license)
-    - [Support](#support)
-
-<!-- /TOC -->These SDKs act as clients for that service, abstracting away the
+use by LLMs. These SDKs act as clients for that service, abstracting away the
 API calls needed to fetch tool definitions and invoke them.
 
 ## Available Packages
