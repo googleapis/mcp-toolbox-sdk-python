@@ -94,16 +94,17 @@ class ToolboxTool(BaseTool):
             auth_tokens: A dictionary of authentication source names to the
                 functions that return corresponding ID token.
             strict: If True, a ValueError is raised if any of the provided auth
-                tokens are already bound. If False, only a warning is issued.
+                parameters is already bound. If False, only a warning is issued.
 
         Returns:
             A new ToolboxTool instance that is a deep copy of the current
             instance, with added auth tokens.
 
         Raises:
-            ValueError: If the provided auth tokens are already registered.
-            ValueError: If the provided auth tokens are already bound and strict
-                is True.
+            ValueError: If any of the provided auth parameters is already
+                registered.
+            ValueError: If any of the provided auth parameters is already bound
+                and strict is True.
         """
         return ToolboxTool(
             self.__async_tool.add_auth_tokens(auth_tokens, strict),
@@ -121,17 +122,17 @@ class ToolboxTool(BaseTool):
         Args:
             auth_source: The name of the authentication source.
             get_id_token: A function that returns the ID token.
-            strict: If True, a ValueError is raised if any of the provided auth
-                token is already bound. If False, only a warning is issued.
+            strict: If True, a ValueError is raised if the provided auth
+                parameter is already bound. If False, only a warning is issued.
 
         Returns:
             A new ToolboxTool instance that is a deep copy of the current
             instance, with added auth token.
 
         Raises:
-            ValueError: If the provided auth token is already registered.
-            ValueError: If the provided auth token is already bound and strict
-                is True.
+            ValueError: If the provided auth parameter is already registered.
+            ValueError: If the provided auth parameter is already bound and
+                strict is True.
         """
         return ToolboxTool(
             self.__async_tool.add_auth_token(auth_source, get_id_token, strict),
@@ -152,7 +153,7 @@ class ToolboxTool(BaseTool):
             bound_params: A dictionary of the bound parameter name to the
                 value or function of the bound value.
             strict: If True, a ValueError is raised if any of the provided bound
-                params are not defined in the tool's schema, or require
+                params is not defined in the tool's schema, or require
                 authentication. If False, only a warning is issued.
 
         Returns:
@@ -160,9 +161,10 @@ class ToolboxTool(BaseTool):
             instance, with added bound params.
 
         Raises:
-            ValueError: If the provided bound params are already bound.
-            ValueError: if the provided bound params are not defined in the tool's schema, or require
-                authentication, and strict is True.
+            ValueError: If any of the provided bound params is already bound.
+            ValueError: if any of the provided bound params is not defined in
+                the tool's schema, or require authentication, and strict is
+                True.
         """
         return ToolboxTool(
             self.__async_tool.bind_params(bound_params, strict),
@@ -184,8 +186,8 @@ class ToolboxTool(BaseTool):
             param_name: The name of the bound parameter.
             param_value: The value of the bound parameter, or a callable that
                 returns the value.
-            strict: If True, a ValueError is raised if any of the provided bound
-                params is not defined in the tool's schema, or requires
+            strict: If True, a ValueError is raised if the provided bound
+                param is not defined in the tool's schema, or requires
                 authentication. If False, only a warning is issued.
 
         Returns:
