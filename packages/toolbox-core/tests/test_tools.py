@@ -14,6 +14,7 @@
 
 
 from typing import AsyncGenerator
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 import pytest_asyncio
@@ -22,7 +23,7 @@ from aioresponses import aioresponses
 from pydantic import ValidationError
 
 from toolbox_core.protocol import ParameterSchema
-from toolbox_core.tool import ToolboxTool, create_docstring
+from toolbox_core.tool import ToolboxTool, create_docstring, resolve_value
 
 TEST_BASE_URL = "http://toolbox.example.com"
 TEST_TOOL_NAME = "sample_tool"
@@ -223,3 +224,64 @@ async def test_tool_run_with_pydantic_validation_error(
             in str(exc_info.value)
         )
         m.assert_not_called()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "non_callable_source",
+    [
+        "a simple string",
+        12345,
+        True,
+        False,
+        None,
+        [1, "two", 3.0],
+        {"key": "value", "number": 100},
+        object(),
+    ],
+    ids=[
+        "string",
+        "integer",
+        "bool_true",
+        "bool_false",
+        "none",
+        "list",
+        "dict",
+        "object",
+    ],
+)
+async def test_resolve_value_non_callable(non_callable_source):
+    """
+    Tests resolve_value when the source is not callable.
+    """
+    resolved = await resolve_value(non_callable_source)
+
+    assert resolved is non_callable_source
+
+
+@pytest.mark.asyncio
+async def test_resolve_value_sync_callable():
+    """
+    Tests resolve_value with a synchronous callable.
+    """
+    expected_value = "sync result"
+    sync_callable = Mock(return_value=expected_value)
+
+    resolved = await resolve_value(sync_callable)
+
+    sync_callable.assert_called_once()
+    assert resolved == expected_value
+
+
+@pytest.mark.asyncio
+async def test_resolve_value_async_callable():
+    """
+    Tests resolve_value with an asynchronous callable (coroutine function).
+    """
+    expected_value = "async result"
+    async_callable = AsyncMock(return_value=expected_value)
+
+    resolved = await resolve_value(async_callable)
+
+    async_callable.assert_awaited_once()
+    assert resolved == expected_value
