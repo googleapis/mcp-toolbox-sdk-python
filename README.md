@@ -136,7 +136,7 @@ all_tools = await client.load_toolset()
 ```
 
 > [!NOTE]
-> **Upcoming Feature (`v0.2.0`+):** Support for calling `toolbox.load_toolset()`
+> **Upcoming Feature (`v0.2.0`+):** Support for calling `client.load_toolset()`
 > without arguments will be introduced in `v0.2.0`.
 
 ### Invoking Tools
@@ -181,6 +181,11 @@ tools = sync_client.load_toolset("my-toolset")
 # Load all tools from all toolsets
 all_tools = sync_client.load_toolset()
 ```
+
+> [!NOTE]
+> **Upcoming Feature (`v0.2.0`+):** Support for calling `sync_client.load_toolset()`
+> without arguments will be introduced in `v0.2.0`.
+
 
 ### Authenticating Tools
 
