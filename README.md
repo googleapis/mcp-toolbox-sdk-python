@@ -145,17 +145,16 @@ Loaded tools behave like callable Python objects or functions.
 
   * **`toolbox-core`**: Async tools are `awaitable`, sync tools are called
     directly.
+    ```py
+    result = await tool(param1="value1", param2="value2")
+    ```
+
   * **`toolbox-langchain`**: Tools conform to LangChain's `BaseTool` interface
     and are typically invoked via `.invoke()` or `.ainvoke()`, often managed by
     a LangGraph agent.
-
-```py
-# toolbox-core
-result = await tool(param1="value1", param2="value2")
-
-# toolbox-langchain
-result = await tool.ainvoke({"param1": "value1", "param2": "value2"})
-```
+    ```py
+    result = await tool.ainvoke({"param1": "value1", "param2": "value2"})
+    ```
 
 ### Synchronous vs. Asynchronous Usage
 
