@@ -15,6 +15,7 @@
 
 import inspect
 import json
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 import pytest_asyncio
@@ -130,6 +131,60 @@ async def test_load_toolset_success(aioresponses, test_tool_str, test_tool_int_b
         assert {t.__name__ for t in tools} == manifest.tools.keys()
 
 
+@pytest.mark.asyncio
+async def test_invoke_tool_server_error(aioresponses, test_tool_str):
+    """Tests that invoking a tool raises an Exception when the server returns an
+    error status."""
+    TOOL_NAME = "server_error_tool"
+    ERROR_MESSAGE = "Simulated Server Error"
+    manifest = ManifestSchema(serverVersion="0.0.0", tools={TOOL_NAME: test_tool_str})
+
+    aioresponses.get(
+        f"{TEST_BASE_URL}/api/tool/{TOOL_NAME}",
+        payload=manifest.model_dump(),
+        status=200,
+    )
+    aioresponses.post(
+        f"{TEST_BASE_URL}/api/tool/{TOOL_NAME}/invoke",
+        payload={"error": ERROR_MESSAGE},
+        status=500,
+    )
+
+    async with ToolboxClient(TEST_BASE_URL) as client:
+        loaded_tool = await client.load_tool(TOOL_NAME)
+
+        with pytest.raises(Exception, match=ERROR_MESSAGE):
+            await loaded_tool(param1="some input")
+
+
+@pytest.mark.asyncio
+async def test_load_tool_not_found_in_manifest(aioresponses, test_tool_str):
+    """
+    Tests that load_tool raises an Exception when the requested tool name
+    is not found in the manifest returned by the server, using existing fixtures.
+    """
+    ACTUAL_TOOL_IN_MANIFEST = "actual_tool_abc"
+    REQUESTED_TOOL_NAME = "non_existent_tool_xyz"
+
+    manifest = ManifestSchema(
+        serverVersion="0.0.0", tools={ACTUAL_TOOL_IN_MANIFEST: test_tool_str}
+    )
+
+    aioresponses.get(
+        f"{TEST_BASE_URL}/api/tool/{REQUESTED_TOOL_NAME}",
+        payload=manifest.model_dump(),
+        status=200,
+    )
+
+    async with ToolboxClient(TEST_BASE_URL) as client:
+        with pytest.raises(Exception, match=f"Tool '{REQUESTED_TOOL_NAME}' not found!"):
+            await client.load_tool(REQUESTED_TOOL_NAME)
+
+    aioresponses.assert_called_once_with(
+        f"{TEST_BASE_URL}/api/tool/{REQUESTED_TOOL_NAME}", method="GET"
+    )
+
+
 class TestAuth:
 
     @pytest.fixture
@@ -182,7 +237,7 @@ class TestAuth:
         tool = await client.load_tool(
             tool_name, auth_token_getters={"my-auth-service": token_handler}
         )
-        res = await tool(5)
+        await tool(5)
 
     @pytest.mark.asyncio
     async def test_auth_with_add_token_success(
@@ -195,7 +250,7 @@ class TestAuth:
 
         tool = await client.load_tool(tool_name)
         tool = tool.add_auth_token_getters({"my-auth-service": token_handler})
-        res = await tool(5)
+        await tool(5)
 
     @pytest.mark.asyncio
     async def test_auth_with_load_tool_fail_no_token(
@@ -203,12 +258,27 @@ class TestAuth:
     ):
         """Tests 'load_tool' with auth token is specified."""
 
-        def token_handler():
-            return expected_header
-
         tool = await client.load_tool(tool_name)
         with pytest.raises(Exception):
-            res = await tool(5)
+            await tool(5)
+
+    @pytest.mark.asyncio
+    async def test_add_auth_token_getters_duplicate_fail(self, tool_name, client):
+        """
+        Tests that adding a duplicate auth token getter raises ValueError.
+        """
+        AUTH_SERVICE = "my-auth-service"
+
+        tool = await client.load_tool(tool_name)
+
+        authed_tool = tool.add_auth_token_getters({AUTH_SERVICE: {}})
+        assert AUTH_SERVICE in authed_tool._ToolboxTool__auth_service_token_getters
+
+        with pytest.raises(
+            ValueError,
+            match=f"Authentication source\\(s\\) `{AUTH_SERVICE}` already registered in tool `{tool_name}`.",
+        ):
+            authed_tool.add_auth_token_getters({AUTH_SERVICE: {}})
 
 
 class TestBoundParameter:
@@ -283,6 +353,22 @@ class TestBoundParameter:
         assert len(tool.__signature__.parameters) == 2
         assert "argA" in tool.__signature__.parameters
 
+        tool = tool.bind_parameters({"argA": 5})
+
+        assert len(tool.__signature__.parameters) == 1
+        assert "argA" not in tool.__signature__.parameters
+
+        res = await tool(True)
+        assert "argA" in res
+
+    @pytest.mark.asyncio
+    async def test_bind_callable_param_success(self, tool_name, client):
+        """Tests 'bind_param' with a bound parameter specified."""
+        tool = await client.load_tool(tool_name)
+
+        assert len(tool.__signature__.parameters) == 2
+        assert "argA" in tool.__signature__.parameters
+
         tool = tool.bind_parameters({"argA": lambda: 5})
 
         assert len(tool.__signature__.parameters) == 1
@@ -301,3 +387,67 @@ class TestBoundParameter:
 
         with pytest.raises(Exception):
             tool = tool.bind_parameters({"argC": lambda: 5})
+
+    @pytest.mark.asyncio
+    async def test_bind_param_static_value_success(self, tool_name, client):
+        """
+        Tests bind_parameters method with a static value.
+        """
+
+        bound_value = "Test value"
+
+        tool = await client.load_tool(tool_name)
+        bound_tool = tool.bind_parameters({"argB": bound_value})
+
+        assert bound_tool is not tool
+        assert "argB" not in bound_tool.__signature__.parameters
+        assert "argA" in bound_tool.__signature__.parameters
+
+        passed_value_a = 42
+        res_payload = await bound_tool(argA=passed_value_a)
+
+        assert res_payload == {"argA": passed_value_a, "argB": bound_value}
+
+    @pytest.mark.asyncio
+    async def test_bind_param_sync_callable_value_success(self, tool_name, client):
+        """
+        Tests bind_parameters method with a sync callable value.
+        """
+
+        bound_value_result = True
+        bound_sync_callable = Mock(return_value=bound_value_result)
+
+        tool = await client.load_tool(tool_name)
+        bound_tool = tool.bind_parameters({"argB": bound_sync_callable})
+
+        assert bound_tool is not tool
+        assert "argB" not in bound_tool.__signature__.parameters
+        assert "argA" in bound_tool.__signature__.parameters
+
+        passed_value_a = 42
+        res_payload = await bound_tool(argA=passed_value_a)
+
+        assert res_payload == {"argA": passed_value_a, "argB": bound_value_result}
+        bound_sync_callable.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_bind_param_async_callable_value_success(self, tool_name, client):
+        """
+        Tests bind_parameters method with an async callable value.
+        """
+
+        bound_value_result = True
+        bound_async_callable = AsyncMock(return_value=bound_value_result)
+
+        tool = await client.load_tool(tool_name)
+        bound_tool = tool.bind_parameters({"argB": bound_async_callable})
+
+        assert bound_tool is not tool
+        assert "argB" not in bound_tool.__signature__.parameters
+        assert "argA" in bound_tool.__signature__.parameters
+
+        passed_value_a = 42
+        res_payload = await bound_tool(argA=passed_value_a)
+
+        assert res_payload == {"argA": passed_value_a, "argB": bound_value_result}
+        bound_async_callable.assert_awaited_once()
