@@ -167,7 +167,7 @@ class TestAuth:
         assert "row2" in response
 
     @pytest.mark.asyncio
-    async def test_run_tool_async_auth(toolbox: ToolboxClient, auth_token1: str):
+    async def test_run_tool_async_auth(self, toolbox: ToolboxClient, auth_token1: str):
         """Tests running a tool with correct auth using an async token getter."""
         tool = await toolbox.load_tool("get-row-by-id-auth")
 
