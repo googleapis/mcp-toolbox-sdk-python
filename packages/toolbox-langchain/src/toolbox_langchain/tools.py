@@ -153,7 +153,7 @@ class ToolboxTool(BaseTool):
             bound_params: A dictionary of the bound parameter name to the
                 value or function of the bound value.
             strict: If True, a ValueError is raised if any of the provided bound
-                params is not defined in the tool's schema, or require
+                params is not defined in the tool's schema, or requires
                 authentication. If False, only a warning is issued.
 
         Returns:

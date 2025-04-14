@@ -62,8 +62,8 @@ class AsyncToolboxTool(BaseTool):
             bound_params: A mapping of parameter names to their bound
                 values.
             strict: If True, raises a ValueError if any of the given bound
-                parameters is missing from the schema or require authentication.
-                If False, only issues a warning.
+                parameters is missing from the schema or requires
+                authentication. If False, only issues a warning.
         """
 
         # If the schema is not already a ToolSchema instance, we create one from
@@ -260,8 +260,8 @@ class AsyncToolboxTool(BaseTool):
                 bound values or functions to retrieve the values. These params
                 will be merged with the existing bound params.
             strict: If True, raises a ValueError if any of the given bound
-                parameters is missing from the schema or require authentication.
-                If False, only issues a warning.
+                parameters is missing from the schema or requires
+                authentication. If False, only issues a warning.
 
         Returns:
             A new AsyncToolboxTool instance that is a deep copy of the current
@@ -361,7 +361,7 @@ class AsyncToolboxTool(BaseTool):
             bound_params: A dictionary of the bound parameter name to the
                 value or function of the bound value.
             strict: If True, a ValueError is raised if any of the provided bound
-                params is not defined in the tool's schema, or require
+                params is not defined in the tool's schema, or requires
                 authentication. If False, only a warning is issued.
 
         Returns:
@@ -371,7 +371,7 @@ class AsyncToolboxTool(BaseTool):
         Raises:
             ValueError: If any of the provided bound params is already bound.
             ValueError: if any of the provided bound params is not defined in
-                the tool's schema, or require authentication, and strict is
+                the tool's schema, or requires authentication, and strict is
                 True.
         """
 
