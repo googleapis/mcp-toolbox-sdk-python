@@ -11,10 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-
+import asyncio
 import types
-from typing import Any, Callable, Mapping, Optional, Union
+from typing import Any, Awaitable, Callable, Coroutine, Mapping, Optional, Union
 
 from aiohttp import ClientSession
 
@@ -37,6 +36,7 @@ class ToolboxClient:
         self,
         url: str,
         session: Optional[ClientSession] = None,
+        client_headers: Optional[dict[str, Union[Callable, Coroutine]]] = None,
     ):
         """
         Initializes the ToolboxClient.
@@ -47,6 +47,7 @@ class ToolboxClient:
                 If None (default), a new session is created internally. Note that
                 if a session is provided, its lifecycle (including closing)
                 should typically be managed externally.
+            client_headers: Headers to include in each request sent through this client.
         """
         self.__base_url = url
 
@@ -54,6 +55,8 @@ class ToolboxClient:
         if session is None:
             session = ClientSession()
         self.__session = session
+
+        self.__client_headers = client_headers if client_headers is not None else {}
 
     def __parse_tool(
         self,
@@ -63,13 +66,16 @@ class ToolboxClient:
         all_bound_params: Mapping[str, Union[Callable[[], Any], Any]],
     ) -> ToolboxTool:
         """Internal helper to create a callable tool from its schema."""
+        # TODO: Check if any auth token getters have the same name as client_headers and don't pass those.
         # sort into reg, authn, and bound params
         params = []
         authn_params: dict[str, list[str]] = {}
         bound_params: dict[str, Callable[[], str]] = {}
+        auth_sources: set[str] = set()
         for p in schema.parameters:
             if p.authSources:  # authn parameter
                 authn_params[p.name] = p.authSources
+                auth_sources.update(p.authSources)
             elif p.name in all_bound_params:  # bound parameter
                 bound_params[p.name] = all_bound_params[p.name]
             else:  # regular parameter
@@ -84,6 +90,7 @@ class ToolboxClient:
             base_url=self.__base_url,
             name=name,
             description=schema.description,
+            client_headers=types.MappingProxyType(self.__client_headers),
             params=params,
             # create a read-only values for the maps to prevent mutation
             required_authn_params=types.MappingProxyType(authn_params),
@@ -153,9 +160,16 @@ class ToolboxClient:
 
         """
 
+        # Resolve client headers
+        original_headers = self.__client_headers
+        resolved_headers = {
+            header_name: resolve_value(original_headers[header_name])
+            for header_name in original_headers
+        }
+
         # request the definition of the tool from the server
         url = f"{self.__base_url}/api/tool/{name}"
-        async with self.__session.get(url) as response:
+        async with self.__session.get(url, headers=resolved_headers) as response:
             json = await response.json()
         manifest: ManifestSchema = ManifestSchema(**json)
 
@@ -185,15 +199,19 @@ class ToolboxClient:
             bound_params: A mapping of parameter names to bind to specific values or
                 callables that are called to produce values as needed.
 
-
-
         Returns:
             list[ToolboxTool]: A list of callables, one for each tool defined
             in the toolset.
         """
+        # Resolve client headers
+        original_headers = self.__client_headers
+        resolved_headers = {
+            header_name: resolve_value(original_headers[header_name])
+            for header_name in original_headers
+        }
         # Request the definition of the tool from the server
         url = f"{self.__base_url}/api/toolset/{name or ''}"
-        async with self.__session.get(url) as response:
+        async with self.__session.get(url, headers=resolved_headers) as response:
             json = await response.json()
         manifest: ManifestSchema = ManifestSchema(**json)
 
@@ -203,3 +221,29 @@ class ToolboxClient:
             for n, s in manifest.tools.items()
         ]
         return tools
+
+    async def add_headers(self, headers: Mapping[str, Union[Callable, Coroutine]]):
+        # TODO: Add logic to update self.__headers
+        pass
+
+
+async def resolve_value(
+    source: Union[Callable[[], Awaitable[Any]], Callable[[], Any], Any],
+) -> Any:
+    """
+    Asynchronously or synchronously resolves a given source to its value.
+    If the `source` is a coroutine function, it will be awaited.
+    If the `source` is a regular callable, it will be called.
+    Otherwise (if it's not a callable), the `source` itself is returned directly.
+    Args:
+        source: The value, a callable returning a value, or a callable
+                returning an awaitable value.
+    Returns:
+        The resolved value.
+    """
+
+    if asyncio.iscoroutinefunction(source):
+        return await source()
+    elif callable(source):
+        return source()
+    return source
