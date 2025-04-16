@@ -13,26 +13,27 @@
 # limitations under the License.
 
 
-import asyncio
 import types
 from inspect import Signature
 from typing import (
     Any,
-    Awaitable,
     Callable,
-    Iterable,
     Mapping,
     Optional,
     Sequence,
-    Type,
     Union,
-    cast,
 )
 
 from aiohttp import ClientSession
-from pydantic import BaseModel, Field, create_model
 
 from toolbox_core.protocol import ParameterSchema
+
+from .utils import (
+    create_func_docstring,
+    identify_required_authn_params,
+    params_to_pydantic_model,
+    resolve_value,
+)
 
 
 class ToolboxTool:
@@ -88,7 +89,7 @@ class ToolboxTool:
 
         # the following properties are set to help anyone that might inspect it determine usage
         self.__name__ = name
-        self.__doc__ = create_docstring(self.__description, self.__params)
+        self.__doc__ = create_func_docstring(self.__description, self.__params)
         self.__signature__ = Signature(
             parameters=inspect_type_params, return_annotation=str
         )
@@ -271,84 +272,3 @@ class ToolboxTool:
             params=new_params,
             bound_params=types.MappingProxyType(all_bound_params),
         )
-
-
-def create_docstring(description: str, params: Sequence[ParameterSchema]) -> str:
-    """Convert tool description and params into its function docstring"""
-    docstring = description
-    if not params:
-        return docstring
-    docstring += "\n\nArgs:"
-    for p in params:
-        docstring += (
-            f"\n    {p.name} ({p.to_param().annotation.__name__}): {p.description}"
-        )
-    return docstring
-
-
-def identify_required_authn_params(
-    req_authn_params: Mapping[str, list[str]], auth_service_names: Iterable[str]
-) -> dict[str, list[str]]:
-    """
-    Identifies authentication parameters that are still required; because they
-        not covered by the provided `auth_service_names`.
-
-        Args:
-            req_authn_params: A mapping of parameter names to sets of required
-                authentication services.
-            auth_service_names: An iterable of authentication service names for which
-                token getters are available.
-
-    Returns:
-        A new dictionary representing the subset of required authentication parameters
-        that are not covered by the provided `auth_services`.
-    """
-    required_params = {}  # params that are still required with provided auth_services
-    for param, services in req_authn_params.items():
-        # if we don't have a token_getter for any of the services required by the param,
-        # the param is still required
-        required = not any(s in services for s in auth_service_names)
-        if required:
-            required_params[param] = services
-    return required_params
-
-
-def params_to_pydantic_model(
-    tool_name: str, params: Sequence[ParameterSchema]
-) -> Type[BaseModel]:
-    """Converts the given parameters to a Pydantic BaseModel class."""
-    field_definitions = {}
-    for field in params:
-        field_definitions[field.name] = cast(
-            Any,
-            (
-                field.to_param().annotation,
-                Field(description=field.description),
-            ),
-        )
-    return create_model(tool_name, **field_definitions)
-
-
-async def resolve_value(
-    source: Union[Callable[[], Awaitable[Any]], Callable[[], Any], Any],
-) -> Any:
-    """
-    Asynchronously or synchronously resolves a given source to its value.
-
-    If the `source` is a coroutine function, it will be awaited.
-    If the `source` is a regular callable, it will be called.
-    Otherwise (if it's not a callable), the `source` itself is returned directly.
-
-    Args:
-        source: The value, a callable returning a value, or a callable
-                returning an awaitable value.
-
-    Returns:
-        The resolved value.
-    """
-
-    if asyncio.iscoroutinefunction(source):
-        return await source()
-    elif callable(source):
-        return source()
-    return source
