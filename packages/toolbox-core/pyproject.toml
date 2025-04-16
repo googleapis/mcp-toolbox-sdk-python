@@ -33,10 +33,10 @@ package-dir = {"" = "src"}
 version = {attr = "toolbox_core.version.__version__"}
 
 [project.urls]
-Homepage = "https://github.com/googleapis/genai-toolbox-langchain-python/blob/main/packages/toolbox-core"
-Repository = "https://github.com/googleapis/genai-toolbox-langchain-python.git"
-"Bug Tracker" = "https://github.com/googleapis/genai-toolbox-langchain-python/issues"
-Changelog = "https://github.com/googleapis/genai-toolbox-langchain-python/blob/main/packages/toolbox-core/CHANGELOG.md"
+Homepage = "https://github.com/googleapis/mcp-toolbox-sdk-python/blob/main/packages/toolbox-core"
+Repository = "https://github.com/googleapis/mcp-toolbox-sdk-python.git"
+"Bug Tracker" = "https://github.com/googleapis/mcp-toolbox-sdk-python/issues"
+Changelog = "https://github.com/googleapis/mcp-toolbox-sdk-python/blob/main/packages/toolbox-core/CHANGELOG.md"
 
 [project.optional-dependencies]
 test = [
@@ -46,6 +46,7 @@ test = [
     "pytest==8.3.5",
     "pytest-aioresponses==0.3.0",
     "pytest-asyncio==0.26.0",
+    "pytest-cov==6.1.0",
     "google-cloud-secret-manager==2.23.2",
     "google-cloud-storage==3.1.0",
 ]
