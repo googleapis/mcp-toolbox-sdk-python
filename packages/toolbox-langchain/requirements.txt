@@ -1,5 +1,5 @@
 langchain-core==0.3.51
 PyYAML==6.0.2
-pydantic==2.11.2
+pydantic==2.11.3
 aiohttp==3.11.16
 deprecated==1.2.18
