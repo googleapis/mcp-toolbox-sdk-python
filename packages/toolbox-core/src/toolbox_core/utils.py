@@ -49,7 +49,7 @@ def identify_required_authn_params(
 ) -> dict[str, list[str]]:
     """
     Identifies authentication parameters that are still required; because they
-        not covered by the provided `auth_service_names`.
+        are not covered by the provided `auth_service_names`.
 
         Args:
             req_authn_params: A mapping of parameter names to sets of required
