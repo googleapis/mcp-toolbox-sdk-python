@@ -23,7 +23,7 @@ from aioresponses import aioresponses
 from pydantic import ValidationError
 
 from toolbox_core.protocol import ParameterSchema
-from toolbox_core.tool import ToolboxTool, create_docstring, resolve_value
+from toolbox_core.tool import ToolboxTool, create_func_docstring, resolve_value
 
 TEST_BASE_URL = "http://toolbox.example.com"
 TEST_TOOL_NAME = "sample_tool"
@@ -53,9 +53,9 @@ async def http_session() -> AsyncGenerator[ClientSession, None]:
         yield session
 
 
-def test_create_docstring_one_param_real_schema():
+def test_create_func_docstring_one_param_real_schema():
     """
-    Tests create_docstring with one real ParameterSchema instance.
+    Tests create_func_docstring with one real ParameterSchema instance.
     """
     description = "This tool does one thing."
     params = [
@@ -64,7 +64,7 @@ def test_create_docstring_one_param_real_schema():
         )
     ]
 
-    result_docstring = create_docstring(description, params)
+    result_docstring = create_func_docstring(description, params)
 
     expected_docstring = (
         "This tool does one thing.\n\n"
@@ -75,9 +75,9 @@ def test_create_docstring_one_param_real_schema():
     assert result_docstring == expected_docstring
 
 
-def test_create_docstring_multiple_params_real_schema():
+def test_create_func_docstring_multiple_params_real_schema():
     """
-    Tests create_docstring with multiple real ParameterSchema instances.
+    Tests create_func_docstring with multiple real ParameterSchema instances.
     """
     description = "This tool does multiple things."
     params = [
@@ -90,7 +90,7 @@ def test_create_docstring_multiple_params_real_schema():
         ),
     ]
 
-    result_docstring = create_docstring(description, params)
+    result_docstring = create_func_docstring(description, params)
 
     expected_docstring = (
         "This tool does multiple things.\n\n"
@@ -103,9 +103,9 @@ def test_create_docstring_multiple_params_real_schema():
     assert result_docstring == expected_docstring
 
 
-def test_create_docstring_no_description_real_schema():
+def test_create_func_docstring_no_description_real_schema():
     """
-    Tests create_docstring with empty description and one real ParameterSchema.
+    Tests create_func_docstring with empty description and one real ParameterSchema.
     """
     description = ""
     params = [
@@ -114,7 +114,7 @@ def test_create_docstring_no_description_real_schema():
         )
     ]
 
-    result_docstring = create_docstring(description, params)
+    result_docstring = create_func_docstring(description, params)
 
     expected_docstring = (
         "\n\nArgs:\n" "    config_id (str): The ID of the configuration."
@@ -125,14 +125,14 @@ def test_create_docstring_no_description_real_schema():
     assert "config_id (str): The ID of the configuration." in result_docstring
 
 
-def test_create_docstring_no_params():
+def test_create_func_docstring_no_params():
     """
-    Tests create_docstring when the params list is empty.
+    Tests create_func_docstring when the params list is empty.
     """
     description = "This is a tool description."
     params = []
 
-    result_docstring = create_docstring(description, params)
+    result_docstring = create_func_docstring(description, params)
 
     assert result_docstring == description
     assert "\n\nArgs:" not in result_docstring

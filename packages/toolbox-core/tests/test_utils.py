@@ -22,7 +22,7 @@ from pydantic import BaseModel, ValidationError
 
 from toolbox_core.protocol import ParameterSchema
 from toolbox_core.utils import (
-    create_docstring,
+    create_func_docstring,
     identify_required_authn_params,
     params_to_pydantic_model,
     resolve_value,
@@ -42,16 +42,16 @@ def create_param_mock(name: str, description: str, annotation: Type) -> Mock:
     return param_mock
 
 
-def test_create_docstring_no_params():
-    """Test create_docstring with no parameters."""
+def test_create_func_docstring_no_params():
+    """Test create_func_docstring with no parameters."""
     description = "This is a tool description."
     params = []
     expected_docstring = "This is a tool description."
-    assert create_docstring(description, params) == expected_docstring
+    assert create_func_docstring(description, params) == expected_docstring
 
 
-def test_create_docstring_with_params():
-    """Test create_docstring with multiple parameters using mocks."""
+def test_create_func_docstring_with_params():
+    """Test create_func_docstring with multiple parameters using mocks."""
     description = "Tool description."
     params = [
         create_param_mock(
@@ -64,11 +64,11 @@ def test_create_docstring_with_params():
 Args:
     param1 (str): First parameter.
     count (int): A number."""
-    assert create_docstring(description, params) == expected_docstring
+    assert create_func_docstring(description, params) == expected_docstring
 
 
-def test_create_docstring_empty_description():
-    """Test create_docstring with an empty description using mocks."""
+def test_create_func_docstring_empty_description():
+    """Test create_func_docstring with an empty description using mocks."""
     description = ""
     params = [
         create_param_mock(
@@ -79,7 +79,7 @@ def test_create_docstring_empty_description():
 
 Args:
     param1 (str): First parameter."""
-    assert create_docstring(description, params) == expected_docstring
+    assert create_func_docstring(description, params) == expected_docstring
 
 
 def test_identify_required_authn_params_none_required():
