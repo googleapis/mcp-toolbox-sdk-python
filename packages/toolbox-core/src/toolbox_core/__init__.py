@@ -14,8 +14,7 @@
 
 from .client import ToolboxClient
 from .sync_client import ToolboxSyncClient
-from .tool import ToolboxTool
 from .sync_tool import ToolboxSyncTool
-
+from .tool import ToolboxTool
 
 __all__ = ["ToolboxClient", "ToolboxSyncClient", "ToolboxTool", "ToolboxSyncTool"]
