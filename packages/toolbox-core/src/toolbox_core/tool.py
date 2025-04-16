@@ -18,6 +18,7 @@ import types
 from inspect import Signature
 from typing import (
     Any,
+    Awaitable,
     Callable,
     Iterable,
     Mapping,
@@ -181,16 +182,12 @@ class ToolboxTool:
 
         # apply bounded parameters
         for param, value in self.__bound_parameters.items():
-            if asyncio.iscoroutinefunction(value):
-                value = await value()
-            elif callable(value):
-                value = value()
-            payload[param] = value
+            payload[param] = await resolve_value(value)
 
         # create headers for auth services
         headers = {}
         for auth_service, token_getter in self.__auth_service_token_getters.items():
-            headers[f"{auth_service}_token"] = token_getter()
+            headers[f"{auth_service}_token"] = await resolve_value(token_getter)
 
         async with self.__session.post(
             self.__url,
@@ -330,3 +327,28 @@ def params_to_pydantic_model(
             ),
         )
     return create_model(tool_name, **field_definitions)
+
+
+async def resolve_value(
+    source: Union[Callable[[], Awaitable[Any]], Callable[[], Any], Any],
+) -> Any:
+    """
+    Asynchronously or synchronously resolves a given source to its value.
+
+    If the `source` is a coroutine function, it will be awaited.
+    If the `source` is a regular callable, it will be called.
+    Otherwise (if it's not a callable), the `source` itself is returned directly.
+
+    Args:
+        source: The value, a callable returning a value, or a callable
+                returning an awaitable value.
+
+    Returns:
+        The resolved value.
+    """
+
+    if asyncio.iscoroutinefunction(source):
+        return await source()
+    elif callable(source):
+        return source()
+    return source
