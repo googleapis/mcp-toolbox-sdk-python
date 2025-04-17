@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import types
+import warnings
 from typing import Any, Callable, Coroutine, Mapping, Optional, Union
 
 from aiohttp import ClientSession
@@ -66,7 +67,6 @@ class ToolboxClient:
         all_bound_params: Mapping[str, Union[Callable[[], Any], Any]],
     ) -> ToolboxTool:
         """Internal helper to create a callable tool from its schema."""
-        # TODO: Check if any auth token getters have the same name as client_headers and don't pass those.
         # sort into reg, authn, and bound params
         params = []
         authn_params: dict[str, list[str]] = {}
@@ -83,6 +83,13 @@ class ToolboxClient:
             authn_params, auth_token_getters.keys()
         )
 
+        request_headers = self.__client_headers
+        for auth_token, auth_token_val in auth_token_getters:
+            if auth_token in request_headers.keys():
+                warnings.warn(f"Auth token {auth_token} already bound in client.")
+            else:
+                request_headers[auth_token] = auth_token_val
+
         tool = ToolboxTool(
             session=self.__session,
             base_url=self.__base_url,
@@ -91,7 +98,7 @@ class ToolboxClient:
             params=params,
             # create a read-only values for the maps to prevent mutation
             required_authn_params=types.MappingProxyType(authn_params),
-            auth_service_token_getters=types.MappingProxyType(auth_token_getters),
+            auth_service_token_getters=types.MappingProxyType(request_headers),
             bound_params=types.MappingProxyType(bound_params),
         )
         return tool
@@ -220,5 +227,13 @@ class ToolboxClient:
         return tools
 
     async def add_headers(self, headers: Mapping[str, Union[Callable, Coroutine]]):
-        # TODO: Add logic to update self.__headers
-        pass
+        existing_headers = self.__client_headers.keys()
+        incoming_headers = headers.keys()
+        duplicates = existing_headers & incoming_headers
+        if duplicates:
+            warnings.warn(
+                f"Client header(s) `{', '.join(duplicates)}` already registered in client. These will not be registered again."
+            )
+        for header_key, header_val in headers:
+            if header_key not in existing_headers:
+                self.__client_headers[header_key] = header_val
