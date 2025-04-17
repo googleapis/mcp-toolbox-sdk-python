@@ -125,7 +125,7 @@ class ToolboxTool:
             description: The description of the remote tool.
             params: The args of the tool.
             required_authn_params: A dict of required authenticated parameters that need
-                a auth_service_token_getter set for them yet.
+                an auth_service_token_getter set for them yet.
             auth_service_token_getters: A dict of authService -> token (or callables
                 that produce a token)
             bound_params: A mapping of parameter names to bind to specific values or
