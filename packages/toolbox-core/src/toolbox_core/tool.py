@@ -14,26 +14,17 @@
 
 
 import types
+from copy import deepcopy
 from inspect import Signature
-from typing import (
-    Any,
-    Callable,
-    Mapping,
-    Optional,
-    Sequence,
-    Union,
-)
+from typing import Any, Callable, Mapping, Optional, Sequence, Union
+from warnings import warn
 
 from aiohttp import ClientSession
+from pydantic import ValidationError
 
 from toolbox_core.protocol import ParameterSchema
 
-from .utils import (
-    create_func_docstring,
-    identify_required_authn_params,
-    params_to_pydantic_model,
-    resolve_value,
-)
+from .utils import create_func_docstring, params_to_pydantic_model, resolve_value
 
 
 class ToolboxTool:
@@ -56,9 +47,11 @@ class ToolboxTool:
         name: str,
         description: str,
         params: Sequence[ParameterSchema],
-        required_authn_params: Mapping[str, list[str]],
         auth_service_token_getters: Mapping[str, Callable[[], str]],
         bound_params: Mapping[str, Union[Callable[[], Any], Any]],
+        strict: bool = True,
+        __original_params: Optional[Sequence[ParameterSchema]] = None,
+        __original_required_authn_params: Optional[Mapping[str, list[str]]] = None,
     ):
         """
         Initializes a callable that will trigger the tool invocation through the
@@ -69,156 +62,357 @@ class ToolboxTool:
             base_url: The base URL of the Toolbox server API.
             name: The name of the remote tool.
             description: The description of the remote tool.
-            params: The args of the tool.
-            required_authn_params: A dict of required authenticated parameters to a list
-                of services that provide values for them.
+            params: The *complete* original parameter list for the tool.
             auth_service_token_getters: A dict of authService -> token (or callables that
                 produce a token)
             bound_params: A mapping of parameter names to bind to specific values or
                 callables that are called to produce values as needed.
+            strict: If True (default), raises ValueError during initialization or
+                    binding if parameters are missing, already bound, or require
+                    authentication. If False, issues a warning for auth conflicts
+                    instead (missing/duplicate bindings still raise errors).
         """
-        # used to invoke the toolbox API
         self.__session: ClientSession = session
         self.__base_url: str = base_url
-        self.__url = f"{base_url}/api/tool/{name}/invoke"
-        self.__description = description
-        self.__params = params
-        self.__pydantic_model = params_to_pydantic_model(name, self.__params)
-
-        inspect_type_params = [param.to_param() for param in self.__params]
-
-        # the following properties are set to help anyone that might inspect it determine usage
         self.__name__ = name
-        self.__doc__ = create_func_docstring(self.__description, self.__params)
-        self.__signature__ = Signature(
-            parameters=inspect_type_params, return_annotation=str
+        self.__description = description
+        self.__strict = strict
+
+        # Store original state, deepcopying params to prevent external mutation
+        self.__original_params = deepcopy(
+            __original_params if __original_params is not None else params
+        )
+        self.__original_required_authn_params = (
+            __original_required_authn_params
+            if __original_required_authn_params is not None
+            else self._derive_required_auth(self.__original_params)
         )
 
-        self.__annotations__ = {p.name: p.annotation for p in inspect_type_params}
+        # Validate initial bound_params against original schema before setting state
+        self._validate_binding(bound_params, check_already_bound=False)
+
+        # Initialize internal state based on current bindings
+        self.__auth_service_token_getters = types.MappingProxyType(
+            dict(auth_service_token_getters)
+        )  # Ensure immutable copy
+        self.__bound_parameters = types.MappingProxyType(
+            dict(bound_params)
+        )  # Ensure immutable copy
+
+        # Filter original params to get current (unbound) params
+        self.__params = tuple(
+            p for p in self.__original_params if p.name not in self.__bound_parameters
+        )  # Use tuple for immutability
+
+        # Setup for invocation and introspection based on *current* params
+        self.__url = f"{self.__base_url}/api/tool/{self.__name__}/invoke"
+        self.__pydantic_model = params_to_pydantic_model(self.__name__, self.__params)
+
+        inspect_type_params = [
+            param.to_param() for param in self.__params
+        ]  # Use current params
+
+        self.__doc__ = create_func_docstring(
+            self.__description, self.__params
+        )  # Use current params
+        self.__signature__ = Signature(
+            parameters=inspect_type_params, return_annotation=str  # Use current params
+        )
+        self.__annotations__ = {
+            p.name: p.annotation for p in inspect_type_params
+        }  # Use current params
         self.__qualname__ = f"{self.__class__.__qualname__}.{self.__name__}"
 
-        # map of parameter name to auth service required by it
-        self.__required_authn_params = required_authn_params
-        # map of authService -> token_getter
-        self.__auth_service_token_getters = auth_service_token_getters
-        # map of parameter name to value (or callable that produces that value)
-        self.__bound_parameters = bound_params
+    @staticmethod
+    def _derive_required_auth(
+        param_schemas: Sequence[ParameterSchema],
+    ) -> Mapping[str, list[str]]:
+        """Helper to extract auth requirements from parameter schemas."""
+        req_auth: dict[str, list[str]] = {}
+        for p in param_schemas:
+            # Check existence and truthiness of authSources
+            if hasattr(p, "authSources") and p.authSources:
+                # Ensure it's a list of strings
+                if isinstance(p.authSources, list) and all(
+                    isinstance(s, str) for s in p.authSources
+                ):
+                    req_auth[p.name] = p.authSources
+                else:
+                    # Warn or raise if authSources has unexpected format?
+                    warn(
+                        f"Parameter '{p.name}' in tool '{p.name}' has malformed 'authSources'. Expected list[str], got {type(p.authSources)}. Ignoring.",
+                        UserWarning,
+                    )
+
+        return types.MappingProxyType(req_auth)
+
+    def _validate_binding(
+        self,
+        params_to_validate: Mapping[str, Union[Callable[[], Any], Any]],
+        check_already_bound: bool = True,
+    ) -> None:
+        """
+        Validates parameters intended for binding against the original schema
+        and authentication requirements, respecting the instance's strict mode.
+        """
+        auth_bound_params: list[str] = []
+        missing_bound_params: list[str] = []
+        already_bound_params: list[str] = []
+
+        original_param_names = {p.name for p in self.__original_params}
+
+        for param_name in params_to_validate:
+            # Check if already bound (if requested)
+            if check_already_bound and param_name in self.__bound_parameters:
+                already_bound_params.append(param_name)
+                continue  # Don't need further checks if already bound
+
+            # Check if missing from original schema
+            if param_name not in original_param_names:
+                missing_bound_params.append(param_name)
+                continue  # Don't check auth if missing
+
+            # Check if requires authentication
+            if param_name in self.__original_required_authn_params:
+                auth_bound_params.append(param_name)
+
+        # --- Report Errors/Warnings ---
+        if already_bound_params:
+            # This is always an error, regardless of strict mode
+            raise ValueError(
+                f"Parameter(s) `{', '.join(already_bound_params)}` already bound in tool `{self.__name__}`."
+            )
+
+        messages: list[str] = []
+        # Missing parameters are always an error
+        if missing_bound_params:
+            messages.append(
+                f"Parameter(s) `{', '.join(missing_bound_params)}` not found in tool schema and cannot be bound."
+            )
+            # Raise immediately for missing params as it indicates a fundamental error
+            raise ValueError("\n".join(messages))
+
+        # Check auth conflicts separately
+        if auth_bound_params:
+            auth_message = f"Parameter(s) `{', '.join(auth_bound_params)}` require authentication and cannot be bound."
+            if self.__strict:
+                # Raise error in strict mode for auth conflict
+                raise ValueError(auth_message)
+            else:
+                # Warn in non-strict mode for auth conflict
+                warn(
+                    auth_message, UserWarning, stacklevel=4
+                )  # Adjust stacklevel as needed
 
     def __copy(
         self,
+        # Allow overriding core components if needed by advanced use cases
         session: Optional[ClientSession] = None,
         base_url: Optional[str] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        params: Optional[Sequence[ParameterSchema]] = None,
-        required_authn_params: Optional[Mapping[str, list[str]]] = None,
+        # State relevant to binding/auth changes
+        params: Optional[
+            Sequence[ParameterSchema]
+        ] = None,  # This would be the *new* current params list
         auth_service_token_getters: Optional[Mapping[str, Callable[[], str]]] = None,
         bound_params: Optional[Mapping[str, Union[Callable[[], Any], Any]]] = None,
+        # Carry over strict mode and original state - these are typically NOT overridden
+        # unless for very specific internal reasons. The public methods do not expose overriding these.
+        strict: Optional[bool] = None,
+        original_params: Optional[Sequence[ParameterSchema]] = None,
+        original_required_authn_params: Optional[Mapping[str, list[str]]] = None,
     ) -> "ToolboxTool":
         """
-        Creates a copy of the ToolboxTool, overriding specific fields.
-
-        Args:
-            session: The `aiohttp.ClientSession` used for making API requests.
-            base_url: The base URL of the Toolbox server API.
-            name: The name of the remote tool.
-            description: The description of the remote tool.
-            params: The args of the tool.
-            required_authn_params: A dict of required authenticated parameters that need
-                an auth_service_token_getter set for them yet.
-            auth_service_token_getters: A dict of authService -> token (or callables
-                that produce a token)
-            bound_params: A mapping of parameter names to bind to specific values or
-                callables that are called to produce values as needed.
-
+        Internal method to create a copy of the ToolboxTool, overriding specific fields.
+        Carries over original schema information and strictness by default.
         """
         check = lambda val, default: val if val is not None else default
+
+        # Ensure original state and strictness are passed correctly using current values as default
+        new_strict = check(strict, self.__strict)
+        new_original_params = check(
+            original_params, self.__original_params
+        )  # Should usually pass self.__original_params
+        new_original_required_authn_params = check(
+            original_required_authn_params, self.__original_required_authn_params
+        )  # Pass self value
+
+        # The 'params' arg here should be the *new* set of *current* (unbound) parameters
+        # determined by the calling method (e.g., bind_parameters derives this)
+        current_params = check(
+            params, self.__params
+        )  # This holds the filtered list for the new instance
+
+        # Use current values as defaults for other potentially changed state
+        new_auth_getters = check(
+            auth_service_token_getters, self.__auth_service_token_getters
+        )
+        new_bound_params = check(bound_params, self.__bound_parameters)
+
+        # Re-call constructor. Note: This will re-run validation in __init__ if applicable,
+        # but _validate_binding should handle it correctly based on the passed bound_params.
+        # Pass the original state explicitly using the internal args.
         return ToolboxTool(
             session=check(session, self.__session),
             base_url=check(base_url, self.__base_url),
             name=check(name, self.__name__),
             description=check(description, self.__description),
-            params=check(params, self.__params),
-            required_authn_params=check(
-                required_authn_params, self.__required_authn_params
-            ),
-            auth_service_token_getters=check(
-                auth_service_token_getters, self.__auth_service_token_getters
-            ),
-            bound_params=check(bound_params, self.__bound_parameters),
+            params=current_params,  # Pass the new *current* params list for the new instance setup
+            auth_service_token_getters=new_auth_getters,
+            bound_params=new_bound_params,
+            strict=new_strict,  # Pass strictness
+            # Pass original state explicitly for the new instance
+            __original_params=new_original_params,
+            __original_required_authn_params=new_original_required_authn_params,
         )
+
+    def _check_invocation_auth(self) -> None:
+        """
+        Verifies that all parameters requiring authentication have a registered
+        token getter before invocation. Internal helper for __call__.
+        """
+        missing_auth_params: dict[str, list[str]] = (
+            {}
+        )  # param_name -> required_auth_sources
+
+        # Check against original requirements for parameters *not currently bound*
+        for (
+            param_name,
+            required_sources,
+        ) in self.__original_required_authn_params.items():
+            if param_name not in self.__bound_parameters:  # Only check unbound params
+                has_auth = False
+                if required_sources:
+                    for source in required_sources:
+                        if source in self.__auth_service_token_getters:
+                            has_auth = True
+                            break  # Found a valid source for this parameter
+                if not has_auth:
+                    missing_auth_params[param_name] = required_sources
+
+        if missing_auth_params:
+            param_details = [
+                f"'{name}' (requires one of: {', '.join(srcs)})"
+                for name, srcs in missing_auth_params.items()
+            ]
+            available_sources = list(self.__auth_service_token_getters.keys())
+            raise PermissionError(
+                f"Tool '{self.__name__}' requires authentication for parameter(s) "
+                f"{', '.join(param_details)} which is not configured. "
+                f"Available authentication sources: {available_sources or 'None'}."
+            )
+        # Potentially add check for tool-level auth here if schema supports it
 
     async def __call__(self, *args: Any, **kwargs: Any) -> str:
         """
         Asynchronously calls the remote tool with the provided arguments.
-
-        Validates arguments against the tool's signature, then sends them
-        as a JSON payload in a POST request to the tool's invoke URL.
-
-        Args:
-            *args: Positional arguments for the tool.
-            **kwargs: Keyword arguments for the tool.
-
-        Returns:
-            The string result returned by the remote tool execution.
         """
+        # 1. Check if all required authentications are satisfied for unbound parameters
+        self._check_invocation_auth()
 
-        # check if any auth services need to be specified yet
-        if len(self.__required_authn_params) > 0:
-            # Gather all the required auth services into a set
-            req_auth_services = set()
-            for s in self.__required_authn_params.values():
-                req_auth_services.update(s)
-            raise Exception(
-                f"One or more of the following authn services are required to invoke this tool: {','.join(req_auth_services)}"
-            )
+        # 2. Bind provided arguments to signature (for current/unbound params)
+        try:
+            bound_call_args = self.__signature__.bind(*args, **kwargs)
+            bound_call_args.apply_defaults()
+            payload = bound_call_args.arguments
+        except TypeError as e:
+            raise TypeError(f"Argument mismatch for tool '{self.__name__}': {e}") from e
 
-        # validate inputs to this call using the signature
-        all_args = self.__signature__.bind(*args, **kwargs)
-        all_args.apply_defaults()  # Include default values if not provided
-        payload = all_args.arguments
+        # 3. Validate argument types using pydantic model (for current/unbound params)
+        try:
+            # Pydantic model validation ensures correct types for unbound args
+            validated_payload = self.__pydantic_model.model_validate(payload)
+            # Use validated data (handles defaults, conversions, etc.)
+            payload_for_api = validated_payload.model_dump()
+        except ValidationError as e:
+            raise ValidationError(
+                f"Invalid argument types for tool '{self.__name__}':\n{e}"
+            ) from e
 
-        # Perform argument type validations using pydantic
-        self.__pydantic_model.model_validate(payload)
-
-        # apply bounded parameters
+        # 4. Apply statically bound parameters (resolve callables)
+        resolved_bound_params: dict[str, Any] = {}
         for param, value in self.__bound_parameters.items():
-            payload[param] = await resolve_value(value)
+            resolved_bound_params[param] = await resolve_value(value)
 
-        # create headers for auth services
-        headers = {}
+        # 5. Merge provided validated args with resolved bound args
+        # Bound parameters take precedence if somehow passed in kwargs as well (shouldn't happen via signature)
+        final_payload = {**payload_for_api, **resolved_bound_params}
+
+        # 6. Create headers for auth services
+        headers: dict[str, str] = {}
         for auth_service, token_getter in self.__auth_service_token_getters.items():
-            headers[f"{auth_service}_token"] = await resolve_value(token_getter)
+            # Include all registered tokens. Server side might ignore unused ones.
+            try:
+                token = await resolve_value(token_getter)
+                if not isinstance(token, str):
+                    warn(
+                        f"Token getter for auth service '{auth_service}' did not return a string.",
+                        UserWarning,
+                    )
+                    token = str(token)  # Attempt conversion
+                headers[f"{auth_service}_token"] = token
+            except Exception as e:
+                # Fail invocation if a token getter fails
+                raise RuntimeError(
+                    f"Failed to retrieve token for auth service '{auth_service}': {e}"
+                ) from e
 
+        # 7. Make the API call
         async with self.__session.post(
             self.__url,
-            json=payload,
+            json=final_payload,
             headers=headers,
+            # Consider adding timeout?
+            # timeout=aiohttp.ClientTimeout(total=...)
         ) as resp:
-            body = await resp.json()
-            if resp.status < 200 or resp.status >= 300:
-                err = body.get("error", f"unexpected status from server: {resp.status}")
-                raise Exception(err)
-        return body.get("result", body)
+            try:
+                # Check content type before assuming JSON
+                content_type = resp.headers.get("Content-Type", "")
+                if "application/json" in content_type:
+                    body = await resp.json()
+                else:
+                    # Handle non-JSON response as text
+                    text_body = await resp.text()
+                    # Log or handle text body appropriately
+                    # We still need to check status code below
+                    body = {
+                        "error": f"Non-JSON response received (Content-Type: {content_type}). Body: {text_body[:500]}..."
+                    }
+
+            except Exception as json_error:  # Includes JSONDecodeError
+                # Handle cases where response is not valid JSON even if header suggests it
+                body = await resp.text()
+                body = {
+                    "error": f"Failed to decode JSON response (status {resp.status}): {json_error}. Body: {body[:500]}..."
+                }
+
+            # Check status code *after* trying to read body
+            if not (200 <= resp.status < 300):
+                err_msg = f"Error calling tool '{self.__name__}' (status {resp.status})"
+                if isinstance(body, dict) and "error" in body:
+                    # Use error from JSON payload if available
+                    err_msg += f": {body['error']}"
+                # No need to add body again if it was already included in body['error'] above
+                raise Exception(err_msg)  # Or a more specific HTTPError subclass
+
+        # 8. Return result (assuming successful 2xx response)
+        if isinstance(body, dict):
+            # Prefer 'result' field if present, otherwise return stringified dict
+            return str(body.get("result", body))
+        else:
+            # Should not happen if status check passed and JSON was decoded, but as fallback
+            return str(body)
 
     def add_auth_token_getters(
         self,
         auth_token_getters: Mapping[str, Callable[[], str]],
     ) -> "ToolboxTool":
         """
-        Registers an auth token getter function that is used for AuthServices when tools
-        are invoked.
-
-        Args:
-            auth_token_getters: A mapping of authentication service names to
-                callables that return the corresponding authentication token.
-
-        Returns:
-            A new ToolboxTool instance with the specified authentication token
-            getters registered.
+        Registers auth token getter functions for specified authentication services.
+        Creates and returns a *new* tool instance.
         """
-
-        # throw an error if the authentication source is already registered
+        # Check for duplicates against current getters
         existing_services = self.__auth_service_token_getters.keys()
         incoming_services = auth_token_getters.keys()
         duplicates = existing_services & incoming_services
@@ -227,48 +421,45 @@ class ToolboxTool:
                 f"Authentication source(s) `{', '.join(duplicates)}` already registered in tool `{self.__name__}`."
             )
 
-        # create a read-only updated value for new_getters
+        # Create updated map of getters
         new_getters = types.MappingProxyType(
-            dict(self.__auth_service_token_getters, **auth_token_getters)
-        )
-        # create a read-only updated for params that are still required
-        new_req_authn_params = types.MappingProxyType(
-            identify_required_authn_params(
-                self.__required_authn_params, auth_token_getters.keys()
-            )
+            {**self.__auth_service_token_getters, **auth_token_getters}
         )
 
+        # Return a new instance using __copy, passing the new getters
         return self.__copy(
             auth_service_token_getters=new_getters,
-            required_authn_params=new_req_authn_params,
+            # Other state (params, bound_params, originals, strict) remains the same
         )
 
     def bind_parameters(
         self, bound_params: Mapping[str, Union[Callable[[], Any], Any]]
     ) -> "ToolboxTool":
         """
-        Binds parameters to values or callables that produce values.
-
-         Args:
-             bound_params: A mapping of parameter names to values or callables that
-                 produce values.
-
-         Returns:
-             A new ToolboxTool instance with the specified parameters bound.
+        Binds parameters to specific values or callables.
+        Creates and returns a *new* tool instance. Validation uses the
+        instance's `strict` mode.
         """
-        param_names = set(p.name for p in self.__params)
-        for name in bound_params.keys():
-            if name not in param_names:
-                raise Exception(f"unable to bind parameters: no parameter named {name}")
+        if not bound_params:
+            return self  # Return self if no parameters are being bound
 
-        new_params = []
-        for p in self.__params:
-            if p.name not in bound_params:
-                new_params.append(p)
-        all_bound_params = dict(self.__bound_parameters)
-        all_bound_params.update(bound_params)
+        # 1. Validate the new bindings against original schema & current state
+        self._validate_binding(bound_params, check_already_bound=True)
 
+        # 2. Create the new state
+        # New combined dictionary of all bound parameters
+        all_bound_params = types.MappingProxyType(
+            {**self.__bound_parameters, **bound_params}
+        )
+
+        # New list of *current* (unbound) parameters for the copied instance
+        new_current_params = tuple(
+            p for p in self.__original_params if p.name not in all_bound_params
+        )
+
+        # 3. Create the new instance via __copy
         return self.__copy(
-            params=new_params,
-            bound_params=types.MappingProxyType(all_bound_params),
+            params=new_current_params,  # Pass the filtered list as the new 'current' params
+            bound_params=all_bound_params,
+            # Other state (auth_getters, originals, strict) remains the same
         )
