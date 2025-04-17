@@ -11,15 +11,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-
 import types
-from typing import Any, Callable, Mapping, Optional, Union
+import warnings
+from typing import Any, Callable, Coroutine, Mapping, Optional, Union
 
 from aiohttp import ClientSession
 
 from .protocol import ManifestSchema, ToolSchema
-from .tool import ToolboxTool, identify_required_authn_params
+from .tool import ToolboxTool
+from .utils import identify_required_authn_params, resolve_value
 
 
 class ToolboxClient:
@@ -37,6 +37,7 @@ class ToolboxClient:
         self,
         url: str,
         session: Optional[ClientSession] = None,
+        client_headers: Optional[dict[str, Union[Callable, Coroutine]]] = None,
     ):
         """
         Initializes the ToolboxClient.
@@ -47,6 +48,7 @@ class ToolboxClient:
                 If None (default), a new session is created internally. Note that
                 if a session is provided, its lifecycle (including closing)
                 should typically be managed externally.
+            client_headers: Headers to include in each request sent through this client.
         """
         self.__base_url = url
 
@@ -54,6 +56,8 @@ class ToolboxClient:
         if session is None:
             session = ClientSession()
         self.__session = session
+
+        self.__client_headers = client_headers if client_headers is not None else {}
 
     def __parse_tool(
         self,
@@ -79,6 +83,13 @@ class ToolboxClient:
             authn_params, auth_token_getters.keys()
         )
 
+        request_headers = self.__client_headers
+        for auth_token, auth_token_val in auth_token_getters.items():
+            if auth_token in request_headers.keys():
+                warnings.warn(f"Auth token {auth_token} already bound in client.")
+            else:
+                request_headers[auth_token] = auth_token_val
+
         tool = ToolboxTool(
             session=self.__session,
             base_url=self.__base_url,
@@ -87,7 +98,7 @@ class ToolboxClient:
             params=params,
             # create a read-only values for the maps to prevent mutation
             required_authn_params=types.MappingProxyType(authn_params),
-            auth_service_token_getters=types.MappingProxyType(auth_token_getters),
+            auth_service_token_getters=types.MappingProxyType(request_headers),
             bound_params=types.MappingProxyType(bound_params),
         )
         return tool
@@ -153,9 +164,16 @@ class ToolboxClient:
 
         """
 
+        # Resolve client headers
+        original_headers = self.__client_headers
+        resolved_headers = {
+            header_name: await resolve_value(original_headers[header_name])
+            for header_name in original_headers
+        }
+
         # request the definition of the tool from the server
         url = f"{self.__base_url}/api/tool/{name}"
-        async with self.__session.get(url) as response:
+        async with self.__session.get(url, headers=resolved_headers) as response:
             json = await response.json()
         manifest: ManifestSchema = ManifestSchema(**json)
 
@@ -185,15 +203,19 @@ class ToolboxClient:
             bound_params: A mapping of parameter names to bind to specific values or
                 callables that are called to produce values as needed.
 
-
-
         Returns:
             list[ToolboxTool]: A list of callables, one for each tool defined
             in the toolset.
         """
+        # Resolve client headers
+        original_headers = self.__client_headers
+        resolved_headers = {
+            header_name: await resolve_value(original_headers[header_name])
+            for header_name in original_headers
+        }
         # Request the definition of the tool from the server
         url = f"{self.__base_url}/api/toolset/{name or ''}"
-        async with self.__session.get(url) as response:
+        async with self.__session.get(url, headers=resolved_headers) as response:
             json = await response.json()
         manifest: ManifestSchema = ManifestSchema(**json)
 
@@ -203,3 +225,15 @@ class ToolboxClient:
             for n, s in manifest.tools.items()
         ]
         return tools
+
+    async def add_headers(self, headers: Mapping[str, Union[Callable, Coroutine]]) -> None:
+        existing_headers = self.__client_headers.keys()
+        incoming_headers = headers.keys()
+        duplicates = existing_headers & incoming_headers
+        if duplicates:
+            warnings.warn(
+                f"Client header(s) `{', '.join(duplicates)}` already registered in client. These will not be registered again."
+            )
+        for header_key, header_val in headers.items():
+            if header_key not in existing_headers:
+                self.__client_headers[header_key] = header_val
