@@ -18,13 +18,13 @@ from typing import (
     Any,
     Awaitable,
     Callable,
-    Iterable,
     Mapping,
     Sequence,
     Type,
     Union,
     cast,
 )
+from types import MappingProxyType
 
 from pydantic import BaseModel, Field, create_model
 
@@ -45,30 +45,14 @@ def create_func_docstring(description: str, params: Sequence[ParameterSchema]) -
 
 
 def identify_required_authn_params(
-    req_authn_params: Mapping[str, list[str]], auth_service_names: Iterable[str]
-) -> dict[str, list[str]]:
-    """
-    Identifies authentication parameters that are still required; because they
-        are not covered by the provided `auth_service_names`.
-
-        Args:
-            req_authn_params: A mapping of parameter names to sets of required
-                authentication services.
-            auth_service_names: An iterable of authentication service names for which
-                token getters are available.
-
-    Returns:
-        A new dictionary representing the subset of required authentication parameters
-        that are not covered by the provided `auth_services`.
-    """
-    required_params = {}  # params that are still required with provided auth_services
-    for param, services in req_authn_params.items():
-        # if we don't have a token_getter for any of the services required by the param,
-        # the param is still required
-        required = not any(s in services for s in auth_service_names)
-        if required:
-            required_params[param] = services
-    return required_params
+    params: Sequence[ParameterSchema],
+) -> Mapping[str, list[str]]:
+    """Helper to extract auth requirements from parameter schemas."""
+    req_auth: dict[str, list[str]] = {}
+    for p in params:
+        if hasattr(p, "authSources") and p.authSources:
+            req_auth[p.name] = p.authSources
+    return MappingProxyType(req_auth)
 
 
 def params_to_pydantic_model(

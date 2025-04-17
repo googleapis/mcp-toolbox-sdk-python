@@ -16,6 +16,7 @@ from typing import Any, Callable, Optional, Union
 from warnings import warn
 
 from aiohttp import ClientSession
+from toolbox_core import ToolboxClient as ToolboxCoreClient
 
 from .tools import AsyncToolboxTool
 from .utils import ManifestSchema, _load_manifest
@@ -38,8 +39,7 @@ class AsyncToolboxClient:
             url: The base URL of the Toolbox service.
             session: An HTTP client session.
         """
-        self.__url = url
-        self.__session = session
+        self.__core_client = ToolboxCoreClient(url, session)
 
     async def aload_tool(
         self,
@@ -79,18 +79,10 @@ class AsyncToolboxClient:
                 )
                 auth_tokens = auth_headers
 
-        url = f"{self.__url}/api/tool/{tool_name}"
-        manifest: ManifestSchema = await _load_manifest(url, self.__session)
-
-        return AsyncToolboxTool(
-            tool_name,
-            manifest.tools[tool_name],
-            self.__url,
-            self.__session,
-            auth_tokens,
-            bound_params,
-            strict,
+        core_tool = await self.__core_client.load_tool(
+            tool_name, auth_tokens, bound_params
         )
+        return AsyncToolboxTool(core_tool)
 
     async def aload_toolset(
         self,
@@ -132,23 +124,10 @@ class AsyncToolboxClient:
                 )
                 auth_tokens = auth_headers
 
-        url = f"{self.__url}/api/toolset/{toolset_name or ''}"
-        manifest: ManifestSchema = await _load_manifest(url, self.__session)
-        tools: list[AsyncToolboxTool] = []
-
-        for tool_name, tool_schema in manifest.tools.items():
-            tools.append(
-                AsyncToolboxTool(
-                    tool_name,
-                    tool_schema,
-                    self.__url,
-                    self.__session,
-                    auth_tokens,
-                    bound_params,
-                    strict,
-                )
-            )
-        return tools
+        core_tools = await self.__core_client.load_toolset(
+            toolset_name, auth_tokens, bound_params
+        )
+        return [AsyncToolboxTool(core_tool) for core_tool in core_tools]
 
     def load_tool(
         self,
