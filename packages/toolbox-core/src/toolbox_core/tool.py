@@ -54,7 +54,6 @@ class ToolboxTool:
         base_url: str,
         name: str,
         description: str,
-        client_headers: Mapping[str, Union[Callable, Coroutine]],
         params: Sequence[ParameterSchema],
         required_authn_params: Mapping[str, list[str]],
         auth_service_token_getters: Mapping[str, Callable[[], str]],
@@ -69,8 +68,6 @@ class ToolboxTool:
             base_url: The base URL of the Toolbox server API.
             name: The name of the remote tool.
             description: The description of the remote tool.
-            client_headers: Immutable headers to include in each request sent to this tool.
-                Tool headers will override the client headers.
             params: The args of the tool.
             required_authn_params: A dict of required authenticated parameters to a list
                 of services that provide values for them.
@@ -84,7 +81,6 @@ class ToolboxTool:
         self.__base_url: str = base_url
         self.__url = f"{base_url}/api/tool/{name}/invoke"
         self.__description = description
-        self.__client_headers = client_headers
         self.__params = params
         self.__pydantic_model = params_to_pydantic_model(name, self.__params)
 
@@ -100,7 +96,6 @@ class ToolboxTool:
         self.__annotations__ = {p.name: p.annotation for p in inspect_type_params}
         self.__qualname__ = f"{self.__class__.__qualname__}.{self.__name__}"
 
-        # TODO: Add logic to remove any auth params named the same as client_params. Raise a warning.
         # map of parameter name to auth service required by it
         self.__required_authn_params = required_authn_params
         # map of authService -> token_getter
@@ -114,7 +109,6 @@ class ToolboxTool:
         base_url: Optional[str] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        client_headers: Optional[Mapping[str, Union[Callable, Coroutine]]] = None,
         params: Optional[Sequence[ParameterSchema]] = None,
         required_authn_params: Optional[Mapping[str, list[str]]] = None,
         auth_service_token_getters: Optional[Mapping[str, Callable[[], str]]] = None,
@@ -144,7 +138,6 @@ class ToolboxTool:
             name=check(name, self.__name__),
             description=check(description, self.__description),
             params=check(params, self.__params),
-            client_headers=check(client_headers, self.__client_headers),
             required_authn_params=check(
                 required_authn_params, self.__required_authn_params
             ),
@@ -200,7 +193,6 @@ class ToolboxTool:
         for auth_service, token_getter in self.__auth_service_token_getters.items():
             headers[f"{auth_service}_token"] = token_getter()
 
-        # TODO: Add client headers
         async with self.__session.post(
             self.__url,
             json=payload,
@@ -228,8 +220,6 @@ class ToolboxTool:
             A new ToolboxTool instance with the specified authentication token
             getters registered.
         """
-        # TODO: Check if any auth token getters are registered as headers in the client.
-
         # throw an error if the authentication source is already registered
         existing_services = self.__auth_service_token_getters.keys()
         incoming_services = auth_token_getters.keys()
@@ -304,7 +294,7 @@ def identify_required_authn_params(
 ) -> dict[str, list[str]]:
     """
     Identifies authentication parameters that are still required; because they
-        not covered by the provided `auth_service_names`.
+        are not covered by the provided `auth_service_names`.
 
         Args:
             req_authn_params: A mapping of parameter names to sets of required
