@@ -84,7 +84,7 @@ class ToolboxClient:
         )
 
         request_headers = self.__client_headers
-        for auth_token, auth_token_val in auth_token_getters:
+        for auth_token, auth_token_val in auth_token_getters.items():
             if auth_token in request_headers.keys():
                 warnings.warn(f"Auth token {auth_token} already bound in client.")
             else:
@@ -167,7 +167,7 @@ class ToolboxClient:
         # Resolve client headers
         original_headers = self.__client_headers
         resolved_headers = {
-            header_name: resolve_value(original_headers[header_name])
+            header_name: await resolve_value(original_headers[header_name])
             for header_name in original_headers
         }
 
@@ -210,7 +210,7 @@ class ToolboxClient:
         # Resolve client headers
         original_headers = self.__client_headers
         resolved_headers = {
-            header_name: resolve_value(original_headers[header_name])
+            header_name: await resolve_value(original_headers[header_name])
             for header_name in original_headers
         }
         # Request the definition of the tool from the server
@@ -234,6 +234,6 @@ class ToolboxClient:
             warnings.warn(
                 f"Client header(s) `{', '.join(duplicates)}` already registered in client. These will not be registered again."
             )
-        for header_key, header_val in headers:
+        for header_key, header_val in headers.items():
             if header_key not in existing_headers:
                 self.__client_headers[header_key] = header_val
