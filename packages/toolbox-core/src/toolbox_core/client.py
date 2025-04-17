@@ -226,7 +226,7 @@ class ToolboxClient:
         ]
         return tools
 
-    async def add_headers(self, headers: Mapping[str, Union[Callable, Coroutine]]):
+    async def add_headers(self, headers: Mapping[str, Union[Callable, Coroutine]]) -> None:
         existing_headers = self.__client_headers.keys()
         incoming_headers = headers.keys()
         duplicates = existing_headers & incoming_headers
