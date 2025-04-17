@@ -13,26 +13,27 @@
 # limitations under the License.
 
 
-import asyncio
 import types
 from inspect import Signature
 from typing import (
     Any,
     Callable,
-    Coroutine,
-    Iterable,
     Mapping,
     Optional,
     Sequence,
-    Type,
     Union,
-    cast,
 )
 
 from aiohttp import ClientSession
-from pydantic import BaseModel, Field, create_model
 
 from toolbox_core.protocol import ParameterSchema
+
+from .utils import (
+    create_func_docstring,
+    identify_required_authn_params,
+    params_to_pydantic_model,
+    resolve_value,
+)
 
 
 class ToolboxTool:
@@ -88,7 +89,7 @@ class ToolboxTool:
 
         # the following properties are set to help anyone that might inspect it determine usage
         self.__name__ = name
-        self.__doc__ = create_docstring(self.__description, self.__params)
+        self.__doc__ = create_func_docstring(self.__description, self.__params)
         self.__signature__ = Signature(
             parameters=inspect_type_params, return_annotation=str
         )
@@ -182,16 +183,12 @@ class ToolboxTool:
 
         # apply bounded parameters
         for param, value in self.__bound_parameters.items():
-            if asyncio.iscoroutinefunction(value):
-                value = await value()
-            elif callable(value):
-                value = value()
-            payload[param] = value
+            payload[param] = await resolve_value(value)
 
         # create headers for auth services
         headers = {}
         for auth_service, token_getter in self.__auth_service_token_getters.items():
-            headers[f"{auth_service}_token"] = token_getter()
+            headers[f"{auth_service}_token"] = await resolve_value(token_getter)
 
         async with self.__session.post(
             self.__url,
@@ -220,6 +217,7 @@ class ToolboxTool:
             A new ToolboxTool instance with the specified authentication token
             getters registered.
         """
+
         # throw an error if the authentication source is already registered
         existing_services = self.__auth_service_token_getters.keys()
         incoming_services = auth_token_getters.keys()
