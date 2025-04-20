@@ -151,7 +151,7 @@ class TestAsyncToolboxTool:
         )
 
     @pytest.mark.parametrize(
-        "auth_tokens, expected_auth_tokens",
+        "auth_token_getters, expected_auth_token_getters",
         [
             (
                 {"test-auth-source": lambda: "test-token"},
@@ -169,19 +169,23 @@ class TestAsyncToolboxTool:
             ),
         ],
     )
-    async def test_toolbox_tool_add_auth_tokens(
-        self, auth_toolbox_tool, auth_tokens, expected_auth_tokens
+    async def test_toolbox_tool_add_auth_token_getters(
+        self, auth_toolbox_tool, auth_token_getters, expected_auth_token_getters
     ):
-        tool = auth_toolbox_tool.add_auth_tokens(auth_tokens)
-        for source, getter in expected_auth_tokens.items():
-            assert tool._AsyncToolboxTool__auth_tokens[source]() == getter()
+        tool = auth_toolbox_tool.add_auth_token_getters(auth_token_getters)
+        for source, getter in expected_auth_token_getters.items():
+            assert tool._AsyncToolboxTool__auth_token_getters[source]() == getter()
 
-    async def test_toolbox_tool_add_auth_tokens_duplicate(self, auth_toolbox_tool):
-        tool = auth_toolbox_tool.add_auth_tokens(
+    async def test_toolbox_tool_add_auth_token_getters_duplicate(
+        self, auth_toolbox_tool
+    ):
+        tool = auth_toolbox_tool.add_auth_token_getters(
             {"test-auth-source": lambda: "test-token"}
         )
         with pytest.raises(ValueError) as e:
-            tool = tool.add_auth_tokens({"test-auth-source": lambda: "test-token"})
+            tool = tool.add_auth_token_getters(
+                {"test-auth-source": lambda: "test-token"}
+            )
         assert (
             "Authentication source(s) `test-auth-source` already registered in tool `test_tool`."
             in str(e.value)
@@ -223,7 +227,7 @@ class TestAsyncToolboxTool:
         )
 
     async def test_toolbox_tool_call_with_auth_tokens(self, auth_toolbox_tool):
-        tool = auth_toolbox_tool.add_auth_tokens(
+        tool = auth_toolbox_tool.add_auth_token_getters(
             {"test-auth-source": lambda: "test-token"}
         )
         result = await tool.ainvoke({"param2": 123})
@@ -240,7 +244,7 @@ class TestAsyncToolboxTool:
             match="Sending ID token over HTTP. User data may be exposed. Use HTTPS for secure communication.",
         ):
             auth_toolbox_tool._AsyncToolboxTool__url = "http://test-url"
-            tool = auth_toolbox_tool.add_auth_tokens(
+            tool = auth_toolbox_tool.add_auth_token_getters(
                 {"test-auth-source": lambda: "test-token"}
             )
             result = await tool.ainvoke({"param2": 123})
