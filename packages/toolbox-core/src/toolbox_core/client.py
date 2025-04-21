@@ -242,4 +242,6 @@ class ToolboxClient:
             raise ValueError(
                 f"Client header(s) `{', '.join(duplicates)}` already registered in the client."
             )
-        self.__client_headers.update(headers)
+
+        merged_headers = {**self.__client_headers, **headers}
+        self.__client_headers = merged_headers
