@@ -444,7 +444,9 @@ class TestBoundParameter:
         assert "argA" not in bound_tool_once.__signature__.parameters
         assert "argB" in bound_tool_once.__signature__.parameters
 
-        expected_error_msg = "cannot re-bind parameter: parameter 'argA' is already bound"
+        expected_error_msg = (
+            "cannot re-bind parameter: parameter 'argA' is already bound"
+        )
         with pytest.raises(ValueError, match=expected_error_msg):
             bound_tool_once.bind_parameters({"argA": 10})
 
