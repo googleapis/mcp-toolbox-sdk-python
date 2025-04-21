@@ -59,7 +59,7 @@ def identify_required_authn_params(
 
     Returns:
         A new dictionary representing the subset of required authentication parameters
-        that are not covered by the provided `auth_services`.
+        that are not covered by the provided `auth_service_names`.
     """
     required_params = {}  # params that are still required with provided auth_services
     for param, services in req_authn_params.items():
