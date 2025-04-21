@@ -65,7 +65,7 @@ class ToolboxClient:
         auth_token_getters: dict[str, Callable[[], str]],
         all_bound_params: Mapping[str, Union[Callable[[], Any], Any]],
         client_headers: Mapping[str, Union[Callable, Coroutine, str]],
-    ) -> ToolboxTool:
+    ) -> tuple[ToolboxTool, set[str], set[str]]:
         """Internal helper to create a callable tool from its schema."""
         # sort into reg, authn, and bound params
         params = []
@@ -95,7 +95,13 @@ class ToolboxClient:
             bound_params=types.MappingProxyType(bound_params),
             client_headers=types.MappingProxyType(client_headers),
         )
-        return tool
+
+        used_bound_keys = set(bound_params.keys())
+        used_auth_keys: set[str] = set()
+        for required_sources in authn_params.values():
+            used_auth_keys.update(required_sources)
+
+        return tool, used_auth_keys, used_bound_keys
 
     async def __aenter__(self):
         """
@@ -171,7 +177,7 @@ class ToolboxClient:
         if name not in manifest.tools:
             # TODO: Better exception
             raise Exception(f"Tool '{name}' not found!")
-        tool = self.__parse_tool(
+        tool, _, _ = self.__parse_tool(
             name,
             manifest.tools[name],
             auth_token_getters,
@@ -217,7 +223,7 @@ class ToolboxClient:
         tools = [
             self.__parse_tool(
                 n, s, auth_token_getters, bound_params, self.__client_headers
-            )
+            )[0]
             for n, s in manifest.tools.items()
         ]
         return tools
