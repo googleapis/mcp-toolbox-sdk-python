@@ -182,7 +182,8 @@ class ToolboxTool:
             for s in self.__required_authn_params.values():
                 req_auth_services.update(s)
             raise Exception(
-                f"One or more of the following authn services are required to invoke this tool: {','.join(req_auth_services)}"
+                f"One or more of the following authn services are required to invoke this tool"
+                f": {','.join(req_auth_services)}"
             )
 
         # validate inputs to this call using the signature
