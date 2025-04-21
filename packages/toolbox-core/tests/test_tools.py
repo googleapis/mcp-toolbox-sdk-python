@@ -406,9 +406,7 @@ def test_tool_init_header_auth_conflict(
     auth_header_key,
 ):
     """Tests ValueError on init if client header conflicts with auth token."""
-    conflicting_client_header = {
-        auth_header_key: "some-client-value"
-    }
+    conflicting_client_header = {auth_header_key: "some-client-value"}
 
     with pytest.raises(
         ValueError, match=f"Client header\\(s\\) `{auth_header_key}` already registered"
