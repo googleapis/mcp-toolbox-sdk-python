@@ -520,11 +520,18 @@ class TestClientHeaders:
             assert result == expected_payload["result"]
 
     @pytest.mark.asyncio
-    async def test_load_tool_with_sync_callable_headers(self, aioresponses, test_tool_str, sync_callable_header,
-                                                        sync_callable_header_value):
+    async def test_load_tool_with_sync_callable_headers(
+        self,
+        aioresponses,
+        test_tool_str,
+        sync_callable_header,
+        sync_callable_header_value,
+    ):
         """Tests loading and invoking a tool with sync callable client headers."""
         tool_name = "tool_with_sync_callable_headers"
-        manifest = ManifestSchema(serverVersion="0.0.0", tools={tool_name: test_tool_str})
+        manifest = ManifestSchema(
+            serverVersion="0.0.0", tools={tool_name: test_tool_str}
+        )
         expected_payload = {"result": "ok_sync"}
         header_key = list(sync_callable_header.keys())[0]
         header_mock = sync_callable_header[header_key]
@@ -544,9 +551,13 @@ class TestClientHeaders:
             assert kwargs.get("headers") == resolved_header
             return CallbackResult(status=200, payload=expected_payload)
 
-        aioresponses.post(f"{TEST_BASE_URL}/api/tool/{tool_name}/invoke", callback=post_callback)
+        aioresponses.post(
+            f"{TEST_BASE_URL}/api/tool/{tool_name}/invoke", callback=post_callback
+        )
 
-        async with ToolboxClient(TEST_BASE_URL, client_headers=sync_callable_header) as client:
+        async with ToolboxClient(
+            TEST_BASE_URL, client_headers=sync_callable_header
+        ) as client:
             tool = await client.load_tool(tool_name)
             header_mock.assert_called_once()  # GET
 
@@ -557,15 +568,20 @@ class TestClientHeaders:
             header_mock.assert_called_once()  # POST/invoke
 
     @pytest.mark.asyncio
-    async def test_load_tool_with_async_callable_headers(self, aioresponses, test_tool_str,
-                                                         async_callable_header,
-                                                         # Use the header fixture (provides mock)
-                                                         async_callable_header_value
-                                                         # Use the value fixture for expected result
-                                                         ):
+    async def test_load_tool_with_async_callable_headers(
+        self,
+        aioresponses,
+        test_tool_str,
+        async_callable_header,
+        # Use the header fixture (provides mock)
+        async_callable_header_value,
+        # Use the value fixture for expected result
+    ):
         """Tests loading and invoking a tool with async callable client headers."""
         tool_name = "tool_with_async_callable_headers"
-        manifest = ManifestSchema(serverVersion="0.0.0", tools={tool_name: test_tool_str})
+        manifest = ManifestSchema(
+            serverVersion="0.0.0", tools={tool_name: test_tool_str}
+        )
         expected_payload = {"result": "ok_async"}
 
         header_key = list(async_callable_header.keys())[0]
@@ -586,12 +602,16 @@ class TestClientHeaders:
             assert kwargs.get("headers") == resolved_header
             return CallbackResult(status=200, payload=expected_payload)
 
-        aioresponses.post(f"{TEST_BASE_URL}/api/tool/{tool_name}/invoke", callback=post_callback)
+        aioresponses.post(
+            f"{TEST_BASE_URL}/api/tool/{tool_name}/invoke", callback=post_callback
+        )
 
         # Pass the dictionary containing the AsyncMock to the client
-        async with ToolboxClient(TEST_BASE_URL, client_headers=async_callable_header) as client:
+        async with ToolboxClient(
+            TEST_BASE_URL, client_headers=async_callable_header
+        ) as client:
             tool = await client.load_tool(tool_name)
-            header_mock.assert_awaited_once() # GET
+            header_mock.assert_awaited_once()  # GET
 
             header_mock.reset_mock()
 
@@ -600,11 +620,15 @@ class TestClientHeaders:
             header_mock.assert_awaited_once()  # POST/invoke
 
     @pytest.mark.asyncio
-    async def test_load_toolset_with_headers(self, aioresponses, test_tool_str, static_header):
+    async def test_load_toolset_with_headers(
+        self, aioresponses, test_tool_str, static_header
+    ):
         """Tests loading a toolset with client headers."""
         toolset_name = "toolset_with_headers"
         tool_name = "tool_in_set"
-        manifest = ManifestSchema(serverVersion="0.0.0", tools={tool_name: test_tool_str})
+        manifest = ManifestSchema(
+            serverVersion="0.0.0", tools={tool_name: test_tool_str}
+        )
 
         # Mock GET
         def get_callback(url, **kwargs):
@@ -612,7 +636,9 @@ class TestClientHeaders:
             assert kwargs.get("headers") == static_header
             return CallbackResult(status=200, payload=manifest.model_dump())
 
-        aioresponses.get(f"{TEST_BASE_URL}/api/toolset/{toolset_name}", callback=get_callback)
+        aioresponses.get(
+            f"{TEST_BASE_URL}/api/toolset/{toolset_name}", callback=get_callback
+        )
 
         async with ToolboxClient(TEST_BASE_URL, client_headers=static_header) as client:
             tools = await client.load_toolset(toolset_name)
@@ -620,10 +646,14 @@ class TestClientHeaders:
             assert tools[0].__name__ == tool_name
 
     @pytest.mark.asyncio
-    async def test_add_headers_success(self, aioresponses, test_tool_str, static_header):
+    async def test_add_headers_success(
+        self, aioresponses, test_tool_str, static_header
+    ):
         """Tests adding headers after client initialization."""
         tool_name = "tool_after_add_headers"
-        manifest = ManifestSchema(serverVersion="0.0.0", tools={tool_name: test_tool_str})
+        manifest = ManifestSchema(
+            serverVersion="0.0.0", tools={tool_name: test_tool_str}
+        )
         expected_payload = {"result": "added_ok"}
 
         # Mock GET for tool definition - check headers
@@ -639,7 +669,9 @@ class TestClientHeaders:
             assert kwargs.get("headers") == static_header
             return CallbackResult(status=200, payload=expected_payload)
 
-        aioresponses.post(f"{TEST_BASE_URL}/api/tool/{tool_name}/invoke", callback=post_callback)
+        aioresponses.post(
+            f"{TEST_BASE_URL}/api/tool/{tool_name}/invoke", callback=post_callback
+        )
 
         async with ToolboxClient(TEST_BASE_URL) as client:
             await client.add_headers(static_header)
@@ -653,17 +685,26 @@ class TestClientHeaders:
     async def test_add_headers_duplicate_fail(self, static_header):
         """Tests that adding a duplicate header via add_headers raises ValueError."""
         async with ToolboxClient(TEST_BASE_URL, client_headers=static_header) as client:
-            with pytest.raises(ValueError, match=f"Client header\\(s\\) `X-Static-Header` already registered"):
-                await client.add_headers(static_header)  # Try adding the same header again
+            with pytest.raises(
+                ValueError,
+                match=f"Client header\\(s\\) `X-Static-Header` already registered",
+            ):
+                await client.add_headers(
+                    static_header
+                )  # Try adding the same header again
 
     @pytest.mark.asyncio
-    async def test_client_header_auth_token_conflict_fail(self, aioresponses, test_tool_auth):
+    async def test_client_header_auth_token_conflict_fail(
+        self, aioresponses, test_tool_auth
+    ):
         """
         Tests that loading a tool fails if a client header conflicts with an auth token name.
         """
         tool_name = "auth_conflict_tool"
         conflict_key = "my-auth-service_token"
-        manifest = ManifestSchema(serverVersion="0.0.0", tools={tool_name: test_tool_auth})
+        manifest = ManifestSchema(
+            serverVersion="0.0.0", tools={tool_name: test_tool_auth}
+        )
 
         conflicting_headers = {conflict_key: "some_value"}
         auth_getters = {"my-auth-service": lambda: "token_val"}
@@ -674,6 +715,11 @@ class TestClientHeaders:
             status=200,
         )
 
-        async with ToolboxClient(TEST_BASE_URL, client_headers=conflicting_headers) as client:
-            with pytest.raises(ValueError, match=f"Client header\\(s\\) `{conflict_key}` already registered"):
+        async with ToolboxClient(
+            TEST_BASE_URL, client_headers=conflicting_headers
+        ) as client:
+            with pytest.raises(
+                ValueError,
+                match=f"Client header\\(s\\) `{conflict_key}` already registered",
+            ):
                 await client.load_tool(tool_name, auth_token_getters=auth_getters)
