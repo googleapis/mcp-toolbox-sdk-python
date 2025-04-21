@@ -181,7 +181,7 @@ async def test_load_tool_not_found_in_manifest(aioresponses, test_tool_str):
             await client.load_tool(REQUESTED_TOOL_NAME)
 
     aioresponses.assert_called_once_with(
-        f"{TEST_BASE_URL}/api/tool/{REQUESTED_TOOL_NAME}", method="GET"
+        f"{TEST_BASE_URL}/api/tool/{REQUESTED_TOOL_NAME}", method="GET", headers={}
     )
 
 
