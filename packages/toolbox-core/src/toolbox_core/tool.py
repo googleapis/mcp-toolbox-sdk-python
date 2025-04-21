@@ -15,7 +15,7 @@
 
 import types
 from inspect import Signature
-from typing import Any, Callable, Mapping, Optional, Sequence, Union, Coroutine
+from typing import Any, Callable, Coroutine, Mapping, Optional, Sequence, Union
 
 from aiohttp import ClientSession
 
@@ -113,7 +113,6 @@ class ToolboxTool:
         self.__bound_parameters = bound_params
         # map of client headers to their value/callable/coroutine
         self.__client_headers = client_headers
-
 
     def __copy(
         self,
@@ -249,8 +248,7 @@ class ToolboxTool:
         # Validate duplicates with client headers
         request_header_names = self.__client_headers.keys()
         auth_token_names = [
-            auth_token_name + "_token"
-            for auth_token_name in incoming_services
+            auth_token_name + "_token" for auth_token_name in incoming_services
         ]
         duplicates = request_header_names & auth_token_names
         if duplicates:
