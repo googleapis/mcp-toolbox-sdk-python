@@ -211,7 +211,6 @@ async def test_load_tool_not_found_in_manifest(aioresponses, test_tool_str):
         serverVersion="0.0.0", tools={ACTUAL_TOOL_IN_MANIFEST: test_tool_str}
     )
 
-    mock_tool_load(aioresponses, REQUESTED_TOOL_NAME, test_tool_str, server_version="0.0.0")
     url = f"{TEST_BASE_URL}/api/tool/{REQUESTED_TOOL_NAME}"
     aioresponses.get(url, payload=manifest.model_dump(),
                      status=200)
@@ -512,7 +511,6 @@ class TestClientHeaders:
 
     @pytest.fixture
     def async_callable_header(self, async_callable_header_value):
-        # This mock, when awaited by the client, will return the value.
         return {
             "X-Async-Callable-Header": AsyncMock(
                 return_value=async_callable_header_value
