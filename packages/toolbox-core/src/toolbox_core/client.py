@@ -36,7 +36,7 @@ class ToolboxClient:
         self,
         url: str,
         session: Optional[ClientSession] = None,
-        client_headers: Optional[dict[str, Union[Callable, Coroutine]]] = None,
+        client_headers: Optional[Mapping[str, Union[Callable, Coroutine, str]]] = None,
     ):
         """
         Initializes the ToolboxClient.
@@ -64,17 +64,9 @@ class ToolboxClient:
         schema: ToolSchema,
         auth_token_getters: dict[str, Callable[[], str]],
         all_bound_params: Mapping[str, Union[Callable[[], Any], Any]],
+        client_headers: Mapping[str, Union[Callable, Coroutine, str]],
     ) -> ToolboxTool:
         """Internal helper to create a callable tool from its schema."""
-        # Validate conflicting Headers/Auth Tokens
-        request_header_names = self.__client_headers.keys()
-        auth_token_names = [auth_token + "_token" for auth_token in auth_token_getters.keys()]
-        duplicates = request_header_names & auth_token_names
-        if duplicates:
-            raise ValueError(
-                f"Client header(s) `{', '.join(duplicates)}` already registered in client."
-            )
-
         # sort into reg, authn, and bound params
         params = []
         authn_params: dict[str, list[str]] = {}
@@ -99,8 +91,9 @@ class ToolboxClient:
             params=params,
             # create a read-only values for the maps to prevent mutation
             required_authn_params=types.MappingProxyType(authn_params),
-            auth_service_token_getters=types.MappingProxyType({**self.__client_headers, **auth_token_getters}),
+            auth_service_token_getters=types.MappingProxyType(auth_token_getters),
             bound_params=types.MappingProxyType(bound_params),
+            client_headers=types.MappingProxyType(client_headers),
         )
         return tool
 
@@ -155,8 +148,6 @@ class ToolboxClient:
                 callables that return the corresponding authentication token.
             bound_params: A mapping of parameter names to bind to specific values or
                 callables that are called to produce values as needed.
-
-
 
         Returns:
             ToolboxTool: A callable object representing the loaded tool, ready
@@ -226,7 +217,9 @@ class ToolboxClient:
         ]
         return tools
 
-    async def add_headers(self, headers: Mapping[str, Union[Callable, Coroutine]]) -> None:
+    async def add_headers(
+        self, headers: Mapping[str, Union[Callable, Coroutine, str]]
+    ) -> None:
         """
         Asynchronously Add headers to be included in each request sent through this client.
 
