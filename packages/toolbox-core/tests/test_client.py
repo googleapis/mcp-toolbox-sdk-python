@@ -611,9 +611,7 @@ class TestClientHeaders:
         aioresponses,
         test_tool_str,
         async_callable_header,
-        # Use the header fixture (provides mock)
         async_callable_header_value,
-        # Use the value fixture for expected result
     ):
         """Tests loading and invoking a tool with async callable client headers."""
         tool_name = "tool_with_async_callable_headers"
@@ -628,14 +626,14 @@ class TestClientHeaders:
         # Calculate expected result using the VALUE fixture
         resolved_header = {header_key: async_callable_header_value}
 
-        # Mock GET callback checks against the RESOLVED value
+        # Mock GET
         def get_callback(url, **kwargs):
             assert kwargs.get("headers") == resolved_header
             return CallbackResult(status=200, payload=manifest.model_dump())
 
         aioresponses.get(f"{TEST_BASE_URL}/api/tool/{tool_name}", callback=get_callback)
 
-        # Mock POST callback checks against the RESOLVED value
+        # Mock POST
         def post_callback(url, **kwargs):
             assert kwargs.get("headers") == resolved_header
             return CallbackResult(status=200, payload=expected_payload)
@@ -644,7 +642,6 @@ class TestClientHeaders:
             f"{TEST_BASE_URL}/api/tool/{tool_name}/invoke", callback=post_callback
         )
 
-        # Pass the dictionary containing the AsyncMock to the client
         async with ToolboxClient(
             TEST_BASE_URL, client_headers=async_callable_header
         ) as client:
@@ -694,9 +691,10 @@ class TestClientHeaders:
         )
         expected_payload = {"result": "added_ok"}
 
-        # Mock GET for tool definition - check headers
+        # Mock GET
         def get_callback(url, **kwargs):
-            assert kwargs.get("headers") == static_header  # Verify headers in GET
+            # Verify headers
+            assert kwargs.get("headers") == static_header
             return CallbackResult(status=200, payload=manifest.model_dump())
 
         aioresponses.get(f"{TEST_BASE_URL}/api/tool/{tool_name}", callback=get_callback)
@@ -729,7 +727,7 @@ class TestClientHeaders:
             ):
                 await client.add_headers(
                     static_header
-                )  # Try adding the same header again
+                )
 
     @pytest.mark.asyncio
     async def test_client_header_auth_token_conflict_fail(
