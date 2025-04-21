@@ -17,9 +17,12 @@ import inspect
 import json
 from unittest.mock import AsyncMock, Mock
 
+import aioresponses
 import pytest
+
+from typing import Optional, Callable, Mapping, Any
 import pytest_asyncio
-from aioresponses import CallbackResult
+from aioresponses import CallbackResult, aioresponses
 
 from toolbox_core import ToolboxClient
 from toolbox_core.protocol import ManifestSchema, ParameterSchema, ToolSchema
@@ -65,6 +68,65 @@ def test_tool_auth():
         ],
     )
 
+# --- Helper Functions for Mocking ---
+
+def mock_tool_load(
+    aio_resp: aioresponses,
+    tool_name: str,
+    tool_schema: ToolSchema,
+    base_url: str = TEST_BASE_URL,
+    server_version: str = "0.0.0",
+    status: int = 200,
+    callback: Optional[Callable] = None,
+):
+    """Mocks the GET /api/tool/{tool_name} endpoint."""
+    url = f"{base_url}/api/tool/{tool_name}"
+    manifest = ManifestSchema(serverVersion=server_version, tools={tool_name: tool_schema})
+    aio_resp.get(
+        url,
+        payload=manifest.model_dump(),
+        status=status,
+        callback=callback,
+    )
+
+def mock_toolset_load(
+    aio_resp: aioresponses,
+    toolset_name: str,
+    tools_dict: Mapping[str, ToolSchema],
+    base_url: str = TEST_BASE_URL,
+    server_version: str = "0.0.0",
+    status: int = 200,
+    callback: Optional[Callable] = None,
+):
+    """Mocks the GET /api/toolset/{toolset_name} endpoint."""
+    # Handle default toolset name (empty string)
+    url_path = f"toolset/{toolset_name}" if toolset_name else "toolset/"
+    url = f"{base_url}/api/{url_path}"
+    manifest = ManifestSchema(serverVersion=server_version, tools=tools_dict)
+    aio_resp.get(
+        url,
+        payload=manifest.model_dump(),
+        status=status,
+        callback=callback,
+    )
+
+def mock_tool_invoke(
+    aio_resp: aioresponses,
+    tool_name: str,
+    base_url: str = TEST_BASE_URL,
+    response_payload: Any = {"result": "ok"},
+    status: int = 200,
+    callback: Optional[Callable] = None,
+):
+    """Mocks the POST /api/tool/{tool_name}/invoke endpoint."""
+    url = f"{base_url}/api/tool/{tool_name}/invoke"
+    aio_resp.post(
+        url,
+        payload=response_payload,
+        status=status,
+        callback=callback,
+    )
+
 
 @pytest.mark.asyncio
 async def test_load_tool_success(aioresponses, test_tool_str):
@@ -73,17 +135,8 @@ async def test_load_tool_success(aioresponses, test_tool_str):
     """
     # Mock out responses from server
     TOOL_NAME = "test_tool_1"
-    manifest = ManifestSchema(serverVersion="0.0.0", tools={TOOL_NAME: test_tool_str})
-    aioresponses.get(
-        f"{TEST_BASE_URL}/api/tool/{TOOL_NAME}",
-        payload=manifest.model_dump(),
-        status=200,
-    )
-    aioresponses.post(
-        f"{TEST_BASE_URL}/api/tool/{TOOL_NAME}/invoke",
-        payload={"result": "ok"},
-        status=200,
-    )
+    mock_tool_load(aioresponses, TOOL_NAME, test_tool_str)
+    mock_tool_invoke(aioresponses, TOOL_NAME)
 
     async with ToolboxClient(TEST_BASE_URL) as client:
         # Load a Tool
@@ -115,11 +168,8 @@ async def test_load_toolset_success(aioresponses, test_tool_str, test_tool_int_b
     manifest = ManifestSchema(
         serverVersion="0.0.0", tools={TOOL1: test_tool_str, TOOL2: test_tool_int_bool}
     )
-    aioresponses.get(
-        f"{TEST_BASE_URL}/api/toolset/{TOOLSET_NAME}",
-        payload=manifest.model_dump(),
-        status=200,
-    )
+    mock_toolset_load(aioresponses, TOOLSET_NAME, manifest.tools)
+
 
     async with ToolboxClient(TEST_BASE_URL) as client:
         tools = await client.load_toolset(TOOLSET_NAME)
@@ -137,18 +187,9 @@ async def test_invoke_tool_server_error(aioresponses, test_tool_str):
     error status."""
     TOOL_NAME = "server_error_tool"
     ERROR_MESSAGE = "Simulated Server Error"
-    manifest = ManifestSchema(serverVersion="0.0.0", tools={TOOL_NAME: test_tool_str})
 
-    aioresponses.get(
-        f"{TEST_BASE_URL}/api/tool/{TOOL_NAME}",
-        payload=manifest.model_dump(),
-        status=200,
-    )
-    aioresponses.post(
-        f"{TEST_BASE_URL}/api/tool/{TOOL_NAME}/invoke",
-        payload={"error": ERROR_MESSAGE},
-        status=500,
-    )
+    mock_tool_load(aioresponses, TOOL_NAME, test_tool_str)
+    mock_tool_invoke(aioresponses, TOOL_NAME, response_payload={"error": ERROR_MESSAGE}, status=500)
 
     async with ToolboxClient(TEST_BASE_URL) as client:
         loaded_tool = await client.load_tool(TOOL_NAME)
@@ -170,11 +211,10 @@ async def test_load_tool_not_found_in_manifest(aioresponses, test_tool_str):
         serverVersion="0.0.0", tools={ACTUAL_TOOL_IN_MANIFEST: test_tool_str}
     )
 
-    aioresponses.get(
-        f"{TEST_BASE_URL}/api/tool/{REQUESTED_TOOL_NAME}",
-        payload=manifest.model_dump(),
-        status=200,
-    )
+    mock_tool_load(aioresponses, REQUESTED_TOOL_NAME, test_tool_str, server_version="0.0.0")
+    url = f"{TEST_BASE_URL}/api/tool/{REQUESTED_TOOL_NAME}"
+    aioresponses.get(url, payload=manifest.model_dump(),
+                     status=200)
 
     async with ToolboxClient(TEST_BASE_URL) as client:
         with pytest.raises(Exception, match=f"Tool '{REQUESTED_TOOL_NAME}' not found!"):
