@@ -228,13 +228,19 @@ class ToolboxClient:
 
     async def add_headers(self, headers: Mapping[str, Union[Callable, Coroutine]]) -> None:
         """
+        Asynchronously Add headers to be included in each request sent through this client.
 
+        Args:
+            headers: Headers to include in each request sent through this client.
+
+        Raises:
+            ValueError: If any of the headers are already registered in the client.
         """
         existing_headers = self.__client_headers.keys()
         incoming_headers = headers.keys()
         duplicates = existing_headers & incoming_headers
         if duplicates:
             raise ValueError(
-                f"Client header(s) `{', '.join(duplicates)}` already registered in client."
+                f"Client header(s) `{', '.join(duplicates)}` already registered in the client."
             )
         self.__client_headers.update(headers)
