@@ -19,8 +19,7 @@ from typing import Any, Callable, Coroutine, Mapping, Optional, Sequence, Union
 
 from aiohttp import ClientSession
 
-from toolbox_core.protocol import ParameterSchema
-
+from .protocol import ParameterSchema
 from .utils import (
     create_func_docstring,
     identify_required_authn_params,
