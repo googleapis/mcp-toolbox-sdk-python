@@ -68,7 +68,9 @@ def test_tool_auth():
         ],
     )
 
+
 # --- Helper Functions for Mocking ---
+
 
 def mock_tool_load(
     aio_resp: aioresponses,
@@ -81,13 +83,16 @@ def mock_tool_load(
 ):
     """Mocks the GET /api/tool/{tool_name} endpoint."""
     url = f"{base_url}/api/tool/{tool_name}"
-    manifest = ManifestSchema(serverVersion=server_version, tools={tool_name: tool_schema})
+    manifest = ManifestSchema(
+        serverVersion=server_version, tools={tool_name: tool_schema}
+    )
     aio_resp.get(
         url,
         payload=manifest.model_dump(),
         status=status,
         callback=callback,
     )
+
 
 def mock_toolset_load(
     aio_resp: aioresponses,
@@ -109,6 +114,7 @@ def mock_toolset_load(
         status=status,
         callback=callback,
     )
+
 
 def mock_tool_invoke(
     aio_resp: aioresponses,
@@ -170,7 +176,6 @@ async def test_load_toolset_success(aioresponses, test_tool_str, test_tool_int_b
     )
     mock_toolset_load(aioresponses, TOOLSET_NAME, manifest.tools)
 
-
     async with ToolboxClient(TEST_BASE_URL) as client:
         tools = await client.load_toolset(TOOLSET_NAME)
 
@@ -189,7 +194,9 @@ async def test_invoke_tool_server_error(aioresponses, test_tool_str):
     ERROR_MESSAGE = "Simulated Server Error"
 
     mock_tool_load(aioresponses, TOOL_NAME, test_tool_str)
-    mock_tool_invoke(aioresponses, TOOL_NAME, response_payload={"error": ERROR_MESSAGE}, status=500)
+    mock_tool_invoke(
+        aioresponses, TOOL_NAME, response_payload={"error": ERROR_MESSAGE}, status=500
+    )
 
     async with ToolboxClient(TEST_BASE_URL) as client:
         loaded_tool = await client.load_tool(TOOL_NAME)
@@ -212,8 +219,7 @@ async def test_load_tool_not_found_in_manifest(aioresponses, test_tool_str):
     )
 
     url = f"{TEST_BASE_URL}/api/tool/{REQUESTED_TOOL_NAME}"
-    aioresponses.get(url, payload=manifest.model_dump(),
-                     status=200)
+    aioresponses.get(url, payload=manifest.model_dump(), status=200)
 
     async with ToolboxClient(TEST_BASE_URL) as client:
         with pytest.raises(Exception, match=f"Tool '{REQUESTED_TOOL_NAME}' not found!"):
@@ -725,9 +731,7 @@ class TestClientHeaders:
                 ValueError,
                 match=f"Client header\\(s\\) `X-Static-Header` already registered",
             ):
-                await client.add_headers(
-                    static_header
-                )
+                await client.add_headers(static_header)
 
     @pytest.mark.asyncio
     async def test_client_header_auth_token_conflict_fail(
