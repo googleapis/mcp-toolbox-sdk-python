@@ -173,7 +173,11 @@ class ToolboxClient:
             # TODO: Better exception
             raise Exception(f"Tool '{name}' not found!")
         tool = self.__parse_tool(
-            name, manifest.tools[name], auth_token_getters, bound_params
+            name,
+            manifest.tools[name],
+            auth_token_getters,
+            bound_params,
+            self.__client_headers,
         )
 
         return tool
@@ -212,7 +216,9 @@ class ToolboxClient:
 
         # parse each tools name and schema into a list of ToolboxTools
         tools = [
-            self.__parse_tool(n, s, auth_token_getters, bound_params)
+            self.__parse_tool(
+                n, s, auth_token_getters, bound_params, self.__client_headers
+            )
             for n, s in manifest.tools.items()
         ]
         return tools
