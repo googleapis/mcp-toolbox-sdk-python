@@ -393,7 +393,7 @@ def test_tool_init_with_client_headers(
         required_authn_params={},
         auth_service_token_getters={},
         bound_params={},
-        client_headers=static_client_header,  # Pass client headers
+        client_headers=static_client_header,
     )
     assert tool_instance._ToolboxTool__client_headers == static_client_header
 
@@ -408,7 +408,7 @@ def test_tool_init_header_auth_conflict(
     """Tests ValueError on init if client header conflicts with auth token."""
     conflicting_client_header = {
         auth_header_key: "some-client-value"
-    }  # Header name matches derived auth token name
+    }
 
     with pytest.raises(
         ValueError, match=f"Client header\\(s\\) `{auth_header_key}` already registered"
@@ -419,8 +419,8 @@ def test_tool_init_header_auth_conflict(
             name="auth_conflict_tool",
             description=sample_tool_description,
             params=sample_tool_auth_params,
-            required_authn_params={},  # Assume auth req satisfied for init check
-            auth_service_token_getters=auth_getters,  # Has 'test-auth'
+            required_authn_params={},
+            auth_service_token_getters=auth_getters,
             bound_params={},
-            client_headers=conflicting_client_header,  # Conflicting header
+            client_headers=conflicting_client_header,
         )
