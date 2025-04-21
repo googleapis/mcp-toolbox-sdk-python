@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import inspect
-from inspect import iscoroutine
 from typing import AsyncGenerator, Callable
 from unittest.mock import AsyncMock, Mock
 
