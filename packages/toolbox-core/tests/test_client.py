@@ -15,12 +15,11 @@
 
 import inspect
 import json
+from typing import Any, Callable, Mapping, Optional
 from unittest.mock import AsyncMock, Mock
 
 import aioresponses
 import pytest
-
-from typing import Optional, Callable, Mapping, Any
 import pytest_asyncio
 from aioresponses import CallbackResult, aioresponses
 
