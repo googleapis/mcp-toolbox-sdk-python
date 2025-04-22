@@ -19,290 +19,91 @@ Databases or APIs) managed by Toolbox into your GenAI applications.
 
 <!-- TOC -->
 
-- [MCP Toolbox SDKs for Python](#mcp-toolbox-sdks-for-python)
-    - [Overview](#overview)
-    - [Available Packages](#available-packages)
-    - [Quickstart](#quickstart)
-    - [Core Concepts](#core-concepts)
-        - [Connecting to Toolbox](#connecting-to-toolbox)
-        - [Loading Tools](#loading-tools)
-        - [Invoking Tools](#invoking-tools)
-        - [Synchronous vs. Asynchronous Usage](#synchronous-vs-asynchronous-usage)
-        - [Authenticating Tools](#authenticating-tools)
-            - [When is Authentication Needed?](#when-is-authentication-needed)
-            - [Supported Authentication Mechanisms](#supported-authentication-mechanisms)
-            - [SDK Configuration](#sdk-configuration)
-        - [Binding Parameter Values](#binding-parameter-values)
-            - [Why Bind Parameters?](#why-bind-parameters)
-            - [SDK Configuration](#sdk-configuration)
-    - [Usage Comparison](#usage-comparison)
-    - [Contributing](#contributing)
-    - [License](#license)
-    - [Support](#support)
+- [Overview](#overview)
+- [Which Package Should I Use?](#which-package-should-i-use)
+- [Available Packages](#available-packages)
+- [Getting Started](#getting-started)
+- [Contributing](#contributing)
+- [License](#license)
+- [Support](#support)
 
 <!-- /TOC -->
 
 ## Overview
 
-The Toolbox service provides a centralized way to manage and expose tools for
-use by LLMs. These SDKs act as clients for that service, abstracting away the
-API calls needed to fetch tool definitions and invoke them.
+The MCP Toolbox service provides a centralized way to manage and expose tools
+(like API connectors, database query tools, etc.) for use by GenAI applications.
+
+These Python SDKs act as clients for that service. They handle the communication needed to:
+
+* Fetch tool definitions from your running Toolbox instance.
+* Provide convenient Python objects or functions representing those tools.
+* Invoke the tools (calling the underlying APIs/services configured in Toolbox).
+* Handle authentication and parameter binding as needed.
+
+By using these SDKs, you can easily leverage your Toolbox-managed tools directly
+within your Python applications or AI orchestration frameworks.
+
+## Which Package Should I Use?
+
+Choosing the right package depends on how you are building your application:
+
+* [`toolbox-langchain`](https://github.com/googleapis/mcp-toolbox-sdk-python/tree/main/packages/toolbox-langchain):
+  Use this package if you are building your application using the LangChain or
+  LangGraph frameworks. It provides tools that are directly compatible with the
+  LangChain ecosystem (`BaseTool` interface), simplifying integration.
+* [`toolbox-core`](https://github.com/googleapis/mcp-toolbox-sdk-python/tree/main/packages/toolbox-core):
+  Use this package if you are not using LangChain/LangGraph or any other
+  orchestration framework, or if you need a framework-agnostic way to interact
+  with Toolbox tools (e.g., for custom orchestration logic or direct use in
+  Python scripts).
 
 ## Available Packages
 
-This repository hosts the following Python packages:
+This repository hosts the following Python packages. See the package-specific
+README for detailed installation and usage instructions:
 
-| Package | Key Purpose | Integration | Path | Details (README) | PyPI Status |
+| Package | Target Use Case | Integration | Path | Details (README) | PyPI Status |
 | :------ | :---------- | :---------- | :---------------------- | :---------- | :--------- 
-| `toolbox-core` | Provides core, framework-agnostic tool handling | Use directly / Custom | `packages/toolbox-core/` | 📄 [View README](https://github.com/googleapis/mcp-toolbox-sdk-python/blob/main/packages/toolbox-core/README.md) | [![PyPI version](https://badge.fury.io/py/toolbox-core.svg)](https://badge.fury.io/py/toolbox-core) |
-| `toolbox-langchain` | Integrates Toolbox tools with the LangChain ecoystem | LangChain / LangGraph | `packages/toolbox-langchain/` | 📄 [View README](https://github.com/googleapis/mcp-toolbox-sdk-python/blob/main/packages/toolbox-langchain/README.md) | [![PyPI version](https://badge.fury.io/py/toolbox-langchain.svg)](https://badge.fury.io/py/toolbox-langchain) |
+| `toolbox-core` | Framework-agnostic / Custom applications | Use directly / Custom | `packages/toolbox-core/` | 📄 [View README](https://github.com/googleapis/mcp-toolbox-sdk-python/blob/main/packages/toolbox-core/README.md) | [![PyPI version](https://badge.fury.io/py/toolbox-core.svg)](https://badge.fury.io/py/toolbox-core) |
+| `toolbox-langchain` | LangChain / LangGraph applications | LangChain / LangGraph | `packages/toolbox-langchain/` | 📄 [View README](https://github.com/googleapis/mcp-toolbox-sdk-python/blob/main/packages/toolbox-langchain/README.md) | [![PyPI version](https://badge.fury.io/py/toolbox-langchain.svg)](https://badge.fury.io/py/toolbox-langchain) |
 
-## Quickstart
+## Getting Started
 
 To get started using Toolbox tools with an application, follow these general steps:
 
-1.  **Configure and Run the Toolbox Service:**
+1.  **Set up and Run the Toolbox Service:**
 
-    For detailed instructions on setting up and running the Toolbox service
-    itself, see: [**Toolbox Getting Started
+    Before using the SDKs, you need the main MCP Toolbox service running. Follow
+    the instructions here: [**Toolbox Getting Started
     Guide**](https://github.com/googleapis/genai-toolbox?tab=readme-ov-file#getting-started)
 
-2.  **Install the Toolbox SDK:**
-
-    Install the appropriate Python SDK package:
+2.  **Install the Appropriate SDK:**
+    
+    Choose the package based on your needs (see "[Which Package Should I Use?](#which-package-should-i-use)" above) and install it:
 
     ```bash
     # For the core, framework-agnostic SDK
     pip install toolbox-core
 
     # OR
-    
+
     # For LangChain/LangGraph integration
-    # pip install toolbox-langchain
+    pip install toolbox-langchain
     ```
 
-3.  **Load Tools Using the SDK Client:**
+3.  **Use the SDK:**
 
-    Once the service is running and the SDK is installed, use the
-    `ToolboxClient` in your Python code to connect to the service and load the
-    tools.
-
-    ```py
-    from toolbox_core import ToolboxClient
-    # from toolbox_langchain import ToolboxClient
-
-    client = ToolboxClient("http://127.0.0.1:5000")
-
-    tools = await client.load_toolset("toolset_name")
-    # tools = await client.aload_toolset("toolset_name")
-    ```
+    Consult the README for your chosen package (linked in the "[Available
+    Packages](#available-packages)" section above) for detailed instructions on
+    how to connect the client, load tool definitions, invoke tools, configure
+    authentication/binding, and integrate them into your application or
+    framework.
 
 > [!TIP]
-> For a complete, step-by-step walkthrough, please refer to the full tutorial:
-> [**Toolbox Quickstart
+> For a complete, end-to-end example including setting up the service and using
+> an SDK, see the full tutorial: [**Toolbox Quickstart
 > Tutorial**](https://googleapis.github.io/genai-toolbox/getting-started/local_quickstart)
-
-## Core Concepts
-
-The following concepts apply generally across the different SDK packages,
-although specific method names or object types might vary slightly. Refer to the
-individual package READMEs for precise details.
-
-### Connecting to Toolbox
-
-Initialize a client, pointing it to the URL where your Toolbox service is
-running.
-
-```py
-from toolbox_core import ToolboxClient
-
-# replace with your Toolbox service's URL
-client = ToolboxClient("http://127.0.0.1:5000")
-```
-
-### Loading Tools
-
-Fetch tool definitions from the Toolbox service. You can load individual tools
-by name or load all tools within a specific toolset (or all available toolsets).
-
-```py
-# Load a single tool
-tool = await client.load_tool("my-tool")
-
-# Load all tools in a specific toolset
-tools = await client.load_toolset("my-toolset")
-
-# Load all tools from all toolsets
-all_tools = await client.load_toolset()
-```
-
-> [!NOTE]
-> **Upcoming Feature (`v0.2.0`+):** Support for calling `client.load_toolset()`
-> without arguments will be introduced in `v0.2.0`.
-
-### Invoking Tools
-
-Loaded tools behave like callable Python objects or functions.
-
-  * **`toolbox-core`**: Async tools are `awaitable`, sync tools are called
-    directly.
-    ```py
-    result = await tool(param1="value1", param2="value2")
-    ```
-
-  * **`toolbox-langchain`**: Tools conform to LangChain's `BaseTool` interface
-    and are typically invoked via `.invoke()` or `.ainvoke()`, often managed by
-    a LangGraph agent.
-    ```py
-    result = await tool.ainvoke({"param1": "value1", "param2": "value2"})
-    ```
-
-### Synchronous vs. Asynchronous Usage
-
-| Package                 | Loading Tools                                                                                                                                                                                                                            | Invoking Tools                                                                                                                                                                 | Docs                                                                                                              |
-| :---------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------- |
-| **`toolbox-core`** | **Async:**<br/>* **Class:** `ToolboxClient`<br/>* **Methods:** `await client.load_*`<br/><br/>**Sync:**<br/>* **Class:** `ToolboxSyncClient`<br/>* **Methods:** `client.load_*` | **Async:**<br/>* **Class:** `ToolboxTool`<br/>* **Invocation:** `await tool(...)`<br/><br/>**Sync:**<br/>* **Class:** `ToolboxSyncTool`<br/>* **Invocation:** `tool(...)`       | [`toolbox-core` README](https://github.com/googleapis/mcp-toolbox-sdk-python/blob/main/packages/toolbox-core/README.md#synchronous-usage)                                                     |
-| **`toolbox-langchain`** | **Unified Class:** `ToolboxClient`<br/><br/>* **Async Methods:** `await client.aload_*`<br/><br/>* **Sync Methods:** `client.load_*` | **Unified Class:** `ToolboxTool`<br/><br/>* &nbsp;**Async Method:** `await tool.ainvoke()`<br/><br/>* &nbsp;**Sync Method:** `tool.invoke()`                                                   | [`toolbox-langchain` README](https://github.com/googleapis/mcp-toolbox-sdk-python/blob/main/packages/toolbox-langchain/README.md#asynchronous-usage) |
-
-The `ToolboxSyncClient` handles communication with the Toolbox service *synchronously* and produces `ToolboxSyncTool` instances when you load tools. You do not use the `await` keyword when interacting with these synchronous versions.
-
-```py
-from toolbox_core import ToolboxSyncClient
-
-# replace with your Toolbox service's URL
-sync_client = ToolboxSyncClient("http://127.0.0.1:5000")
-
-# Load a single tool
-tool = sync_client.load_tool("my-tool")
-
-# Load all tools in a specific toolset
-tools = sync_client.load_toolset("my-toolset")
-
-# Load all tools from all toolsets
-all_tools = sync_client.load_toolset()
-```
-
-> [!NOTE]
-> **Upcoming Feature (`v0.2.0`+):** Support for calling `sync_client.load_toolset()`
-> without arguments will be introduced in `v0.2.0`.
-
-
-### Authenticating Tools
-
-Tools configured in the Toolbox service to require authentication need
-credentials provided by the SDK during invocation.
-
-#### When is Authentication Needed?
-
-Authentication is configured *per-tool* within the Toolbox service. If a tool
-definition specifies it requires authentication (e.g., an "authenticated
-parameter"), the SDK must be configured to provide the necessary token.
-
-#### Supported Authentication Mechanisms
-
-Currently, the primary mechanism involves passing **OIDC ID Tokens** (typically
-obtained via Google OAuth 2.0) for specific parameters marked as authenticated
-in the tool's definition within the Toolbox service. Refer to the [Toolbox
-Service Documentation - Authenticated
-Parameters](https://googleapis.github.io/genai-toolbox/resources/tools/#authenticated-parameters)
-for details on configuring this in the service.
-
-#### SDK Configuration
-
-> [!WARNING]
-> Always use HTTPS to connect your application with the Toolbox service,
-> especially in production environments or whenever the communication involves
-> sensitive data (including scenarios where tools require authentication
-> tokens). Using plain HTTP lacks encryption and exposes your application and
-> data to significant security risks.
-
-You need to provide the SDK with a function (sync or async) that can retrieve
-the required ID token when the tool is called. This function is registered with
-the SDK, associating it with the specific authentication requirement defined in
-the Toolbox service (matched by name).
-
-```python
-from toolbox_core import ToolboxClient
-# from toolbox_langchain import ToolboxClient
-
-async def get_auth_token():
-    # ... Logic to retrieve ID token (e.g., from local storage, OAuth flow)
-    # This example just returns a placeholder. Replace with your actual token retrieval.
-    return "YOUR_ID_TOKEN" # Placeholder
-
-toolbox = ToolboxClient("http://127.0.0.1:5000")
-tool = await toolbox.load_tool("my-tool")
-# tool = await toolbox.aload_tool("my-tool")
-
-auth_tool = tool.add_auth_token_getters({"my_auth": get_auth_token})
-# auth_tool = tool.add_auth_tokens({"my_auth": get_auth_token})
-
-# OR
-
-auth_tool = await toolbox.load_tool("my-tool", auth_token_getters={"my_auth": get_auth_token})
-# auth_tool = await toolbox.aload_tool("my-tool", auth_tokens={"my_auth": get_auth_token})
-
-result = await auth_tool(input="some input")
-# result = await auth_tool.ainvoke({"input": "some input"})
-```
-
-> [!TIP]
-> Your token retriever function is invoked every time an authenticated parameter
-> requires a token for a tool call. Consider implementing caching logic within
-> this function to avoid redundant token fetching or generation, especially for
-> tokens with longer validity periods or if the retrieval process is
-> resource-intensive.
-
-### Binding Parameter Values
-
-Pre-set specific parameter values for a tool *before* it's invoked or passed to
-an LLM. Bound parameter values are fixed and won't be requested from the LLM.
-
-#### Why Bind Parameters?
-
-  * **Protecting sensitive information:** API keys, secrets, etc.
-  * **Enforcing consistency:** Ensuring specific values for certain parameters.
-  * **Pre-filling known data:** Pre-fill common or known values.
-
-#### SDK Configuration
-
-> [!IMPORTANT]
-> The parameter names used for binding must exactly match the parameter names
-> defined in the tool's configuration within the Toolbox service.
-
-> [!NOTE]
-> You do not need to modify the tool's configuration in the Toolbox service to
-> bind parameter values using the SDK.
-
-Similar to authentication, you can bind parameters after loading a tool or
-during the loading process.
-
-```py
-from toolbox_core import ToolboxClient
-# from toolbox_langchain import ToolboxClient
-
-toolbox = ToolboxClient("http://127.0.0.1:5000")
-tool = await toolbox.load_tool("my-tool")
-# tool = await toolbox.aload_tool("my-tool")
-
-bound_tool = tool.bind_parameters({"param": "value"})
-# bound_tool = tool.bind_params({"param": "value"})
-
-# OR
-
-bound_tool = await toolbox.load_tool("my-tool", bound_params={"param": "value"})
-# bound_tool = await toolbox.aload_tool("my-tool", bound_params={"param": "value"})
-```
-
-## Usage Comparison
-
-While the core concepts are similar, the way you integrate and use the tools
-varies depending on the chosen SDK package and framework.
-
-| Package           | Target Scenario                                                  | Client Class(es)                                                                    | Loaded Tool Type                                                       | Tool Invocation                         | LangGraph Integration                                                                                              | Detailed Examples                                                                                                  |
-| :---------------- | :--------------------------------------------------------------- | :---------------------------------------------------------------------------------- | :--------------------------------------------------------------------- | :-------------------------------------- | :----------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------- |
-| `toolbox-core`    | Framework-agnostic applications or custom orchestration logic.   | `ToolboxClient` (async)<br>`ToolboxSyncClient` (sync)                               | `ToolboxTool` (async) /<br>`ToolboxSyncTool` (sync)                    | Directly callable / awaitable.          | **Requires wrapping:** Tools may need manual wrapping (e.g., `StructuredTool.from_function`) for full LLM use. | [Core README Section](https://github.com/googleapis/mcp-toolbox-sdk-python/tree/main/packages/toolbox-core#use-with-langgraph)     |
-| `toolbox-langchain` | Applications within the LangChain / LangGraph ecosystem.         | `ToolboxClient` (provides both sync `load_*` and async `aload_*` methods)           | `ToolboxTool` instances (compatible with LangChain `BaseTool`)         | Standard LangChain tool usage patterns. | **Seamless:** Designed for direct use with `model.bind_tools(tools)` and `ToolNode(tools)`.                       | [LangChain README Section](https://github.com/googleapis/mcp-toolbox-sdk-python/blob/main/packages/toolbox-langchain#use-with-langgraph) |
 
 ## Contributing
 
