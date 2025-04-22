@@ -43,6 +43,7 @@ class ToolboxSyncClient:
 
         Args:
             url: The base URL for the Toolbox service API (e.g., "http://localhost:5000").
+            client_headers: Headers to include in each request sent through this client.
         """
         # Running a loop in a background thread allows us to support async
         # methods from non-async environments.
@@ -140,6 +141,15 @@ class ToolboxSyncClient:
         ]
 
     def add_headers(self, headers: Mapping[str, Union[Callable, Coroutine, str]]) -> None:
+        """
+        Synchronously Add headers to be included in each request sent through this client.
+
+        Args:
+            headers: Headers to include in each request sent through this client.
+
+        Raises:
+            ValueError: If any of the headers are already registered in the client.
+        """
         coro = self.__async_client.add_headers(headers)
 
         # We have already created a new loop in the init method in case it does not already exist
