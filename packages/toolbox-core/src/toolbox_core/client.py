@@ -156,8 +156,8 @@ class ToolboxClient:
 
         """
         # Resolve client headers
-        headers = {
-            name: await resolve_value(value)
+        resolved_headers = {
+            name: await resolve_value(val)
             for name, val in self.__client_headers.items()
         }
 
