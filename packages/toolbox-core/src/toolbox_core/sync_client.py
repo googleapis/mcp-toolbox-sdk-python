@@ -14,7 +14,7 @@
 
 import asyncio
 from threading import Thread
-from typing import Any, Callable, Mapping, Optional, TypeVar, Union
+from typing import Any, Callable, Coroutine, Mapping, Optional, TypeVar, Union
 
 from .client import ToolboxClient
 from .sync_tool import ToolboxSyncTool
@@ -24,7 +24,7 @@ T = TypeVar("T")
 
 class ToolboxSyncClient:
     """
-    An synchronous client for interacting with a Toolbox service.
+    A synchronous client for interacting with a Toolbox service.
 
     Provides methods to discover and load tools defined by a remote Toolbox
     service endpoint.
@@ -36,12 +36,14 @@ class ToolboxSyncClient:
     def __init__(
         self,
         url: str,
+        client_headers: Optional[Mapping[str, Union[Callable, Coroutine, str]]] = None,
     ):
         """
         Initializes the ToolboxSyncClient.
 
         Args:
             url: The base URL for the Toolbox service API (e.g., "http://localhost:5000").
+            client_headers: Headers to include in each request sent through this client.
         """
         # Running a loop in a background thread allows us to support async
         # methods from non-async environments.
@@ -53,7 +55,7 @@ class ToolboxSyncClient:
             self.__class__.__loop = loop
 
         async def create_client():
-            return ToolboxClient(url)
+            return ToolboxClient(url, client_headers=client_headers)
 
         # Ignoring type since we're already checking the existence of a loop above.
         self.__async_client = asyncio.run_coroutine_threadsafe(
@@ -137,6 +139,23 @@ class ToolboxSyncClient:
             ToolboxSyncTool(async_tool, self.__loop, self.__thread)
             for async_tool in async_tools
         ]
+
+    def add_headers(
+        self, headers: Mapping[str, Union[Callable, Coroutine, str]]
+    ) -> None:
+        """
+        Synchronously Add headers to be included in each request sent through this client.
+
+        Args:
+            headers: Headers to include in each request sent through this client.
+
+        Raises:
+            ValueError: If any of the headers are already registered in the client.
+        """
+        coro = self.__async_client.add_headers(headers)
+
+        # We have already created a new loop in the init method in case it does not already exist
+        asyncio.run_coroutine_threadsafe(coro, self.__loop).result()  # type: ignore
 
     def __enter__(self):
         """Enter the runtime context related to this client instance."""
