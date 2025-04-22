@@ -156,11 +156,7 @@ class ToolboxClient:
 
         """
         # Resolve client headers
-        original_headers = self.__client_headers
-        resolved_headers = {
-            header_name: await resolve_value(original_headers[header_name])
-            for header_name in original_headers
-        }
+        headers = { name: await resolve_value(value) for name, val in self.__client_headers.items() }
 
         # request the definition of the tool from the server
         url = f"{self.__base_url}/api/tool/{name}"
