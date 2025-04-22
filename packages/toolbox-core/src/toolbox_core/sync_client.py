@@ -140,7 +140,9 @@ class ToolboxSyncClient:
             for async_tool in async_tools
         ]
 
-    def add_headers(self, headers: Mapping[str, Union[Callable, Coroutine, str]]) -> None:
+    def add_headers(
+        self, headers: Mapping[str, Union[Callable, Coroutine, str]]
+    ) -> None:
         """
         Synchronously Add headers to be included in each request sent through this client.
 
@@ -153,7 +155,7 @@ class ToolboxSyncClient:
         coro = self.__async_client.add_headers(headers)
 
         # We have already created a new loop in the init method in case it does not already exist
-        asyncio.run_coroutine_threadsafe(coro, self.__loop).result() # type: ignore
+        asyncio.run_coroutine_threadsafe(coro, self.__loop).result()  # type: ignore
 
     def __enter__(self):
         """Enter the runtime context related to this client instance."""
