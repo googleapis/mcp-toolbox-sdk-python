@@ -85,7 +85,9 @@ def mock_tool_load(
     if payload_override is not None:
         payload = payload_override
     else:
-        manifest = ManifestSchema(serverVersion=server_version, tools={tool_name: tool_schema})
+        manifest = ManifestSchema(
+            serverVersion=server_version, tools={tool_name: tool_schema}
+        )
         payload = manifest.model_dump()
     aio_resp.get(
         url,
@@ -205,6 +207,7 @@ async def test_invoke_tool_server_error(aioresponses, test_tool_str):
         with pytest.raises(Exception, match=ERROR_MESSAGE):
             await loaded_tool(param1="some input")
 
+
 @pytest.mark.asyncio
 async def test_load_tool_not_found_in_manifest(aioresponses, test_tool_str):
     """
@@ -222,7 +225,7 @@ async def test_load_tool_not_found_in_manifest(aioresponses, test_tool_str):
         aio_resp=aioresponses,
         tool_name=REQUESTED_TOOL_NAME,
         tool_schema=test_tool_str,
-        payload_override=mismatched_manifest_payload
+        payload_override=mismatched_manifest_payload,
     )
 
     async with ToolboxClient(TEST_BASE_URL) as client:
@@ -527,6 +530,22 @@ class TestClientHeaders:
             )
         }
 
+    @staticmethod
+    def create_callback_factory(
+        expected_header, callback_status, callback_payload
+    ) -> Callable:
+        """
+        Factory that RETURNS a callback function for aioresponses.
+        The returned callback will check headers and return the specified payload/status.
+        """
+
+        def actual_callback(url, **kwargs):
+            received_headers = kwargs.get("headers")
+            assert received_headers == expected_header
+            return CallbackResult(status=callback_status, payload=callback_payload)
+
+        return actual_callback
+
     @pytest.mark.asyncio
     async def test_client_init_with_headers(self, static_header):
         """Tests client initialization with static headers."""
@@ -544,20 +563,18 @@ class TestClientHeaders:
         )
         expected_payload = {"result": "ok"}
 
-        # Mock GET for tool definition
-        def get_callback(url, **kwargs):
-            # Verify headers
-            assert kwargs.get("headers") == static_header
-            return CallbackResult(status=200, payload=manifest.model_dump())
-
+        get_callback = self.create_callback_factory(
+            expected_header=static_header,
+            callback_status=200,
+            callback_payload=manifest.model_dump(),
+        )
         aioresponses.get(f"{TEST_BASE_URL}/api/tool/{tool_name}", callback=get_callback)
 
-        # Mock POST for invocation
-        def post_callback(url, **kwargs):
-            # Verify headers
-            assert kwargs.get("headers") == static_header
-            return CallbackResult(status=200, payload=expected_payload)
-
+        post_callback = self.create_callback_factory(
+            expected_header=static_header,
+            callback_status=200,
+            callback_payload=expected_payload,
+        )
         aioresponses.post(
             f"{TEST_BASE_URL}/api/tool/{tool_name}/invoke", callback=post_callback
         )
@@ -585,20 +602,18 @@ class TestClientHeaders:
         header_mock = sync_callable_header[header_key]
         resolved_header = {header_key: sync_callable_header_value}
 
-        # Mock GET
-        def get_callback(url, **kwargs):
-            # Verify headers
-            assert kwargs.get("headers") == resolved_header
-            return CallbackResult(status=200, payload=manifest.model_dump())
-
+        get_callback = self.create_callback_factory(
+            expected_header=resolved_header,
+            callback_status=200,
+            callback_payload=manifest.model_dump(),
+        )
         aioresponses.get(f"{TEST_BASE_URL}/api/tool/{tool_name}", callback=get_callback)
 
-        # Mock POST
-        def post_callback(url, **kwargs):
-            # Verify headers
-            assert kwargs.get("headers") == resolved_header
-            return CallbackResult(status=200, payload=expected_payload)
-
+        post_callback = self.create_callback_factory(
+            expected_header=resolved_header,
+            callback_status=200,
+            callback_payload=expected_payload,
+        )
         aioresponses.post(
             f"{TEST_BASE_URL}/api/tool/{tool_name}/invoke", callback=post_callback
         )
@@ -636,18 +651,18 @@ class TestClientHeaders:
         # Calculate expected result using the VALUE fixture
         resolved_header = {header_key: async_callable_header_value}
 
-        # Mock GET
-        def get_callback(url, **kwargs):
-            assert kwargs.get("headers") == resolved_header
-            return CallbackResult(status=200, payload=manifest.model_dump())
-
+        get_callback = self.create_callback_factory(
+            expected_header=resolved_header,
+            callback_status=200,
+            callback_payload=manifest.model_dump(),
+        )
         aioresponses.get(f"{TEST_BASE_URL}/api/tool/{tool_name}", callback=get_callback)
 
-        # Mock POST
-        def post_callback(url, **kwargs):
-            assert kwargs.get("headers") == resolved_header
-            return CallbackResult(status=200, payload=expected_payload)
-
+        post_callback = self.create_callback_factory(
+            expected_header=resolved_header,
+            callback_status=200,
+            callback_payload=expected_payload,
+        )
         aioresponses.post(
             f"{TEST_BASE_URL}/api/tool/{tool_name}/invoke", callback=post_callback
         )
@@ -675,16 +690,14 @@ class TestClientHeaders:
             serverVersion="0.0.0", tools={tool_name: test_tool_str}
         )
 
-        # Mock GET
-        def get_callback(url, **kwargs):
-            # Verify headers
-            assert kwargs.get("headers") == static_header
-            return CallbackResult(status=200, payload=manifest.model_dump())
-
+        get_callback = self.create_callback_factory(
+            expected_header=static_header,
+            callback_status=200,
+            callback_payload=manifest.model_dump(),
+        )
         aioresponses.get(
             f"{TEST_BASE_URL}/api/toolset/{toolset_name}", callback=get_callback
         )
-
         async with ToolboxClient(TEST_BASE_URL, client_headers=static_header) as client:
             tools = await client.load_toolset(toolset_name)
             assert len(tools) == 1
@@ -701,20 +714,18 @@ class TestClientHeaders:
         )
         expected_payload = {"result": "added_ok"}
 
-        # Mock GET
-        def get_callback(url, **kwargs):
-            # Verify headers
-            assert kwargs.get("headers") == static_header
-            return CallbackResult(status=200, payload=manifest.model_dump())
-
+        get_callback = self.create_callback_factory(
+            expected_header=static_header,
+            callback_status=200,
+            callback_payload=manifest.model_dump(),
+        )
         aioresponses.get(f"{TEST_BASE_URL}/api/tool/{tool_name}", callback=get_callback)
 
-        # Mock POST
-        def post_callback(url, **kwargs):
-            # Verify headers
-            assert kwargs.get("headers") == static_header
-            return CallbackResult(status=200, payload=expected_payload)
-
+        post_callback = self.create_callback_factory(
+            expected_header=static_header,
+            callback_status=200,
+            callback_payload=expected_payload,
+        )
         aioresponses.post(
             f"{TEST_BASE_URL}/api/tool/{tool_name}/invoke", callback=post_callback
         )
