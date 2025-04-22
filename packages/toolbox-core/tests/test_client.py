@@ -532,7 +532,9 @@ class TestClientHeaders:
 
     @staticmethod
     def create_callback_factory(
-        expected_header, callback_payload, callback_status: int = 200,
+        expected_header,
+        callback_payload,
+        callback_status: int = 200,
     ) -> Callable:
         """
         Factory that RETURNS a callback function for aioresponses.
