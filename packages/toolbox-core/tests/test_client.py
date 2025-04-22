@@ -78,15 +78,18 @@ def mock_tool_load(
     server_version: str = "0.0.0",
     status: int = 200,
     callback: Optional[Callable] = None,
+    payload_override: Optional[Callable] = None,
 ):
     """Mocks the GET /api/tool/{tool_name} endpoint."""
     url = f"{base_url}/api/tool/{tool_name}"
-    manifest = ManifestSchema(
-        serverVersion=server_version, tools={tool_name: tool_schema}
-    )
+    if payload_override is not None:
+        payload = payload_override
+    else:
+        manifest = ManifestSchema(serverVersion=server_version, tools={tool_name: tool_schema})
+        payload = manifest.model_dump()
     aio_resp.get(
         url,
-        payload=manifest.model_dump(),
+        payload=payload,
         status=status,
         callback=callback,
     )
@@ -202,7 +205,6 @@ async def test_invoke_tool_server_error(aioresponses, test_tool_str):
         with pytest.raises(Exception, match=ERROR_MESSAGE):
             await loaded_tool(param1="some input")
 
-
 @pytest.mark.asyncio
 async def test_load_tool_not_found_in_manifest(aioresponses, test_tool_str):
     """
@@ -212,12 +214,16 @@ async def test_load_tool_not_found_in_manifest(aioresponses, test_tool_str):
     ACTUAL_TOOL_IN_MANIFEST = "actual_tool_abc"
     REQUESTED_TOOL_NAME = "non_existent_tool_xyz"
 
-    manifest = ManifestSchema(
+    mismatched_manifest_payload = ManifestSchema(
         serverVersion="0.0.0", tools={ACTUAL_TOOL_IN_MANIFEST: test_tool_str}
-    )
+    ).model_dump()
 
-    url = f"{TEST_BASE_URL}/api/tool/{REQUESTED_TOOL_NAME}"
-    aioresponses.get(url, payload=manifest.model_dump(), status=200)
+    mock_tool_load(
+        aio_resp=aioresponses,
+        tool_name=REQUESTED_TOOL_NAME,
+        tool_schema=test_tool_str,
+        payload_override=mismatched_manifest_payload
+    )
 
     async with ToolboxClient(TEST_BASE_URL) as client:
         with pytest.raises(Exception, match=f"Tool '{REQUESTED_TOOL_NAME}' not found!"):
