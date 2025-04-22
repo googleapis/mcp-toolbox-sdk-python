@@ -532,7 +532,7 @@ class TestClientHeaders:
 
     @staticmethod
     def create_callback_factory(
-        expected_header, callback_status, callback_payload
+        expected_header, callback_payload, callback_status: int = 200,
     ) -> Callable:
         """
         Factory that RETURNS a callback function for aioresponses.
@@ -565,14 +565,12 @@ class TestClientHeaders:
 
         get_callback = self.create_callback_factory(
             expected_header=static_header,
-            callback_status=200,
             callback_payload=manifest.model_dump(),
         )
         aioresponses.get(f"{TEST_BASE_URL}/api/tool/{tool_name}", callback=get_callback)
 
         post_callback = self.create_callback_factory(
             expected_header=static_header,
-            callback_status=200,
             callback_payload=expected_payload,
         )
         aioresponses.post(
@@ -604,14 +602,12 @@ class TestClientHeaders:
 
         get_callback = self.create_callback_factory(
             expected_header=resolved_header,
-            callback_status=200,
             callback_payload=manifest.model_dump(),
         )
         aioresponses.get(f"{TEST_BASE_URL}/api/tool/{tool_name}", callback=get_callback)
 
         post_callback = self.create_callback_factory(
             expected_header=resolved_header,
-            callback_status=200,
             callback_payload=expected_payload,
         )
         aioresponses.post(
@@ -653,14 +649,12 @@ class TestClientHeaders:
 
         get_callback = self.create_callback_factory(
             expected_header=resolved_header,
-            callback_status=200,
             callback_payload=manifest.model_dump(),
         )
         aioresponses.get(f"{TEST_BASE_URL}/api/tool/{tool_name}", callback=get_callback)
 
         post_callback = self.create_callback_factory(
             expected_header=resolved_header,
-            callback_status=200,
             callback_payload=expected_payload,
         )
         aioresponses.post(
@@ -692,7 +686,6 @@ class TestClientHeaders:
 
         get_callback = self.create_callback_factory(
             expected_header=static_header,
-            callback_status=200,
             callback_payload=manifest.model_dump(),
         )
         aioresponses.get(
@@ -716,14 +709,12 @@ class TestClientHeaders:
 
         get_callback = self.create_callback_factory(
             expected_header=static_header,
-            callback_status=200,
             callback_payload=manifest.model_dump(),
         )
         aioresponses.get(f"{TEST_BASE_URL}/api/tool/{tool_name}", callback=get_callback)
 
         post_callback = self.create_callback_factory(
             expected_header=static_header,
-            callback_status=200,
             callback_payload=expected_payload,
         )
         aioresponses.post(
