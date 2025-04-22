@@ -15,14 +15,7 @@
 
 import types
 from inspect import Signature
-from typing import (
-    Any,
-    Callable,
-    Mapping,
-    Optional,
-    Sequence,
-    Union,
-)
+from typing import Any, Callable, Coroutine, Mapping, Optional, Sequence, Union
 
 from aiohttp import ClientSession
 
@@ -58,6 +51,7 @@ class ToolboxTool:
         required_authn_params: Mapping[str, list[str]],
         auth_service_token_getters: Mapping[str, Callable[[], str]],
         bound_params: Mapping[str, Union[Callable[[], Any], Any]],
+        client_headers: Mapping[str, Union[Callable, Coroutine, str]],
     ):
         """
         Initializes a callable that will trigger the tool invocation through the
@@ -75,6 +69,7 @@ class ToolboxTool:
                 produce a token)
             bound_params: A mapping of parameter names to bind to specific values or
                 callables that are called to produce values as needed.
+            client_headers: Client specific headers bound to the tool.
         """
         # used to invoke the toolbox API
         self.__session: ClientSession = session
@@ -96,12 +91,27 @@ class ToolboxTool:
         self.__annotations__ = {p.name: p.annotation for p in inspect_type_params}
         self.__qualname__ = f"{self.__class__.__qualname__}.{self.__name__}"
 
+        # Validate conflicting Headers/Auth Tokens
+        request_header_names = client_headers.keys()
+        auth_token_names = [
+            auth_token_name + "_token"
+            for auth_token_name in auth_service_token_getters.keys()
+        ]
+        duplicates = request_header_names & auth_token_names
+        if duplicates:
+            raise ValueError(
+                f"Client header(s) `{', '.join(duplicates)}` already registered in client. "
+                f"Cannot register client the same headers in the client as well as tool."
+            )
+
         # map of parameter name to auth service required by it
         self.__required_authn_params = required_authn_params
         # map of authService -> token_getter
         self.__auth_service_token_getters = auth_service_token_getters
         # map of parameter name to value (or callable that produces that value)
         self.__bound_parameters = bound_params
+        # map of client headers to their value/callable/coroutine
+        self.__client_headers = client_headers
 
     def __copy(
         self,
@@ -113,6 +123,7 @@ class ToolboxTool:
         required_authn_params: Optional[Mapping[str, list[str]]] = None,
         auth_service_token_getters: Optional[Mapping[str, Callable[[], str]]] = None,
         bound_params: Optional[Mapping[str, Union[Callable[[], Any], Any]]] = None,
+        client_headers: Optional[Mapping[str, Union[Callable, Coroutine, str]]] = None,
     ) -> "ToolboxTool":
         """
         Creates a copy of the ToolboxTool, overriding specific fields.
@@ -129,7 +140,7 @@ class ToolboxTool:
                 that produce a token)
             bound_params: A mapping of parameter names to bind to specific values or
                 callables that are called to produce values as needed.
-
+            client_headers: Client specific headers bound to the tool.
         """
         check = lambda val, default: val if val is not None else default
         return ToolboxTool(
@@ -145,6 +156,7 @@ class ToolboxTool:
                 auth_service_token_getters, self.__auth_service_token_getters
             ),
             bound_params=check(bound_params, self.__bound_parameters),
+            client_headers=check(client_headers, self.__client_headers),
         )
 
     async def __call__(self, *args: Any, **kwargs: Any) -> str:
@@ -169,7 +181,8 @@ class ToolboxTool:
             for s in self.__required_authn_params.values():
                 req_auth_services.update(s)
             raise Exception(
-                f"One or more of the following authn services are required to invoke this tool: {','.join(req_auth_services)}"
+                f"One or more of the following authn services are required to invoke this tool"
+                f": {','.join(req_auth_services)}"
             )
 
         # validate inputs to this call using the signature
@@ -188,6 +201,8 @@ class ToolboxTool:
         headers = {}
         for auth_service, token_getter in self.__auth_service_token_getters.items():
             headers[f"{auth_service}_token"] = await resolve_value(token_getter)
+        for client_header_name, client_header_val in self.__client_headers.items():
+            headers[client_header_name] = await resolve_value(client_header_val)
 
         async with self.__session.post(
             self.__url,
@@ -215,6 +230,10 @@ class ToolboxTool:
         Returns:
             A new ToolboxTool instance with the specified authentication token
             getters registered.
+
+        Raises
+            ValueError: If the auth source has already been registered either
+            to the tool or to the corresponding client.
         """
 
         # throw an error if the authentication source is already registered
@@ -224,6 +243,18 @@ class ToolboxTool:
         if duplicates:
             raise ValueError(
                 f"Authentication source(s) `{', '.join(duplicates)}` already registered in tool `{self.__name__}`."
+            )
+
+        # Validate duplicates with client headers
+        request_header_names = self.__client_headers.keys()
+        auth_token_names = [
+            auth_token_name + "_token" for auth_token_name in incoming_services
+        ]
+        duplicates = request_header_names & auth_token_names
+        if duplicates:
+            raise ValueError(
+                f"Client header(s) `{', '.join(duplicates)}` already registered in client. "
+                f"Cannot register client the same headers in the client as well as tool."
             )
 
         # create a read-only updated value for new_getters
