@@ -33,7 +33,7 @@ classifiers = [
 package-dir = {"" = "src"}
 
 [tool.setuptools.dynamic]
-version = {attr = "toolbox_llamindex.version.__version__"}
+version = {attr = "toolbox_llamaindex.version.__version__"}
 
 [project.urls]
 Homepage = "https://github.com/googleapis/mcp-toolbox-sdk-python/blob/main/packages/toolbox-llamaindex"
