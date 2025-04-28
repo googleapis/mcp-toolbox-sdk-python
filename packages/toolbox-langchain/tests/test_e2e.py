@@ -128,7 +128,6 @@ class TestE2EClientAsync:
         with pytest.raises(
             PermissionError,
             match="Tool get-row-by-id-auth requires authentication, but no valid authentication sources are registered. Please register the required sources before use.",
-
         ):
             await tool.ainvoke({"id": "2"})
 
