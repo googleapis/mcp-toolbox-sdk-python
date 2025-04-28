@@ -126,8 +126,9 @@ class TestE2EClientAsync:
             "get-row-by-id-auth",
         )
         with pytest.raises(
-            ToolException,
-            match="{'status': 'Unauthorized', 'error': 'tool invocation not authorized. Please make sure your specify correct auth headers'}",
+            PermissionError,
+            match="Tool get-row-by-id-auth requires authentication, but no valid authentication sources are registered. Please register the required sources before use.",
+
         ):
             await tool.ainvoke({"id": "2"})
 
@@ -266,8 +267,8 @@ class TestE2EClientSync:
             "get-row-by-id-auth",
         )
         with pytest.raises(
-            ToolException,
-            match="{'status': 'Unauthorized', 'error': 'tool invocation not authorized. Please make sure your specify correct auth headers'}",
+            PermissionError,
+            match="Tool get-row-by-id-auth requires authentication, but no valid authentication sources are registered. Please register the required sources before use.",
         ):
             tool.invoke({"id": "2"})
 
