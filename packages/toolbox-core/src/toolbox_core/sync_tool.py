@@ -85,7 +85,7 @@ class ToolboxSyncTool:
         # Standard Python object attributes like __doc__ are technically "writable".
         # But not defining a setter function makes this a read-only property.
         # Mypy flags this issue in the type checks.
-        return self.__async_tool.__annotations__
+        return self.__async_tool.__annotations__.copy()
 
     def __call__(self, *args: Any, **kwargs: Any) -> str:
         """
