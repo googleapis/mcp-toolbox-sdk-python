@@ -13,10 +13,10 @@
 # limitations under the License.
 
 import asyncio
-import types
 from asyncio import AbstractEventLoop
 from inspect import Signature
 from threading import Thread
+from types import MappingProxyType
 from typing import Any, Callable, Mapping, TypeVar, Union
 
 from .tool import ToolboxTool
@@ -86,7 +86,7 @@ class ToolboxSyncTool:
         # Standard Python object attributes like __doc__ are technically "writable".
         # But not defining a setter function makes this a read-only property.
         # Mypy flags this issue in the type checks.
-        return types.MappingProxyType(self.__async_tool.__annotations__)
+        return MappingProxyType(self.__async_tool.__annotations__)
 
     def __call__(self, *args: Any, **kwargs: Any) -> str:
         """
