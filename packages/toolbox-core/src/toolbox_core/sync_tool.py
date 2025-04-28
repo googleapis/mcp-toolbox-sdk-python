@@ -82,7 +82,7 @@ class ToolboxSyncTool:
         return self.__async_tool.__signature__
 
     @property
-    def __annotations__(self) -> dict[str, Any]:  # type: ignore[override]
+    def __annotations__(self) -> MappingProxyType[str, Any]:  # type: ignore[override]
         # Standard Python object attributes like __doc__ are technically "writable".
         # But not defining a setter function makes this a read-only property.
         # Mypy flags this issue in the type checks.
