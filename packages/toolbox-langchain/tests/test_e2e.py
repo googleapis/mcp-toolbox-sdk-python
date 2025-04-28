@@ -125,11 +125,11 @@ class TestE2EClientAsync:
         tool = await toolbox.aload_tool(
             "get-row-by-id-auth",
         )
-        # with pytest.raises(
-        #     PermissionError,
-        #     match="Tool get-row-by-id-auth requires authentication, but no valid authentication sources are registered. Please register the required sources before use.",
-        # ):
-        await tool.ainvoke({"id": "2"})
+        with pytest.raises(
+            PermissionError,
+            match="Tool get-row-by-id-auth requires authentication, but no valid authentication sources are registered. Please register the required sources before use.",
+        ):
+            await tool.ainvoke({"id": "2"})
 
     async def test_run_tool_wrong_auth(self, toolbox, auth_token2):
         """Tests running a tool with incorrect auth."""
@@ -265,11 +265,11 @@ class TestE2EClientSync:
         tool = toolbox.load_tool(
             "get-row-by-id-auth",
         )
-        # with pytest.raises(
-        #     PermissionError,
-        #     match="Tool get-row-by-id-auth requires authentication, but no valid authentication sources are registered. Please register the required sources before use.",
-        # ):
-        tool.invoke({"id": "2"})
+        with pytest.raises(
+            PermissionError,
+            match="Tool get-row-by-id-auth requires authentication, but no valid authentication sources are registered. Please register the required sources before use.",
+        ):
+            tool.invoke({"id": "2"})
 
     def test_run_tool_wrong_auth(self, toolbox, auth_token2):
         """Tests running a tool with incorrect auth."""
