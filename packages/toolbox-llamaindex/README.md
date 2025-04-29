@@ -1,8 +1,8 @@
 ![MCP Toolbox Logo](https://raw.githubusercontent.com/googleapis/genai-toolbox/main/logo.png)
-# MCP Toolbox LlamaIndex SDK
+# MCP Toolbox LangChain SDK
 
 This SDK allows you to seamlessly integrate the functionalities of
-[Toolbox](https://github.com/googleapis/genai-toolbox) into your LlamaIndex LLM
+[Toolbox](https://github.com/googleapis/genai-toolbox) into your LangChain LLM
 applications, enabling advanced orchestration and interaction with GenAI models.
 
 <!-- TOC ignore:true -->
@@ -15,7 +15,10 @@ applications, enabling advanced orchestration and interaction with GenAI models.
 - [Loading Tools](#loading-tools)
     - [Load a toolset](#load-a-toolset)
     - [Load a single tool](#load-a-single-tool)
-- [Use with LlamaIndex](#use-with-llamaindex)
+- [Use with LangChain](#use-with-langchain)
+- [Use with LangGraph](#use-with-langgraph)
+    - [Represent Tools as Nodes](#represent-tools-as-nodes)
+    - [Connect Tools with LLM](#connect-tools-with-llm)
 - [Manual usage](#manual-usage)
 - [Authenticating Tools](#authenticating-tools)
     - [Supported Authentication Mechanisms](#supported-authentication-mechanisms)
@@ -35,40 +38,33 @@ applications, enabling advanced orchestration and interaction with GenAI models.
 ## Installation
 
 ```bash
-pip install toolbox-llamaindex
+pip install toolbox-langchain
 ```
 
 ## Quickstart
 
 Here's a minimal example to get you started using
-# TODO: add link
-[LlamaIndex]():
+[LangGraph](https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent):
 
 ```py
-import asyncio
+from toolbox_langchain import ToolboxClient
+from langchain_google_vertexai import ChatVertexAI
+from langgraph.prebuilt import create_react_agent
 
-from llama_index.llms.google_genai import GoogleGenAI
-from llama_index.core.agent.workflow import AgentWorkflow
+toolbox = ToolboxClient("http://127.0.0.1:5000")
+tools = toolbox.load_toolset()
 
-from toolbox_llamaindex import ToolboxClient
+model = ChatVertexAI(model="gemini-1.5-pro-002")
+agent = create_react_agent(model, tools)
 
-async def run_agent():
-  toolbox = ToolboxClient("http://127.0.0.1:5000")
-  tools = toolbox.load_toolset()
+prompt = "How's the weather today?"
 
-  vertex_model = GoogleGenAI(
-      model="gemini-1.5-pro",
-      vertexai_config={"project": "project-id", "location": "us-central1"},
-  )
-  agent = AgentWorkflow.from_tools_or_functions(
-      tools,
-      llm=vertex_model,
-      system_prompt="You are a helpful assistant.",
-  )
-  response = await agent.run(user_msg="Get some response from the agent.")
-  print(response)
-
-asyncio.run(run_agent())
+for s in agent.stream({"messages": [("user", prompt)]}, stream_mode="values"):
+    message = s["messages"][-1]
+    if isinstance(message, tuple):
+        print(message)
+    else:
+        message.pretty_print()
 ```
 
 ## Usage
@@ -76,7 +72,7 @@ asyncio.run(run_agent())
 Import and initialize the toolbox client.
 
 ```py
-from toolbox_llamaindex import ToolboxClient
+from toolbox_langchain import ToolboxClient
 
 # Replace with your Toolbox service's URL
 toolbox = ToolboxClient("http://127.0.0.1:5000")
@@ -106,63 +102,85 @@ tool = toolbox.load_tool("my-tool")
 Loading individual tools gives you finer-grained control over which tools are
 available to your LLM agent.
 
-## Use with LlamaIndex
+## Use with LangChain
 
 LangChain's agents can dynamically choose and execute tools based on the user
 input. Include tools loaded from the Toolbox SDK in the agent's toolkit:
 
 ```py
-from llama_index.llms.google_genai import GoogleGenAI
-from llama_index.core.agent.workflow import AgentWorkflow
+from langchain_google_vertexai import ChatVertexAI
 
-vertex_model = GoogleGenAI(
-    model="gemini-1.5-pro",
-    vertexai_config={"project": "project-id", "location": "us-central1"},
-)
+model = ChatVertexAI(model="gemini-1.5-pro-002")
 
 # Initialize agent with tools
-agent = AgentWorkflow.from_tools_or_functions(
-    tools,
-    llm=vertex_model,
-    system_prompt="You are a helpful assistant.",
-)
+agent = model.bind_tools(tools)
 
-# Query the agent
-response = await agent.run(user_msg="Get some response from the agent.")
-print(response)
+# Run the agent
+result = agent.invoke("Do something with the tools")
 ```
 
-### Maintain state
+## Use with LangGraph
 
-To maintain state for the agent, add context as follows:
+Integrate the Toolbox SDK with LangGraph to use Toolbox service tools within a
+graph-based workflow. Follow the [official
+guide](https://langchain-ai.github.io/langgraph/) with minimal changes.
+
+### Represent Tools as Nodes
+
+Represent each tool as a LangGraph node, encapsulating the tool's execution within the node's functionality:
 
 ```py
-from llama_index.core.agent.workflow import AgentWorkflow
-from llama_index.core.workflow import Context
-from llama_index.llms.google_genai import GoogleGenAI
+from toolbox_langchain import ToolboxClient
+from langgraph.graph import StateGraph, MessagesState
+from langgraph.prebuilt import ToolNode
 
-vertex_model = GoogleGenAI(
-    model="gemini-1.5-pro",
-    vertexai_config={"project": "twisha-dev", "location": "us-central1"},
-)
-agent = AgentWorkflow.from_tools_or_functions(
-    tools,
-    llm=vertex_model,
-    system_prompt="You are a helpful assistant",
-)
+# Define the function that calls the model
+def call_model(state: MessagesState):
+    messages = state['messages']
+    response = model.invoke(messages)
+    return {"messages": [response]}  # Return a list to add to existing messages
 
-# Save memory in agent context
-ctx = Context(agent)
-response = await agent.run(user_msg="Give me some response.", ctx=ctx)
-print(response)
+model = ChatVertexAI(model="gemini-1.5-pro-002")
+builder = StateGraph(MessagesState)
+tool_node = ToolNode(tools)
+
+builder.add_node("agent", call_model)
+builder.add_node("tools", tool_node)
+```
+
+### Connect Tools with LLM
+
+Connect tool nodes with LLM nodes. The LLM decides which tool to use based on
+input or context. Tool output can be fed back into the LLM:
+
+```py
+from typing import Literal
+from langgraph.graph import END, START
+from langchain_core.messages import HumanMessage
+
+# Define the function that determines whether to continue or not
+def should_continue(state: MessagesState) -> Literal["tools", END]:
+    messages = state['messages']
+    last_message = messages[-1]
+    if last_message.tool_calls:
+        return "tools"  # Route to "tools" node if LLM makes a tool call
+    return END  # Otherwise, stop
+
+builder.add_edge(START, "agent")
+builder.add_conditional_edges("agent", should_continue)
+builder.add_edge("tools", 'agent')
+
+graph = builder.compile()
+
+graph.invoke({"messages": [HumanMessage(content="Do something with the tools")]})
 ```
 
 ## Manual usage
 
-Execute a tool manually using the `call` method:
+Execute a tool manually using the `invoke` method:
 
 ```py
-result = tools[0].call({"name": "Alice", "age": 30})
+result = tools[0].invoke({"name": "Alice", "age": 30})
 ```
 
 This is useful for testing tools or when you need precise control over tool
@@ -232,7 +250,7 @@ auth_tools = toolbox.load_toolset(auth_tokens={"my_auth": get_auth_token})
 
 ```py
 import asyncio
-from toolbox_llamaindex import ToolboxClient
+from toolbox_langchain import ToolboxClient
 
 async def get_auth_token():
     # ... Logic to retrieve ID token (e.g., from local storage, OAuth flow)
@@ -243,7 +261,7 @@ toolbox = ToolboxClient("http://127.0.0.1:5000")
 tool = toolbox.load_tool("my-tool")
 
 auth_tool = tool.add_auth_token("my_auth", get_auth_token)
-result = auth_tool.call({"input": "some input"})
+result = auth_tool.invoke({"input": "some input"})
 print(result)
 ```
 
@@ -311,7 +329,7 @@ use the asynchronous interfaces of the `ToolboxClient`.
 
 ```py
 import asyncio
-from toolbox_llamaindex import ToolboxClient
+from toolbox_langchain import ToolboxClient
 
 async def main():
     toolbox = ToolboxClient("http://127.0.0.1:5000")

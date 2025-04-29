@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: core
+name: llamaindex
 on:
   pull_request:
     paths:
-      - 'packages/toolbox-core/**'
-      - '!packages/toolbox-core/**/*.md'
+      - 'packages/toolbox-llamaindex/**'
+      - '!packages/toolbox-llamaindex/**/*.md'
   pull_request_target:
     types: [labeled]
 
@@ -34,7 +34,7 @@ jobs:
       cancel-in-progress: true
     defaults:
       run:
-        working-directory: ./packages/toolbox-core
+        working-directory: ./packages/toolbox-llamaindex
     permissions:
       contents: 'read'
       issues: 'write'
@@ -81,4 +81,4 @@ jobs:
       - name: Run type-check
         env:
           MYPYPATH: './src'
-        run: mypy --install-types --non-interactive --cache-dir=.mypy_cache/ -p toolbox_core
+        run: mypy --install-types --non-interactive --cache-dir=.mypy_cache/ -p toolbox_llamaindex

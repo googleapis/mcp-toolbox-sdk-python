@@ -11,9 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-
-from typing import AsyncGenerator
+import inspect
+from typing import AsyncGenerator, Callable
 from unittest.mock import AsyncMock, Mock
 
 import pytest
@@ -41,6 +40,20 @@ def sample_tool_params() -> list[ParameterSchema]:
 
 
 @pytest.fixture
+def sample_tool_auth_params() -> list[ParameterSchema]:
+    """Parameters for a sample tool requiring authentication."""
+    return [
+        ParameterSchema(name="target", type="string", description="Target system"),
+        ParameterSchema(
+            name="token",
+            type="string",
+            description="Auth token",
+            authSources=["test-auth"],
+        ),
+    ]
+
+
+@pytest.fixture
 def sample_tool_description() -> str:
     """Description for the sample tool."""
     return "A sample tool that processes a message and a count."
@@ -51,6 +64,61 @@ async def http_session() -> AsyncGenerator[ClientSession, None]:
     """Provides an aiohttp ClientSession that is closed after the test."""
     async with ClientSession() as session:
         yield session
+
+
+# --- Fixtures for Client Headers ---
+
+
+@pytest.fixture
+def static_client_header() -> dict[str, str]:
+    return {"X-Client-Static": "client-static-value"}
+
+
+@pytest.fixture
+def sync_callable_client_header_value() -> str:
+    return "client-sync-callable-value"
+
+
+@pytest.fixture
+def sync_callable_client_header(sync_callable_client_header_value) -> dict[str, Mock]:
+    return {"X-Client-Sync": Mock(return_value=sync_callable_client_header_value)}
+
+
+@pytest.fixture
+def async_callable_client_header_value() -> str:
+    return "client-async-callable-value"
+
+
+@pytest.fixture
+def async_callable_client_header(
+    async_callable_client_header_value,
+) -> dict[str, AsyncMock]:
+    return {
+        "X-Client-Async": AsyncMock(return_value=async_callable_client_header_value)
+    }
+
+
+# --- Fixtures for Auth Getters ---
+
+
+@pytest.fixture
+def auth_token_value() -> str:
+    return "auth-token-123"
+
+
+@pytest.fixture
+def auth_getters(auth_token_value) -> dict[str, Callable[[], str]]:
+    return {"test-auth": lambda: auth_token_value}
+
+
+@pytest.fixture
+def auth_getters_mock(auth_token_value) -> dict[str, Mock]:
+    return {"test-auth": Mock(return_value=auth_token_value)}
+
+
+@pytest.fixture
+def auth_header_key() -> str:
+    return "test-auth_token"
 
 
 def test_create_func_docstring_one_param_real_schema():
@@ -168,6 +236,7 @@ async def test_tool_creation_callable_and_run(
             required_authn_params={},
             auth_service_token_getters={},
             bound_params={},
+            client_headers={},
         )
 
         assert callable(tool_instance), "ToolboxTool instance should be callable"
@@ -212,17 +281,15 @@ async def test_tool_run_with_pydantic_validation_error(
             required_authn_params={},
             auth_service_token_getters={},
             bound_params={},
+            client_headers={},
         )
 
         assert callable(tool_instance)
 
-        with pytest.raises(ValidationError) as exc_info:
+        expected_pattern = r"1 validation error for sample_tool\ncount\n  Input should be a valid integer, unable to parse string as an integer \[\s*type=int_parsing,\s*input_value='not-a-number',\s*input_type=str\s*\]*"
+        with pytest.raises(ValidationError, match=expected_pattern):
             await tool_instance(message="hello", count="not-a-number")
 
-        assert (
-            "1 validation error for sample_tool\ncount\n  Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='not-a-number', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.11/v/int_parsing"
-            in str(exc_info.value)
-        )
         m.assert_not_called()
 
 
@@ -285,3 +352,72 @@ async def test_resolve_value_async_callable():
 
     async_callable.assert_awaited_once()
     assert resolved == expected_value
+
+
+# --- Tests for ToolboxTool Initialization and Validation ---
+
+
+def test_tool_init_basic(http_session, sample_tool_params, sample_tool_description):
+    """Tests basic tool initialization without headers or auth."""
+    tool_instance = ToolboxTool(
+        session=http_session,
+        base_url=TEST_BASE_URL,
+        name=TEST_TOOL_NAME,
+        description=sample_tool_description,
+        params=sample_tool_params,
+        required_authn_params={},
+        auth_service_token_getters={},
+        bound_params={},
+        client_headers={},
+    )
+    assert tool_instance.__name__ == TEST_TOOL_NAME
+    assert inspect.iscoroutinefunction(tool_instance.__call__)
+    assert "message" in tool_instance.__signature__.parameters
+    assert "count" in tool_instance.__signature__.parameters
+
+    assert tool_instance._ToolboxTool__client_headers == {}
+    assert tool_instance._ToolboxTool__auth_service_token_getters == {}
+
+
+def test_tool_init_with_client_headers(
+    http_session, sample_tool_params, sample_tool_description, static_client_header
+):
+    """Tests tool initialization *with* client headers."""
+    tool_instance = ToolboxTool(
+        session=http_session,
+        base_url=TEST_BASE_URL,
+        name=TEST_TOOL_NAME,
+        description=sample_tool_description,
+        params=sample_tool_params,
+        required_authn_params={},
+        auth_service_token_getters={},
+        bound_params={},
+        client_headers=static_client_header,
+    )
+    assert tool_instance._ToolboxTool__client_headers == static_client_header
+
+
+def test_tool_init_header_auth_conflict(
+    http_session,
+    sample_tool_auth_params,
+    sample_tool_description,
+    auth_getters,
+    auth_header_key,
+):
+    """Tests ValueError on init if client header conflicts with auth token."""
+    conflicting_client_header = {auth_header_key: "some-client-value"}
+
+    with pytest.raises(
+        ValueError, match=f"Client header\\(s\\) `{auth_header_key}` already registered"
+    ):
+        ToolboxTool(
+            session=http_session,
+            base_url=TEST_BASE_URL,
+            name="auth_conflict_tool",
+            description=sample_tool_description,
+            params=sample_tool_auth_params,
+            required_authn_params={},
+            auth_service_token_getters=auth_getters,
+            bound_params={},
+            client_headers=conflicting_client_header,
+        )
