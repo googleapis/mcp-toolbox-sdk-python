@@ -314,7 +314,10 @@ class ToolboxTool:
          Returns:
              A new ToolboxTool instance with the specified parameters bound.
         """
+        param_names = set(p.name for p in self.__params)
         for name in bound_params.keys():
+            if name not in param_names:
+                raise Exception(f"unable to bind parameters: no parameter named {name}")
             if name in self.__bound_parameters:
                 raise ValueError(
                     f"cannot re-bind parameter: parameter '{name}' is already bound"
