@@ -460,7 +460,9 @@ class TestBoundParameter:
         with pytest.raises(ValueError) as e:
             tool_with_bound_param.bind_parameters({"argA": lambda: 20})
 
-        assert "cannot re-bind parameter: parameter 'argA' is already bound" in str(e.value)
+        assert "cannot re-bind parameter: parameter 'argA' is already bound" in str(
+            e.value
+        )
 
     @pytest.mark.asyncio
     async def test_bind_param_static_value_success(self, tool_name, client):
