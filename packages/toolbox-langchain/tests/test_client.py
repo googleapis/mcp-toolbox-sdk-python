@@ -49,7 +49,7 @@ class TestToolboxClient:
         assert tool.name == mock_tool.name
         assert tool.description == mock_tool.description
         assert tool.args_schema == mock_tool.args_schema
-        mock_aload_tool.assert_called_once_with("test_tool", {}, None, {}, True)
+        mock_aload_tool.assert_called_once_with("test_tool", {}, None, None, {}, True)
 
     @patch("toolbox_langchain.client.AsyncToolboxClient.aload_toolset")
     def test_load_toolset(self, mock_aload_toolset, toolbox_client):
@@ -70,7 +70,7 @@ class TestToolboxClient:
             and a.args_schema == b.args_schema
             for a, b in zip(tools, mock_tools)
         )
-        mock_aload_toolset.assert_called_once_with(None, {}, None, {}, True)
+        mock_aload_toolset.assert_called_once_with(None, {}, None, None, {}, True)
 
     @pytest.mark.asyncio
     @patch("toolbox_langchain.client.AsyncToolboxClient.aload_tool")
@@ -85,7 +85,7 @@ class TestToolboxClient:
         assert tool.name == mock_tool.name
         assert tool.description == mock_tool.description
         assert tool.args_schema == mock_tool.args_schema
-        mock_aload_tool.assert_called_once_with("test_tool", {}, None, {}, True)
+        mock_aload_tool.assert_called_once_with("test_tool", {}, None, None, {}, True)
 
     @pytest.mark.asyncio
     @patch("toolbox_langchain.client.AsyncToolboxClient.aload_toolset")
@@ -107,7 +107,7 @@ class TestToolboxClient:
             and a.args_schema == b.args_schema
             for a, b in zip(tools, mock_tools)
         )
-        mock_aload_toolset.assert_called_once_with(None, {}, None, {}, True)
+        mock_aload_toolset.assert_called_once_with(None, {}, None, None, {}, True)
 
     @patch("toolbox_langchain.client.AsyncToolboxClient.aload_tool")
     def test_load_tool_with_args(self, mock_aload_tool, toolbox_client):
@@ -116,12 +116,14 @@ class TestToolboxClient:
         mock_tool.description = "mock description"
         mock_tool.args_schema = BaseModel
         mock_aload_tool.return_value = mock_tool
-        auth_tokens = {"token1": lambda: "value1"}
-        auth_headers = {"header1": lambda: "value2"}
-        bound_params = {"param1": "value3"}
+        auth_token_getters = {"token_getter1": lambda: "value1"}
+        auth_tokens = {"token1": lambda: "value2"}
+        auth_headers = {"header1": lambda: "value3"}
+        bound_params = {"param1": "value4"}
 
         tool = toolbox_client.load_tool(
             "test_tool_name",
+            auth_token_getters=auth_token_getters,
             auth_tokens=auth_tokens,
             auth_headers=auth_headers,
             bound_params=bound_params,
@@ -132,7 +134,12 @@ class TestToolboxClient:
         assert tool.description == mock_tool.description
         assert tool.args_schema == mock_tool.args_schema
         mock_aload_tool.assert_called_once_with(
-            "test_tool_name", auth_tokens, auth_headers, bound_params, False
+            "test_tool_name",
+            auth_token_getters,
+            auth_tokens,
+            auth_headers,
+            bound_params,
+            False,
         )
 
     @patch("toolbox_langchain.client.AsyncToolboxClient.aload_toolset")
@@ -146,12 +153,14 @@ class TestToolboxClient:
         mock_tools[1].args_schema = BaseModel
         mock_aload_toolset.return_value = mock_tools
 
-        auth_tokens = {"token1": lambda: "value1"}
-        auth_headers = {"header1": lambda: "value2"}
-        bound_params = {"param1": "value3"}
+        auth_token_getters = {"token_getter1": lambda: "value1"}
+        auth_tokens = {"token1": lambda: "value2"}
+        auth_headers = {"header1": lambda: "value3"}
+        bound_params = {"param1": "value4"}
 
         tools = toolbox_client.load_toolset(
             toolset_name="my_toolset",
+            auth_token_getters=auth_token_getters,
             auth_tokens=auth_tokens,
             auth_headers=auth_headers,
             bound_params=bound_params,
@@ -166,7 +175,12 @@ class TestToolboxClient:
             for a, b in zip(tools, mock_tools)
         )
         mock_aload_toolset.assert_called_once_with(
-            "my_toolset", auth_tokens, auth_headers, bound_params, False
+            "my_toolset",
+            auth_token_getters,
+            auth_tokens,
+            auth_headers,
+            bound_params,
+            False,
         )
 
     @pytest.mark.asyncio
@@ -178,18 +192,29 @@ class TestToolboxClient:
         mock_tool.args_schema = BaseModel
         mock_aload_tool.return_value = mock_tool
 
-        auth_tokens = {"token1": lambda: "value1"}
-        auth_headers = {"header1": lambda: "value2"}
-        bound_params = {"param1": "value3"}
+        auth_token_getters = {"token_getter1": lambda: "value1"}
+        auth_tokens = {"token1": lambda: "value2"}
+        auth_headers = {"header1": lambda: "value3"}
+        bound_params = {"param1": "value4"}
 
         tool = await toolbox_client.aload_tool(
-            "test_tool", auth_tokens, auth_headers, bound_params, False
+            "test_tool",
+            auth_token_getters,
+            auth_tokens,
+            auth_headers,
+            bound_params,
+            False,
         )
         assert tool.name == mock_tool.name
         assert tool.description == mock_tool.description
         assert tool.args_schema == mock_tool.args_schema
         mock_aload_tool.assert_called_once_with(
-            "test_tool", auth_tokens, auth_headers, bound_params, False
+            "test_tool",
+            auth_token_getters,
+            auth_tokens,
+            auth_headers,
+            bound_params,
+            False,
         )
 
     @pytest.mark.asyncio
@@ -204,12 +229,18 @@ class TestToolboxClient:
         mock_tools[1].args_schema = BaseModel
         mock_aload_toolset.return_value = mock_tools
 
-        auth_tokens = {"token1": lambda: "value1"}
-        auth_headers = {"header1": lambda: "value2"}
-        bound_params = {"param1": "value3"}
+        auth_token_getters = {"token_getter1": lambda: "value1"}
+        auth_tokens = {"token1": lambda: "value2"}
+        auth_headers = {"header1": lambda: "value3"}
+        bound_params = {"param1": "value4"}
 
         tools = await toolbox_client.aload_toolset(
-            "my_toolset", auth_tokens, auth_headers, bound_params, False
+            "my_toolset",
+            auth_token_getters,
+            auth_tokens,
+            auth_headers,
+            bound_params,
+            False,
         )
         assert len(tools) == len(mock_tools)
         assert all(
@@ -219,5 +250,10 @@ class TestToolboxClient:
             for a, b in zip(tools, mock_tools)
         )
         mock_aload_toolset.assert_called_once_with(
-            "my_toolset", auth_tokens, auth_headers, bound_params, False
+            "my_toolset",
+            auth_token_getters,
+            auth_tokens,
+            auth_headers,
+            bound_params,
+            False,
         )

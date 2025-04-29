@@ -88,7 +88,8 @@ class ToolboxClient:
     async def aload_tool(
         self,
         tool_name: str,
-        auth_tokens: dict[str, Callable[[], str]] = {},
+        auth_token_getters: dict[str, Callable[[], str]] = {},
+        auth_tokens: Optional[dict[str, Callable[[], str]]] = None,
         auth_headers: Optional[dict[str, Callable[[], str]]] = None,
         bound_params: dict[str, Union[Any, Callable[[], Any]]] = {},
         strict: bool = True,
@@ -98,9 +99,10 @@ class ToolboxClient:
 
         Args:
             tool_name: The name of the tool to load.
-            auth_tokens: An optional mapping of authentication source names to
-                functions that retrieve ID tokens.
-            auth_headers: Deprecated. Use `auth_tokens` instead.
+            auth_token_getters: An optional mapping of authentication source
+                names to functions that retrieve ID tokens.
+            auth_tokens: Deprecated. Use `auth_token_getters` instead.
+            auth_headers: Deprecated. Use `auth_token_getters` instead.
             bound_params: An optional mapping of parameter names to their
                 bound values.
             strict: If True, raises a ValueError if any of the given bound
@@ -112,7 +114,12 @@ class ToolboxClient:
         """
         async_tool = await self.__run_as_async(
             self.__async_client.aload_tool(
-                tool_name, auth_tokens, auth_headers, bound_params, strict
+                tool_name,
+                auth_token_getters,
+                auth_tokens,
+                auth_headers,
+                bound_params,
+                strict,
             )
         )
 
@@ -123,7 +130,8 @@ class ToolboxClient:
     async def aload_toolset(
         self,
         toolset_name: Optional[str] = None,
-        auth_tokens: dict[str, Callable[[], str]] = {},
+        auth_token_getters: dict[str, Callable[[], str]] = {},
+        auth_tokens: Optional[dict[str, Callable[[], str]]] = None,
         auth_headers: Optional[dict[str, Callable[[], str]]] = None,
         bound_params: dict[str, Union[Any, Callable[[], Any]]] = {},
         strict: bool = True,
@@ -135,9 +143,10 @@ class ToolboxClient:
         Args:
             toolset_name: The name of the toolset to load. If not provided,
                 all tools are loaded.
-            auth_tokens: An optional mapping of authentication source names to
-                functions that retrieve ID tokens.
-            auth_headers: Deprecated. Use `auth_tokens` instead.
+            auth_token_getters: An optional mapping of authentication source
+                names to functions that retrieve ID tokens.
+            auth_tokens: Deprecated. Use `auth_token_getters` instead.
+            auth_headers: Deprecated. Use `auth_token_getters` instead.
             bound_params: An optional mapping of parameter names to their
                 bound values.
             strict: If True, raises a ValueError if any of the given bound
@@ -149,7 +158,12 @@ class ToolboxClient:
         """
         async_tools = await self.__run_as_async(
             self.__async_client.aload_toolset(
-                toolset_name, auth_tokens, auth_headers, bound_params, strict
+                toolset_name,
+                auth_token_getters,
+                auth_tokens,
+                auth_headers,
+                bound_params,
+                strict,
             )
         )
 
@@ -164,7 +178,8 @@ class ToolboxClient:
     def load_tool(
         self,
         tool_name: str,
-        auth_tokens: dict[str, Callable[[], str]] = {},
+        auth_token_getters: dict[str, Callable[[], str]] = {},
+        auth_tokens: Optional[dict[str, Callable[[], str]]] = None,
         auth_headers: Optional[dict[str, Callable[[], str]]] = None,
         bound_params: dict[str, Union[Any, Callable[[], Any]]] = {},
         strict: bool = True,
@@ -174,9 +189,10 @@ class ToolboxClient:
 
         Args:
             tool_name: The name of the tool to load.
-            auth_tokens: An optional mapping of authentication source names to
-                functions that retrieve ID tokens.
-            auth_headers: Deprecated. Use `auth_tokens` instead.
+            auth_token_getters: An optional mapping of authentication source
+                names to functions that retrieve ID tokens.
+            auth_tokens: Deprecated. Use `auth_token_getters` instead.
+            auth_headers: Deprecated. Use `auth_token_getters` instead.
             bound_params: An optional mapping of parameter names to their
                 bound values.
             strict: If True, raises a ValueError if any of the given bound
@@ -188,7 +204,12 @@ class ToolboxClient:
         """
         async_tool = self.__run_as_sync(
             self.__async_client.aload_tool(
-                tool_name, auth_tokens, auth_headers, bound_params, strict
+                tool_name,
+                auth_token_getters,
+                auth_tokens,
+                auth_headers,
+                bound_params,
+                strict,
             )
         )
 
@@ -199,7 +220,8 @@ class ToolboxClient:
     def load_toolset(
         self,
         toolset_name: Optional[str] = None,
-        auth_tokens: dict[str, Callable[[], str]] = {},
+        auth_token_getters: dict[str, Callable[[], str]] = {},
+        auth_tokens: Optional[dict[str, Callable[[], str]]] = None,
         auth_headers: Optional[dict[str, Callable[[], str]]] = None,
         bound_params: dict[str, Union[Any, Callable[[], Any]]] = {},
         strict: bool = True,
@@ -211,9 +233,10 @@ class ToolboxClient:
         Args:
             toolset_name: The name of the toolset to load. If not provided,
                 all tools are loaded.
-            auth_tokens: An optional mapping of authentication source names to
-                functions that retrieve ID tokens.
-            auth_headers: Deprecated. Use `auth_tokens` instead.
+            auth_token_getters: An optional mapping of authentication source
+                names to functions that retrieve ID tokens.
+            auth_tokens: Deprecated. Use `auth_token_getters` instead.
+            auth_headers: Deprecated. Use `auth_token_getters` instead.
             bound_params: An optional mapping of parameter names to their
                 bound values.
             strict: If True, raises a ValueError if any of the given bound
@@ -225,7 +248,12 @@ class ToolboxClient:
         """
         async_tools = self.__run_as_sync(
             self.__async_client.aload_toolset(
-                toolset_name, auth_tokens, auth_headers, bound_params, strict
+                toolset_name,
+                auth_token_getters,
+                auth_tokens,
+                auth_headers,
+                bound_params,
+                strict,
             )
         )
 

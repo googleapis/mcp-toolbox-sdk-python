@@ -44,7 +44,8 @@ class AsyncToolboxClient:
     async def aload_tool(
         self,
         tool_name: str,
-        auth_tokens: dict[str, Callable[[], str]] = {},
+        auth_token_getters: dict[str, Callable[[], str]] = {},
+        auth_tokens: Optional[dict[str, Callable[[], str]]] = None,
         auth_headers: Optional[dict[str, Callable[[], str]]] = None,
         bound_params: dict[str, Union[Any, Callable[[], Any]]] = {},
         strict: bool = True,
@@ -54,9 +55,10 @@ class AsyncToolboxClient:
 
         Args:
             tool_name: The name of the tool to load.
-            auth_tokens: An optional mapping of authentication source names to
-                functions that retrieve ID tokens.
-            auth_headers: Deprecated. Use `auth_tokens` instead.
+            auth_token_getters: An optional mapping of authentication source
+                names to functions that retrieve ID tokens.
+            auth_tokens: Deprecated. Use `auth_token_getters` instead.
+            auth_headers: Deprecated. Use `auth_token_getters` instead.
             bound_params: An optional mapping of parameter names to their
                 bound values.
             strict: If True, raises a ValueError if any of the given bound
@@ -67,17 +69,30 @@ class AsyncToolboxClient:
             A tool loaded from the Toolbox.
         """
         if auth_headers:
-            if auth_tokens:
+            if auth_token_getters:
                 warn(
-                    "Both `auth_tokens` and `auth_headers` are provided. `auth_headers` is deprecated, and `auth_tokens` will be used.",
+                    "Both `auth_token_getters` and `auth_headers` are provided. `auth_headers` is deprecated, and `auth_token_getters` will be used.",
                     DeprecationWarning,
                 )
             else:
                 warn(
-                    "Argument `auth_headers` is deprecated. Use `auth_tokens` instead.",
+                    "Argument `auth_headers` is deprecated. Use `auth_token_getters` instead.",
                     DeprecationWarning,
                 )
-                auth_tokens = auth_headers
+                auth_token_getters = auth_headers
+
+        if auth_tokens:
+            if auth_token_getters:
+                warn(
+                    "Both `auth_token_getters` and `auth_tokens` are provided. `auth_tokens` is deprecated, and `auth_token_getters` will be used.",
+                    DeprecationWarning,
+                )
+            else:
+                warn(
+                    "Argument `auth_tokens` is deprecated. Use `auth_token_getters` instead.",
+                    DeprecationWarning,
+                )
+                auth_token_getters = auth_tokens
 
         url = f"{self.__url}/api/tool/{tool_name}"
         manifest: ManifestSchema = await _load_manifest(url, self.__session)
@@ -87,7 +102,7 @@ class AsyncToolboxClient:
             manifest.tools[tool_name],
             self.__url,
             self.__session,
-            auth_tokens,
+            auth_token_getters,
             bound_params,
             strict,
         )
@@ -95,7 +110,8 @@ class AsyncToolboxClient:
     async def aload_toolset(
         self,
         toolset_name: Optional[str] = None,
-        auth_tokens: dict[str, Callable[[], str]] = {},
+        auth_token_getters: dict[str, Callable[[], str]] = {},
+        auth_tokens: Optional[dict[str, Callable[[], str]]] = None,
         auth_headers: Optional[dict[str, Callable[[], str]]] = None,
         bound_params: dict[str, Union[Any, Callable[[], Any]]] = {},
         strict: bool = True,
@@ -107,9 +123,10 @@ class AsyncToolboxClient:
         Args:
             toolset_name: The name of the toolset to load. If not provided,
                 all tools are loaded.
-            auth_tokens: An optional mapping of authentication source names to
-                functions that retrieve ID tokens.
-            auth_headers: Deprecated. Use `auth_tokens` instead.
+            auth_token_getters: An optional mapping of authentication source
+                names to functions that retrieve ID tokens.
+            auth_tokens: Deprecated. Use `auth_token_getters` instead.
+            auth_headers: Deprecated. Use `auth_token_getters` instead.
             bound_params: An optional mapping of parameter names to their
                 bound values.
             strict: If True, raises a ValueError if any of the given bound
@@ -120,17 +137,30 @@ class AsyncToolboxClient:
             A list of all tools loaded from the Toolbox.
         """
         if auth_headers:
-            if auth_tokens:
+            if auth_token_getters:
                 warn(
-                    "Both `auth_tokens` and `auth_headers` are provided. `auth_headers` is deprecated, and `auth_tokens` will be used.",
+                    "Both `auth_token_getters` and `auth_headers` are provided. `auth_headers` is deprecated, and `auth_token_getters` will be used.",
                     DeprecationWarning,
                 )
             else:
                 warn(
-                    "Argument `auth_headers` is deprecated. Use `auth_tokens` instead.",
+                    "Argument `auth_headers` is deprecated. Use `auth_token_getters` instead.",
                     DeprecationWarning,
                 )
-                auth_tokens = auth_headers
+                auth_token_getters = auth_headers
+
+        if auth_tokens:
+            if auth_token_getters:
+                warn(
+                    "Both `auth_token_getters` and `auth_tokens` are provided. `auth_tokens` is deprecated, and `auth_token_getters` will be used.",
+                    DeprecationWarning,
+                )
+            else:
+                warn(
+                    "Argument `auth_tokens` is deprecated. Use `auth_token_getters` instead.",
+                    DeprecationWarning,
+                )
+                auth_token_getters = auth_tokens
 
         url = f"{self.__url}/api/toolset/{toolset_name or ''}"
         manifest: ManifestSchema = await _load_manifest(url, self.__session)
@@ -143,7 +173,7 @@ class AsyncToolboxClient:
                     tool_schema,
                     self.__url,
                     self.__session,
-                    auth_tokens,
+                    auth_token_getters,
                     bound_params,
                     strict,
                 )
@@ -153,7 +183,8 @@ class AsyncToolboxClient:
     def load_tool(
         self,
         tool_name: str,
-        auth_tokens: dict[str, Callable[[], str]] = {},
+        auth_token_getters: dict[str, Callable[[], str]] = {},
+        auth_tokens: Optional[dict[str, Callable[[], str]]] = None,
         auth_headers: Optional[dict[str, Callable[[], str]]] = None,
         bound_params: dict[str, Union[Any, Callable[[], Any]]] = {},
         strict: bool = True,
@@ -163,7 +194,8 @@ class AsyncToolboxClient:
     def load_toolset(
         self,
         toolset_name: Optional[str] = None,
-        auth_tokens: dict[str, Callable[[], str]] = {},
+        auth_token_getters: dict[str, Callable[[], str]] = {},
+        auth_tokens: Optional[dict[str, Callable[[], str]]] = None,
         auth_headers: Optional[dict[str, Callable[[], str]]] = None,
         bound_params: dict[str, Union[Any, Callable[[], Any]]] = {},
         strict: bool = True,

@@ -59,7 +59,7 @@ class TestToolboxTool:
         mock_async_tool._AsyncToolboxTool__schema = tool_schema
         mock_async_tool._AsyncToolboxTool__url = "http://test_url"
         mock_async_tool._AsyncToolboxTool__session = Mock()
-        mock_async_tool._AsyncToolboxTool__auth_tokens = {}
+        mock_async_tool._AsyncToolboxTool__auth_token_getters = {}
         mock_async_tool._AsyncToolboxTool__bound_params = {}
         return mock_async_tool
 
@@ -73,7 +73,7 @@ class TestToolboxTool:
         mock_async_tool._AsyncToolboxTool__schema = auth_tool_schema
         mock_async_tool._AsyncToolboxTool__url = "http://test_url"
         mock_async_tool._AsyncToolboxTool__session = Mock()
-        mock_async_tool._AsyncToolboxTool__auth_tokens = {}
+        mock_async_tool._AsyncToolboxTool__auth_token_getters = {}
         mock_async_tool._AsyncToolboxTool__bound_params = {}
         return mock_async_tool
 
@@ -155,7 +155,7 @@ class TestToolboxTool:
         assert isinstance(tool, ToolboxTool)
 
     @pytest.mark.parametrize(
-        "auth_tokens, expected_auth_tokens",
+        "auth_token_getters, expected_auth_token_getters",
         [
             (
                 {"test-auth-source": lambda: "test-token"},
@@ -173,46 +173,52 @@ class TestToolboxTool:
             ),
         ],
     )
-    def test_toolbox_tool_add_auth_tokens(
+    def test_toolbox_tool_add_auth_token_getters(
         self,
-        auth_tokens,
-        expected_auth_tokens,
+        auth_token_getters,
+        expected_auth_token_getters,
         mock_async_auth_tool,
         auth_toolbox_tool,
     ):
-        auth_toolbox_tool._ToolboxTool__async_tool._AsyncToolboxTool__auth_tokens = (
-            expected_auth_tokens
+        auth_toolbox_tool._ToolboxTool__async_tool._AsyncToolboxTool__auth_token_getters = (
+            expected_auth_token_getters
         )
-        auth_toolbox_tool._ToolboxTool__async_tool.add_auth_tokens.return_value = (
+        auth_toolbox_tool._ToolboxTool__async_tool.add_auth_token_getters.return_value = (
             mock_async_auth_tool
         )
 
-        tool = auth_toolbox_tool.add_auth_tokens(auth_tokens)
-        mock_async_auth_tool.add_auth_tokens.assert_called_once_with(auth_tokens, True)
-        for source, getter in expected_auth_tokens.items():
+        tool = auth_toolbox_tool.add_auth_token_getters(auth_token_getters)
+        mock_async_auth_tool.add_auth_token_getters.assert_called_once_with(
+            auth_token_getters, True
+        )
+        for source, getter in expected_auth_token_getters.items():
             assert (
-                tool._ToolboxTool__async_tool._AsyncToolboxTool__auth_tokens[source]()
+                tool._ToolboxTool__async_tool._AsyncToolboxTool__auth_token_getters[
+                    source
+                ]()
                 == getter()
             )
         assert isinstance(tool, ToolboxTool)
 
-    def test_toolbox_tool_add_auth_token(self, mock_async_auth_tool, auth_toolbox_tool):
+    def test_toolbox_tool_add_auth_token_getter(
+        self, mock_async_auth_tool, auth_toolbox_tool
+    ):
         get_id_token = lambda: "test-token"
-        expected_auth_tokens = {"test-auth-source": get_id_token}
-        auth_toolbox_tool._ToolboxTool__async_tool._AsyncToolboxTool__auth_tokens = (
-            expected_auth_tokens
+        expected_auth_token_getters = {"test-auth-source": get_id_token}
+        auth_toolbox_tool._ToolboxTool__async_tool._AsyncToolboxTool__auth_token_getters = (
+            expected_auth_token_getters
         )
-        auth_toolbox_tool._ToolboxTool__async_tool.add_auth_token.return_value = (
+        auth_toolbox_tool._ToolboxTool__async_tool.add_auth_token_getter.return_value = (
             mock_async_auth_tool
         )
 
-        tool = auth_toolbox_tool.add_auth_token("test-auth-source", get_id_token)
-        mock_async_auth_tool.add_auth_token.assert_called_once_with(
+        tool = auth_toolbox_tool.add_auth_token_getter("test-auth-source", get_id_token)
+        mock_async_auth_tool.add_auth_token_getter.assert_called_once_with(
             "test-auth-source", get_id_token, True
         )
 
         assert (
-            tool._ToolboxTool__async_tool._AsyncToolboxTool__auth_tokens[
+            tool._ToolboxTool__async_tool._AsyncToolboxTool__auth_token_getters[
                 "test-auth-source"
             ]()
             == "test-token"

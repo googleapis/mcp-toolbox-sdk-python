@@ -225,21 +225,21 @@ async def get_auth_token():
 toolbox = ToolboxClient("http://127.0.0.1:5000")
 tools = toolbox.load_toolset()
 
-auth_tool = tools[0].add_auth_token("my_auth", get_auth_token) # Single token
+auth_tool = tools[0].add_auth_token_getter("my_auth", get_auth_token) # Single token
 
-multi_auth_tool = tools[0].add_auth_tokens({"my_auth", get_auth_token}) # Multiple tokens
+multi_auth_tool = tools[0].add_auth_token_getters({"my_auth", get_auth_token}) # Multiple tokens
 
 # OR
 
-auth_tools = [tool.add_auth_token("my_auth", get_auth_token) for tool in tools]
+auth_tools = [tool.add_auth_token_getter("my_auth", get_auth_token) for tool in tools]
 ```
 
 #### Add Authentication While Loading
 
 ```py
-auth_tool = toolbox.load_tool(auth_tokens={"my_auth": get_auth_token})
+auth_tool = toolbox.load_tool(auth_token_getters={"my_auth": get_auth_token})
 
-auth_tools = toolbox.load_toolset(auth_tokens={"my_auth": get_auth_token})
+auth_tools = toolbox.load_toolset(auth_token_getters={"my_auth": get_auth_token})
 ```
 
 > [!NOTE]
@@ -260,7 +260,7 @@ async def get_auth_token():
 toolbox = ToolboxClient("http://127.0.0.1:5000")
 tool = toolbox.load_tool("my-tool")
 
-auth_tool = tool.add_auth_token("my_auth", get_auth_token)
+auth_tool = tool.add_auth_token_getter("my_auth", get_auth_token)
 result = auth_tool.invoke({"input": "some input"})
 print(result)
 ```

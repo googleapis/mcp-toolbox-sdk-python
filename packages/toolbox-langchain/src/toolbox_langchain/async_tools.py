@@ -45,7 +45,7 @@ class AsyncToolboxTool(BaseTool):
         schema: ToolSchema,
         url: str,
         session: ClientSession,
-        auth_tokens: dict[str, Callable[[], str]] = {},
+        auth_token_getters: dict[str, Callable[[], str]] = {},
         bound_params: dict[str, Union[Any, Callable[[], Any]]] = {},
         strict: bool = True,
     ) -> None:
@@ -57,8 +57,8 @@ class AsyncToolboxTool(BaseTool):
             schema: The tool schema.
             url: The base URL of the Toolbox service.
             session: The HTTP client session.
-            auth_tokens: A mapping of authentication source names to functions
-                that retrieve ID tokens.
+            auth_token_getters: A mapping of authentication source names to
+                functions that retrieve ID tokens.
             bound_params: A mapping of parameter names to their bound
                 values.
             strict: If True, raises a ValueError if any of the given bound
@@ -132,7 +132,7 @@ class AsyncToolboxTool(BaseTool):
         self.__schema = schema
         self.__url = url
         self.__session = session
-        self.__auth_tokens = auth_tokens
+        self.__auth_token_getters = auth_token_getters
         self.__auth_params = auth_params
         self.__bound_params = bound_params
 
@@ -172,7 +172,7 @@ class AsyncToolboxTool(BaseTool):
         kwargs.update(evaluated_params)
 
         return await _invoke_tool(
-            self.__url, self.__session, self.__name, kwargs, self.__auth_tokens
+            self.__url, self.__session, self.__name, kwargs, self.__auth_token_getters
         )
 
     def __validate_auth(self, strict: bool = True) -> None:
@@ -199,7 +199,7 @@ class AsyncToolboxTool(BaseTool):
 
         # Check tool for at least 1 required auth source
         for src in self.__schema.authRequired:
-            if src in self.__auth_tokens:
+            if src in self.__auth_token_getters:
                 is_authenticated = True
                 break
 
@@ -211,7 +211,7 @@ class AsyncToolboxTool(BaseTool):
             for src in param.authSources:
 
                 # Find first auth source that is specified
-                if src in self.__auth_tokens:
+                if src in self.__auth_token_getters:
                     has_auth = True
                     break
             if not has_auth:
@@ -238,7 +238,7 @@ class AsyncToolboxTool(BaseTool):
     def __create_copy(
         self,
         *,
-        auth_tokens: dict[str, Callable[[], str]] = {},
+        auth_token_getters: dict[str, Callable[[], str]] = {},
         bound_params: dict[str, Union[Any, Callable[[], Any]]] = {},
         strict: bool,
     ) -> "AsyncToolboxTool":
@@ -253,8 +253,8 @@ class AsyncToolboxTool(BaseTool):
         original instance, ensuring immutability.
 
         Args:
-            auth_tokens: A dictionary of auth source names to functions that
-                retrieve ID tokens. These tokens will be merged with the
+            auth_token_getters: A dictionary of auth source names to functions
+                that retrieve ID tokens. These tokens will be merged with the
                 existing auth tokens.
             bound_params: A dictionary of parameter names to their
                 bound values or functions to retrieve the values. These params
@@ -281,21 +281,21 @@ class AsyncToolboxTool(BaseTool):
             schema=new_schema,
             url=self.__url,
             session=self.__session,
-            auth_tokens={**self.__auth_tokens, **auth_tokens},
+            auth_token_getters={**self.__auth_token_getters, **auth_token_getters},
             bound_params={**self.__bound_params, **bound_params},
             strict=strict,
         )
 
-    def add_auth_tokens(
-        self, auth_tokens: dict[str, Callable[[], str]], strict: bool = True
+    def add_auth_token_getters(
+        self, auth_token_getters: dict[str, Callable[[], str]], strict: bool = True
     ) -> "AsyncToolboxTool":
         """
         Registers functions to retrieve ID tokens for the corresponding
         authentication sources.
 
         Args:
-            auth_tokens: A dictionary of authentication source names to the
-                functions that return corresponding ID token.
+            auth_token_getters: A dictionary of authentication source names to
+                the functions that return corresponding ID token getters.
             strict: If True, a ValueError is raised if any of the provided auth
                 parameters is already bound. If False, only a warning is issued.
 
@@ -313,8 +313,8 @@ class AsyncToolboxTool(BaseTool):
 
         # Check if the authentication source is already registered.
         dupe_tokens: list[str] = []
-        for auth_token, _ in auth_tokens.items():
-            if auth_token in self.__auth_tokens:
+        for auth_token, _ in auth_token_getters.items():
+            if auth_token in self.__auth_token_getters:
                 dupe_tokens.append(auth_token)
 
         if dupe_tokens:
@@ -322,9 +322,9 @@ class AsyncToolboxTool(BaseTool):
                 f"Authentication source(s) `{', '.join(dupe_tokens)}` already registered in tool `{self.__name}`."
             )
 
-        return self.__create_copy(auth_tokens=auth_tokens, strict=strict)
+        return self.__create_copy(auth_token_getters=auth_token_getters, strict=strict)
 
-    def add_auth_token(
+    def add_auth_token_getter(
         self, auth_source: str, get_id_token: Callable[[], str], strict: bool = True
     ) -> "AsyncToolboxTool":
         """
@@ -346,7 +346,7 @@ class AsyncToolboxTool(BaseTool):
             ValueError: If the provided auth parameter is already bound and
                 strict is True.
         """
-        return self.add_auth_tokens({auth_source: get_id_token}, strict=strict)
+        return self.add_auth_token_getters({auth_source: get_id_token}, strict=strict)
 
     def bind_params(
         self,
