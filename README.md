@@ -1,342 +1,126 @@
-![MCP Toolbox Logo](https://raw.githubusercontent.com/googleapis/genai-toolbox/main/logo.png)
-# MCP Toolbox LangChain SDK
+![MCP Toolbox
+Logo](https://raw.githubusercontent.com/googleapis/genai-toolbox/main/logo.png)
+# MCP Toolbox SDKs for Python
 
-This SDK allows you to seamlessly integrate the functionalities of
-[Toolbox](https://github.com/googleapis/genai-toolbox) into your LangChain LLM
-applications, enabling advanced orchestration and interaction with GenAI models.
+[![License: Apache
+2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![PyPI - Python
+Version](https://img.shields.io/pypi/pyversions/toolbox-core)](https://pypi.org/project/toolbox-core/)
 
-<!-- TOC ignore:true -->
-## Table of Contents
+This repository contains Python SDKs designed to seamlessly integrate the
+functionalities of the [MCP
+Toolbox](https://github.com/googleapis/genai-toolbox) into your Gen AI
+applications. These SDKs allow you to load tools defined in Toolbox and use them
+as standard Python functions or objects within popular orchestration frameworks
+or your custom code.
+
+This simplifies the process of incorporating external functionalities (like
+Databases or APIs) managed by Toolbox into your GenAI applications.
+
 <!-- TOC -->
 
-- [Installation](#installation)
-- [Quickstart](#quickstart)
-- [Usage](#usage)
-- [Loading Tools](#loading-tools)
-    - [Load a toolset](#load-a-toolset)
-    - [Load a single tool](#load-a-single-tool)
-- [Use with LangChain](#use-with-langchain)
-- [Use with LangGraph](#use-with-langgraph)
-    - [Represent Tools as Nodes](#represent-tools-as-nodes)
-    - [Connect Tools with LLM](#connect-tools-with-llm)
-- [Manual usage](#manual-usage)
-- [Authenticating Tools](#authenticating-tools)
-    - [Supported Authentication Mechanisms](#supported-authentication-mechanisms)
-    - [Configure Tools](#configure-tools)
-    - [Configure SDK](#configure-sdk)
-        - [Add Authentication to a Tool](#add-authentication-to-a-tool)
-        - [Add Authentication While Loading](#add-authentication-while-loading)
-    - [Complete Example](#complete-example)
-- [Binding Parameter Values](#binding-parameter-values)
-    - [Binding Parameters to a Tool](#binding-parameters-to-a-tool)
-    - [Binding Parameters While Loading](#binding-parameters-while-loading)
-    - [Binding Dynamic Values](#binding-dynamic-values)
-- [Asynchronous Usage](#asynchronous-usage)
+- [Overview](#overview)
+- [Which Package Should I Use?](#which-package-should-i-use)
+- [Available Packages](#available-packages)
+- [Getting Started](#getting-started)
+- [Contributing](#contributing)
+- [License](#license)
+- [Support](#support)
 
 <!-- /TOC -->
 
-## Installation
+## Overview
 
-```bash
-pip install toolbox-langchain
-```
+The MCP Toolbox service provides a centralized way to manage and expose tools
+(like API connectors, database query tools, etc.) for use by GenAI applications.
 
-## Quickstart
+These Python SDKs act as clients for that service. They handle the communication needed to:
 
-Here's a minimal example to get you started using
-[LangGraph](https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent):
+* Fetch tool definitions from your running Toolbox instance.
+* Provide convenient Python objects or functions representing those tools.
+* Invoke the tools (calling the underlying APIs/services configured in Toolbox).
+* Handle authentication and parameter binding as needed.
 
-```py
-from toolbox_langchain import ToolboxClient
-from langchain_google_vertexai import ChatVertexAI
-from langgraph.prebuilt import create_react_agent
+By using these SDKs, you can easily leverage your Toolbox-managed tools directly
+within your Python applications or AI orchestration frameworks.
 
-toolbox = ToolboxClient("http://127.0.0.1:5000")
-tools = toolbox.load_toolset()
+## Which Package Should I Use?
 
-model = ChatVertexAI(model="gemini-1.5-pro-002")
-agent = create_react_agent(model, tools)
+Choosing the right package depends on how you are building your application:
 
-prompt = "How's the weather today?"
+* [`toolbox-langchain`](https://github.com/googleapis/mcp-toolbox-sdk-python/tree/main/packages/toolbox-langchain):
+  Use this package if you are building your application using the LangChain or
+  LangGraph frameworks. It provides tools that are directly compatible with the
+  LangChain ecosystem (`BaseTool` interface), simplifying integration.
+* [`toolbox-core`](https://github.com/googleapis/mcp-toolbox-sdk-python/tree/main/packages/toolbox-core):
+  Use this package if you are not using LangChain/LangGraph or any other
+  orchestration framework, or if you need a framework-agnostic way to interact
+  with Toolbox tools (e.g., for custom orchestration logic or direct use in
+  Python scripts).
 
-for s in agent.stream({"messages": [("user", prompt)]}, stream_mode="values"):
-    message = s["messages"][-1]
-    if isinstance(message, tuple):
-        print(message)
-    else:
-        message.pretty_print()
-```
+## Available Packages
 
-## Usage
+This repository hosts the following Python packages. See the package-specific
+README for detailed installation and usage instructions:
 
-Import and initialize the toolbox client.
+| Package | Target Use Case | Integration | Path | Details (README) | PyPI Status |
+| :------ | :---------- | :---------- | :---------------------- | :---------- | :--------- 
+| `toolbox-core` | Framework-agnostic / Custom applications | Use directly / Custom | `packages/toolbox-core/` | 📄 [View README](https://github.com/googleapis/mcp-toolbox-sdk-python/blob/main/packages/toolbox-core/README.md) | [![PyPI version](https://badge.fury.io/py/toolbox-core.svg)](https://badge.fury.io/py/toolbox-core) |
+| `toolbox-langchain` | LangChain / LangGraph applications | LangChain / LangGraph | `packages/toolbox-langchain/` | 📄 [View README](https://github.com/googleapis/mcp-toolbox-sdk-python/blob/main/packages/toolbox-langchain/README.md) | [![PyPI version](https://badge.fury.io/py/toolbox-langchain.svg)](https://badge.fury.io/py/toolbox-langchain) |
 
-```py
-from toolbox_langchain import ToolboxClient
+## Getting Started
 
-# Replace with your Toolbox service's URL
-toolbox = ToolboxClient("http://127.0.0.1:5000")
-```
+To get started using Toolbox tools with an application, follow these general steps:
 
-## Loading Tools
+1.  **Set up and Run the Toolbox Service:**
 
-### Load a toolset
+    Before using the SDKs, you need the main MCP Toolbox service running. Follow
+    the instructions here: [**Toolbox Getting Started
+    Guide**](https://github.com/googleapis/genai-toolbox?tab=readme-ov-file#getting-started)
 
-A toolset is a collection of related tools. You can load all tools in a toolset
-or a specific one:
+2.  **Install the Appropriate SDK:**
+    
+    Choose the package based on your needs (see "[Which Package Should I Use?](#which-package-should-i-use)" above) and install it:
 
-```py
-# Load all tools
-tools = toolbox.load_toolset()
+    ```bash
+    # For the core, framework-agnostic SDK
+    pip install toolbox-core
 
-# Load a specific toolset
-tools = toolbox.load_toolset("my-toolset")
-```
+    # OR
 
-### Load a single tool
+    # For LangChain/LangGraph integration
+    pip install toolbox-langchain
+    ```
 
-```py
-tool = toolbox.load_tool("my-tool")
-```
+3.  **Use the SDK:**
 
-Loading individual tools gives you finer-grained control over which tools are
-available to your LLM agent.
+    Consult the README for your chosen package (linked in the "[Available
+    Packages](#available-packages)" section above) for detailed instructions on
+    how to connect the client, load tool definitions, invoke tools, configure
+    authentication/binding, and integrate them into your application or
+    framework.
 
-## Use with LangChain
+> [!TIP]
+> For a complete, end-to-end example including setting up the service and using
+> an SDK, see the full tutorial: [**Toolbox Quickstart
+> Tutorial**](https://googleapis.github.io/genai-toolbox/getting-started/local_quickstart)
 
-LangChain's agents can dynamically choose and execute tools based on the user
-input. Include tools loaded from the Toolbox SDK in the agent's toolkit:
+## Contributing
 
-```py
-from langchain_google_vertexai import ChatVertexAI
+Contributions are welcome! Please refer to the
+[`CONTRIBUTING.md`](https://github.com/googleapis/mcp-toolbox-sdk-python/blob/main/CONTRIBUTING.md)
+to get started.
 
-model = ChatVertexAI(model="gemini-1.5-pro-002")
+## License
 
-# Initialize agent with tools
-agent = model.bind_tools(tools)
+This project is licensed under the Apache License 2.0. See the
+[LICENSE](https://github.com/googleapis/genai-toolbox/blob/main/LICENSE) file
+for details.
 
-# Run the agent
-result = agent.invoke("Do something with the tools")
-```
+## Support
 
-## Use with LangGraph
-
-Integrate the Toolbox SDK with LangGraph to use Toolbox service tools within a
-graph-based workflow. Follow the [official
-guide](https://langchain-ai.github.io/langgraph/) with minimal changes.
-
-### Represent Tools as Nodes
-
-Represent each tool as a LangGraph node, encapsulating the tool's execution within the node's functionality:
-
-```py
-from toolbox_langchain import ToolboxClient
-from langgraph.graph import StateGraph, MessagesState
-from langgraph.prebuilt import ToolNode
-
-# Define the function that calls the model
-def call_model(state: MessagesState):
-    messages = state['messages']
-    response = model.invoke(messages)
-    return {"messages": [response]}  # Return a list to add to existing messages
-
-model = ChatVertexAI(model="gemini-1.5-pro-002")
-builder = StateGraph(MessagesState)
-tool_node = ToolNode(tools)
-
-builder.add_node("agent", call_model)
-builder.add_node("tools", tool_node)
-```
-
-### Connect Tools with LLM
-
-Connect tool nodes with LLM nodes. The LLM decides which tool to use based on
-input or context. Tool output can be fed back into the LLM:
-
-```py
-from typing import Literal
-from langgraph.graph import END, START
-from langchain_core.messages import HumanMessage
-
-# Define the function that determines whether to continue or not
-def should_continue(state: MessagesState) -> Literal["tools", END]:
-    messages = state['messages']
-    last_message = messages[-1]
-    if last_message.tool_calls:
-        return "tools"  # Route to "tools" node if LLM makes a tool call
-    return END  # Otherwise, stop
-
-builder.add_edge(START, "agent")
-builder.add_conditional_edges("agent", should_continue)
-builder.add_edge("tools", 'agent')
-
-graph = builder.compile()
-
-graph.invoke({"messages": [HumanMessage(content="Do something with the tools")]})
-```
-
-## Manual usage
-
-Execute a tool manually using the `invoke` method:
-
-```py
-result = tools[0].invoke({"name": "Alice", "age": 30})
-```
-
-This is useful for testing tools or when you need precise control over tool
-execution outside of an agent framework.
-
-## Authenticating Tools
-
-> [!WARNING]
-> Always use HTTPS to connect your application with the Toolbox service,
-> especially when using tools with authentication configured. Using HTTP exposes
-> your application to serious security risks.
-
-Some tools require user authentication to access sensitive data.
-
-### Supported Authentication Mechanisms
-Toolbox currently supports authentication using the [OIDC
-protocol](https://openid.net/specs/openid-connect-core-1_0.html) with [ID
-tokens](https://openid.net/specs/openid-connect-core-1_0.html#IDToken) (not
-access tokens) for [Google OAuth
-2.0](https://cloud.google.com/apigee/docs/api-platform/security/oauth/oauth-home).
-
-### Configure Tools
-
-Refer to [these
-instructions](https://googleapis.github.io/genai-toolbox/resources/tools/#authenticated-parameters) on
-configuring tools for authenticated parameters.
-
-### Configure SDK
-
-You need a method to retrieve an ID token from your authentication service:
-
-```py
-async def get_auth_token():
-    # ... Logic to retrieve ID token (e.g., from local storage, OAuth flow)
-    # This example just returns a placeholder. Replace with your actual token retrieval.
-    return "YOUR_ID_TOKEN" # Placeholder
-```
-
-#### Add Authentication to a Tool
-
-```py
-toolbox = ToolboxClient("http://127.0.0.1:5000")
-tools = toolbox.load_toolset()
-
-auth_tool = tools[0].add_auth_token("my_auth", get_auth_token) # Single token
-
-multi_auth_tool = tools[0].add_auth_tokens({"my_auth", get_auth_token}) # Multiple tokens
-
-# OR
-
-auth_tools = [tool.add_auth_token("my_auth", get_auth_token) for tool in tools]
-```
-
-#### Add Authentication While Loading
-
-```py
-auth_tool = toolbox.load_tool(auth_tokens={"my_auth": get_auth_token})
-
-auth_tools = toolbox.load_toolset(auth_tokens={"my_auth": get_auth_token})
-```
-
-> [!NOTE]
-> Adding auth tokens during loading only affect the tools loaded within
-> that call.
-
-### Complete Example
-
-```py
-import asyncio
-from toolbox_langchain import ToolboxClient
-
-async def get_auth_token():
-    # ... Logic to retrieve ID token (e.g., from local storage, OAuth flow)
-    # This example just returns a placeholder. Replace with your actual token retrieval.
-    return "YOUR_ID_TOKEN" # Placeholder
-
-toolbox = ToolboxClient("http://127.0.0.1:5000")
-tool = toolbox.load_tool("my-tool")
-
-auth_tool = tool.add_auth_token("my_auth", get_auth_token)
-result = auth_tool.invoke({"input": "some input"})
-print(result)
-```
-
-## Binding Parameter Values
-
-Predetermine values for tool parameters using the SDK. These values won't be
-modified by the LLM. This is useful for:
-
-* **Protecting sensitive information:**  API keys, secrets, etc.
-* **Enforcing consistency:** Ensuring specific values for certain parameters.
-* **Pre-filling known data:**  Providing defaults or context.
-
-### Binding Parameters to a Tool
-
-```py
-toolbox = ToolboxClient("http://127.0.0.1:5000")
-tools = toolbox.load_toolset()
-
-bound_tool = tool[0].bind_param("param", "value") # Single param
-
-multi_bound_tool = tools[0].bind_params({"param1": "value1", "param2": "value2"}) # Multiple params
-
-# OR
-
-bound_tools = [tool.bind_param("param", "value") for tool in tools]
-```
-
-### Binding Parameters While Loading
-
-```py
-bound_tool = toolbox.load_tool("my-tool", bound_params={"param": "value"})
-
-bound_tools = toolbox.load_toolset(bound_params={"param": "value"})
-```
-
-> [!NOTE]
-> Bound values during loading only affect the tools loaded in that call.
-
-### Binding Dynamic Values
-
-Use a function to bind dynamic values:
-
-```py
-def get_dynamic_value():
-  # Logic to determine the value
-  return "dynamic_value"
-
-dynamic_bound_tool = tool.bind_param("param", get_dynamic_value)
-```
-
-> [!IMPORTANT]
-> You don't need to modify tool configurations to bind parameter values.
-
-## Asynchronous Usage
-
-For better performance through [cooperative
-multitasking](https://en.wikipedia.org/wiki/Cooperative_multitasking), you can
-use the asynchronous interfaces of the `ToolboxClient`.
-
-> [!Note]
-> Asynchronous interfaces like `aload_tool` and `aload_toolset` require an
-> asynchronous environment. For guidance on running asynchronous Python
-> programs, see [asyncio
-> documentation](https://docs.python.org/3/library/asyncio-runner.html#running-an-asyncio-program).
-
-```py
-import asyncio
-from toolbox_langchain import ToolboxClient
-
-async def main():
-    toolbox = ToolboxClient("http://127.0.0.1:5000")
-    tool = await client.aload_tool("my-tool")
-    tools = await client.aload_toolset()
-    response = await tool.ainvoke()
-
-if __name__ == "__main__":
-    asyncio.run(main())
-```
+If you encounter issues or have questions, please check the existing [GitHub
+Issues](https://github.com/googleapis/genai-toolbox/issues) for the main Toolbox
+project. If your issue is specific to one of the SDKs, please look for existing
+issues [here](https://github.com/googleapis/mcp-toolbox-sdk-python/issues) or
+open a new issue in this repository.
