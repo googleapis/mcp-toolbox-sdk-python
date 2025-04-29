@@ -12,11 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-import types
 from inspect import Signature
+import copy
 from typing import Any, Callable, Coroutine, Mapping, Optional, Sequence, Union
-
+from types import MappingProxyType
 from aiohttp import ClientSession
 
 from .protocol import ParameterSchema
@@ -112,6 +111,34 @@ class ToolboxTool:
         self.__bound_parameters = bound_params
         # map of client headers to their value/callable/coroutine
         self.__client_headers = client_headers
+
+    @property
+    def _name(self) -> str:
+        return self.__name__
+
+    @property
+    def _description(self) -> str:
+        return self.__description
+
+    @property
+    def _params(self) -> Sequence[ParameterSchema]:
+        return copy.deepcopy(self.__params)
+
+    @property
+    def _bound_params(self) -> Mapping[str, Union[Callable[[], Any], Any]]:
+        return MappingProxyType(self.__bound_parameters)
+
+    @property
+    def _required_auth_params(self) -> Mapping[str, list[str]]:
+        return MappingProxyType(self.__required_authn_params)
+
+    @property
+    def _auth_service_token_getters(self) -> Mapping[str, Callable[[], str]]:
+        return MappingProxyType(self.__auth_service_token_getters)
+
+    @property
+    def _client_headers(self) -> Mapping[str, Union[Callable, Coroutine, str]]:
+        return MappingProxyType(self.__client_headers)
 
     def __copy(
         self,

@@ -67,7 +67,7 @@ class ToolboxSyncTool:
 
     @property
     def __name__(self) -> str:
-        return self.__async_tool.__name__
+        return self.__async_tool._name
 
     @property
     def __doc__(self) -> Union[str, None]:  # type: ignore[override]
