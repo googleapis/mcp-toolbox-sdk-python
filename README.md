@@ -18,7 +18,6 @@ This simplifies the process of incorporating external functionalities (like
 Databases or APIs) managed by Toolbox into your GenAI applications.
 
 <!-- TOC -->
-
 - [Overview](#overview)
 - [Which Package Should I Use?](#which-package-should-i-use)
 - [Available Packages](#available-packages)
@@ -52,6 +51,10 @@ Choosing the right package depends on how you are building your application:
   Use this package if you are building your application using the LangChain or
   LangGraph frameworks. It provides tools that are directly compatible with the
   LangChain ecosystem (`BaseTool` interface), simplifying integration.
+* [`toolbox-llamaindex`](https://github.com/googleapis/mcp-toolbox-sdk-python/tree/main/packages/toolbox-llamaindex):
+  Use this package if you are building your application using the LlamaIndex framework. 
+  It provides tools that are directly compatible with the
+  LlamaIndex ecosystem (`BaseTool` interface), simplifying integration.
 * [`toolbox-core`](https://github.com/googleapis/mcp-toolbox-sdk-python/tree/main/packages/toolbox-core):
   Use this package if you are not using LangChain/LangGraph or any other
   orchestration framework, or if you need a framework-agnostic way to interact
@@ -67,6 +70,7 @@ README for detailed installation and usage instructions:
 | :------ | :---------- | :---------- | :---------------------- | :---------- | :--------- 
 | `toolbox-core` | Framework-agnostic / Custom applications | Use directly / Custom | `packages/toolbox-core/` | 📄 [View README](https://github.com/googleapis/mcp-toolbox-sdk-python/blob/main/packages/toolbox-core/README.md) | [![PyPI version](https://badge.fury.io/py/toolbox-core.svg)](https://badge.fury.io/py/toolbox-core) |
 | `toolbox-langchain` | LangChain / LangGraph applications | LangChain / LangGraph | `packages/toolbox-langchain/` | 📄 [View README](https://github.com/googleapis/mcp-toolbox-sdk-python/blob/main/packages/toolbox-langchain/README.md) | [![PyPI version](https://badge.fury.io/py/toolbox-langchain.svg)](https://badge.fury.io/py/toolbox-langchain) |
+| `toolbox-llamaindex` | LlamaIndex  applications                 | LlamaIndex            | `packages/toolbox-llamaindex/` | 📄 [View README](https://github.com/googleapis/mcp-toolbox-sdk-python/blob/main/packages/toolbox-llamaindex/README.md) | [![PyPI version](https://badge.fury.io/py/toolbox-llamaindex.svg)](https://badge.fury.io/py/toolbox-llamaindex) |
 
 ## Getting Started
 
@@ -90,6 +94,9 @@ To get started using Toolbox tools with an application, follow these general ste
 
     # For LangChain/LangGraph integration
     pip install toolbox-langchain
+    
+    # For the LlamaIndex integration
+    pip install toolbox-llamaindex
     ```
 
 3.  **Use the SDK:**
