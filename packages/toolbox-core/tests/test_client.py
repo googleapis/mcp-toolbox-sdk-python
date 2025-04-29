@@ -454,6 +454,9 @@ class TestBoundParameter:
 
         tool_with_bound_param = tool.bind_parameters({"argA": lambda: 10})
 
+        assert len(tool_with_bound_param.__signature__.parameters) == 1
+        assert "argA" not in tool_with_bound_param.__signature__.parameters
+
         with pytest.raises(ValueError) as e:
             tool_with_bound_param.bind_parameters({"argA": lambda: 20})
 
