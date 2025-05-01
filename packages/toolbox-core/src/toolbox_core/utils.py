@@ -72,9 +72,7 @@ def identify_required_authn_params(
     for param, services in req_authn_params.items():
         # if we don't have a token_getter for any of the services required by the param,
         # the param is still required
-        matched_services = [
-            s for s in services if s in auth_service_names
-        ]
+        matched_services = [s for s in services if s in auth_service_names]
 
         if matched_services:
             used_services.update(matched_services)

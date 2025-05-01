@@ -88,8 +88,9 @@ def test_identify_required_authn_params_none_required():
     auth_service_names = ["service_a", "service_b"]
     expected = {}
     expected_used = set()
-    assert (
-        identify_required_authn_params(req_authn_params, auth_service_names) == (expected, expected_used)
+    assert identify_required_authn_params(req_authn_params, auth_service_names) == (
+        expected,
+        expected_used,
     )
 
 
@@ -102,8 +103,9 @@ def test_identify_required_authn_params_all_covered():
     auth_service_names = ["service_a", "service_b"]
     expected = {}
     expected_used = set(auth_service_names)
-    assert (
-        identify_required_authn_params(req_authn_params, auth_service_names) == (expected, expected_used)
+    assert identify_required_authn_params(req_authn_params, auth_service_names) == (
+        expected,
+        expected_used,
     )
 
 
@@ -121,8 +123,9 @@ def test_identify_required_authn_params_some_covered():
         "token_e": ["service_e", "service_f"],
     }
     expected_used = set(auth_service_names)
-    assert (
-        identify_required_authn_params(req_authn_params, auth_service_names) == (expected, expected_used)
+    assert identify_required_authn_params(req_authn_params, auth_service_names) == (
+        expected,
+        expected_used,
     )
 
 
@@ -138,8 +141,9 @@ def test_identify_required_authn_params_none_covered():
         "token_e": ["service_e", "service_f"],
     }
     expected_used = set()
-    assert (
-        identify_required_authn_params(req_authn_params, auth_service_names) == (expected, expected_used)
+    assert identify_required_authn_params(req_authn_params, auth_service_names) == (
+        expected,
+        expected_used,
     )
 
 
@@ -155,8 +159,9 @@ def test_identify_required_authn_params_no_available_services():
         "token_b": ["service_b", "service_c"],
     }
     expected_used = set()
-    assert (
-        identify_required_authn_params(req_authn_params, auth_service_names) == (expected, expected_used)
+    assert identify_required_authn_params(req_authn_params, auth_service_names) == (
+        expected,
+        expected_used,
     )
 
 
@@ -170,8 +175,9 @@ def test_identify_required_authn_params_empty_services_for_param():
         "token_x": [],
     }
     expected_used = set()
-    assert (
-        identify_required_authn_params(req_authn_params, auth_service_names) == (expected, expected_used)
+    assert identify_required_authn_params(req_authn_params, auth_service_names) == (
+        expected,
+        expected_used,
     )
 
 
