@@ -81,7 +81,7 @@ class ToolboxClient:
 
         authn_params = identify_required_authn_params(
             authn_params, auth_token_getters.keys()
-        )
+        )[0]
 
         tool = ToolboxTool(
             session=self.__session,

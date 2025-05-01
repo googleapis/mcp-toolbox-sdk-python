@@ -46,29 +46,42 @@ def create_func_docstring(description: str, params: Sequence[ParameterSchema]) -
 
 def identify_required_authn_params(
     req_authn_params: Mapping[str, list[str]], auth_service_names: Iterable[str]
-) -> dict[str, list[str]]:
+) -> tuple[dict[str, list[str]], set[str]]:
     """
     Identifies authentication parameters that are still required; because they
-        are not covered by the provided `auth_service_names`.
+        are not covered by the provided `auth_service_names`, and also returns a
+        set of all authentication services that were found to be matching.
 
         Args:
-            req_authn_params: A mapping of parameter names to sets of required
+            req_authn_params: A mapping of parameter names to lists of required
                 authentication services.
             auth_service_names: An iterable of authentication service names for which
                 token getters are available.
 
     Returns:
-        A new dictionary representing the subset of required authentication parameters
-        that are not covered by the provided `auth_service_names`.
+        A tuple containing:
+            - A new dictionary representing the subset of required
+              authentication parameters that are not covered by the provided
+              `auth_service_names`.
+            - A list of authentication service names from `auth_service_names`
+              that were found to satisfy at least one parameter's requirements.
     """
-    required_params = {}  # params that are still required with provided auth_services
+    required_params: dict[str, list[str]] = {}
+    used_services: set[str] = set()
+
     for param, services in req_authn_params.items():
         # if we don't have a token_getter for any of the services required by the param,
         # the param is still required
-        required = not any(s in services for s in auth_service_names)
-        if required:
+        matched_services = [
+            s for s in services if s in auth_service_names
+        ]
+
+        if matched_services:
+            used_services.update(matched_services)
+        else:
             required_params[param] = services
-    return required_params
+
+    return required_params, used_services
 
 
 def params_to_pydantic_model(
