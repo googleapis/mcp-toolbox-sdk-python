@@ -273,7 +273,7 @@ class ToolboxTool:
             required_authn_params=new_req_authn_params,
         )
 
-    def bind_parameters(
+    def bind_params(
         self, bound_params: Mapping[str, Union[Callable[[], Any], Any]]
     ) -> "ToolboxTool":
         """
