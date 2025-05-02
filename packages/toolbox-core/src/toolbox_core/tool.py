@@ -307,12 +307,12 @@ class ToolboxTool:
         """
         Binds parameters to values or callables that produce values.
 
-         Args:
-             bound_params: A mapping of parameter names to values or callables that
-                 produce values.
+        Args:
+            bound_params: A mapping of parameter names to values or callables that
+                produce values.
 
-         Returns:
-             A new ToolboxTool instance with the specified parameters bound.
+        Returns:
+            A new ToolboxTool instance with the specified parameters bound.
         """
         param_names = set(p.name for p in self.__params)
         for name in bound_params.keys():
@@ -335,3 +335,21 @@ class ToolboxTool:
             params=new_params,
             bound_params=MappingProxyType(all_bound_params),
         )
+
+    def bind_param(
+        self,
+        param_name: str,
+        param_value: Union[Callable[[], Any], Any],
+    ) -> "ToolboxTool":
+        """
+        Binds a parameter to the value or callables that produce it.
+
+        Args:
+            param_name: The name of the bound parameter.
+            param_value: The value of the bound parameter, or a callable that
+                returns the value.
+
+        Returns:
+            A new ToolboxTool instance with the specified parameters bound.
+        """
+        return self.bind_params({param_name: param_value})
