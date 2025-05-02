@@ -105,7 +105,7 @@ class TestBindParams:
         self, toolbox: ToolboxClient, get_n_rows_tool: ToolboxTool
     ):
         """Bind a param to an existing tool."""
-        new_tool = get_n_rows_tool.bind_parameters({"num_rows": "3"})
+        new_tool = get_n_rows_tool.bind_params({"num_rows": "3"})
         response = await new_tool()
         assert isinstance(response, str)
         assert "row1" in response
@@ -117,7 +117,7 @@ class TestBindParams:
         self, toolbox: ToolboxClient, get_n_rows_tool: ToolboxTool
     ):
         """Bind a callable param to an existing tool."""
-        new_tool = get_n_rows_tool.bind_parameters({"num_rows": lambda: "3"})
+        new_tool = get_n_rows_tool.bind_params({"num_rows": lambda: "3"})
         response = await new_tool()
         assert isinstance(response, str)
         assert "row1" in response

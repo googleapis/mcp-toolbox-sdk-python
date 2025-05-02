@@ -153,7 +153,7 @@ class ToolboxSyncTool:
         new_async_tool = self.__async_tool.add_auth_token_getters(auth_token_getters)
         return ToolboxSyncTool(new_async_tool, self.__loop, self.__thread)
 
-    def bind_parameters(
+    def bind_params(
         self, bound_params: Mapping[str, Union[Callable[[], Any], Any]]
     ) -> "ToolboxSyncTool":
         """
@@ -167,5 +167,5 @@ class ToolboxSyncTool:
              A new ToolboxSyncTool instance with the specified parameters bound.
         """
 
-        new_async_tool = self.__async_tool.bind_parameters(bound_params)
+        new_async_tool = self.__async_tool.bind_params(bound_params)
         return ToolboxSyncTool(new_async_tool, self.__loop, self.__thread)
