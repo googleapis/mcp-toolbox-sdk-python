@@ -133,11 +133,14 @@ class TestAuth:
         self, toolbox: ToolboxClient, auth_token2: str
     ):
         """Tests running a tool that doesn't require auth, with auth provided."""
-        tool = await toolbox.load_tool(
-            "get-row-by-id", auth_token_getters={"my-test-auth": lambda: auth_token2}
-        )
-        response = await tool(id="2")
-        assert "row2" in response
+
+        with pytest.raises(
+            ValueError,
+            match=rf"Validation failed for tool 'get-row-by-id': unused auth tokens: my-test-auth",
+        ):
+            await toolbox.load_tool(
+                "get-row-by-id", auth_token_getters={"my-test-auth": lambda: auth_token2}
+            )
 
     async def test_run_tool_no_auth(self, toolbox: ToolboxClient):
         """Tests running a tool requiring auth without providing auth."""
