@@ -139,7 +139,8 @@ class TestAuth:
             match=rf"Validation failed for tool 'get-row-by-id': unused auth tokens: my-test-auth",
         ):
             await toolbox.load_tool(
-                "get-row-by-id", auth_token_getters={"my-test-auth": lambda: auth_token2}
+                "get-row-by-id",
+                auth_token_getters={"my-test-auth": lambda: auth_token2},
             )
 
     async def test_run_tool_no_auth(self, toolbox: ToolboxClient):
