@@ -194,9 +194,7 @@ class ToolboxClient:
         if unused_auth or unused_bound:
             error_messages = []
             if unused_auth:
-                error_messages.append(
-                    f"unused auth tokens: {', '.join(unused_auth)}"
-                )
+                error_messages.append(f"unused auth tokens: {', '.join(unused_auth)}")
             if unused_bound:
                 error_messages.append(
                     f"unused bound parameters: {', '.join(unused_bound)}"
