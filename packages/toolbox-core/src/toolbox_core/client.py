@@ -280,7 +280,7 @@ class ToolboxClient:
                             f"unused bound parameters: {', '.join(unused_bound)}"
                         )
                     raise ValueError(
-                        f"Validation failed for tool '{name}': { '; '.join(error_messages) }."
+                        f"Validation failed for tool '{tool_name}': { '; '.join(error_messages) }."
                     )
             else:
                 overall_used_auth_keys.update(used_auth_keys)
