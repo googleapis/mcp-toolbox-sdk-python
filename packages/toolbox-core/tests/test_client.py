@@ -66,6 +66,7 @@ def test_tool_auth():
         ],
     )
 
+
 @pytest.fixture
 def tool_schema_minimal():
     """A tool with no parameters, no auth."""
@@ -74,6 +75,7 @@ def tool_schema_minimal():
         parameters=[],
     )
 
+
 @pytest.fixture
 def tool_schema_requires_auth_X():
     """A tool requiring 'auth_service_X'."""
@@ -81,7 +83,7 @@ def tool_schema_requires_auth_X():
         description="Tool Requiring Auth X",
         parameters=[
             ParameterSchema(
-                name="auth_param_X", #
+                name="auth_param_X",  #
                 type="string",
                 description="Auth X Token",
                 authSources=["auth_service_X"],
@@ -100,6 +102,7 @@ def tool_schema_with_param_P():
             ParameterSchema(name="param_P", type="string", description="Parameter P"),
         ],
     )
+
 
 # --- Helper Functions for Mocking ---
 
@@ -580,7 +583,9 @@ class TestUnusedParameterValidation:
         The tool (tool_schema_minimal) does not declare any authSources.
         """
         tool_name = "minimal_tool_for_unused_auth"
-        mock_tool_load(aioresponses, tool_name, tool_schema_minimal, base_url=TEST_BASE_URL)
+        mock_tool_load(
+            aioresponses, tool_name, tool_schema_minimal, base_url=TEST_BASE_URL
+        )
 
         async with ToolboxClient(TEST_BASE_URL) as client:
             with pytest.raises(
@@ -601,7 +606,9 @@ class TestUnusedParameterValidation:
         provided. The tool (tool_schema_minimal) has no parameters to bind.
         """
         tool_name = "minimal_tool_for_unused_bound"
-        mock_tool_load(aioresponses, tool_name, tool_schema_minimal, base_url=TEST_BASE_URL)
+        mock_tool_load(
+            aioresponses, tool_name, tool_schema_minimal, base_url=TEST_BASE_URL
+        )
 
         async with ToolboxClient(TEST_BASE_URL) as client:
             with pytest.raises(
@@ -621,7 +628,9 @@ class TestUnusedParameterValidation:
         are provided.
         """
         tool_name = "minimal_tool_for_unused_both"
-        mock_tool_load(aioresponses, tool_name, tool_schema_minimal, base_url=TEST_BASE_URL)
+        mock_tool_load(
+            aioresponses, tool_name, tool_schema_minimal, base_url=TEST_BASE_URL
+        )
 
         async with ToolboxClient(TEST_BASE_URL) as client:
             with pytest.raises(
@@ -647,7 +656,9 @@ class TestUnusedParameterValidation:
         toolset_name = "strict_set_single_tool_unused_auth"
         tool_A_name = "tool_A_minimal"
         tools_dict = {tool_A_name: tool_schema_minimal}
-        mock_toolset_load(aioresponses, toolset_name, tools_dict, base_url=TEST_BASE_URL)
+        mock_toolset_load(
+            aioresponses, toolset_name, tools_dict, base_url=TEST_BASE_URL
+        )
 
         async with ToolboxClient(TEST_BASE_URL) as client:
             with pytest.raises(
@@ -677,7 +688,9 @@ class TestUnusedParameterValidation:
             tool_minimal_name: tool_schema_minimal,
             tool_auth_X_name: tool_schema_requires_auth_X,
         }
-        mock_toolset_load(aioresponses, toolset_name, tools_dict, base_url=TEST_BASE_URL)
+        mock_toolset_load(
+            aioresponses, toolset_name, tools_dict, base_url=TEST_BASE_URL
+        )
 
         async with ToolboxClient(TEST_BASE_URL) as client:
             with pytest.raises(
@@ -708,7 +721,9 @@ class TestUnusedParameterValidation:
             tool_auth_X_name: tool_schema_requires_auth_X,
             tool_minimal_name: tool_schema_minimal,
         }
-        mock_toolset_load(aioresponses, toolset_name, tools_dict, base_url=TEST_BASE_URL)
+        mock_toolset_load(
+            aioresponses, toolset_name, tools_dict, base_url=TEST_BASE_URL
+        )
 
         async with ToolboxClient(TEST_BASE_URL) as client:
             with pytest.raises(
@@ -722,6 +737,7 @@ class TestUnusedParameterValidation:
                     },
                     strict=True,
                 )
+
     @pytest.mark.asyncio
     async def test_load_toolset_strict_one_tool_unused_bound_raises(
         self, aioresponses, tool_schema_minimal
@@ -733,7 +749,9 @@ class TestUnusedParameterValidation:
         toolset_name = "strict_set_single_tool_unused_bound"
         tool_A_name = "tool_A_minimal_for_bound"
         tools_dict = {tool_A_name: tool_schema_minimal}
-        mock_toolset_load(aioresponses, toolset_name, tools_dict, base_url=TEST_BASE_URL)
+        mock_toolset_load(
+            aioresponses, toolset_name, tools_dict, base_url=TEST_BASE_URL
+        )
 
         async with ToolboxClient(TEST_BASE_URL) as client:
             with pytest.raises(
@@ -762,7 +780,9 @@ class TestUnusedParameterValidation:
             tool_minimal_name: tool_schema_minimal,
             tool_param_P_name: tool_schema_with_param_P,
         }
-        mock_toolset_load(aioresponses, toolset_name, tools_dict, base_url=TEST_BASE_URL)
+        mock_toolset_load(
+            aioresponses, toolset_name, tools_dict, base_url=TEST_BASE_URL
+        )
 
         async with ToolboxClient(TEST_BASE_URL) as client:
             with pytest.raises(
@@ -793,7 +813,9 @@ class TestUnusedParameterValidation:
             tool_param_P_name: tool_schema_with_param_P,
             tool_minimal_name: tool_schema_minimal,
         }
-        mock_toolset_load(aioresponses, toolset_name, tools_dict, base_url=TEST_BASE_URL)
+        mock_toolset_load(
+            aioresponses, toolset_name, tools_dict, base_url=TEST_BASE_URL
+        )
 
         async with ToolboxClient(TEST_BASE_URL) as client:
             with pytest.raises(
@@ -808,8 +830,6 @@ class TestUnusedParameterValidation:
                     strict=True,
                 )
 
-
-
     @pytest.mark.asyncio
     async def test_load_toolset_strict_with_unused_auth_and_bound_raises_error(
         self, aioresponses, tool_schema_minimal
@@ -822,7 +842,9 @@ class TestUnusedParameterValidation:
         toolset_name = "strict_set_unused_both_minimal_tool"
         tool_minimal_name = "minimal_for_both_strict"
         tools_dict = {tool_minimal_name: tool_schema_minimal}
-        mock_toolset_load(aioresponses, toolset_name, tools_dict, base_url=TEST_BASE_URL)
+        mock_toolset_load(
+            aioresponses, toolset_name, tools_dict, base_url=TEST_BASE_URL
+        )
 
         async with ToolboxClient(TEST_BASE_URL) as client:
             with pytest.raises(
@@ -851,7 +873,9 @@ class TestUnusedParameterValidation:
             "auth_tool": tool_schema_requires_auth_X,
             "minimal_tool_in_set": tool_schema_minimal,
         }
-        mock_toolset_load(aioresponses, toolset_name, tools_dict, base_url=TEST_BASE_URL)
+        mock_toolset_load(
+            aioresponses, toolset_name, tools_dict, base_url=TEST_BASE_URL
+        )
 
         async with ToolboxClient(TEST_BASE_URL) as client:
             with pytest.raises(
@@ -880,7 +904,9 @@ class TestUnusedParameterValidation:
             "param_P_tool_in_set": tool_schema_with_param_P,
             "minimal_tool_in_set_bound": tool_schema_minimal,
         }
-        mock_toolset_load(aioresponses, toolset_name, tools_dict, base_url=TEST_BASE_URL)
+        mock_toolset_load(
+            aioresponses, toolset_name, tools_dict, base_url=TEST_BASE_URL
+        )
 
         async with ToolboxClient(TEST_BASE_URL) as client:
             with pytest.raises(
@@ -909,7 +935,9 @@ class TestUnusedParameterValidation:
             "auth_tool_for_both": tool_schema_requires_auth_X,
             "param_P_tool_for_both": tool_schema_with_param_P,
         }
-        mock_toolset_load(aioresponses, toolset_name, tools_dict, base_url=TEST_BASE_URL)
+        mock_toolset_load(
+            aioresponses, toolset_name, tools_dict, base_url=TEST_BASE_URL
+        )
 
         async with ToolboxClient(TEST_BASE_URL) as client:
             with pytest.raises(
@@ -928,7 +956,7 @@ class TestUnusedParameterValidation:
                     },
                     strict=False,
                 )
-    
+
     @pytest.mark.asyncio
     async def test_load_toolset_non_strict_default_name_globally_unused_auth(
         self, aioresponses, tool_schema_minimal
@@ -940,7 +968,9 @@ class TestUnusedParameterValidation:
         toolset_name = None
         expected_error_toolset_name = "default"
         tools_dict = {"some_minimal_tool": tool_schema_minimal}
-        mock_toolset_load(aioresponses, toolset_name, tools_dict, base_url=TEST_BASE_URL)
+        mock_toolset_load(
+            aioresponses, toolset_name, tools_dict, base_url=TEST_BASE_URL
+        )
 
         async with ToolboxClient(TEST_BASE_URL) as client:
             with pytest.raises(
@@ -949,10 +979,11 @@ class TestUnusedParameterValidation:
             ):
                 await client.load_toolset(
                     name=toolset_name,
-                    auth_token_getters={"globally_unused_auth_default": lambda: "token"},
+                    auth_token_getters={
+                        "globally_unused_auth_default": lambda: "token"
+                    },
                     strict=False,
                 )
-
 
     @pytest.mark.asyncio
     async def test_load_toolset_non_strict_partially_used_auth_succeeds(
@@ -967,7 +998,9 @@ class TestUnusedParameterValidation:
             "auth_tool_partial": tool_schema_requires_auth_X,
             "minimal_tool_partial": tool_schema_minimal,
         }
-        mock_toolset_load(aioresponses, toolset_name, tools_dict, base_url=TEST_BASE_URL)
+        mock_toolset_load(
+            aioresponses, toolset_name, tools_dict, base_url=TEST_BASE_URL
+        )
 
         async with ToolboxClient(TEST_BASE_URL) as client:
             await client.load_toolset(
@@ -975,7 +1008,6 @@ class TestUnusedParameterValidation:
                 auth_token_getters={"auth_service_X": lambda: "tokenX"},
                 strict=False,
             )
-
 
     @pytest.mark.asyncio
     async def test_load_toolset_non_strict_partially_used_bound_succeeds(
@@ -990,7 +1022,9 @@ class TestUnusedParameterValidation:
             "param_P_tool_partial": tool_schema_with_param_P,
             "minimal_tool_partial_bound": tool_schema_minimal,
         }
-        mock_toolset_load(aioresponses, toolset_name, tools_dict, base_url=TEST_BASE_URL)
+        mock_toolset_load(
+            aioresponses, toolset_name, tools_dict, base_url=TEST_BASE_URL
+        )
 
         async with ToolboxClient(TEST_BASE_URL) as client:
             await client.load_toolset(
@@ -998,7 +1032,6 @@ class TestUnusedParameterValidation:
                 bound_params={"param_P": "valueP"},
                 strict=False,
             )
-
 
     @pytest.mark.asyncio
     async def test_load_toolset_non_strict_partially_used_auth_and_bound_succeeds(
@@ -1013,7 +1046,9 @@ class TestUnusedParameterValidation:
             "auth_tool_for_both": tool_schema_requires_auth_X,
             "param_P_tool_for_both": tool_schema_with_param_P,
         }
-        mock_toolset_load(aioresponses, toolset_name, tools_dict, base_url=TEST_BASE_URL)
+        mock_toolset_load(
+            aioresponses, toolset_name, tools_dict, base_url=TEST_BASE_URL
+        )
 
         async with ToolboxClient(TEST_BASE_URL) as client:
             await client.load_toolset(
