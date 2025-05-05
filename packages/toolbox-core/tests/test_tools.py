@@ -68,35 +68,9 @@ async def http_session() -> AsyncGenerator[ClientSession, None]:
 
 # --- Fixtures for Client Headers ---
 
-
 @pytest.fixture
 def static_client_header() -> dict[str, str]:
     return {"X-Client-Static": "client-static-value"}
-
-
-@pytest.fixture
-def sync_callable_client_header_value() -> str:
-    return "client-sync-callable-value"
-
-
-@pytest.fixture
-def sync_callable_client_header(sync_callable_client_header_value) -> dict[str, Mock]:
-    return {"X-Client-Sync": Mock(return_value=sync_callable_client_header_value)}
-
-
-@pytest.fixture
-def async_callable_client_header_value() -> str:
-    return "client-async-callable-value"
-
-
-@pytest.fixture
-def async_callable_client_header(
-    async_callable_client_header_value,
-) -> dict[str, AsyncMock]:
-    return {
-        "X-Client-Async": AsyncMock(return_value=async_callable_client_header_value)
-    }
-
 
 # --- Fixtures for Auth Getters ---
 
