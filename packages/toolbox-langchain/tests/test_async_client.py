@@ -110,7 +110,7 @@ class TestAsyncToolboxClient:
             await mock_client.aload_tool(
                 tool_name,
                 auth_headers={"Authorization": lambda: "Bearer token"},
-                auth_tokens={"test": lambda: "token"},
+                auth_token_getters={"test": lambda: "token"},
             )
             assert len(w) == 1
             assert issubclass(w[-1].category, DeprecationWarning)
@@ -172,7 +172,7 @@ class TestAsyncToolboxClient:
             simplefilter("always")
             await mock_client.aload_toolset(
                 auth_headers={"Authorization": lambda: "Bearer token"},
-                auth_tokens={"test": lambda: "token"},
+                auth_token_getters={"test": lambda: "token"},
             )
             assert len(w) == 1
             assert issubclass(w[-1].category, DeprecationWarning)

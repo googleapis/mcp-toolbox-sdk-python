@@ -115,7 +115,7 @@ class TestE2EClientAsync:
     async def test_run_tool_unauth_with_auth(self, toolbox, auth_token2):
         """Tests running a tool that doesn't require auth, with auth provided."""
         tool = await toolbox.aload_tool(
-            "get-row-by-id", auth_tokens={"my-test-auth": lambda: auth_token2}
+            "get-row-by-id", auth_token_getters={"my-test-auth": lambda: auth_token2}
         )
         response = await tool.ainvoke({"id": "2"})
         assert "row2" in response
@@ -126,8 +126,8 @@ class TestE2EClientAsync:
             "get-row-by-id-auth",
         )
         with pytest.raises(
-            ToolException,
-            match="{'status': 'Unauthorized', 'error': 'tool invocation not authorized. Please make sure your specify correct auth headers'}",
+            PermissionError,
+            match="Tool get-row-by-id-auth requires authentication, but no valid authentication sources are registered. Please register the required sources before use.",
         ):
             await tool.ainvoke({"id": "2"})
 
@@ -136,7 +136,7 @@ class TestE2EClientAsync:
         tool = await toolbox.aload_tool(
             "get-row-by-id-auth",
         )
-        auth_tool = tool.add_auth_token("my-test-auth", lambda: auth_token2)
+        auth_tool = tool.add_auth_token_getter("my-test-auth", lambda: auth_token2)
         with pytest.raises(
             ToolException,
             match="{'status': 'Unauthorized', 'error': 'tool invocation not authorized. Please make sure your specify correct auth headers'}",
@@ -148,7 +148,7 @@ class TestE2EClientAsync:
         tool = await toolbox.aload_tool(
             "get-row-by-id-auth",
         )
-        auth_tool = tool.add_auth_token("my-test-auth", lambda: auth_token1)
+        auth_tool = tool.add_auth_token_getter("my-test-auth", lambda: auth_token1)
         response = await auth_tool.ainvoke({"id": "2"})
         assert "row2" in response
 
@@ -164,7 +164,8 @@ class TestE2EClientAsync:
     async def test_run_tool_param_auth(self, toolbox, auth_token1):
         """Tests running a tool with a param requiring auth, with correct auth."""
         tool = await toolbox.aload_tool(
-            "get-row-by-email-auth", auth_tokens={"my-test-auth": lambda: auth_token1}
+            "get-row-by-email-auth",
+            auth_token_getters={"my-test-auth": lambda: auth_token1},
         )
         response = await tool.ainvoke({})
         assert "row4" in response
@@ -174,7 +175,8 @@ class TestE2EClientAsync:
     async def test_run_tool_param_auth_no_field(self, toolbox, auth_token1):
         """Tests running a tool with a param requiring auth, with insufficient auth."""
         tool = await toolbox.aload_tool(
-            "get-row-by-content-auth", auth_tokens={"my-test-auth": lambda: auth_token1}
+            "get-row-by-content-auth",
+            auth_token_getters={"my-test-auth": lambda: auth_token1},
         )
         with pytest.raises(
             ToolException,
@@ -255,7 +257,7 @@ class TestE2EClientSync:
     def test_run_tool_unauth_with_auth(self, toolbox, auth_token2):
         """Tests running a tool that doesn't require auth, with auth provided."""
         tool = toolbox.load_tool(
-            "get-row-by-id", auth_tokens={"my-test-auth": lambda: auth_token2}
+            "get-row-by-id", auth_token_getters={"my-test-auth": lambda: auth_token2}
         )
         response = tool.invoke({"id": "2"})
         assert "row2" in response
@@ -266,8 +268,8 @@ class TestE2EClientSync:
             "get-row-by-id-auth",
         )
         with pytest.raises(
-            ToolException,
-            match="{'status': 'Unauthorized', 'error': 'tool invocation not authorized. Please make sure your specify correct auth headers'}",
+            PermissionError,
+            match="Tool get-row-by-id-auth requires authentication, but no valid authentication sources are registered. Please register the required sources before use.",
         ):
             tool.invoke({"id": "2"})
 
@@ -276,7 +278,7 @@ class TestE2EClientSync:
         tool = toolbox.load_tool(
             "get-row-by-id-auth",
         )
-        auth_tool = tool.add_auth_token("my-test-auth", lambda: auth_token2)
+        auth_tool = tool.add_auth_token_getter("my-test-auth", lambda: auth_token2)
         with pytest.raises(
             ToolException,
             match="{'status': 'Unauthorized', 'error': 'tool invocation not authorized. Please make sure your specify correct auth headers'}",
@@ -288,7 +290,7 @@ class TestE2EClientSync:
         tool = toolbox.load_tool(
             "get-row-by-id-auth",
         )
-        auth_tool = tool.add_auth_token("my-test-auth", lambda: auth_token1)
+        auth_tool = tool.add_auth_token_getter("my-test-auth", lambda: auth_token1)
         response = auth_tool.invoke({"id": "2"})
         assert "row2" in response
 
@@ -304,7 +306,8 @@ class TestE2EClientSync:
     def test_run_tool_param_auth(self, toolbox, auth_token1):
         """Tests running a tool with a param requiring auth, with correct auth."""
         tool = toolbox.load_tool(
-            "get-row-by-email-auth", auth_tokens={"my-test-auth": lambda: auth_token1}
+            "get-row-by-email-auth",
+            auth_token_getters={"my-test-auth": lambda: auth_token1},
         )
         response = tool.invoke({})
         assert "row4" in response
@@ -314,7 +317,8 @@ class TestE2EClientSync:
     def test_run_tool_param_auth_no_field(self, toolbox, auth_token1):
         """Tests running a tool with a param requiring auth, with insufficient auth."""
         tool = toolbox.load_tool(
-            "get-row-by-content-auth", auth_tokens={"my-test-auth": lambda: auth_token1}
+            "get-row-by-content-auth",
+            auth_token_getters={"my-test-auth": lambda: auth_token1},
         )
         with pytest.raises(
             ToolException,
