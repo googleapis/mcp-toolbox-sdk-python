@@ -94,7 +94,7 @@ class ToolboxTool:
         # Validate conflicting Headers/Auth Tokens
         request_header_names = client_headers.keys()
         auth_token_names = [
-            auth_token_name + "_token"
+            self.__get_auth_header(auth_token_name)
             for auth_token_name in auth_service_token_getters.keys()
         ]
         duplicates = request_header_names & auth_token_names
@@ -187,6 +187,11 @@ class ToolboxTool:
             client_headers=check(client_headers, self.__client_headers),
         )
 
+    def __get_auth_header(self, auth_token_name: str) -> str:
+        """Returns the formatted auth token header name."""
+        return f"{auth_token_name}_token"
+
+
     async def __call__(self, *args: Any, **kwargs: Any) -> str:
         """
         Asynchronously calls the remote tool with the provided arguments.
@@ -228,7 +233,7 @@ class ToolboxTool:
         # create headers for auth services
         headers = {}
         for auth_service, token_getter in self.__auth_service_token_getters.items():
-            headers[f"{auth_service}_token"] = await resolve_value(token_getter)
+            headers[self.__get_auth_header(auth_service)] = await resolve_value(token_getter)
         for client_header_name, client_header_val in self.__client_headers.items():
             headers[client_header_name] = await resolve_value(client_header_val)
 
@@ -276,7 +281,8 @@ class ToolboxTool:
         # Validate duplicates with client headers
         request_header_names = self.__client_headers.keys()
         auth_token_names = [
-            auth_token_name + "_token" for auth_token_name in incoming_services
+            self.__get_auth_header(auth_token_name)
+            for auth_token_name in incoming_services
         ]
         duplicates = request_header_names & auth_token_names
         if duplicates:
