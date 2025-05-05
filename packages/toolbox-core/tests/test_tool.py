@@ -398,6 +398,7 @@ def test_tool_init_header_auth_conflict(
             client_headers=conflicting_client_header,
         )
 
+
 def test_tool_add_auth_token_getters_conflict_with_existing_client_header(
     http_session: ClientSession,
     sample_tool_params: list[ParameterSchema],
@@ -416,7 +417,9 @@ def test_tool_add_auth_token_getters_conflict_with_existing_client_header(
         required_authn_params={},
         auth_service_token_getters={},
         bound_params={},
-        client_headers={ "X-Shared-Auth-Token_token": "value_from_initial_client_headers"},
+        client_headers={
+            "X-Shared-Auth-Token_token": "value_from_initial_client_headers"
+        },
     )
     new_auth_getters_causing_conflict = {
         "X-Shared-Auth-Token": lambda: "token_value_from_new_getter"
