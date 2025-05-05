@@ -191,7 +191,6 @@ class ToolboxTool:
         """Returns the formatted auth token header name."""
         return f"{auth_token_name}_token"
 
-
     async def __call__(self, *args: Any, **kwargs: Any) -> str:
         """
         Asynchronously calls the remote tool with the provided arguments.
@@ -233,7 +232,9 @@ class ToolboxTool:
         # create headers for auth services
         headers = {}
         for auth_service, token_getter in self.__auth_service_token_getters.items():
-            headers[self.__get_auth_header(auth_service)] = await resolve_value(token_getter)
+            headers[self.__get_auth_header(auth_service)] = await resolve_value(
+                token_getter
+            )
         for client_header_name, client_header_val in self.__client_headers.items():
             headers[client_header_name] = await resolve_value(client_header_val)
 
