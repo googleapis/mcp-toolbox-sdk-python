@@ -68,9 +68,11 @@ async def http_session() -> AsyncGenerator[ClientSession, None]:
 
 # --- Fixtures for Client Headers ---
 
+
 @pytest.fixture
 def static_client_header() -> dict[str, str]:
     return {"X-Client-Static": "client-static-value"}
+
 
 # --- Fixtures for Auth Getters ---
 
