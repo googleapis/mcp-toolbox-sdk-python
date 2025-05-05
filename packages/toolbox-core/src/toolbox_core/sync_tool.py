@@ -12,16 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import copy
 import asyncio
 from asyncio import AbstractEventLoop
-from inspect import Signature
 from threading import Thread
-from typing import Any, Callable, Mapping, TypeVar, Union, Sequence, Coroutine
+from typing import Any, Callable, Coroutine, Mapping, Sequence, TypeVar, Union
 
 from .protocol import ParameterSchema
-
-
 from .tool import ToolboxTool
 
 T = TypeVar("T")
