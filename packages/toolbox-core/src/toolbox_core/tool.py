@@ -12,10 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from inspect import Signature
 import copy
-from typing import Any, Callable, Coroutine, Mapping, Optional, Sequence, Union
+from inspect import Signature
 from types import MappingProxyType
+from typing import Any, Callable, Coroutine, Mapping, Optional, Sequence, Union
+
 from aiohttp import ClientSession
 
 from .protocol import ParameterSchema
