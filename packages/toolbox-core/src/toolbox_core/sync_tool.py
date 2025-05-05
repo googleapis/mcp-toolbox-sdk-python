@@ -14,8 +14,8 @@
 
 import asyncio
 from asyncio import AbstractEventLoop
-from threading import Thread
 from inspect import Signature
+from threading import Thread
 from typing import Any, Callable, Coroutine, Mapping, Sequence, TypeVar, Union
 
 from .protocol import ParameterSchema
