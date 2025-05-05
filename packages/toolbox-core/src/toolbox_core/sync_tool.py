@@ -12,11 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import copy
 import asyncio
 from asyncio import AbstractEventLoop
 from inspect import Signature
 from threading import Thread
-from typing import Any, Callable, Mapping, TypeVar, Union
+from typing import Any, Callable, Mapping, TypeVar, Union, Sequence, Coroutine
+
+from .protocol import ParameterSchema
+
 
 from .tool import ToolboxTool
 
@@ -66,26 +70,32 @@ class ToolboxSyncTool:
         self.__qualname__ = f"{self.__class__.__qualname__}.{self.__name__}"
 
     @property
-    def __name__(self) -> str:
-        return self.__async_tool._name
+    def _name(self) -> str:
+        return self.__name__
 
     @property
-    def __doc__(self) -> Union[str, None]:  # type: ignore[override]
-        # Standard Python object attributes like __doc__ are technically "writable".
-        # But not defining a setter function makes this a read-only property.
-        # Mypy flags this issue in the type checks.
-        return self.__async_tool.__doc__
+    def _description(self) -> str:
+        return self.__async_tool._description
 
     @property
-    def __signature__(self) -> Signature:
-        return self.__async_tool.__signature__
+    def _params(self) -> Sequence[ParameterSchema]:
+        return self.__async_tool._params
 
     @property
-    def __annotations__(self) -> dict[str, Any]:  # type: ignore[override]
-        # Standard Python object attributes like __doc__ are technically "writable".
-        # But not defining a setter function makes this a read-only property.
-        # Mypy flags this issue in the type checks.
-        return self.__async_tool.__annotations__
+    def _bound_params(self) -> Mapping[str, Union[Callable[[], Any], Any]]:
+        return self.__async_tool._bound_params
+
+    @property
+    def _required_auth_params(self) -> Mapping[str, list[str]]:
+        return self.__async_tool._required_auth_params
+
+    @property
+    def _auth_service_token_getters(self) -> Mapping[str, Callable[[], str]]:
+        return self.__async_tool._auth_service_token_getters
+
+    @property
+    def _client_headers(self) -> Mapping[str, Union[Callable, Coroutine, str]]:
+        return self.__async_tool._client_headers
 
     def __call__(self, *args: Any, **kwargs: Any) -> str:
         """
