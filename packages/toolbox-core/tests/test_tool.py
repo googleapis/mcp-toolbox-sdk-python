@@ -88,11 +88,6 @@ def auth_getters(auth_token_value) -> dict[str, Callable[[], str]]:
 
 
 @pytest.fixture
-def auth_getters_mock(auth_token_value) -> dict[str, Mock]:
-    return {"test-auth": Mock(return_value=auth_token_value)}
-
-
-@pytest.fixture
 def auth_header_key() -> str:
     return "test-auth_token"
 
