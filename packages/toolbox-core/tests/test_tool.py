@@ -397,3 +397,34 @@ def test_tool_init_header_auth_conflict(
             bound_params={},
             client_headers=conflicting_client_header,
         )
+
+def test_tool_add_auth_token_getters_conflict_with_existing_client_header(
+    http_session: ClientSession,
+    sample_tool_params: list[ParameterSchema],
+    sample_tool_description: str,
+):
+    """
+    Tests ValueError when add_auth_token_getters introduces an auth service
+    whose token name conflicts with an existing client header.
+    """
+    tool_instance = ToolboxTool(
+        session=http_session,
+        base_url=TEST_BASE_URL,
+        name="tool_with_client_header",
+        description=sample_tool_description,
+        params=sample_tool_params,
+        required_authn_params={},
+        auth_service_token_getters={},
+        bound_params={},
+        client_headers={ "X-Shared-Auth-Token_token": "value_from_initial_client_headers"},
+    )
+    new_auth_getters_causing_conflict = {
+        "X-Shared-Auth-Token": lambda: "token_value_from_new_getter"
+    }
+    expected_error_message = (
+        f"Client header\\(s\\) `X-Shared-Auth-Token_token` already registered in client. "
+        f"Cannot register client the same headers in the client as well as tool."
+    )
+
+    with pytest.raises(ValueError, match=expected_error_message):
+        tool_instance.add_auth_token_getters(new_auth_getters_causing_conflict)
