@@ -435,8 +435,8 @@ class TestBoundParameter:
         assert "argB" in res
 
     @pytest.mark.asyncio
-    async def test_bind_param_success(self, tool_name, client):
-        """Tests 'bind_param' with a bound parameter specified."""
+    async def test_bind_params_success(self, tool_name, client):
+        """Tests 'bind_params' with a bound parameter specified."""
         tool = await client.load_tool(tool_name)
 
         assert len(tool.__signature__.parameters) == 2
@@ -451,8 +451,8 @@ class TestBoundParameter:
         assert "argA" in res
 
     @pytest.mark.asyncio
-    async def test_bind_callable_param_success(self, tool_name, client):
-        """Tests 'bind_param' with a bound parameter specified."""
+    async def test_bind_callable_params_success(self, tool_name, client):
+        """Tests 'bind_params' with a bound parameter specified."""
         tool = await client.load_tool(tool_name)
 
         assert len(tool.__signature__.parameters) == 2
@@ -467,7 +467,7 @@ class TestBoundParameter:
         assert "argA" in res
 
     @pytest.mark.asyncio
-    async def test_bind_param_fail(self, tool_name, client):
+    async def test_bind_params_fail(self, tool_name, client):
         """Tests 'bind_params' with a bound parameter that doesn't exist."""
         tool = await client.load_tool(tool_name)
 
@@ -479,7 +479,7 @@ class TestBoundParameter:
         assert "unable to bind parameters: no parameter named argC" in str(e.value)
 
     @pytest.mark.asyncio
-    async def test_rebind_param_fail(self, tool_name, client):
+    async def test_rebind_params_fail(self, tool_name, client):
         """
         Tests that 'bind_params' fails when attempting to re-bind a
         parameter that has already been bound.
@@ -502,7 +502,7 @@ class TestBoundParameter:
         )
 
     @pytest.mark.asyncio
-    async def test_bind_param_static_value_success(self, tool_name, client):
+    async def test_bind_params_static_value_success(self, tool_name, client):
         """
         Tests bind_params method with a static value.
         """
@@ -522,7 +522,7 @@ class TestBoundParameter:
         assert res_payload == {"argA": passed_value_a, "argB": bound_value}
 
     @pytest.mark.asyncio
-    async def test_bind_param_sync_callable_value_success(self, tool_name, client):
+    async def test_bind_params_sync_callable_value_success(self, tool_name, client):
         """
         Tests bind_params method with a sync callable value.
         """
@@ -544,7 +544,7 @@ class TestBoundParameter:
         bound_sync_callable.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_bind_param_async_callable_value_success(self, tool_name, client):
+    async def test_bind_params_async_callable_value_success(self, tool_name, client):
         """
         Tests bind_params method with an async callable value.
         """
@@ -554,6 +554,137 @@ class TestBoundParameter:
 
         tool = await client.load_tool(tool_name)
         bound_tool = tool.bind_params({"argB": bound_async_callable})
+
+        assert bound_tool is not tool
+        assert "argB" not in bound_tool.__signature__.parameters
+        assert "argA" in bound_tool.__signature__.parameters
+
+        passed_value_a = 42
+        res_payload = await bound_tool(argA=passed_value_a)
+
+        assert res_payload == {"argA": passed_value_a, "argB": bound_value_result}
+        bound_async_callable.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_bind_param_success(self, tool_name, client):
+        """Tests 'bind_param' with a bound parameter specified."""
+        tool = await client.load_tool(tool_name)
+
+        assert len(tool.__signature__.parameters) == 2
+        assert "argA" in tool.__signature__.parameters
+
+        tool = tool.bind_param("argA", 5)
+
+        assert len(tool.__signature__.parameters) == 1
+        assert "argA" not in tool.__signature__.parameters
+
+        res = await tool(True)
+        assert "argA" in res
+
+    @pytest.mark.asyncio
+    async def test_bind_callable_param_success(self, tool_name, client):
+        """Tests 'bind_param' with a bound parameter specified."""
+        tool = await client.load_tool(tool_name)
+
+        assert len(tool.__signature__.parameters) == 2
+        assert "argA" in tool.__signature__.parameters
+
+        tool = tool.bind_param("argA", lambda: 5)
+
+        assert len(tool.__signature__.parameters) == 1
+        assert "argA" not in tool.__signature__.parameters
+
+        res = await tool(True)
+        assert "argA" in res
+
+    @pytest.mark.asyncio
+    async def test_bind_param_fail(self, tool_name, client):
+        """Tests 'bind_param' with a bound parameter that doesn't exist."""
+        tool = await client.load_tool(tool_name)
+
+        assert len(tool.__signature__.parameters) == 2
+        assert "argA" in tool.__signature__.parameters
+
+        with pytest.raises(Exception) as e:
+            tool.bind_param("argC", lambda: 5)
+        assert "unable to bind parameters: no parameter named argC" in str(e.value)
+
+    @pytest.mark.asyncio
+    async def test_rebind_param_fail(self, tool_name, client):
+        """
+        Tests that 'bind_param' fails when attempting to re-bind a
+        parameter that has already been bound.
+        """
+        tool = await client.load_tool(tool_name)
+
+        assert len(tool.__signature__.parameters) == 2
+        assert "argA" in tool.__signature__.parameters
+
+        tool_with_bound_param = tool.bind_param("argA", lambda: 10)
+
+        assert len(tool_with_bound_param.__signature__.parameters) == 1
+        assert "argA" not in tool_with_bound_param.__signature__.parameters
+
+        with pytest.raises(ValueError) as e:
+            tool_with_bound_param.bind_param("argA", lambda: 20)
+
+        assert "cannot re-bind parameter: parameter 'argA' is already bound" in str(
+            e.value
+        )
+
+    @pytest.mark.asyncio
+    async def test_bind_param_static_value_success(self, tool_name, client):
+        """
+        Tests bind_param method with a static value.
+        """
+
+        bound_value = "Test value"
+
+        tool = await client.load_tool(tool_name)
+        bound_tool = tool.bind_param("argB", bound_value)
+
+        assert bound_tool is not tool
+        assert "argB" not in bound_tool.__signature__.parameters
+        assert "argA" in bound_tool.__signature__.parameters
+
+        passed_value_a = 42
+        res_payload = await bound_tool(argA=passed_value_a)
+
+        assert res_payload == {"argA": passed_value_a, "argB": bound_value}
+
+    @pytest.mark.asyncio
+    async def test_bind_param_sync_callable_value_success(self, tool_name, client):
+        """
+        Tests bind_param method with a sync callable value.
+        """
+
+        bound_value_result = True
+        bound_sync_callable = Mock(return_value=bound_value_result)
+
+        tool = await client.load_tool(tool_name)
+        bound_tool = tool.bind_param("argB", bound_sync_callable)
+
+        assert bound_tool is not tool
+        assert "argB" not in bound_tool.__signature__.parameters
+        assert "argA" in bound_tool.__signature__.parameters
+
+        passed_value_a = 42
+        res_payload = await bound_tool(argA=passed_value_a)
+
+        assert res_payload == {"argA": passed_value_a, "argB": bound_value_result}
+        bound_sync_callable.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_bind_param_async_callable_value_success(self, tool_name, client):
+        """
+        Tests bind_param method with an async callable value.
+        """
+
+        bound_value_result = True
+        bound_async_callable = AsyncMock(return_value=bound_value_result)
+
+        tool = await client.load_tool(tool_name)
+        bound_tool = tool.bind_param("argB", bound_async_callable)
 
         assert bound_tool is not tool
         assert "argB" not in bound_tool.__signature__.parameters
