@@ -286,11 +286,11 @@ class ToolboxTool:
             )
 
         # create a read-only updated value for new_getters
-        new_getters = types.MappingProxyType(
+        new_getters = MappingProxyType(
             dict(self.__auth_service_token_getters, **auth_token_getters)
         )
         # create a read-only updated for params that are still required
-        new_req_authn_params = types.MappingProxyType(
+        new_req_authn_params = MappingProxyType(
             identify_required_authn_params(
                 self.__required_authn_params, auth_token_getters.keys()
             )
@@ -328,5 +328,5 @@ class ToolboxTool:
 
         return self.__copy(
             params=new_params,
-            bound_params=types.MappingProxyType(all_bound_params),
+            bound_params=MappingProxyType(all_bound_params),
         )
