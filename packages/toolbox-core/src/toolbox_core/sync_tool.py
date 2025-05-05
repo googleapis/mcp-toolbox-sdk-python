@@ -15,6 +15,7 @@
 import asyncio
 from asyncio import AbstractEventLoop
 from threading import Thread
+from inspect import Signature
 from typing import Any, Callable, Coroutine, Mapping, Sequence, TypeVar, Union
 
 from .protocol import ParameterSchema
@@ -64,6 +65,28 @@ class ToolboxSyncTool:
         # Defining __qualname__ as a property leads to a TypeError because the class object needs
         # a string value immediately, not a descriptor that evaluates later.
         self.__qualname__ = f"{self.__class__.__qualname__}.{self.__async_tool._name}"
+
+    @property
+    def __name__(self) -> str:
+        return self.__async_tool.__name__
+
+    @property
+    def __doc__(self) -> Union[str, None]:  # type: ignore[override]
+        # Standard Python object attributes like __doc__ are technically "writable".
+        # But not defining a setter function makes this a read-only property.
+        # Mypy flags this issue in the type checks.
+        return self.__async_tool.__doc__
+
+    @property
+    def __signature__(self) -> Signature:
+        return self.__async_tool.__signature__
+
+    @property
+    def __annotations__(self) -> dict[str, Any]:  # type: ignore[override]
+        # Standard Python object attributes like __doc__ are technically "writable".
+        # But not defining a setter function makes this a read-only property.
+        # Mypy flags this issue in the type checks.
+        return self.__async_tool.__annotations__
 
     @property
     def _name(self) -> str:
