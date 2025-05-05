@@ -20,7 +20,10 @@ If you are still having issues, please be sure to include as much information as
   - OS type and version:
   - Python version: `python --version`
   - pip version: `pip --version`
-  - `toolbox-langchain` version: `pip show toolbox-langchain`
+  - Version of the package you're using (Run the corresponding commands as seen below)
+    - `pip show toolbox-langchain`
+    - `pip show toolbox-core`
+    - `pip show toolbox-llamaindex`
 
 #### Steps to reproduce
 
