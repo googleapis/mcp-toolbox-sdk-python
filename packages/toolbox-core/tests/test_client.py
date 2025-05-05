@@ -698,7 +698,6 @@ class TestBoundParameter:
         assert res_payload == {"argA": passed_value_a, "argB": bound_value_result}
         bound_async_callable.assert_awaited_once()
 
-
     @pytest.mark.asyncio
     async def test_bind_param_success(self, tool_name, client):
         """Tests 'bind_param' with a bound parameter specified."""
