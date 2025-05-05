@@ -283,7 +283,7 @@ class ToolboxTool:
         new_getters = types.MappingProxyType(
             dict(self.__auth_service_token_getters, **auth_token_getters)
         )
-        # create a read-only updated for params that are still required
+        # find the updated required authn params and the auth token getters used
         new_req_authn_params, new_req_authz_tokens, used_auth_token_getters = (
             identify_required_authn_params(
                 self.__required_authn_params,
@@ -292,10 +292,16 @@ class ToolboxTool:
             )
         )
 
-        # TODO: Add validation for used_auth_token_getters
+        # ensure no auth token getter provided remains unused
+        unused_auth = set(incoming_services) - used_auth_token_getters
+        if unused_auth:
+            raise ValueError(
+                f"Authentication source(s) `{', '.join(unused_auth)}` unused by tool `{self.__name__}`."
+            )
 
         return self.__copy(
             auth_service_token_getters=new_getters,
+            # create a read-only map for params that are still required
             required_authn_params=types.MappingProxyType(new_req_authn_params),
             required_authz_tokens=new_req_authz_tokens,
         )
