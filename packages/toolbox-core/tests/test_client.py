@@ -266,7 +266,9 @@ async def test_load_tool_not_found_in_manifest(aioresponses, test_tool_str):
     )
 
     async with ToolboxClient(TEST_BASE_URL) as client:
-        with pytest.raises(ValueError, match=f"Tool '{REQUESTED_TOOL_NAME}' not found!"):
+        with pytest.raises(
+            ValueError, match=f"Tool '{REQUESTED_TOOL_NAME}' not found!"
+        ):
             await client.load_tool(REQUESTED_TOOL_NAME)
 
     aioresponses.assert_called_once_with(

@@ -329,7 +329,9 @@ class ToolboxTool:
                 )
 
             if name not in param_names:
-                raise ValueError(f"unable to bind parameters: no parameter named {name}")
+                raise ValueError(
+                    f"unable to bind parameters: no parameter named {name}"
+                )
 
         new_params = []
         for p in self.__params:
