@@ -145,7 +145,7 @@ class ToolboxSyncTool:
         self,
         param_name: str,
         param_value: Union[Callable[[], Any], Any],
-    ) -> "ToolboxTool":
+    ) -> "ToolboxSyncTool":
         """
         Binds a parameter to the value or callables that produce it.
 
