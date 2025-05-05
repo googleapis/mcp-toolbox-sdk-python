@@ -266,7 +266,7 @@ async def test_load_tool_not_found_in_manifest(aioresponses, test_tool_str):
     )
 
     async with ToolboxClient(TEST_BASE_URL) as client:
-        with pytest.raises(Exception, match=f"Tool '{REQUESTED_TOOL_NAME}' not found!"):
+        with pytest.raises(ValueError, match=f"Tool '{REQUESTED_TOOL_NAME}' not found!"):
             await client.load_tool(REQUESTED_TOOL_NAME)
 
     aioresponses.assert_called_once_with(
@@ -474,7 +474,7 @@ class TestBoundParameter:
         assert len(tool.__signature__.parameters) == 2
         assert "argA" in tool.__signature__.parameters
 
-        with pytest.raises(Exception) as e:
+        with pytest.raises(ValueError) as e:
             tool.bind_params({"argC": lambda: 5})
         assert "unable to bind parameters: no parameter named argC" in str(e.value)
 
@@ -605,7 +605,7 @@ class TestBoundParameter:
         assert len(tool.__signature__.parameters) == 2
         assert "argA" in tool.__signature__.parameters
 
-        with pytest.raises(Exception) as e:
+        with pytest.raises(ValueError) as e:
             tool.bind_param("argC", lambda: 5)
         assert "unable to bind parameters: no parameter named argC" in str(e.value)
 

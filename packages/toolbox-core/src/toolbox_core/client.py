@@ -176,7 +176,7 @@ class ToolboxClient:
         # parse the provided definition to a tool
         if name not in manifest.tools:
             # TODO: Better exception
-            raise Exception(f"Tool '{name}' not found!")
+            raise ValueError(f"Tool '{name}' not found!")
         tool, used_auth_keys, used_bound_keys = self.__parse_tool(
             name,
             manifest.tools[name],
