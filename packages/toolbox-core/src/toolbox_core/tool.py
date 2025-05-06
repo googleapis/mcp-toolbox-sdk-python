@@ -309,7 +309,8 @@ class ToolboxTool:
 
         new_getters = dict(self.__auth_service_token_getters, **auth_token_getters)
 
-        # find the updated auth requirements
+        # find the updated required authn params, authz tokens and the auth
+        # token getters used
         new_req_authn_params, new_req_authz_tokens, used_auth_token_getters = (
             identify_auth_requirements(
                 self.__required_authn_params,
