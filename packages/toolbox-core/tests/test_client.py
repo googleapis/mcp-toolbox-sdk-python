@@ -400,6 +400,35 @@ class TestAuth:
             await client.load_tool(tool_name, auth_token_getters={AUTH_SERVICE: {}})
 
 
+    @pytest.mark.asyncio
+    async def test_add_auth_token_getters_missing_fail(self, tool_name, client):
+        """
+        Tests that adding a missing auth token getter raises ValueError.
+        """
+        AUTH_SERVICE = "xmy-auth-service"
+
+        tool = await client.load_tool(tool_name)
+
+        with pytest.raises(
+            ValueError,
+            match=f"Authentication source\(s\) \`{AUTH_SERVICE}\` unused by tool \`{tool_name}\`.",
+        ):
+            tool.add_auth_token_getters({AUTH_SERVICE: {}})
+
+    @pytest.mark.asyncio
+    async def test_constructor_getters_missing_fail(self, tool_name, client):
+        """
+        Tests that adding a missing auth token getter raises ValueError.
+        """
+        AUTH_SERVICE = "xmy-auth-service"
+
+        with pytest.raises(
+            ValueError,
+            match=f"Validation failed for tool '{tool_name}': unused auth tokens: {AUTH_SERVICE}.",
+        ):
+            await client.load_tool(tool_name, auth_token_getters={AUTH_SERVICE: {}})
+
+
 class TestBoundParameter:
 
     @pytest.fixture
