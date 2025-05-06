@@ -327,7 +327,8 @@ class ToolboxTool:
             )
 
         return self.__copy(
-            # create a read-only map for updated getters, params and tokens that are still required
+            # create read-only values for updated getters, params and tokens
+            # that are still required
             auth_service_token_getters=MappingProxyType(new_getters),
             required_authn_params=MappingProxyType(new_req_authn_params),
             required_authz_tokens=tuple(new_req_authz_tokens),
