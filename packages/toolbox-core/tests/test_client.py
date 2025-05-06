@@ -371,7 +371,6 @@ class TestAuth:
         ):
             authed_tool.add_auth_token_getters({AUTH_SERVICE: {}})
 
-
     @pytest.mark.asyncio
     async def test_add_auth_token_getters_missing_fail(self, tool_name, client):
         """
