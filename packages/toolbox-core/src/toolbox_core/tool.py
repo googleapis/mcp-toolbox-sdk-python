@@ -283,7 +283,9 @@ class ToolboxTool:
         new_getters = types.MappingProxyType(
             dict(self.__auth_service_token_getters, **auth_token_getters)
         )
-        # find the updated required authn params and the auth token getters used
+
+        # find the updated required authn params, authz tokens and the auth
+        # token getters used
         new_req_authn_params, new_req_authz_tokens, used_auth_token_getters = (
             identify_required_authn_params(
                 self.__required_authn_params,
