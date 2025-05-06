@@ -83,10 +83,12 @@ Args:
 
 
 def test_identify_required_authn_params_none_required():
-    """Test when no authentication parameters are required initially."""
-    req_authn_params = {}
+    """Test when no authentication parameters or authorization tokens are required initially."""
+    req_authn_params: dict[str, list[str]] = {}
+    req_authz_tokens: list[str] = []
     auth_service_names = ["service_a", "service_b"]
-    expected = {}
+    expected_params = {}
+    expected_authz: list[str] = []
     expected_used = set()
     result = identify_required_authn_params(
         req_authn_params, req_authz_tokens, auth_service_names
@@ -99,11 +101,12 @@ def test_identify_required_authn_params_none_required():
 
 
 def test_identify_required_authn_params_all_covered():
-    """Test when all required parameters are covered by available services."""
+    """Test when all required authn parameters are covered, no authz tokens."""
     req_authn_params = {
         "token_a": ["service_a"],
         "token_b": ["service_b", "service_c"],
     }
+    req_authz_tokens: list[str] = []
     auth_service_names = ["service_a", "service_b"]
     expected_params = {}
     expected_authz: list[str] = []
@@ -119,15 +122,16 @@ def test_identify_required_authn_params_all_covered():
 
 
 def test_identify_required_authn_params_some_covered():
-    """Test when some parameters are covered, and some are not."""
+    """Test when some authn parameters are covered, and some are not, no authz tokens."""
     req_authn_params = {
         "token_a": ["service_a"],
         "token_b": ["service_b", "service_c"],
         "token_d": ["service_d"],
         "token_e": ["service_e", "service_f"],
     }
+    req_authz_tokens: list[str] = []
     auth_service_names = ["service_a", "service_b"]
-    expected = {
+    expected_params = {
         "token_d": ["service_d"],
         "token_e": ["service_e", "service_f"],
     }
@@ -145,16 +149,18 @@ def test_identify_required_authn_params_some_covered():
 
 
 def test_identify_required_authn_params_none_covered():
-    """Test when none of the required parameters are covered."""
+    """Test when none of the required authn parameters are covered, no authz tokens."""
     req_authn_params = {
         "token_d": ["service_d"],
         "token_e": ["service_e", "service_f"],
     }
+    req_authz_tokens: list[str] = []
     auth_service_names = ["service_a", "service_b"]
-    expected = {
+    expected_params = {
         "token_d": ["service_d"],
         "token_e": ["service_e", "service_f"],
     }
+    expected_authz: list[str] = []
     expected_used = set()
     result = identify_required_authn_params(
         req_authn_params, req_authz_tokens, auth_service_names
@@ -167,16 +173,18 @@ def test_identify_required_authn_params_none_covered():
 
 
 def test_identify_required_authn_params_no_available_services():
-    """Test when no authentication services are available."""
+    """Test when no authn services are available, no authz tokens."""
     req_authn_params = {
         "token_a": ["service_a"],
         "token_b": ["service_b", "service_c"],
     }
-    auth_service_names = []
-    expected = {
+    req_authz_tokens: list[str] = []
+    auth_service_names: list[str] = []
+    expected_params = {
         "token_a": ["service_a"],
         "token_b": ["service_b", "service_c"],
     }
+    expected_authz: list[str] = []
     expected_used = set()
     result = identify_required_authn_params(
         req_authn_params, req_authz_tokens, auth_service_names
@@ -189,14 +197,16 @@ def test_identify_required_authn_params_no_available_services():
 
 
 def test_identify_required_authn_params_empty_services_for_param():
-    """Test edge case where a param requires an empty list of services."""
+    """Test edge case: authn param requires an empty list of services, no authz tokens."""
     req_authn_params = {
         "token_x": [],
     }
+    req_authz_tokens: list[str] = []
     auth_service_names = ["service_a"]
-    expected = {
+    expected_params = {
         "token_x": [],
     }
+    expected_authz: list[str] = []
     expected_used = set()
     result = identify_required_authn_params(
         req_authn_params, req_authz_tokens, auth_service_names
