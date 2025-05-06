@@ -46,7 +46,7 @@ def create_func_docstring(description: str, params: Sequence[ParameterSchema]) -
 
 def identify_required_authn_params(
     req_authn_params: Mapping[str, list[str]],
-    req_authz_tokens: list[str],
+    req_authz_tokens: Sequence[str],
     auth_service_names: Iterable[str],
 ) -> tuple[dict[str, list[str]], list[str], set[str]]:
     """
@@ -100,7 +100,7 @@ def identify_required_authn_params(
     if matched_authz_services:
         used_services.update(matched_authz_services)
     else:
-        required_authz_tokens = req_authz_tokens
+        required_authz_tokens = list(req_authz_tokens)
 
     return required_authn_params, required_authz_tokens, used_services
 
