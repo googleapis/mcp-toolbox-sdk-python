@@ -13,10 +13,10 @@
 # limitations under the License.
 
 
-from warnings import warn
 import types
 from inspect import Signature
 from typing import Any, Callable, Coroutine, Mapping, Optional, Sequence, Union
+from warnings import warn
 
 from aiohttp import ClientSession
 
