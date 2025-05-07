@@ -301,10 +301,8 @@ class TestAuth:
 
         # mock tool INVOKE call
         def require_headers(url, **kwargs):
-            if kwargs["headers"].get("my-auth-service_token") == expected_header:
-                return CallbackResult(status=200, body="{}")
-            else:
-                return CallbackResult(status=400, body="{}")
+            assert kwargs["headers"].get("my-auth-service_token") == expected_header
+            return CallbackResult(status=200, body="{}")
 
         aioresponses.post(
             f"{TEST_BASE_URL}/api/tool/{tool_name}/invoke",
