@@ -17,7 +17,7 @@ import asyncio
 from inspect import Parameter, Signature
 from threading import Thread
 from typing import Any, Callable, Mapping, Union
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import MagicMock, Mock, create_autospec, patch
 
 import pytest
 
@@ -27,8 +27,8 @@ from toolbox_core.tool import ToolboxTool
 
 @pytest.fixture
 def mock_async_tool() -> MagicMock:
-    """Fixture for a MagicMock simulating a ToolboxTool instance."""
-    tool = MagicMock(spec=ToolboxTool)
+    """Fixture for an auto-specced MagicMock simulating a ToolboxTool instance."""
+    tool = create_autospec(ToolboxTool, instance=True)
     tool.__name__ = "mock_async_tool_name"
     tool.__doc__ = "Mock async tool documentation."
 
@@ -41,16 +41,10 @@ def mock_async_tool() -> MagicMock:
 
     tool.__annotations__ = {"a": str, "b": int, "return": str}
 
-    # Mock the __call__ method to return a coroutine (MagicMock that can be awaited)
-    # We'll make the internal call return a simple value for testing the sync wrapper
-    async def mock_async_call(*args, **kwargs):
-        return f"async_called_with_{args}_{kwargs}"
-
-    tool.__call__ = MagicMock(side_effect=lambda *a, **k: mock_async_call(*a, **k))
-
-    # Mock methods that return a new async_tool
-    tool.add_auth_token_getters = MagicMock(return_value=MagicMock(spec=ToolboxTool))
-    tool.bind_params = MagicMock(return_value=MagicMock(spec=ToolboxTool))
+    tool.add_auth_token_getters.return_value = create_autospec(
+        ToolboxTool, instance=True
+    )
+    tool.bind_params.return_value = create_autospec(ToolboxTool, instance=True)
 
     return tool
 
@@ -150,8 +144,8 @@ def test_toolbox_sync_tool_call(
     kwargs_dict = {"kwarg1": "value1"}
 
     # Create a mock coroutine to be returned by async_tool.__call__
-    mock_coro = MagicMock()  # Represents the coroutine object
-    mock_async_tool.return_value = mock_coro  # async_tool() returns mock_coro
+    mock_coro = MagicMock(name="mock_coro_returned_by_async_tool")
+    mock_async_tool.return_value = mock_coro
 
     result = toolbox_sync_tool(*args_tuple, **kwargs_dict)
 
@@ -170,9 +164,8 @@ def test_toolbox_sync_tool_add_auth_token_getters(
     """Tests the add_auth_token_getters method."""
     auth_getters: Mapping[str, Callable[[], str]] = {"service1": lambda: "token1"}
 
-    # The mock_async_tool.add_auth_token_getters is already set up to return a new MagicMock
     new_mock_async_tool = mock_async_tool.add_auth_token_getters.return_value
-    new_mock_async_tool.__name__ = "new_async_tool_with_auth"  # for __qualname__
+    new_mock_async_tool.__name__ = "new_async_tool_with_auth"
 
     new_sync_tool = toolbox_sync_tool.add_auth_token_getters(auth_getters)
 
@@ -232,8 +225,6 @@ def test_toolbox_sync_tool_bind_param(
     new_mock_async_tool = mock_async_tool.bind_params.return_value
     new_mock_async_tool.__name__ = "new_async_tool_with_single_bound_param"
 
-    # Since bind_param calls self.bind_params, which in turn calls async_tool.bind_params,
-    # we check that async_tool.bind_params is called correctly.
     new_sync_tool = toolbox_sync_tool.bind_param(param_name, param_value)
 
     mock_async_tool.bind_params.assert_called_once_with({param_name: param_value})
