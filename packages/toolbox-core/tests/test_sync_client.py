@@ -61,7 +61,7 @@ def manage_sync_client_class_state():
 
 
 @pytest.fixture()
-def test_tool_str_schema():  # Renamed to avoid conflict if original fixture is imported
+def test_tool_str_schema():
     return ToolSchema(
         description="Test Tool with String input",
         parameters=[
@@ -73,7 +73,7 @@ def test_tool_str_schema():  # Renamed to avoid conflict if original fixture is 
 
 
 @pytest.fixture()
-def test_tool_int_bool_schema():  # Renamed
+def test_tool_int_bool_schema():
     return ToolSchema(
         description="Test Tool with Int, Bool",
         parameters=[
@@ -84,7 +84,7 @@ def test_tool_int_bool_schema():  # Renamed
 
 
 @pytest.fixture()
-def test_tool_auth_schema():  # Renamed
+def test_tool_auth_schema():
     return ToolSchema(
         description="Test Tool with Int,Bool+Auth",
         parameters=[
@@ -104,7 +104,7 @@ def tool_schema_minimal():
     return ToolSchema(description="Minimal Test Tool", parameters=[])
 
 
-# --- Helper Functions for Mocking (from existing tests) ---
+# --- Helper Functions for Mocking ---
 def mock_tool_load(
     aio_resp: aioresponses,
     tool_name: str,
@@ -113,9 +113,7 @@ def mock_tool_load(
     server_version: str = "0.0.0",
     status: int = 200,
     callback: Optional[Callable] = None,
-    payload_override: Optional[
-        Any
-    ] = None,  # Changed from Callable to Any for flexibility
+    payload_override: Optional[Any] = None,
 ):
     url = f"{base_url}/api/tool/{tool_name}"
     payload_data = {}
@@ -162,15 +160,9 @@ def mock_tool_invoke(
 def test_sync_client_initialization_and_loop_management():
     """Tests that the event loop and thread are managed correctly at class level."""
     client1 = ToolboxSyncClient(TEST_BASE_URL)
-    assert (
-        client1._ToolboxSyncClient__loop is not None
-    ), "Loop should be created"
-    assert (
-        client1._ToolboxSyncClient__thread is not None
-    ), "Thread should be created"
-    assert (
-        client1._ToolboxSyncClient__thread.is_alive()
-    ), "Thread should be running"
+    assert client1._ToolboxSyncClient__loop is not None, "Loop should be created"
+    assert client1._ToolboxSyncClient__thread is not None, "Thread should be created"
+    assert client1._ToolboxSyncClient__thread.is_alive(), "Thread should be running"
     assert isinstance(
         client1._ToolboxSyncClient__async_client, ToolboxClient
     ), "Async client should be ToolboxClient instance"
@@ -180,9 +172,7 @@ def test_sync_client_initialization_and_loop_management():
 
     client2 = ToolboxSyncClient(TEST_BASE_URL)  # Should reuse existing loop/thread
     assert client2._ToolboxSyncClient__loop is loop1, "Loop should be reused"
-    assert (
-        client2._ToolboxSyncClient__thread is thread1
-    ), "Thread should be reused"
+    assert client2._ToolboxSyncClient__thread is thread1, "Thread should be reused"
     assert isinstance(client2._ToolboxSyncClient__async_client, ToolboxClient)
 
     client1.close()  # Closes its async_client's session
@@ -192,22 +182,11 @@ def test_sync_client_initialization_and_loop_management():
 
 def test_sync_client_close_method():
     """Tests the close() method of ToolboxSyncClient."""
-    # We need to mock the underlying async_client's close method.
-    # The __init__ of ToolboxSyncClient creates the async_client in a thread.
-    # Patching `ToolboxClient` class to control the instance it produces.
-
-    # This specific test has an issue: `async_client.close()` is a coroutine.
-    # `ToolboxSyncClient.close()` calls `asyncio.run_coroutine_threadsafe(coro, self.__loop).result()`.
-    # The `self.__loop` in `close()` (and other methods) refers to `ToolboxSyncClient._ToolboxSyncClient__loop`.
-
     mock_async_client_instance = AsyncMock(spec=ToolboxClient)
     mock_async_client_instance.close = AsyncMock(
         return_value=None
     )  # close() is a coroutine
 
-    # Patch 'create_client' to return our mocked async client instance
-    # This is tricky because create_client is an inner async function.
-    # A better way: patch ToolboxClient constructor.
     with patch(
         "toolbox_core.sync_client.ToolboxClient",
         return_value=mock_async_client_instance,
@@ -224,9 +203,6 @@ def test_sync_client_close_method():
 
 def test_sync_client_context_manager(aioresponses, tool_schema_minimal):
     """Tests the context manager (__enter__ and __exit__) functionality."""
-    # Use aioresponses to ensure close is effective (though hard to check session state directly)
-    # The main check is that close() is called on exit.
-
     with patch.object(
         ToolboxSyncClient, "close", wraps=ToolboxSyncClient.close, autospec=True
     ) as mock_close_method:
@@ -267,8 +243,6 @@ def test_sync_load_tool_success(aioresponses, test_tool_str_schema):
             test_tool_str_schema.description
             + f"\n\nArgs:\n    param1 (str): Description of Param1"  # This format comes from ToolboxTool
         )
-        # This assertion depends on the mock ToolboxTool's __doc__ generation or the real one
-        # For now, we check that the doc is based on the schema's description
         assert test_tool_str_schema.description in loaded_tool.__doc__
 
         sig = inspect.signature(loaded_tool)
@@ -276,7 +250,6 @@ def test_sync_load_tool_success(aioresponses, test_tool_str_schema):
             p.name for p in test_tool_str_schema.parameters
         ]
 
-        # Invoke the synchronous tool
         result = loaded_tool(param1="some value")
         assert result == "sync_tool_ok"
 
@@ -351,7 +324,7 @@ def test_sync_load_tool_not_found_in_manifest(aioresponses, test_tool_str_schema
         # The error comes from the underlying async client's parsing
         with pytest.raises(
             ValueError,
-            match=f"Tool '{REQUESTED_TOOL_NAME}' not found!",  # Adjusted error message if ToolboxClient is source
+            match=f"Tool '{REQUESTED_TOOL_NAME}' not found!",
         ):
             client.load_tool(REQUESTED_TOOL_NAME)
 
@@ -397,21 +370,15 @@ def test_sync_add_headers_success(aioresponses, test_tool_str_schema):
 def test_sync_add_headers_duplicate_fail(aioresponses):
     """Tests that adding a duplicate header via add_headers raises ValueError (from async client)."""
     initial_headers = {"X-Initial-Header": "initial_value"}
-
-    # The error for duplicate headers is raised by the underlying ToolboxClient.
-    # We need to ensure ToolboxSyncClient correctly calls and propagates it.
-    # For this, we can mock the async_client's add_headers.
-
     mock_async_client = AsyncMock(spec=ToolboxClient)
 
     # Configure add_headers to simulate the ValueError from ToolboxClient
     async def mock_add_headers_async(headers):
         # Simulate ToolboxClient's check
-        if "X-Initial-Header" in headers:  # simplified check
+        if "X-Initial-Header" in headers:
             raise ValueError("Client header(s) `X-Initial-Header` already registered")
 
     mock_async_client.add_headers = AsyncMock(side_effect=mock_add_headers_async)
-    # mock_async_client.close = AsyncMock() # For context manager
 
     with patch(
         "toolbox_core.sync_client.ToolboxClient", return_value=mock_async_client
@@ -426,7 +393,7 @@ def test_sync_add_headers_duplicate_fail(aioresponses):
                 client.add_headers({"X-Initial-Header": "another_value"})
 
 
-def test_load_tool_raises_if_loop_or_thread_none(test_tool_str_schema):
+def test_load_tool_raises_if_loop_or_thread_none():
     """
     Tests that load_tool and load_toolset raise ValueError if the class-level
     event loop or thread is None when accessed.
@@ -464,13 +431,12 @@ def test_load_tool_raises_if_loop_or_thread_none(test_tool_str_schema):
 
 class TestSyncAuth:
     @pytest.fixture
-    def expected_header_token(self):  # Renamed to avoid clash
+    def expected_header_token(self):
         return "sync_auth_token_for_testing"
 
     @pytest.fixture
-    def tool_name_auth(self):  # Renamed
+    def tool_name_auth(self):
         return "sync_auth_tool1"
-
 
     def test_auth_with_load_tool_success(
         self,
@@ -489,7 +455,9 @@ class TestSyncAuth:
         )
 
         def require_headers_callback(url, **kwargs):
-            assert kwargs["headers"].get("my-auth-service_token") == expected_header_token
+            assert (
+                kwargs["headers"].get("my-auth-service_token") == expected_header_token
+            )
             return CallbackResult(status=200, payload={"result": "auth_ok"})
 
         aioresponses.post(
@@ -505,7 +473,6 @@ class TestSyncAuth:
             tool = client.load_tool(
                 tool_name_auth, auth_token_getters={"my-auth-service": token_handler}
             )
-            # Tool invocation depends on parameters; test_tool_auth_schema has argA (int), argB (bool with auth)
             result = tool(argA=5)  # argB is the authed param in schema
             assert result == "auth_ok"
 
@@ -526,7 +493,9 @@ class TestSyncAuth:
         )
 
         def require_headers_callback(url, **kwargs):
-            assert kwargs["headers"].get("my-auth-service_token") == expected_header_token
+            assert (
+                kwargs["headers"].get("my-auth-service_token") == expected_header_token
+            )
             return CallbackResult(status=200, payload={"result": "auth_ok"})
 
         aioresponses.post(
@@ -540,7 +509,6 @@ class TestSyncAuth:
                 return expected_header_token
 
             tool = client.load_tool(tool_name_auth)
-            # Assuming ToolboxSyncTool.add_auth_token_getters works by wrapping async tool's method
             authed_tool = tool.add_auth_token_getters(
                 {"my-auth-service": token_handler}
             )
@@ -558,13 +526,6 @@ class TestSyncAuth:
             payload=manifest.model_dump(),
             status=200,
         )
-        # Server will reject if token is missing and required by its logic / schema implies it
-        # The require_headers_callback in this class's fixture handles the 400
-        # For this test, the error should be raised during tool invocation if mock Tool requires it
-        # Or, if the server itself validates based on schema, the POST might fail.
-        # The mock ToolboxTool's __call__ has a simplified auth check.
-
-        # If the server responds with 400 due to missing token in payload
         aioresponses.post(
             f"{TEST_BASE_URL}/api/tool/{tool_name_auth}/invoke",
             payload={"error": "Missing token"},
@@ -575,8 +536,9 @@ class TestSyncAuth:
             tool = client.load_tool(tool_name_auth)
             # Invocation should fail
             with pytest.raises(
-                ValueError, match="One or more of the following authn services are required to invoke this tool: my-auth-service"
-            ):  # Match error from server
+                ValueError,
+                match="One or more of the following authn services are required to invoke this tool: my-auth-service",
+            ):  # Match error from client
                 tool(argA=15, argB=True)
 
     def test_add_auth_token_getters_duplicate_fail(
@@ -598,30 +560,10 @@ class TestSyncAuth:
 
             # First addition should work
             authed_tool = tool.add_auth_token_getters({AUTH_SERVICE: lambda: "token1"})
-            # The error for duplicate registration is typically raised by the underlying async tool/client logic
-            # My mock ToolboxTool.add_auth_token_getters currently overwrites.
-            # The original test for ToolboxClient implies `_ToolboxTool__auth_service_token_getters`
-            # The check should be in ToolboxTool's add_auth_token_getters.
-            # For ToolboxSyncClient, the error would propagate if ToolboxTool raises it.
-            # Let's assume ToolboxTool is robust.
-            # If the original test `TestAuth.test_add_auth_token_getters_duplicate_fail` passed,
-            # it's because `ToolboxTool.add_auth_token_getters` raised that ValueError.
-            # My mock `ToolboxTool` needs to be updated or the test adjusted.
-            # For now, assuming it propagates:
             with pytest.raises(
                 ValueError,
                 match=f"Authentication source\\(s\\) `{AUTH_SERVICE}` already registered in tool `{tool_name_auth}`.",
             ):
-                # This error message implies the state is checked *before* adding.
-                # The mock ToolboxTool's add_auth_token_getters would need to check self._auth_getters.
-                # This test may need a more sophisticated mock for ToolboxTool or it tests ToolboxClient behavior.
-                # Given the prompt, this is testing the wrapper. If the error originates from the wrapped object, it should propagate.
-                # The error message is from the original `ToolboxClient` test suite.
-                # This test would pass if the *async* `ToolboxTool.add_auth_token_getters`
-                # has the logic to raise this error.
-                # For the sync wrapper, we're testing that it correctly calls the async method
-                # and re-wraps, and propagates exceptions.
-                # Let's assume the async tool raises it.
                 authed_tool.add_auth_token_getters({AUTH_SERVICE: lambda: "token2"})
 
     def test_add_auth_token_getters_missing_fail(
@@ -642,7 +584,6 @@ class TestSyncAuth:
 
             with pytest.raises(
                 ValueError,
-                # This error comes from validation logic within ToolboxTool or ToolboxClient upon tool creation/configuration
                 match=f"Authentication source\\(s\\) `{UNUSED_AUTH_SERVICE}` unused by tool `{tool_name_auth}`.",
             ):
                 tool.add_auth_token_getters({UNUSED_AUTH_SERVICE: lambda: "token"})
@@ -665,7 +606,6 @@ class TestSyncAuth:
                 ValueError,
                 match=f"Validation failed for tool '{tool_name_auth}': unused auth tokens: {UNUSED_AUTH_SERVICE}.",
             ):
-                # This validation happens in ToolboxClient.load_tool based on schema vs getters
                 client.load_tool(
                     tool_name_auth,
                     auth_token_getters={UNUSED_AUTH_SERVICE: lambda: "token"},
