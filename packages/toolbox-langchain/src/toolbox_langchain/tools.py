@@ -13,15 +13,11 @@
 # limitations under the License.
 
 import asyncio
-from asyncio import AbstractEventLoop
-from threading import Thread
-from typing import Any, Awaitable, Callable, TypeVar, Union
+from typing import Any, Callable, Union
 
 from langchain_core.tools import BaseTool
+from toolbox_core.sync_tool import ToolboxSyncTool as ToolboxCoreSyncTool
 
-from .async_tools import AsyncToolboxTool
-
-T = TypeVar("T")
 
 
 class ToolboxTool(BaseTool):
@@ -32,56 +28,37 @@ class ToolboxTool(BaseTool):
 
     def __init__(
         self,
-        async_tool: AsyncToolboxTool,
-        loop: AbstractEventLoop,
-        thread: Thread,
+        core_sync_tool: ToolboxCoreSyncTool,
     ) -> None:
         """
         Initializes a ToolboxTool instance.
 
         Args:
-            async_tool: The underlying AsyncToolboxTool instance.
-            loop: The event loop used to run asynchronous tasks.
-            thread: The thread to run blocking operations in.
+            core_sync_tool: The underlying core sync ToolboxTool instance.
         """
 
-        # Due to how pydantic works, we must initialize the underlying
-        # BaseTool class before assigning values to member variables.
+        self.__core_sync_tool = core_sync_tool
         super().__init__(
-            name=async_tool.name,
-            description=async_tool.description,
-            args_schema=async_tool.args_schema,
-        )
-
-        self.__async_tool = async_tool
-        self.__loop = loop
-        self.__thread = thread
-
-    def __run_as_sync(self, coro: Awaitable[T]) -> T:
-        """Run an async coroutine synchronously"""
-        if not self.__loop:
-            raise Exception(
-                "Cannot call synchronous methods before the background loop is initialized."
-            )
-        return asyncio.run_coroutine_threadsafe(coro, self.__loop).result()
-
-    async def __run_as_async(self, coro: Awaitable[T]) -> T:
-        """Run an async coroutine asynchronously"""
-
-        # If a loop has not been provided, attempt to run in current thread.
-        if not self.__loop:
-            return await coro
-
-        # Otherwise, run in the background thread.
-        return await asyncio.wrap_future(
-            asyncio.run_coroutine_threadsafe(coro, self.__loop)
+            name=self.__core_sync_tool.__name__,
+            description=self.__core_sync_tool.__doc__,
+            args_schema=self.__core_sync_tool._ToolboxSyncTool__pydantic_model,
         )
 
     def _run(self, **kwargs: Any) -> dict[str, Any]:
-        return self.__run_as_sync(self.__async_tool._arun(**kwargs))
+        return self.__core_sync_tool(**kwargs)
 
     async def _arun(self, **kwargs: Any) -> dict[str, Any]:
-        return await self.__run_as_async(self.__async_tool._arun(**kwargs))
+        coro = self.__core_sync_tool._ToolboxSyncTool__async_tool(**kwargs)
+
+        # If a loop has not been provided, attempt to run in current thread.
+        if not self.__core_sync_client._ToolboxSyncClient__loop:
+            return await coro
+
+        # Otherwise, run in the background thread.
+        await asyncio.wrap_future(
+            asyncio.run_coroutine_threadsafe(coro, self.__core_sync_client._ToolboxSyncTool__loop)
+        )
+
 
     def add_auth_token_getters(
         self, auth_token_getters: dict[str, Callable[[], str]], strict: bool = True
@@ -93,27 +70,21 @@ class ToolboxTool(BaseTool):
         Args:
             auth_token_getters: A dictionary of authentication source names to
                 the functions that return corresponding ID token.
-            strict: If True, a ValueError is raised if any of the provided auth
-                parameters is already bound. If False, only a warning is issued.
 
         Returns:
             A new ToolboxTool instance that is a deep copy of the current
-            instance, with added auth tokens.
+            instance, with added auth token getters.
 
         Raises:
             ValueError: If any of the provided auth parameters is already
                 registered.
-            ValueError: If any of the provided auth parameters is already bound
-                and strict is True.
         """
-        return ToolboxTool(
-            self.__async_tool.add_auth_token_getters(auth_token_getters, strict),
-            self.__loop,
-            self.__thread,
-        )
+        new_core_sync_tool = self.__core_sync_tool.add_auth_token_getters(auth_token_getters)
+        return ToolboxTool(core_sync_tool=new_core_sync_tool)
+
 
     def add_auth_token_getter(
-        self, auth_source: str, get_id_token: Callable[[], str], strict: bool = True
+        self, auth_source: str, get_id_token: Callable[[], str]
     ) -> "ToolboxTool":
         """
         Registers a function to retrieve an ID token for a given authentication
@@ -122,8 +93,6 @@ class ToolboxTool(BaseTool):
         Args:
             auth_source: The name of the authentication source.
             get_id_token: A function that returns the ID token.
-            strict: If True, a ValueError is raised if the provided auth
-                parameter is already bound. If False, only a warning is issued.
 
         Returns:
             A new ToolboxTool instance that is a deep copy of the current
@@ -131,19 +100,12 @@ class ToolboxTool(BaseTool):
 
         Raises:
             ValueError: If the provided auth parameter is already registered.
-            ValueError: If the provided auth parameter is already bound and
-                strict is True.
         """
-        return ToolboxTool(
-            self.__async_tool.add_auth_token_getter(auth_source, get_id_token, strict),
-            self.__loop,
-            self.__thread,
-        )
+        return self.add_auth_token_getters({auth_source: get_id_token})
 
     def bind_params(
         self,
         bound_params: dict[str, Union[Any, Callable[[], Any]]],
-        strict: bool = True,
     ) -> "ToolboxTool":
         """
         Registers values or functions to retrieve the value for the
@@ -152,9 +114,6 @@ class ToolboxTool(BaseTool):
         Args:
             bound_params: A dictionary of the bound parameter name to the
                 value or function of the bound value.
-            strict: If True, a ValueError is raised if any of the provided bound
-                params is not defined in the tool's schema, or requires
-                authentication. If False, only a warning is issued.
 
         Returns:
             A new ToolboxTool instance that is a deep copy of the current
@@ -162,15 +121,9 @@ class ToolboxTool(BaseTool):
 
         Raises:
             ValueError: If any of the provided bound params is already bound.
-            ValueError: if any of the provided bound params is not defined in
-                the tool's schema, or require authentication, and strict is
-                True.
         """
-        return ToolboxTool(
-            self.__async_tool.bind_params(bound_params, strict),
-            self.__loop,
-            self.__thread,
-        )
+        new_core_sync_tool = self.__core_sync_tool.bind_params(bound_params)
+        return ToolboxTool(core_sync_tool=new_core_sync_tool)
 
     def bind_param(
         self,
@@ -186,9 +139,6 @@ class ToolboxTool(BaseTool):
             param_name: The name of the bound parameter.
             param_value: The value of the bound parameter, or a callable that
                 returns the value.
-            strict: If True, a ValueError is raised if the provided bound
-                param is not defined in the tool's schema, or requires
-                authentication. If False, only a warning is issued.
 
         Returns:
             A new ToolboxTool instance that is a deep copy of the current
@@ -196,11 +146,5 @@ class ToolboxTool(BaseTool):
 
         Raises:
             ValueError: If the provided bound param is already bound.
-            ValueError: if the provided bound param is not defined in the tool's
-                schema, or requires authentication, and strict is True.
         """
-        return ToolboxTool(
-            self.__async_tool.bind_param(param_name, param_value, strict),
-            self.__loop,
-            self.__thread,
-        )
+        return self.bind_params({param_name: param_value})
