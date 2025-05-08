@@ -308,11 +308,11 @@ class ToolboxClient:
 
         return tools
 
-    async def add_headers(
+    def add_headers(
         self, headers: Mapping[str, Union[Callable, Coroutine, str]]
     ) -> None:
         """
-        Asynchronously Add headers to be included in each request sent through this client.
+        Add headers to be included in each request sent through this client.
 
         Args:
             headers: Headers to include in each request sent through this client.
