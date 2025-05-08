@@ -161,7 +161,7 @@ class AsyncToolboxClient:
 
         tools = []
         for core_tool in core_tools:
-            tools.append(AsyncToolboxTool(core_tool_instance=core_tool))
+            tools.append(AsyncToolboxTool(core_tool=core_tool))
         return tools
 
     def load_tool(
