@@ -13,7 +13,8 @@
       "packages/toolbox-core": {
         "component": "toolbox-core",
         "extra-files": [
-          "src/toolbox_core/version.py"
+          "src/toolbox_core/version.py",
+          "CHANGELOG.md"
         ]
       },
       "packages/toolbox-langchain": {
@@ -25,7 +26,8 @@
        "packages/toolbox-llamaindex": {
         "component": "toolbox-llamaindex",
         "extra-files": [
-          "src/toolbox_llamaindex/version.py"
+          "src/toolbox_llamaindex/version.py",
+          "CHANGELOG.md"
         ]
       }
     },
