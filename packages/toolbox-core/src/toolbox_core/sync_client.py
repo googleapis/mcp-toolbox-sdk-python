@@ -137,7 +137,9 @@ class ToolboxSyncClient:
         Raises:
             ValueError: If validation fails based on the `strict` flag.
         """
-        coro = self.__async_client.load_toolset(name, auth_token_getters, bound_params, strict)
+        coro = self.__async_client.load_toolset(
+            name, auth_token_getters, bound_params, strict
+        )
 
         if not self.__loop or not self.__thread:
             raise ValueError("Background loop or thread cannot be None.")
