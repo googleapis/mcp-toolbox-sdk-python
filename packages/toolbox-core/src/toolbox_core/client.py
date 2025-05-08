@@ -88,8 +88,8 @@ class ToolboxClient:
             base_url=self.__base_url,
             name=name,
             description=schema.description,
-            params=params,
-            # create a read-only values for the maps to prevent mutation
+            # create a read-only values to prevent mutation
+            params=tuple(params),
             required_authn_params=types.MappingProxyType(authn_params),
             auth_service_token_getters=types.MappingProxyType(auth_token_getters),
             bound_params=types.MappingProxyType(bound_params),

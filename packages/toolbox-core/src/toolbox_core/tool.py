@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-import types
+import copy
 from inspect import Signature
+from types import MappingProxyType
 from typing import Any, Callable, Coroutine, Mapping, Optional, Sequence, Union
 
 from aiohttp import ClientSession
@@ -112,6 +112,34 @@ class ToolboxTool:
         self.__bound_parameters = bound_params
         # map of client headers to their value/callable/coroutine
         self.__client_headers = client_headers
+
+    @property
+    def _name(self) -> str:
+        return self.__name__
+
+    @property
+    def _description(self) -> str:
+        return self.__description
+
+    @property
+    def _params(self) -> Sequence[ParameterSchema]:
+        return copy.deepcopy(self.__params)
+
+    @property
+    def _bound_params(self) -> Mapping[str, Union[Callable[[], Any], Any]]:
+        return MappingProxyType(self.__bound_parameters)
+
+    @property
+    def _required_auth_params(self) -> Mapping[str, list[str]]:
+        return MappingProxyType(self.__required_authn_params)
+
+    @property
+    def _auth_service_token_getters(self) -> Mapping[str, Callable[[], str]]:
+        return MappingProxyType(self.__auth_service_token_getters)
+
+    @property
+    def _client_headers(self) -> Mapping[str, Union[Callable, Coroutine, str]]:
+        return MappingProxyType(self.__client_headers)
 
     def __copy(
         self,
@@ -258,11 +286,11 @@ class ToolboxTool:
             )
 
         # create a read-only updated value for new_getters
-        new_getters = types.MappingProxyType(
+        new_getters = MappingProxyType(
             dict(self.__auth_service_token_getters, **auth_token_getters)
         )
         # create a read-only updated for params that are still required
-        new_req_authn_params = types.MappingProxyType(
+        new_req_authn_params = MappingProxyType(
             identify_required_authn_params(
                 self.__required_authn_params, auth_token_getters.keys()
             )
@@ -300,5 +328,5 @@ class ToolboxTool:
 
         return self.__copy(
             params=new_params,
-            bound_params=types.MappingProxyType(all_bound_params),
+            bound_params=MappingProxyType(all_bound_params),
         )
