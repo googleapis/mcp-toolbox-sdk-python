@@ -15,12 +15,10 @@
 
 import asyncio
 from threading import Thread
-from typing import Any, Callable, Coroutine, Mapping, Optional, TypeVar, Union
+from typing import Any, Callable, Coroutine, Mapping, Optional, Union
 
 from .client import ToolboxClient
 from .sync_tool import ToolboxSyncTool
-
-T = TypeVar("T")
 
 
 class ToolboxSyncClient:
