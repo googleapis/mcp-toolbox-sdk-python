@@ -17,12 +17,10 @@ import asyncio
 from asyncio import AbstractEventLoop
 from inspect import Signature
 from threading import Thread
-from typing import Any, Callable, Coroutine, Mapping, Sequence, TypeVar, Union
+from typing import Any, Callable, Coroutine, Mapping, Sequence, Union
 
 from .protocol import ParameterSchema
 from .tool import ToolboxTool
-
-T = TypeVar("T")
 
 
 class ToolboxSyncTool:
