@@ -15,7 +15,7 @@
 
 import inspect
 from typing import Any, Callable, Mapping, Optional
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from aioresponses import CallbackResult, aioresponses
@@ -373,12 +373,12 @@ def test_sync_add_headers_duplicate_fail(aioresponses):
     mock_async_client = AsyncMock(spec=ToolboxClient)
 
     # Configure add_headers to simulate the ValueError from ToolboxClient
-    async def mock_add_headers_async(headers):
+    def mock_add_headers(headers):
         # Simulate ToolboxClient's check
         if "X-Initial-Header" in headers:
             raise ValueError("Client header(s) `X-Initial-Header` already registered")
 
-    mock_async_client.add_headers = AsyncMock(side_effect=mock_add_headers_async)
+    mock_async_client.add_headers = Mock(side_effect=mock_add_headers)
 
     with patch(
         "toolbox_core.sync_client.ToolboxClient", return_value=mock_async_client
