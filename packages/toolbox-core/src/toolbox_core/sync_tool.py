@@ -17,11 +17,9 @@ import asyncio
 from asyncio import AbstractEventLoop
 from inspect import Signature
 from threading import Thread
-from typing import Any, Callable, Mapping, TypeVar, Union
+from typing import Any, Callable, Mapping, Union
 
 from .tool import ToolboxTool
-
-T = TypeVar("T")
 
 
 class ToolboxSyncTool:
