@@ -103,7 +103,7 @@ class AsyncToolboxClient:
         auth_tokens: Optional[dict[str, Callable[[], str]]] = None,
         auth_headers: Optional[dict[str, Callable[[], str]]] = None,
         bound_params: dict[str, Union[Any, Callable[[], Any]]] = {},
-        strict: bool = True,
+        strict: bool = False,
     ) -> list[AsyncToolboxTool]:
         """
         Loads tools from the Toolbox service, optionally filtered by toolset
@@ -118,9 +118,11 @@ class AsyncToolboxClient:
             auth_headers: Deprecated. Use `auth_token_getters` instead.
             bound_params: An optional mapping of parameter names to their
                 bound values.
-            strict: If True, raises a ValueError if any of the given bound
-                parameters are missing from the schema or require
-                authentication. If False, only issues a warning.
+            strict: If True, raises an error if *any* loaded tool instance fails
+                to utilize at least one provided parameter or auth token (if any
+                provided). If False (default), raises an error only if a
+                user-provided parameter or auth token cannot be applied to *any*
+                loaded tool across the set.
 
         Returns:
             A list of all tools loaded from the Toolbox.
@@ -170,7 +172,6 @@ class AsyncToolboxClient:
         auth_tokens: Optional[dict[str, Callable[[], str]]] = None,
         auth_headers: Optional[dict[str, Callable[[], str]]] = None,
         bound_params: dict[str, Union[Any, Callable[[], Any]]] = {},
-        strict: bool = True,
     ) -> AsyncToolboxTool:
         raise NotImplementedError("Synchronous methods not supported by async client.")
 
@@ -181,6 +182,6 @@ class AsyncToolboxClient:
         auth_tokens: Optional[dict[str, Callable[[], str]]] = None,
         auth_headers: Optional[dict[str, Callable[[], str]]] = None,
         bound_params: dict[str, Union[Any, Callable[[], Any]]] = {},
-        strict: bool = True,
+        strict: bool = False,
     ) -> list[AsyncToolboxTool]:
         raise NotImplementedError("Synchronous methods not supported by async client.")

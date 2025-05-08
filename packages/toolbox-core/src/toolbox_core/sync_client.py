@@ -58,7 +58,6 @@ class ToolboxSyncClient:
         async def create_client():
             return ToolboxClient(url, client_headers=client_headers)
 
-        # Ignoring type since we're already checking the existence of a loop above.
         self.__async_client = asyncio.run_coroutine_threadsafe(
             create_client(), self.__class__.__loop
         ).result()
