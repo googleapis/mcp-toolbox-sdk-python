@@ -41,7 +41,7 @@ class ToolboxTool(BaseTool):
         super().__init__(
             name=self.__core_sync_tool.__name__,
             description=self.__core_sync_tool.__doc__,
-            args_schema=self.__core_sync_tool._ToolboxSyncTool__pydantic_model,
+            args_schema=self.__core_sync_tool._ToolboxSyncTool__async_tool._ToolboxTool__pydantic_model,
         )
 
     def _run(self, **kwargs: Any) -> dict[str, Any]:
