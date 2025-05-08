@@ -95,11 +95,11 @@ class ToolboxClient:
             return await coro
 
         # Otherwise, run in the background thread.
-        core_tool = await asyncio.wrap_future(
+        core_sync_tool = await asyncio.wrap_future(
             asyncio.run_coroutine_threadsafe(coro, self.__core_sync_client._ToolboxSyncClient__loop)
         )
 
-        return ToolboxTool(core_tool=core_tool)
+        return ToolboxTool(core_sync_tool=core_sync_tool)
 
     async def aload_toolset(
         self,
@@ -170,13 +170,13 @@ class ToolboxClient:
             return await coro
 
         # Otherwise, run in the background thread.
-        core_tools = await asyncio.wrap_future(
+        core_sync_tools = await asyncio.wrap_future(
             asyncio.run_coroutine_threadsafe(coro, self.__core_sync_client._ToolboxSyncClient__loop)
         )
 
         tools = []
-        for core_tool in core_tools:
-            tools.append(ToolboxTool(core_tool=core_tool))
+        for core_sync_tool in core_sync_tools:
+            tools.append(ToolboxTool(core_sync_tool=core_sync_tool))
         return tools
 
     def load_tool(
@@ -228,12 +228,12 @@ class ToolboxClient:
                 )
                 auth_token_getters = auth_tokens
 
-        core_tool = self.__core_sync_client.load_tool(
+        core_sync_tool = self.__core_sync_client.load_tool(
             name=tool_name,
             auth_token_getters=auth_token_getters,
             bound_params=bound_params
         )
-        return ToolboxTool(core_tool=core_tool)
+        return ToolboxTool(core_sync_tool=core_sync_tool)
 
     def load_toolset(
         self,
@@ -292,7 +292,7 @@ class ToolboxClient:
                 )
                 auth_token_getters = auth_tokens
 
-        core_tools = self.__core_sync_client.load_toolset(
+        core_sync_tools = self.__core_sync_client.load_toolset(
             name=toolset_name,
             auth_token_getters=auth_token_getters,
             bound_params=bound_params,
@@ -300,6 +300,6 @@ class ToolboxClient:
         )
 
         tools = []
-        for core_tool in core_tools:
-            tools.append(ToolboxTool(core_tool=core_tool))
+        for core_sync_tool in core_sync_tools:
+            tools.append(ToolboxTool(core_sync_tool=core_sync_tool))
         return tools

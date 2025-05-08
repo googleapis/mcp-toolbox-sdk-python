@@ -12,15 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from copy import deepcopy
-from typing import Any, Callable, TypeVar, Union
-from warnings import warn
+from typing import Any, Callable, Union
 
 from langchain_core.tools import BaseTool
 from toolbox_core.tool import ToolboxTool as ToolboxCoreTool
 
-
-T = TypeVar("T")
 
 
 # This class is an internal implementation detail and is not exposed to the
@@ -40,14 +36,7 @@ class AsyncToolboxTool(BaseTool):
         Initializes an AsyncToolboxTool instance.
 
         Args:
-            name: The name of the tool.
-            schema: The tool schema.
-            url: The base URL of the Toolbox service.
-            session: The HTTP client session.
-            auth_token_getters: A mapping of authentication source names to
-                functions that retrieve ID tokens.
-            bound_params: A mapping of parameter names to their bound
-                values.
+            core_tool: The underlying core async ToolboxTool instance.
         """
 
         self.__core_tool = core_tool
@@ -88,7 +77,7 @@ class AsyncToolboxTool(BaseTool):
 
         Returns:
             A new AsyncToolboxTool instance that is a deep copy of the current
-            instance, with added auth tokens.
+            instance, with added auth token getters.
 
         Raises:
             ValueError: If any of the provided auth parameters is already
