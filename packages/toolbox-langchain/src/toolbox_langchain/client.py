@@ -18,6 +18,7 @@ from typing import Any, Callable, Optional, Union
 
 from .tools import ToolboxTool
 from toolbox_core.sync_client import ToolboxSyncClient as ToolboxCoreSyncClient
+from toolbox_core.sync_tool import ToolboxSyncTool
 
 
 
@@ -90,15 +91,16 @@ class ToolboxClient:
             bound_params=bound_params
         )
 
-        # If a loop has not been provided, attempt to run in current thread.
         if not self.__core_sync_client._ToolboxSyncClient__loop:
-            return await coro
+            # If a loop has not been provided, attempt to run in current thread.
+            core_tool = await coro
+        else:
+            # Otherwise, run in the background thread.
+            core_tool = await asyncio.wrap_future(
+                asyncio.run_coroutine_threadsafe(coro, self.__core_sync_client._ToolboxSyncClient__loop)
+            )
 
-        # Otherwise, run in the background thread.
-        core_sync_tool = await asyncio.wrap_future(
-            asyncio.run_coroutine_threadsafe(coro, self.__core_sync_client._ToolboxSyncClient__loop)
-        )
-
+        core_sync_tool = ToolboxSyncTool(core_tool, self.__core_sync_client._ToolboxSyncClient__loop, self.__core_sync_client._ToolboxSyncClient__thread)
         return ToolboxTool(core_sync_tool=core_sync_tool)
 
     async def aload_toolset(
@@ -165,15 +167,19 @@ class ToolboxClient:
             strict=strict
         )
 
-        # If a loop has not been provided, attempt to run in current thread.
         if not self.__core_sync_client._ToolboxSyncClient__loop:
-            return await coro
+            # If a loop has not been provided, attempt to run in current thread.
+            core_tools = await coro
+        else:
+            # Otherwise, run in the background thread.
+            core_tools = await asyncio.wrap_future(
+                asyncio.run_coroutine_threadsafe(coro, self.__core_sync_client._ToolboxSyncClient__loop)
+            )
 
-        # Otherwise, run in the background thread.
-        core_sync_tools = await asyncio.wrap_future(
-            asyncio.run_coroutine_threadsafe(coro, self.__core_sync_client._ToolboxSyncClient__loop)
-        )
-
+        core_sync_tools = [
+            ToolboxSyncTool(core_tool, self.__core_sync_client._ToolboxSyncClient__loop, self.__core_sync_client._ToolboxSyncClient__thread)
+            for core_tool in core_tools
+        ]
         tools = []
         for core_sync_tool in core_sync_tools:
             tools.append(ToolboxTool(core_sync_tool=core_sync_tool))
