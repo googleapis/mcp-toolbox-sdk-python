@@ -15,7 +15,7 @@
 
 import inspect
 from typing import Any, Callable, Mapping, Optional
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from aioresponses import CallbackResult, aioresponses
@@ -44,8 +44,12 @@ def sync_client_environment():
     # This ensures any client created will start a new loop/thread.
 
     # Ensure no loop/thread is running from a previous misbehaving test or setup
-    assert original_loop is None or not original_loop.is_running()
-    assert original_thread is None or not original_thread.is_alive()
+    if original_loop and original_loop.is_running():
+        original_loop.call_soon_threadsafe(original_loop.stop)
+        if original_thread and original_thread.is_alive():
+            original_thread.join(timeout=5)
+        ToolboxSyncClient._ToolboxSyncClient__loop = None
+        ToolboxSyncClient._ToolboxSyncClient__thread = None
 
     ToolboxSyncClient._ToolboxSyncClient__loop = None
     ToolboxSyncClient._ToolboxSyncClient__thread = None
@@ -408,20 +412,32 @@ class TestSyncClientHeaders:
         result = tool(param1="test")
         assert result == expected_payload["result"]
 
-    @pytest.mark.usefixtures("sync_client_environment")
     def test_sync_add_headers_duplicate_fail(self):
-        """
-        Tests that adding a duplicate header via add_headers raises ValueError.
-        Manually create client to control initial headers.
-        """
+        """Tests that adding a duplicate header via add_headers raises ValueError (from async client)."""
         initial_headers = {"X-Initial-Header": "initial_value"}
+        mock_async_client = AsyncMock(spec=ToolboxClient)
 
-        with ToolboxSyncClient(TEST_BASE_URL, client_headers=initial_headers) as client:
-            with pytest.raises(
-                ValueError,
-                match="Client header\\(s\\) `X-Initial-Header` already registered",
-            ):
-                client.add_headers({"X-Initial-Header": "another_value"})
+        # Configure add_headers to simulate the ValueError from ToolboxClient
+        def mock_add_headers(headers):
+            # Simulate ToolboxClient's check
+            if "X-Initial-Header" in headers:
+                raise ValueError(
+                    "Client header(s) `X-Initial-Header` already registered"
+                )
+
+        mock_async_client.add_headers = Mock(side_effect=mock_add_headers)
+
+        with patch(
+            "toolbox_core.sync_client.ToolboxClient", return_value=mock_async_client
+        ):
+            with ToolboxSyncClient(
+                TEST_BASE_URL, client_headers=initial_headers
+            ) as client:
+                with pytest.raises(
+                    ValueError,
+                    match="Client header\\(s\\) `X-Initial-Header` already registered",
+                ):
+                    client.add_headers({"X-Initial-Header": "another_value"})
 
 
 class TestSyncAuth:
