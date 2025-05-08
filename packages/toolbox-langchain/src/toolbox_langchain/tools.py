@@ -36,10 +36,13 @@ class ToolboxTool(BaseTool):
         Args:
             core_sync_tool: The underlying core sync ToolboxTool instance.
         """
+
+        # Due to how pydantic works, we must initialize the underlying
+        # BaseTool class before assigning values to member variables.
         super().__init__(
-            name=self.__core_sync_tool.__name__,
-            description=self.__core_sync_tool.__doc__,
-            args_schema=self.__core_sync_tool._ToolboxSyncTool__async_tool._ToolboxTool__pydantic_model,
+            name=core_sync_tool.__name__,
+            description=core_sync_tool.__doc__,
+            args_schema=core_sync_tool._ToolboxSyncTool__async_tool._ToolboxTool__pydantic_model,
         )
         self.__core_sync_tool = core_sync_tool
 
