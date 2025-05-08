@@ -20,7 +20,7 @@ from aiohttp import ClientSession
 
 from toolbox_langchain.async_client import AsyncToolboxClient
 from toolbox_langchain.async_tools import AsyncToolboxTool
-from toolbox_langchain.utils import ManifestSchema
+from toolbox_core.protocol import ManifestSchema
 
 URL = "http://test_url"
 MANIFEST_JSON = {
