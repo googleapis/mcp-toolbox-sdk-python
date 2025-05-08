@@ -431,14 +431,38 @@ class TestBoundParameter:
 
     @pytest.mark.asyncio
     async def test_bind_param_fail(self, tool_name, client):
-        """Tests 'bind_param' with a bound parameter that doesn't exist."""
+        """Tests 'bind_parameters' with a bound parameter that doesn't exist."""
         tool = await client.load_tool(tool_name)
 
         assert len(tool.__signature__.parameters) == 2
         assert "argA" in tool.__signature__.parameters
 
-        with pytest.raises(Exception):
-            tool = tool.bind_parameters({"argC": lambda: 5})
+        with pytest.raises(Exception) as e:
+            tool.bind_parameters({"argC": lambda: 5})
+        assert "unable to bind parameters: no parameter named argC" in str(e.value)
+
+    @pytest.mark.asyncio
+    async def test_rebind_param_fail(self, tool_name, client):
+        """
+        Tests that 'bind_parameters' fails when attempting to re-bind a
+        parameter that has already been bound.
+        """
+        tool = await client.load_tool(tool_name)
+
+        assert len(tool.__signature__.parameters) == 2
+        assert "argA" in tool.__signature__.parameters
+
+        tool_with_bound_param = tool.bind_parameters({"argA": lambda: 10})
+
+        assert len(tool_with_bound_param.__signature__.parameters) == 1
+        assert "argA" not in tool_with_bound_param.__signature__.parameters
+
+        with pytest.raises(ValueError) as e:
+            tool_with_bound_param.bind_parameters({"argA": lambda: 20})
+
+        assert "cannot re-bind parameter: parameter 'argA' is already bound" in str(
+            e.value
+        )
 
     @pytest.mark.asyncio
     async def test_bind_param_static_value_success(self, tool_name, client):
