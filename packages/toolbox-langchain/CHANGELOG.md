@@ -1,5 +1,35 @@
 # Changelog
 
+## [0.1.1](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-langchain-v0.1.0...toolbox-langchain-v0.1.1) (2025-05-08)
+
+
+### Bug Fixes
+
+* **deps:** update python-nonmajor ([#148](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/148)) ([bc894e1](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/bc894e1d14823e88a3c0f24ab05b8839a3d653e0))
+* **deps:** update python-nonmajor ([#175](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/175)) ([73e5a4a](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/73e5a4ac63ee39486529952351c06179ee268c7c))
+* **deps:** update python-nonmajor ([#180](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/180)) ([8d909a9](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/8d909a9e19abed4a02e30a4dfc48e06afdbb01ea))
+* **deps:** update python-nonmajor ([#98](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/98)) ([f03e7ec](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/f03e7ec986eddfb1e0adc81b8be8e9140dcbd530))
+
+
+### Miscellaneous Chores
+
+* change port number to default toolbox port ([#135](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/135)) ([6164b09](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/6164b09d60412a0e3faf95c1b2e8df13b5ab7782))
+* **deps:** update dependency pydantic to v2.11.3 ([#163](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/163)) ([6a78495](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/6a78495ecfe8b51992f55518ab0e7dca1bd6f849))
+* **deps:** update dependency pydantic to v2.11.4 ([#200](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/200)) ([758f620](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/758f620e25427396b52d257722d7f71312421ad1))
+* fix supported python versions ([#191](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/191)) ([f308b5f](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/f308b5f7d7019635798000d0921cf3f549075fd8))
+* fix urls in pyproject.toml ([#101](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/101)) ([6e5875e](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/6e5875eb5c3dbce9c9efb00418716577f90e4d05))
+* **main:** release toolbox-langchain 0.1.1 ([#54](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/54)) ([3e4edf1](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/3e4edf12841ed880073ac0e4e905a51c4cc7c9a9))
+* move to correct readme ([#198](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/198)) ([99d0ad0](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/99d0ad043071b89a937ee90bffb3f24ecc03a2e7))
+* move toolbox-llamaindex package ([#192](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/192)) ([293854f](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/293854ff514c015968d205ab731dcd040a143df6))
+* rebrand as MCP Toolbox ([#156](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/156)) ([d090a3f](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/d090a3f2af35a2e3e1e5d59b3176b026af510b7b))
+* refactor layout for multiple packages ([#99](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/99)) ([ac43090](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/ac43090822fbf19a8920732e2ec3aa8b9c3130c1))
+* release 0.1.0 ([#24](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/24)) ([6fff8e2](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/6fff8e2ea18bd6df9f30d7790b6076cf0b32cc75))
+* rename repo ([#165](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/165)) ([70a476a](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/70a476a4fed46a905fe77101c3c1077fd6d5bd21))
+* Update auth_token(s) as auth_token_getter(s) and add_auth_token(s) as add_auth_token_getter(s) ([#182](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/182)) ([48fd28c](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/48fd28c63421429e7bf287194769dab26ede2d10))
+* update toolbox version ([#188](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/188)) ([58d8f7d](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/58d8f7d4601495faf2a33a48cc26bb0a599622ed))
+* update toolbox version ([#190](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/190)) ([87e21ed](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/87e21ed07035ec96fb7b6c730585061d17d727c7))
+* update toolbox version ([#226](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/226)) ([2a92def](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/2a92def08825417b32faa523a3355eba34351955))
+
 ## 0.1.0 (2025-02-05)
 
 
@@ -24,4 +54,3 @@
 ### Bug Fixes
 
 * Deprecate 'add_auth_headers' in favor of 'add_auth_tokens' ([c5c699c](https://github.com/googleapis/genai-toolbox-langchain-python/commit/c5c699cc29bcc0708a31bff90e8cec489982fe2a))
-
