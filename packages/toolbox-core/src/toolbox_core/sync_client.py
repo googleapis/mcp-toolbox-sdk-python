@@ -113,6 +113,7 @@ class ToolboxSyncClient:
         name: str,
         auth_token_getters: dict[str, Callable[[], str]] = {},
         bound_params: Mapping[str, Union[Callable[[], Any], Any]] = {},
+        strict: bool = False,
     ) -> list[ToolboxSyncTool]:
         """
         Synchronously fetches a toolset and loads all tools defined within it.
@@ -123,12 +124,20 @@ class ToolboxSyncClient:
                 callables that return the corresponding authentication token.
             bound_params: A mapping of parameter names to bind to specific values or
                 callables that are called to produce values as needed.
+            strict: If True, raises an error if *any* loaded tool instance fails
+                to utilize at least one provided parameter or auth token (if any
+                provided). If False (default), raises an error only if a
+                user-provided parameter or auth token cannot be applied to *any*
+                loaded tool across the set.
 
         Returns:
             list[ToolboxSyncTool]: A list of callables, one for each tool defined
             in the toolset.
+
+        Raises:
+            ValueError: If validation fails based on the `strict` flag.
         """
-        coro = self.__async_client.load_toolset(name, auth_token_getters, bound_params)
+        coro = self.__async_client.load_toolset(name, auth_token_getters, bound_params, strict)
 
         if not self.__loop or not self.__thread:
             raise ValueError("Background loop or thread cannot be None.")
