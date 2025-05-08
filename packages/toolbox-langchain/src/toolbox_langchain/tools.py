@@ -63,7 +63,7 @@ class ToolboxTool(BaseTool):
 
 
     def add_auth_token_getters(
-        self, auth_token_getters: dict[str, Callable[[], str]], strict: bool = True
+        self, auth_token_getters: dict[str, Callable[[], str]]
     ) -> "ToolboxTool":
         """
         Registers functions to retrieve ID tokens for the corresponding
@@ -131,7 +131,6 @@ class ToolboxTool(BaseTool):
         self,
         param_name: str,
         param_value: Union[Any, Callable[[], Any]],
-        strict: bool = True,
     ) -> "ToolboxTool":
         """
         Registers a value or a function to retrieve the value for a given bound
