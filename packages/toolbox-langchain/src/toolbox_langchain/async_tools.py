@@ -38,13 +38,12 @@ class AsyncToolboxTool(BaseTool):
         Args:
             core_tool: The underlying core async ToolboxTool instance.
         """
-
-        self.__core_tool = core_tool
         super().__init__(
             name=self.__core_tool.__name__,
             description=self.__core_tool.__doc__,
             args_schema=self.__core_tool._ToolboxTool__pydantic_model,
         )
+        self.__core_tool = core_tool
 
     def _run(self, **kwargs: Any) -> str:
         raise NotImplementedError("Synchronous methods not supported by async tools.")
