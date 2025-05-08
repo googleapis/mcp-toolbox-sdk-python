@@ -4,6 +4,6 @@ Changelogs
 -----
 | Package    | Version |
 | -------- | ------- |
-| [toolbox-core](https://github.com/googleapis/mcp-toolbox-sdk-python/tree/main/packages/toolbox-core/CHANGELOG.md)  | https://img.shields.io/pypi/v/toolbox-core.svg    |
-| [toolbox-langchain](https://github.com/googleapis/mcp-toolbox-sdk-python/tree/main/packages/toolbox-langchain/CHANGELOG.md) | https://img.shields.io/pypi/v/toolbox-langchain.svg      |
-| [toolbox-llamaindex](https://github.com/googleapis/mcp-toolbox-sdk-python/tree/main/packages/toolbox-llamaindex/CHANGELOG.md)    | https://img.shields.io/pypi/v/toolbox-llamaindex.svg    |
+| [toolbox-core](https://github.com/googleapis/mcp-toolbox-sdk-python/tree/main/packages/toolbox-core/CHANGELOG.md)  | ![toolbox-core version](https://img.shields.io/pypi/v/toolbox-core.svg)    |
+| [toolbox-langchain](https://github.com/googleapis/mcp-toolbox-sdk-python/tree/main/packages/toolbox-langchain/CHANGELOG.md) | ![toolbox-langchain version](https://img.shields.io/pypi/v/toolbox-langchain.svg)      |
+| [toolbox-llamaindex](https://github.com/googleapis/mcp-toolbox-sdk-python/tree/main/packages/toolbox-llamaindex/CHANGELOG.md)    | ![toolbox-llamaindex version](https://img.shields.io/pypi/v/toolbox-llamaindex.svg)    |
