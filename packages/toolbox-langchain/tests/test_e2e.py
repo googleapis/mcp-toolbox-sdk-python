@@ -54,7 +54,7 @@ class TestE2EClientAsync:
     @pytest_asyncio.fixture(scope="function")
     async def get_n_rows_tool(self, toolbox):
         tool = await toolbox.aload_tool("get-n-rows")
-        assert tool._ToolboxTool__async_tool._AsyncToolboxTool__name == "get-n-rows"
+        assert tool._ToolboxTool__core_sync_tool.__name__ == "get-n-rows"
         return tool
 
     #### Basic e2e tests
