@@ -17,8 +17,7 @@ from warnings import warn
 
 from aiohttp import ClientSession
 
-from .tools import AsyncToolboxTool
-
+from .async_tools import AsyncToolboxTool
 from toolbox_core.client import ToolboxClient as ToolboxCoreClient
 
 
