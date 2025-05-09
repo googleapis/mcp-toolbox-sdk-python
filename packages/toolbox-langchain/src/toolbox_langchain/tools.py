@@ -41,7 +41,7 @@ class ToolboxTool(BaseTool):
         super().__init__(
             name=core_sync_tool.__name__,
             description=core_sync_tool.__doc__,
-            args_schema=core_sync_tool._ToolboxSyncTool__async_tool._ToolboxTool__pydantic_model,
+            args_schema=core_sync_tool._async_tool._pydantic_model,
         )
         self.__core_sync_tool = core_sync_tool
 
@@ -49,16 +49,16 @@ class ToolboxTool(BaseTool):
         return self.__core_sync_tool(**kwargs)
 
     async def _arun(self, **kwargs: Any) -> dict[str, Any]:
-        coro = self.__core_sync_tool._ToolboxSyncTool__async_tool(**kwargs)
+        coro = self.__core_sync_tool._async_tool(**kwargs)
 
         # If a loop has not been provided, attempt to run in current thread.
-        if not self.__core_sync_tool._ToolboxSyncTool__loop:
+        if not self.__core_sync_tool._loop:
             return await coro
 
         # Otherwise, run in the background thread.
         return await asyncio.wrap_future(
             asyncio.run_coroutine_threadsafe(
-                coro, self.__core_sync_tool._ToolboxSyncTool__loop
+                coro, self.__core_sync_tool._loop
             )
         )
 
