@@ -201,7 +201,7 @@ class ToolboxSyncClient:
 
     def load_toolset(
         self,
-        name: str,
+        name: Optional[str] = None,
         auth_token_getters: dict[str, Callable[[], str]] = {},
         bound_params: Mapping[str, Union[Callable[[], Any], Any]] = {},
         strict: bool = False,
@@ -210,7 +210,7 @@ class ToolboxSyncClient:
         Synchronously fetches a toolset and loads all tools defined within it.
 
         Args:
-            name: Name of the toolset to load tools.
+            name: Name of the toolset to load. If None, loads the default toolset.
             auth_token_getters: A mapping of authentication service names to
                 callables that return the corresponding authentication token.
             bound_params: A mapping of parameter names to bind to specific values or
