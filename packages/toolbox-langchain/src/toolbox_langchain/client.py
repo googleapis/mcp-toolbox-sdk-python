@@ -100,6 +100,9 @@ class ToolboxClient:
                 asyncio.run_coroutine_threadsafe(coro, self.__core_sync_client._loop)
             )
 
+        if not self.__core_sync_client._loop or not self.__core_sync_client._thread:
+            raise ValueError("Background loop or thread cannot be None.")
+
         core_sync_tool = ToolboxSyncTool(
             core_tool,
             self.__core_sync_client._loop,
