@@ -19,6 +19,7 @@ from typing import Any, Callable, Coroutine, Mapping, Optional, Sequence, Union
 from warnings import warn
 
 from aiohttp import ClientSession
+from pydantic import BaseModel
 
 from .protocol import ParameterSchema
 from .utils import (
@@ -118,6 +119,10 @@ class ToolboxTool:
         self.__bound_parameters = bound_params
         # map of client headers to their value/callable/coroutine
         self.__client_headers = client_headers
+
+    @property
+    def _pydantic_model(self) -> type[BaseModel]:
+        return self.__pydantic_model
 
     def __copy(
         self,
