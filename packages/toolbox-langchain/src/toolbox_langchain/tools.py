@@ -45,10 +45,10 @@ class ToolboxTool(BaseTool):
         )
         self.__core_sync_tool = core_sync_tool
 
-    def _run(self, **kwargs: Any) -> dict[str, Any]:
+    def _run(self, **kwargs: Any) -> str:
         return self.__core_sync_tool(**kwargs)
 
-    async def _arun(self, **kwargs: Any) -> dict[str, Any]:
+    async def _arun(self, **kwargs: Any) -> str:
         coro = self.__core_sync_tool._async_tool(**kwargs)
 
         # If a loop has not been provided, attempt to run in current thread.

@@ -43,7 +43,7 @@ class AsyncToolboxTool(BaseTool):
         super().__init__(
             name=core_tool.__name__,
             description=core_tool.__doc__,
-            args_schema=core_tool._ToolboxTool__pydantic_model,
+            args_schema=core_tool._pydantic_model,
         )
         self.__core_tool = core_tool
 
