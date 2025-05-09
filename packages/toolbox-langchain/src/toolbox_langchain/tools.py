@@ -57,7 +57,7 @@ class ToolboxTool(BaseTool):
             return await coro
 
         # Otherwise, run in the background thread.
-        await asyncio.wrap_future(
+        return await asyncio.wrap_future(
             asyncio.run_coroutine_threadsafe(coro, self.__core_sync_tool._ToolboxSyncTool__loop)
         )
 
