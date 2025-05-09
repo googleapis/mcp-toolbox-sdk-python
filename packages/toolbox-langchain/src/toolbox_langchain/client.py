@@ -97,9 +97,7 @@ class ToolboxClient:
         else:
             # Otherwise, run in the background thread.
             core_tool = await asyncio.wrap_future(
-                asyncio.run_coroutine_threadsafe(
-                    coro, self.__core_sync_client._loop
-                )
+                asyncio.run_coroutine_threadsafe(coro, self.__core_sync_client._loop)
             )
 
         core_sync_tool = ToolboxSyncTool(
@@ -179,9 +177,7 @@ class ToolboxClient:
         else:
             # Otherwise, run in the background thread.
             core_tools = await asyncio.wrap_future(
-                asyncio.run_coroutine_threadsafe(
-                    coro, self.__core_sync_client._loop
-                )
+                asyncio.run_coroutine_threadsafe(coro, self.__core_sync_client._loop)
             )
 
         core_sync_tools = [

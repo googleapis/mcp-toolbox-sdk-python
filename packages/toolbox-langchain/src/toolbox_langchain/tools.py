@@ -57,9 +57,7 @@ class ToolboxTool(BaseTool):
 
         # Otherwise, run in the background thread.
         return await asyncio.wrap_future(
-            asyncio.run_coroutine_threadsafe(
-                coro, self.__core_sync_tool._loop
-            )
+            asyncio.run_coroutine_threadsafe(coro, self.__core_sync_tool._loop)
         )
 
     def add_auth_token_getters(
