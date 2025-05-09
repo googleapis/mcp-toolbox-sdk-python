@@ -19,6 +19,7 @@ from typing import Any, Callable, Coroutine, Mapping, Optional, Sequence, Union
 from warnings import warn
 
 from aiohttp import ClientSession
+from pydantic import BaseModel
 
 from .protocol import ParameterSchema
 from .utils import (
@@ -157,6 +158,10 @@ class ToolboxTool:
     @property
     def _client_headers(self) -> Mapping[str, Union[Callable, Coroutine, str]]:
         return MappingProxyType(self.__client_headers)
+
+    @property
+    def _pydantic_model(self) -> type[BaseModel]:
+        return self.__pydantic_model
 
     def __copy(
         self,
