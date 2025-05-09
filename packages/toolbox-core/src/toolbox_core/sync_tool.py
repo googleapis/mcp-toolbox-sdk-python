@@ -51,9 +51,9 @@ class ToolboxSyncTool:
         if not isinstance(async_tool, ToolboxTool):
             raise TypeError("async_tool must be an instance of ToolboxTool")
 
-        self.__async_tool = async_tool
-        self.__loop = loop
-        self.__thread = thread
+        self._async_tool = async_tool
+        self._loop = loop
+        self._thread = thread
 
         # NOTE: We cannot define __qualname__ as a @property here.
         # Properties are designed to compute values dynamically when accessed on an *instance* (using 'self').
@@ -65,26 +65,38 @@ class ToolboxSyncTool:
         self.__qualname__ = f"{self.__class__.__qualname__}.{self.__name__}"
 
     @property
+    def _async_tool(self) -> ToolboxTool:
+        return self._async_tool
+    
+    @property
+    def _loop(self) -> AbstractEventLoop:
+        return self._loop
+
+    @property
+    def _thread(self) -> Thread:
+        return self._thread
+
+    @property
     def __name__(self) -> str:
-        return self.__async_tool.__name__
+        return self._async_tool.__name__
 
     @property
     def __doc__(self) -> Union[str, None]:  # type: ignore[override]
         # Standard Python object attributes like __doc__ are technically "writable".
         # But not defining a setter function makes this a read-only property.
         # Mypy flags this issue in the type checks.
-        return self.__async_tool.__doc__
+        return self._async_tool.__doc__
 
     @property
     def __signature__(self) -> Signature:
-        return self.__async_tool.__signature__
+        return self._async_tool.__signature__
 
     @property
     def __annotations__(self) -> dict[str, Any]:  # type: ignore[override]
         # Standard Python object attributes like __doc__ are technically "writable".
         # But not defining a setter function makes this a read-only property.
         # Mypy flags this issue in the type checks.
-        return self.__async_tool.__annotations__
+        return self._async_tool.__annotations__
 
     def __call__(self, *args: Any, **kwargs: Any) -> str:
         """
@@ -100,8 +112,8 @@ class ToolboxSyncTool:
         Returns:
             The string result returned by the remote tool execution.
         """
-        coro = self.__async_tool(*args, **kwargs)
-        return asyncio.run_coroutine_threadsafe(coro, self.__loop).result()
+        coro = self._async_tool(*args, **kwargs)
+        return asyncio.run_coroutine_threadsafe(coro, self._loop).result()
 
     def add_auth_token_getters(
         self,
@@ -120,8 +132,8 @@ class ToolboxSyncTool:
             getters registered.
         """
 
-        new_async_tool = self.__async_tool.add_auth_token_getters(auth_token_getters)
-        return ToolboxSyncTool(new_async_tool, self.__loop, self.__thread)
+        new_async_tool = self._async_tool.add_auth_token_getters(auth_token_getters)
+        return ToolboxSyncTool(new_async_tool, self._loop, self._thread)
 
     def bind_params(
         self, bound_params: Mapping[str, Union[Callable[[], Any], Any]]
@@ -137,8 +149,8 @@ class ToolboxSyncTool:
             A new ToolboxSyncTool instance with the specified parameters bound.
         """
 
-        new_async_tool = self.__async_tool.bind_params(bound_params)
-        return ToolboxSyncTool(new_async_tool, self.__loop, self.__thread)
+        new_async_tool = self._async_tool.bind_params(bound_params)
+        return ToolboxSyncTool(new_async_tool, self._loop, self._thread)
 
     def bind_param(
         self,
