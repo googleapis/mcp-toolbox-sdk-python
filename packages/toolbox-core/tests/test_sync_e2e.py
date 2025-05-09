@@ -129,7 +129,7 @@ class TestAuth:
         """Tests running a tool requiring auth without providing auth."""
         tool = toolbox.load_tool("get-row-by-id-auth")
         with pytest.raises(
-            Exception,
+            PermissionError,
             match="One or more of the following authn services are required to invoke this tool: my-test-auth",
         ):
             tool(id="2")
@@ -156,7 +156,7 @@ class TestAuth:
         """Tests running a tool with a param requiring auth, without auth."""
         tool = toolbox.load_tool("get-row-by-email-auth")
         with pytest.raises(
-            ValueError,
+            PermissionError,
             match="One or more of the following authn services are required to invoke this tool: my-test-auth",
         ):
             tool()
