@@ -63,7 +63,7 @@ class ToolboxSyncClient:
         ).result()
 
     @property
-    def _async_client(self) -> Optional[ToolboxClient]:
+    def _async_client(self) -> ToolboxClient:
         return self.__async_client
 
     @property
@@ -71,7 +71,7 @@ class ToolboxSyncClient:
         return self.__class__.__loop
 
     @property
-    def _thread(self) -> Thread:
+    def _thread(self) -> Optional[Thread]:
         return self.__class__.__thread
 
     def close(self):
