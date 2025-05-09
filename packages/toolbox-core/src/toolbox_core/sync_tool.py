@@ -51,9 +51,9 @@ class ToolboxSyncTool:
         if not isinstance(async_tool, ToolboxTool):
             raise TypeError("async_tool must be an instance of ToolboxTool")
 
-        self._async_tool = async_tool
-        self._loop = loop
-        self._thread = thread
+        self.__async_tool = async_tool
+        self.__loop = loop
+        self.__thread = thread
 
         # NOTE: We cannot define __qualname__ as a @property here.
         # Properties are designed to compute values dynamically when accessed on an *instance* (using 'self').
@@ -66,15 +66,15 @@ class ToolboxSyncTool:
 
     @property
     def _async_tool(self) -> ToolboxTool:
-        return self._async_tool
+        return self.__async_tool
 
     @property
     def _loop(self) -> AbstractEventLoop:
-        return self._loop
+        return self.__loop
 
     @property
     def _thread(self) -> Thread:
-        return self._thread
+        return self.__thread
 
     @property
     def __name__(self) -> str:
