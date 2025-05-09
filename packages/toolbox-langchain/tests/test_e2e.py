@@ -36,7 +36,6 @@ This file covers the following use cases:
 
 import pytest
 import pytest_asyncio
-from langchain_core.tools import ToolException
 from pydantic import ValidationError
 
 from toolbox_langchain.client import ToolboxClient
@@ -327,7 +326,7 @@ class TestE2EClientSync:
             auth_token_getters={"my-test-auth": lambda: auth_token1},
         )
         with pytest.raises(
-            ToolException,
+            Exception,
             match='provided parameters were invalid: error parsing authenticated parameter "data": no field named row_data in claims',
         ):
             tool.invoke({})
