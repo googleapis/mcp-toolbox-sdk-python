@@ -14,6 +14,7 @@
 
 
 import asyncio
+from asyncio import AbstractEventLoop
 from threading import Thread
 from typing import Any, Callable, Coroutine, Mapping, Optional, Union
 
@@ -29,7 +30,7 @@ class ToolboxSyncClient:
     service endpoint.
     """
 
-    __loop: Optional[asyncio.AbstractEventLoop] = None
+    __loop: Optional[AbstractEventLoop] = None
     __thread: Optional[Thread] = None
 
     def __init__(
@@ -60,6 +61,18 @@ class ToolboxSyncClient:
         self.__async_client = asyncio.run_coroutine_threadsafe(
             create_client(), self.__class__.__loop
         ).result()
+
+    @property
+    def _async_client(self) -> ToolboxClient:
+        return self.__async_client
+
+    @property
+    def _loop(self) -> AbstractEventLoop:
+        return self.__class__.__loop
+
+    @property
+    def _thread(self) -> Thread:
+        return self.__class__.__thread
 
     def close(self):
         """
