@@ -13,13 +13,13 @@
 # limitations under the License.
 
 import asyncio
-from warnings import warn
 from typing import Any, Callable, Optional, Union
+from warnings import warn
 
-from .tools import ToolboxTool
 from toolbox_core.sync_client import ToolboxSyncClient as ToolboxCoreSyncClient
 from toolbox_core.sync_tool import ToolboxSyncTool
 
+from .tools import ToolboxTool
 
 
 class ToolboxClient:
@@ -88,7 +88,7 @@ class ToolboxClient:
         coro = self.__core_sync_client._ToolboxSyncClient__async_client.load_tool(
             name=tool_name,
             auth_token_getters=auth_token_getters,
-            bound_params=bound_params
+            bound_params=bound_params,
         )
 
         if not self.__core_sync_client._ToolboxSyncClient__loop:
@@ -97,10 +97,16 @@ class ToolboxClient:
         else:
             # Otherwise, run in the background thread.
             core_tool = await asyncio.wrap_future(
-                asyncio.run_coroutine_threadsafe(coro, self.__core_sync_client._ToolboxSyncClient__loop)
+                asyncio.run_coroutine_threadsafe(
+                    coro, self.__core_sync_client._ToolboxSyncClient__loop
+                )
             )
 
-        core_sync_tool = ToolboxSyncTool(core_tool, self.__core_sync_client._ToolboxSyncClient__loop, self.__core_sync_client._ToolboxSyncClient__thread)
+        core_sync_tool = ToolboxSyncTool(
+            core_tool,
+            self.__core_sync_client._ToolboxSyncClient__loop,
+            self.__core_sync_client._ToolboxSyncClient__thread,
+        )
         return ToolboxTool(core_sync_tool=core_sync_tool)
 
     async def aload_toolset(
@@ -164,7 +170,7 @@ class ToolboxClient:
             name=toolset_name,
             auth_token_getters=auth_token_getters,
             bound_params=bound_params,
-            strict=strict
+            strict=strict,
         )
 
         if not self.__core_sync_client._ToolboxSyncClient__loop:
@@ -173,11 +179,17 @@ class ToolboxClient:
         else:
             # Otherwise, run in the background thread.
             core_tools = await asyncio.wrap_future(
-                asyncio.run_coroutine_threadsafe(coro, self.__core_sync_client._ToolboxSyncClient__loop)
+                asyncio.run_coroutine_threadsafe(
+                    coro, self.__core_sync_client._ToolboxSyncClient__loop
+                )
             )
 
         core_sync_tools = [
-            ToolboxSyncTool(core_tool, self.__core_sync_client._ToolboxSyncClient__loop, self.__core_sync_client._ToolboxSyncClient__thread)
+            ToolboxSyncTool(
+                core_tool,
+                self.__core_sync_client._ToolboxSyncClient__loop,
+                self.__core_sync_client._ToolboxSyncClient__thread,
+            )
             for core_tool in core_tools
         ]
         tools = []
@@ -237,7 +249,7 @@ class ToolboxClient:
         core_sync_tool = self.__core_sync_client.load_tool(
             name=tool_name,
             auth_token_getters=auth_token_getters,
-            bound_params=bound_params
+            bound_params=bound_params,
         )
         return ToolboxTool(core_sync_tool=core_sync_tool)
 
@@ -302,7 +314,7 @@ class ToolboxClient:
             name=toolset_name,
             auth_token_getters=auth_token_getters,
             bound_params=bound_params,
-            strict=strict
+            strict=strict,
         )
 
         tools = []

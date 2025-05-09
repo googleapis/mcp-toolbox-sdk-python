@@ -18,7 +18,6 @@ from langchain_core.tools import BaseTool
 from toolbox_core.tool import ToolboxTool as ToolboxCoreTool
 
 
-
 # This class is an internal implementation detail and is not exposed to the
 # end-user. It should not be used directly by external code. Changes to this
 # class will not be considered breaking changes to the public API.
@@ -63,8 +62,6 @@ class AsyncToolboxTool(BaseTool):
             invocation.
         """
         return await self.__core_tool(**kwargs)
-
-
 
     def add_auth_token_getters(
         self, auth_token_getters: dict[str, Callable[[], str]]

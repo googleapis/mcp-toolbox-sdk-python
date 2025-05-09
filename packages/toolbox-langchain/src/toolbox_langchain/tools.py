@@ -19,7 +19,6 @@ from langchain_core.tools import BaseTool
 from toolbox_core.sync_tool import ToolboxSyncTool as ToolboxCoreSyncTool
 
 
-
 class ToolboxTool(BaseTool):
     """
     A subclass of LangChain's BaseTool that supports features specific to
@@ -58,9 +57,10 @@ class ToolboxTool(BaseTool):
 
         # Otherwise, run in the background thread.
         return await asyncio.wrap_future(
-            asyncio.run_coroutine_threadsafe(coro, self.__core_sync_tool._ToolboxSyncTool__loop)
+            asyncio.run_coroutine_threadsafe(
+                coro, self.__core_sync_tool._ToolboxSyncTool__loop
+            )
         )
-
 
     def add_auth_token_getters(
         self, auth_token_getters: dict[str, Callable[[], str]]
@@ -81,9 +81,10 @@ class ToolboxTool(BaseTool):
             ValueError: If any of the provided auth parameters is already
                 registered.
         """
-        new_core_sync_tool = self.__core_sync_tool.add_auth_token_getters(auth_token_getters)
+        new_core_sync_tool = self.__core_sync_tool.add_auth_token_getters(
+            auth_token_getters
+        )
         return ToolboxTool(core_sync_tool=new_core_sync_tool)
-
 
     def add_auth_token_getter(
         self, auth_source: str, get_id_token: Callable[[], str]
