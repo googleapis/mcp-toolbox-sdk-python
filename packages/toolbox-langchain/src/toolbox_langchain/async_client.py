@@ -16,9 +16,9 @@ from typing import Any, Callable, Optional, Union
 from warnings import warn
 
 from aiohttp import ClientSession
+from toolbox_core.client import ToolboxClient as ToolboxCoreClient
 
 from .async_tools import AsyncToolboxTool
-from toolbox_core.client import ToolboxClient as ToolboxCoreClient
 
 
 # This class is an internal implementation detail and is not exposed to the
@@ -92,7 +92,7 @@ class AsyncToolboxClient:
         core_tool = await self.__core_client.load_tool(
             name=tool_name,
             auth_token_getters=auth_token_getters,
-            bound_params=bound_params
+            bound_params=bound_params,
         )
         return AsyncToolboxTool(core_tool=core_tool)
 
@@ -157,7 +157,7 @@ class AsyncToolboxClient:
             name=toolset_name,
             auth_token_getters=auth_token_getters,
             bound_params=bound_params,
-            strict=strict
+            strict=strict,
         )
 
         tools = []

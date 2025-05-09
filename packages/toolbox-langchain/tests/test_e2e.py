@@ -119,7 +119,8 @@ class TestE2EClientAsync:
             match="Validation failed for tool 'get-row-by-id': unused auth tokens: my-test-auth.",
         ):
             await toolbox.aload_tool(
-                "get-row-by-id", auth_token_getters={"my-test-auth": lambda: auth_token2}
+                "get-row-by-id",
+                auth_token_getters={"my-test-auth": lambda: auth_token2},
             )
 
     async def test_run_tool_no_auth(self, toolbox):
@@ -182,9 +183,10 @@ class TestE2EClientAsync:
         )
         with pytest.raises(
             Exception,
-            match="provided parameters were invalid: error parsing authenticated parameter \"data\": no field named row_data in claims"
+            match='provided parameters were invalid: error parsing authenticated parameter "data": no field named row_data in claims',
         ):
             await tool.ainvoke({})
+
 
 @pytest.mark.usefixtures("toolbox_server")
 class TestE2EClientSync:
@@ -262,7 +264,8 @@ class TestE2EClientSync:
             match="Validation failed for tool 'get-row-by-id': unused auth tokens: my-test-auth.",
         ):
             toolbox.load_tool(
-                "get-row-by-id", auth_token_getters={"my-test-auth": lambda: auth_token2}
+                "get-row-by-id",
+                auth_token_getters={"my-test-auth": lambda: auth_token2},
             )
 
     def test_run_tool_no_auth(self, toolbox):
@@ -325,6 +328,6 @@ class TestE2EClientSync:
         )
         with pytest.raises(
             ToolException,
-            match="provided parameters were invalid: error parsing authenticated parameter \"data\": no field named row_data in claims",
+            match='provided parameters were invalid: error parsing authenticated parameter "data": no field named row_data in claims',
         ):
             tool.invoke({})
