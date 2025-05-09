@@ -71,7 +71,7 @@ class TestE2EClientAsync:
         toolset = await toolbox.aload_toolset(toolset_name)
         assert len(toolset) == expected_length
         for tool in toolset:
-            name = tool._ToolboxTool__async_tool._AsyncToolboxTool__name
+            name = tool._ToolboxTool__core_sync_tool.__name__
             assert name in expected_tools
 
     async def test_aload_toolset_all(self, toolbox):
@@ -85,7 +85,7 @@ class TestE2EClientAsync:
             "get-row-by-content-auth",
         ]
         for tool in toolset:
-            name = tool._ToolboxTool__async_tool._AsyncToolboxTool__name
+            name = tool._ToolboxTool__core_sync_tool.__name__
             assert name in tool_names
 
     async def test_run_tool_async(self, get_n_rows_tool):
