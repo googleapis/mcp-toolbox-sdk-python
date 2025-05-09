@@ -63,11 +63,11 @@ class ToolboxSyncClient:
         ).result()
 
     @property
-    def _async_client(self) -> ToolboxClient:
+    def _async_client(self) -> Optional[ToolboxClient]:
         return self.__async_client
 
     @property
-    def _loop(self) -> AbstractEventLoop:
+    def _loop(self) -> Optional[AbstractEventLoop]:
         return self.__class__.__loop
 
     @property
