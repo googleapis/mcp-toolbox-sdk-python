@@ -67,7 +67,7 @@ class ToolboxSyncTool:
     @property
     def _async_tool(self) -> ToolboxTool:
         return self._async_tool
-    
+
     @property
     def _loop(self) -> AbstractEventLoop:
         return self._loop
