@@ -59,19 +59,6 @@ class ToolboxClient:
         Returns:
             A tool loaded from the Toolbox.
         """
-        if auth_headers:
-            if auth_token_getters:
-                warn(
-                    "Both `auth_token_getters` and `auth_headers` are provided. `auth_headers` is deprecated, and `auth_token_getters` will be used.",
-                    DeprecationWarning,
-                )
-            else:
-                warn(
-                    "Argument `auth_headers` is deprecated. Use `auth_token_getters` instead.",
-                    DeprecationWarning,
-                )
-                auth_token_getters = auth_headers
-
         if auth_tokens:
             if auth_token_getters:
                 warn(
@@ -84,6 +71,19 @@ class ToolboxClient:
                     DeprecationWarning,
                 )
                 auth_token_getters = auth_tokens
+
+        if auth_headers:
+            if auth_token_getters:
+                warn(
+                    "Both `auth_token_getters` and `auth_headers` are provided. `auth_headers` is deprecated, and `auth_token_getters` will be used.",
+                    DeprecationWarning,
+                )
+            else:
+                warn(
+                    "Argument `auth_headers` is deprecated. Use `auth_token_getters` instead.",
+                    DeprecationWarning,
+                )
+                auth_token_getters = auth_headers
 
         coro = self.__core_sync_client._async_client.load_tool(
             name=tool_name,
@@ -141,19 +141,6 @@ class ToolboxClient:
         Returns:
             A list of all tools loaded from the Toolbox.
         """
-        if auth_headers:
-            if auth_token_getters:
-                warn(
-                    "Both `auth_token_getters` and `auth_headers` are provided. `auth_headers` is deprecated, and `auth_token_getters` will be used.",
-                    DeprecationWarning,
-                )
-            else:
-                warn(
-                    "Argument `auth_headers` is deprecated. Use `auth_token_getters` instead.",
-                    DeprecationWarning,
-                )
-                auth_token_getters = auth_headers
-
         if auth_tokens:
             if auth_token_getters:
                 warn(
@@ -166,6 +153,19 @@ class ToolboxClient:
                     DeprecationWarning,
                 )
                 auth_token_getters = auth_tokens
+
+        if auth_headers:
+            if auth_token_getters:
+                warn(
+                    "Both `auth_token_getters` and `auth_headers` are provided. `auth_headers` is deprecated, and `auth_token_getters` will be used.",
+                    DeprecationWarning,
+                )
+            else:
+                warn(
+                    "Argument `auth_headers` is deprecated. Use `auth_token_getters` instead.",
+                    DeprecationWarning,
+                )
+                auth_token_getters = auth_headers
 
         coro = self.__core_sync_client._async_client.load_toolset(
             name=toolset_name,
@@ -222,19 +222,6 @@ class ToolboxClient:
         Returns:
             A tool loaded from the Toolbox.
         """
-        if auth_headers:
-            if auth_token_getters:
-                warn(
-                    "Both `auth_token_getters` and `auth_headers` are provided. `auth_headers` is deprecated, and `auth_token_getters` will be used.",
-                    DeprecationWarning,
-                )
-            else:
-                warn(
-                    "Argument `auth_headers` is deprecated. Use `auth_token_getters` instead.",
-                    DeprecationWarning,
-                )
-                auth_token_getters = auth_headers
-
         if auth_tokens:
             if auth_token_getters:
                 warn(
@@ -247,6 +234,19 @@ class ToolboxClient:
                     DeprecationWarning,
                 )
                 auth_token_getters = auth_tokens
+
+        if auth_headers:
+            if auth_token_getters:
+                warn(
+                    "Both `auth_token_getters` and `auth_headers` are provided. `auth_headers` is deprecated, and `auth_token_getters` will be used.",
+                    DeprecationWarning,
+                )
+            else:
+                warn(
+                    "Argument `auth_headers` is deprecated. Use `auth_token_getters` instead.",
+                    DeprecationWarning,
+                )
+                auth_token_getters = auth_headers
 
         core_sync_tool = self.__core_sync_client.load_tool(
             name=tool_name,
@@ -286,19 +286,6 @@ class ToolboxClient:
         Returns:
             A list of all tools loaded from the Toolbox.
         """
-        if auth_headers:
-            if auth_token_getters:
-                warn(
-                    "Both `auth_token_getters` and `auth_headers` are provided. `auth_headers` is deprecated, and `auth_token_getters` will be used.",
-                    DeprecationWarning,
-                )
-            else:
-                warn(
-                    "Argument `auth_headers` is deprecated. Use `auth_token_getters` instead.",
-                    DeprecationWarning,
-                )
-                auth_token_getters = auth_headers
-
         if auth_tokens:
             if auth_token_getters:
                 warn(
@@ -311,6 +298,19 @@ class ToolboxClient:
                     DeprecationWarning,
                 )
                 auth_token_getters = auth_tokens
+
+        if auth_headers:
+            if auth_token_getters:
+                warn(
+                    "Both `auth_token_getters` and `auth_headers` are provided. `auth_headers` is deprecated, and `auth_token_getters` will be used.",
+                    DeprecationWarning,
+                )
+            else:
+                warn(
+                    "Argument `auth_headers` is deprecated. Use `auth_token_getters` instead.",
+                    DeprecationWarning,
+                )
+                auth_token_getters = auth_headers
 
         core_sync_tools = self.__core_sync_client.load_toolset(
             name=toolset_name,
