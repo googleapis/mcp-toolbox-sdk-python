@@ -68,19 +68,6 @@ class AsyncToolboxClient:
         Returns:
             A tool loaded from the Toolbox.
         """
-        if auth_headers:
-            if auth_token_getters:
-                warn(
-                    "Both `auth_token_getters` and `auth_headers` are provided. `auth_headers` is deprecated, and `auth_token_getters` will be used.",
-                    DeprecationWarning,
-                )
-            else:
-                warn(
-                    "Argument `auth_headers` is deprecated. Use `auth_token_getters` instead.",
-                    DeprecationWarning,
-                )
-                auth_token_getters = auth_headers
-
         if auth_tokens:
             if auth_token_getters:
                 warn(
@@ -93,6 +80,19 @@ class AsyncToolboxClient:
                     DeprecationWarning,
                 )
                 auth_token_getters = auth_tokens
+
+        if auth_headers:
+            if auth_token_getters:
+                warn(
+                    "Both `auth_token_getters` and `auth_headers` are provided. `auth_headers` is deprecated, and `auth_token_getters` will be used.",
+                    DeprecationWarning,
+                )
+            else:
+                warn(
+                    "Argument `auth_headers` is deprecated. Use `auth_token_getters` instead.",
+                    DeprecationWarning,
+                )
+                auth_token_getters = auth_headers
 
         url = f"{self.__url}/api/tool/{tool_name}"
         manifest: ManifestSchema = await _load_manifest(url, self.__session)
@@ -136,19 +136,6 @@ class AsyncToolboxClient:
         Returns:
             A list of all tools loaded from the Toolbox.
         """
-        if auth_headers:
-            if auth_token_getters:
-                warn(
-                    "Both `auth_token_getters` and `auth_headers` are provided. `auth_headers` is deprecated, and `auth_token_getters` will be used.",
-                    DeprecationWarning,
-                )
-            else:
-                warn(
-                    "Argument `auth_headers` is deprecated. Use `auth_token_getters` instead.",
-                    DeprecationWarning,
-                )
-                auth_token_getters = auth_headers
-
         if auth_tokens:
             if auth_token_getters:
                 warn(
@@ -161,6 +148,19 @@ class AsyncToolboxClient:
                     DeprecationWarning,
                 )
                 auth_token_getters = auth_tokens
+
+        if auth_headers:
+            if auth_token_getters:
+                warn(
+                    "Both `auth_token_getters` and `auth_headers` are provided. `auth_headers` is deprecated, and `auth_token_getters` will be used.",
+                    DeprecationWarning,
+                )
+            else:
+                warn(
+                    "Argument `auth_headers` is deprecated. Use `auth_token_getters` instead.",
+                    DeprecationWarning,
+                )
+                auth_token_getters = auth_headers
 
         url = f"{self.__url}/api/toolset/{toolset_name or ''}"
         manifest: ManifestSchema = await _load_manifest(url, self.__session)
