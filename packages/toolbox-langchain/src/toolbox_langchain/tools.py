@@ -97,7 +97,7 @@ class ToolboxTool(BaseTool):
 
         Returns:
             A new ToolboxTool instance that is a deep copy of the current
-            instance, with added auth token.
+            instance, with added auth token getter.
 
         Raises:
             ValueError: If the provided auth parameter is already registered.
