@@ -15,6 +15,7 @@
 import asyncio
 from typing import Any, Callable, Union
 
+from deprecated import deprecated
 from langchain_core.tools import BaseTool
 from toolbox_core.sync_tool import ToolboxSyncTool as ToolboxCoreSyncTool
 
@@ -101,6 +102,18 @@ class ToolboxTool(BaseTool):
             ValueError: If the provided auth parameter is already registered.
         """
         return self.add_auth_token_getters({auth_source: get_id_token})
+
+    @deprecated("Please use `add_auth_token_getters` instead.")
+    def add_auth_tokens(
+        self, auth_tokens: dict[str, Callable[[], str]], strict: bool = True
+    ) -> "ToolboxTool":
+        return self.add_auth_token_getters(auth_tokens)
+
+    @deprecated("Please use `add_auth_token_getter` instead.")
+    def add_auth_token(
+        self, auth_source: str, get_id_token: Callable[[], str], strict: bool = True
+    ) -> "ToolboxTool":
+        return self.add_auth_token_getter(auth_source, get_id_token)
 
     def bind_params(
         self,
