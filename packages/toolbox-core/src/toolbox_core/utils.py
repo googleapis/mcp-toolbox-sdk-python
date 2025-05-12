@@ -45,41 +45,64 @@ def create_func_docstring(description: str, params: Sequence[ParameterSchema]) -
 
 
 def identify_required_authn_params(
-    req_authn_params: Mapping[str, list[str]], auth_service_names: Iterable[str]
-) -> tuple[dict[str, list[str]], set[str]]:
+    req_authn_params: Mapping[str, list[str]],
+    req_authz_tokens: list[str],
+    auth_service_names: Iterable[str],
+) -> tuple[dict[str, list[str]], list[str], set[str]]:
     """
-    Identifies authentication parameters that are still required; because they
-        are not covered by the provided `auth_service_names`, and also returns a
-        set of all authentication services that were found to be matching.
+    Identifies authentication parameters and authorization tokens that are still
+    required because they are not covered by the provided `auth_service_names`.
+    Also returns a set of all authentication/authorization services from
+    `auth_service_names` that were found to be matching.
 
-        Args:
-            req_authn_params: A mapping of parameter names to lists of required
-                authentication services.
-            auth_service_names: An iterable of authentication service names for which
-                token getters are available.
+    Args:
+        req_authn_params: A mapping of parameter names to lists of required
+            authentication services for those parameters.
+        req_authz_tokens: A list of strings representing all authorization
+            tokens that are required to invoke the current tool.
+        auth_service_names: An iterable of authentication/authorization service
+            names for which token getters are available.
 
     Returns:
         A tuple containing:
-            - A new dictionary representing the subset of required
-              authentication parameters that are not covered by the provided
-              `auth_service_names`.
-            - A list of authentication service names from `auth_service_names`
-              that were found to satisfy at least one parameter's requirements.
+            - required_authn_params: A new dictionary representing the subset of
+              required authentication parameters that are not covered by the
+              provided `auth_service_names`.
+            - required_authz_tokens: A list of required authorization tokens if
+              no service name in `auth_service_names` matches any token in
+              `req_authz_tokens`. If any match is found, this list is empty.
+            - used_services: A set of service names from `auth_service_names`
+              that were found to satisfy at least one authentication parameter's
+              requirements or matched one of the `req_authz_tokens`.
     """
-    required_params: dict[str, list[str]] = {}
+    required_authn_params: dict[str, list[str]] = {}
     used_services: set[str] = set()
 
+    # find which of the required authn params are covered by available services.
     for param, services in req_authn_params.items():
+
         # if we don't have a token_getter for any of the services required by the param,
         # the param is still required
-        matched_services = [s for s in services if s in auth_service_names]
+        matched_authn_services = [s for s in services if s in auth_service_names]
 
-        if matched_services:
-            used_services.update(matched_services)
+        if matched_authn_services:
+            used_services.update(matched_authn_services)
         else:
-            required_params[param] = services
+            required_authn_params[param] = services
 
-    return required_params, used_services
+    # find which of the required authz tokens are covered by available services.
+    matched_authz_services = [s for s in auth_service_names if s in req_authz_tokens]
+    required_authz_tokens: list[str] = []
+
+    # If a match is found, authorization is met (no remaining required tokens).
+    # Otherwise, all `req_authz_tokens` are still required. (Handles empty
+    # `req_authz_tokens` correctly, resulting in no required tokens).
+    if matched_authz_services:
+        used_services.update(matched_authz_services)
+    else:
+        required_authz_tokens = req_authz_tokens
+
+    return required_authn_params, required_authz_tokens, used_services
 
 
 def params_to_pydantic_model(

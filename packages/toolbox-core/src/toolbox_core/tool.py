@@ -299,7 +299,10 @@ class ToolboxTool:
         # create a read-only updated for params that are still required
         new_req_authn_params = MappingProxyType(
             identify_required_authn_params(
-                self.__required_authn_params, auth_token_getters.keys()
+                # TODO: Add authRequired
+                self.__required_authn_params,
+                [],
+                auth_token_getters.keys(),
             )[0]
         )
 

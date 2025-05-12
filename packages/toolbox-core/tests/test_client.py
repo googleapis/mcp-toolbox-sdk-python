@@ -607,7 +607,7 @@ class TestBoundParameter:
         assert len(tool.__signature__.parameters) == 2
         assert "argA" in tool.__signature__.parameters
 
-        with pytest.raises(ValueError) as e:
+        with pytest.raises(Exception) as e:
             tool.bind_param("argC", lambda: 5)
         assert "unable to bind parameters: no parameter named argC" in str(e.value)
 

@@ -79,8 +79,11 @@ class ToolboxClient:
             else:  # regular parameter
                 params.append(p)
 
-        authn_params, used_auth_keys = identify_required_authn_params(
-            authn_params, auth_token_getters.keys()
+        authn_params, _, used_auth_keys = identify_required_authn_params(
+            # TODO: Add schema.authRequired as second arg
+            authn_params,
+            [],
+            auth_token_getters.keys(),
         )
 
         tool = ToolboxTool(
