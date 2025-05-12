@@ -14,7 +14,9 @@
 
 
 import inspect
-from typing import Any, Callable, Mapping, Optional
+from asyncio import AbstractEventLoop
+from threading import Thread
+from typing import Any, Callable, Generator, Mapping, Optional
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -605,3 +607,53 @@ class TestSyncAuth:
                 tool_name_auth,
                 auth_token_getters={UNUSED_AUTH_SERVICE: lambda: "token"},
             )
+
+
+# --- Tests for @property methods of ToolboxSyncClient ---
+
+
+@pytest.fixture
+def sync_client_with_mocks() -> Generator[ToolboxSyncClient, Any, Any]:
+    """
+    Fixture to create a ToolboxSyncClient with mocked internal async client
+    without relying on actual network calls during init.
+    """
+    with patch(
+        "toolbox_core.sync_client.ToolboxClient", autospec=True
+    ) as MockToolboxClient:
+        # Mock the async client's constructor to return an AsyncMock instance
+        mock_async_client_instance = AsyncMock(spec=ToolboxClient)
+        MockToolboxClient.return_value = mock_async_client_instance
+
+        # Mock the run_coroutine_threadsafe and its result()
+        with patch("asyncio.run_coroutine_threadsafe") as mock_run_coroutine_threadsafe:
+            mock_future = Mock()
+            mock_future.result.return_value = mock_async_client_instance
+            mock_run_coroutine_threadsafe.return_value = mock_future
+
+            client = ToolboxSyncClient(TEST_BASE_URL)
+            yield client
+
+
+def test_sync_client_underscore_async_client_property(
+    sync_client_with_mocks: ToolboxSyncClient,
+):
+    """Tests the _async_client property."""
+    assert isinstance(sync_client_with_mocks._async_client, AsyncMock)
+
+
+def test_sync_client_underscore_loop_property(
+    sync_client_with_mocks: ToolboxSyncClient,
+):
+    """Tests the _loop property."""
+    assert sync_client_with_mocks._loop is not None
+    assert isinstance(sync_client_with_mocks._loop, AbstractEventLoop)
+
+
+def test_sync_client_underscore_thread_property(
+    sync_client_with_mocks: ToolboxSyncClient,
+):
+    """Tests the _thread property."""
+    assert sync_client_with_mocks._thread is not None
+    assert isinstance(sync_client_with_mocks._thread, Thread)
+    assert sync_client_with_mocks._thread.is_alive()
