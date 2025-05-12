@@ -239,7 +239,7 @@ class ToolboxTool:
             for s in self.__required_authn_params.values():
                 req_auth_services.update(s)
             req_auth_services.update(self.__required_authz_tokens)
-            raise ValueError(
+            raise PermissionError(
                 f"One or more of the following authn services are required to invoke this tool"
                 f": {','.join(req_auth_services)}"
             )
