@@ -79,7 +79,7 @@ class ToolboxClient:
             else:  # regular parameter
                 params.append(p)
 
-        authn_params, _ = identify_required_authn_params(
+        authn_params, used_auth_keys = identify_required_authn_params(
             authn_params, auth_token_getters.keys()
         )
 
@@ -97,9 +97,6 @@ class ToolboxClient:
         )
 
         used_bound_keys = set(bound_params.keys())
-        used_auth_keys: set[str] = set()
-        for required_sources in authn_params.values():
-            used_auth_keys.update(required_sources)
 
         return tool, used_auth_keys, used_bound_keys
 
