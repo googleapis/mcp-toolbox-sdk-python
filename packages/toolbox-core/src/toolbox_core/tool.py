@@ -94,7 +94,7 @@ class ToolboxTool:
         # Validate conflicting Headers/Auth Tokens
         request_header_names = client_headers.keys()
         auth_token_names = [
-            auth_token_name + "_token"
+            self.__get_auth_header(auth_token_name)
             for auth_token_name in auth_service_token_getters.keys()
         ]
         duplicates = request_header_names & auth_token_names
@@ -187,6 +187,10 @@ class ToolboxTool:
             client_headers=check(client_headers, self.__client_headers),
         )
 
+    def __get_auth_header(self, auth_token_name: str) -> str:
+        """Returns the formatted auth token header name."""
+        return f"{auth_token_name}_token"
+
     async def __call__(self, *args: Any, **kwargs: Any) -> str:
         """
         Asynchronously calls the remote tool with the provided arguments.
@@ -208,7 +212,7 @@ class ToolboxTool:
             req_auth_services = set()
             for s in self.__required_authn_params.values():
                 req_auth_services.update(s)
-            raise Exception(
+            raise ValueError(
                 f"One or more of the following authn services are required to invoke this tool"
                 f": {','.join(req_auth_services)}"
             )
@@ -228,7 +232,9 @@ class ToolboxTool:
         # create headers for auth services
         headers = {}
         for auth_service, token_getter in self.__auth_service_token_getters.items():
-            headers[f"{auth_service}_token"] = await resolve_value(token_getter)
+            headers[self.__get_auth_header(auth_service)] = await resolve_value(
+                token_getter
+            )
         for client_header_name, client_header_val in self.__client_headers.items():
             headers[client_header_name] = await resolve_value(client_header_val)
 
@@ -276,7 +282,8 @@ class ToolboxTool:
         # Validate duplicates with client headers
         request_header_names = self.__client_headers.keys()
         auth_token_names = [
-            auth_token_name + "_token" for auth_token_name in incoming_services
+            self.__get_auth_header(auth_token_name)
+            for auth_token_name in incoming_services
         ]
         duplicates = request_header_names & auth_token_names
         if duplicates:
@@ -292,8 +299,11 @@ class ToolboxTool:
         # create a read-only updated for params that are still required
         new_req_authn_params = MappingProxyType(
             identify_required_authn_params(
-                self.__required_authn_params, auth_token_getters.keys()
-            )
+                # TODO: Add authRequired
+                self.__required_authn_params,
+                [],
+                auth_token_getters.keys(),
+            )[0]
         )
 
         return self.__copy(
@@ -301,23 +311,30 @@ class ToolboxTool:
             required_authn_params=new_req_authn_params,
         )
 
-    def bind_parameters(
+    def bind_params(
         self, bound_params: Mapping[str, Union[Callable[[], Any], Any]]
     ) -> "ToolboxTool":
         """
         Binds parameters to values or callables that produce values.
 
-         Args:
-             bound_params: A mapping of parameter names to values or callables that
-                 produce values.
+        Args:
+            bound_params: A mapping of parameter names to values or callables that
+                produce values.
 
-         Returns:
-             A new ToolboxTool instance with the specified parameters bound.
+        Returns:
+            A new ToolboxTool instance with the specified parameters bound.
         """
         param_names = set(p.name for p in self.__params)
         for name in bound_params.keys():
+            if name in self.__bound_parameters:
+                raise ValueError(
+                    f"cannot re-bind parameter: parameter '{name}' is already bound"
+                )
+
             if name not in param_names:
-                raise Exception(f"unable to bind parameters: no parameter named {name}")
+                raise ValueError(
+                    f"unable to bind parameters: no parameter named {name}"
+                )
 
         new_params = []
         for p in self.__params:
@@ -330,3 +347,21 @@ class ToolboxTool:
             params=new_params,
             bound_params=MappingProxyType(all_bound_params),
         )
+
+    def bind_param(
+        self,
+        param_name: str,
+        param_value: Union[Callable[[], Any], Any],
+    ) -> "ToolboxTool":
+        """
+        Binds a parameter to the value or callables that produce it.
+
+        Args:
+            param_name: The name of the bound parameter.
+            param_value: The value of the bound parameter, or a callable that
+                returns the value.
+
+        Returns:
+            A new ToolboxTool instance with the specified parameters bound.
+        """
+        return self.bind_params({param_name: param_value})
