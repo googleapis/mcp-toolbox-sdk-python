@@ -212,7 +212,7 @@ class ToolboxTool:
             req_auth_services = set()
             for s in self.__required_authn_params.values():
                 req_auth_services.update(s)
-            raise Exception(
+            raise ValueError(
                 f"One or more of the following authn services are required to invoke this tool"
                 f": {','.join(req_auth_services)}"
             )
@@ -329,7 +329,9 @@ class ToolboxTool:
                 )
 
             if name not in param_names:
-                raise Exception(f"unable to bind parameters: no parameter named {name}")
+                raise ValueError(
+                    f"unable to bind parameters: no parameter named {name}"
+                )
 
         new_params = []
         for p in self.__params:
