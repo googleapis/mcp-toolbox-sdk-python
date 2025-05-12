@@ -60,11 +60,15 @@ def identify_required_authn_params(
 
     Returns:
         A tuple containing:
-            - A new dictionary representing the subset of required
-              authentication parameters that are not covered by the provided
-              `auth_service_names`.
-            - A list of authentication service names from `auth_service_names`
-              that were found to satisfy at least one parameter's requirements.
+            - required_authn_params: A new dictionary representing the subset of
+              required authentication parameters that are not covered by the
+              provided `auth_service_names`.
+            - required_authz_tokens: A list of required authorization tokens if
+              no service name in `auth_service_names` matches any token in
+              `req_authz_tokens`. If any match is found, this list is empty.
+            - used_services: A set of service names from `auth_service_names`
+              that were found to satisfy at least one authentication parameter's
+              requirements or matched one of the `req_authz_tokens`.
     """
     required_params: dict[str, list[str]] = {}
     used_services: set[str] = set()
