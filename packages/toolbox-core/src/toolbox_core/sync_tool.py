@@ -65,7 +65,9 @@ class ToolboxSyncTool:
         # itself is being processed during module import or class definition.
         # Defining __qualname__ as a property leads to a TypeError because the class object needs
         # a string value immediately, not a descriptor that evaluates later.
-        self.__qualname__ = f"{self.__class__.__qualname__}.{self.__async_tool._name}"
+        self.__qualname__ = (
+            f"{self.__class__.__qualname__}.{self.__async_tool.__name__}"
+        )
 
     @property
     def __name__(self) -> str:
