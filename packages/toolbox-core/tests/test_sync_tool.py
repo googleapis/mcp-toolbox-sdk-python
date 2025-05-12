@@ -127,6 +127,60 @@ def test_toolbox_sync_tool_annotations_property(
     assert toolbox_sync_tool.__annotations__ is mock_async_tool.__annotations__
 
 
+def test_toolbox_sync_tool_underscore_name_property(
+    toolbox_sync_tool: ToolboxSyncTool, mock_async_tool: MagicMock
+):
+    """Tests the _name property."""
+    assert toolbox_sync_tool._name == mock_async_tool._name
+
+
+def test_toolbox_sync_tool_underscore_description_property(
+    toolbox_sync_tool: ToolboxSyncTool, mock_async_tool: MagicMock
+):
+    """Tests the _description property."""
+    assert toolbox_sync_tool._description == mock_async_tool._description
+
+
+def test_toolbox_sync_tool_underscore_params_property(
+    toolbox_sync_tool: ToolboxSyncTool, mock_async_tool: MagicMock
+):
+    """Tests the _params property."""
+    assert toolbox_sync_tool._params == mock_async_tool._params
+
+
+def test_toolbox_sync_tool_underscore_bound_params_property(
+    toolbox_sync_tool: ToolboxSyncTool, mock_async_tool: MagicMock
+):
+    """Tests the _bound_params property."""
+    assert toolbox_sync_tool._bound_params == mock_async_tool._bound_params
+
+
+def test_toolbox_sync_tool_underscore_required_auth_params_property(
+    toolbox_sync_tool: ToolboxSyncTool, mock_async_tool: MagicMock
+):
+    """Tests the _required_auth_params property."""
+    assert (
+        toolbox_sync_tool._required_auth_params == mock_async_tool._required_auth_params
+    )
+
+
+def test_toolbox_sync_tool_underscore_auth_service_token_getters_property(
+    toolbox_sync_tool: ToolboxSyncTool, mock_async_tool: MagicMock
+):
+    """Tests the _auth_service_token_getters property."""
+    assert (
+        toolbox_sync_tool._auth_service_token_getters
+        is mock_async_tool._auth_service_token_getters
+    )
+
+
+def test_toolbox_sync_tool_underscore_client_headers_property(
+    toolbox_sync_tool: ToolboxSyncTool, mock_async_tool: MagicMock
+):
+    """Tests the _client_headers property."""
+    assert toolbox_sync_tool._client_headers is mock_async_tool._client_headers
+
+
 @patch("asyncio.run_coroutine_threadsafe")
 def test_toolbox_sync_tool_call(
     mock_run_coroutine_threadsafe: MagicMock,
