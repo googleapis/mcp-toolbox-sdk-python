@@ -284,23 +284,22 @@ class ToolboxClient:
                 overall_used_auth_keys.update(used_auth_keys)
                 overall_used_bound_params.update(used_bound_keys)
 
-        if not strict:
-            unused_auth = provided_auth_keys - overall_used_auth_keys
-            unused_bound = provided_bound_keys - overall_used_bound_params
+        unused_auth = provided_auth_keys - overall_used_auth_keys
+        unused_bound = provided_bound_keys - overall_used_bound_params
 
-            if unused_auth or unused_bound:
-                error_messages = []
-                if unused_auth:
-                    error_messages.append(
-                        f"unused auth tokens could not be applied to any tool: {', '.join(unused_auth)}"
-                    )
-                if unused_bound:
-                    error_messages.append(
-                        f"unused bound parameters could not be applied to any tool: {', '.join(unused_bound)}"
-                    )
-                raise ValueError(
-                    f"Validation failed for toolset '{name or 'default'}': { '; '.join(error_messages) }."
+        if unused_auth or unused_bound:
+            error_messages = []
+            if unused_auth:
+                error_messages.append(
+                    f"unused auth tokens could not be applied to any tool: {', '.join(unused_auth)}"
                 )
+            if unused_bound:
+                error_messages.append(
+                    f"unused bound parameters could not be applied to any tool: {', '.join(unused_bound)}"
+                )
+            raise ValueError(
+                f"Validation failed for toolset '{name or 'default'}': { '; '.join(error_messages) }."
+            )
 
         return tools
 
