@@ -88,8 +88,12 @@ def test_identify_required_authn_params_none_required():
     auth_service_names = ["service_a", "service_b"]
     expected = {}
     expected_used = set()
-    assert identify_required_authn_params(req_authn_params, auth_service_names) == (
-        expected,
+    result = identify_required_authn_params(
+        req_authn_params, req_authz_tokens, auth_service_names
+    )
+    assert result == (
+        expected_params,
+        expected_authz,
         expected_used,
     )
 
@@ -101,10 +105,15 @@ def test_identify_required_authn_params_all_covered():
         "token_b": ["service_b", "service_c"],
     }
     auth_service_names = ["service_a", "service_b"]
-    expected = {}
-    expected_used = set(auth_service_names)
-    assert identify_required_authn_params(req_authn_params, auth_service_names) == (
-        expected,
+    expected_params = {}
+    expected_authz: list[str] = []
+    expected_used = {"service_a", "service_b"}
+    result = identify_required_authn_params(
+        req_authn_params, req_authz_tokens, auth_service_names
+    )
+    assert result == (
+        expected_params,
+        expected_authz,
         expected_used,
     )
 
@@ -122,9 +131,15 @@ def test_identify_required_authn_params_some_covered():
         "token_d": ["service_d"],
         "token_e": ["service_e", "service_f"],
     }
-    expected_used = set(auth_service_names)
-    assert identify_required_authn_params(req_authn_params, auth_service_names) == (
-        expected,
+    expected_authz: list[str] = []
+    expected_used = {"service_a", "service_b"}
+
+    result = identify_required_authn_params(
+        req_authn_params, req_authz_tokens, auth_service_names
+    )
+    assert result == (
+        expected_params,
+        expected_authz,
         expected_used,
     )
 
@@ -141,8 +156,12 @@ def test_identify_required_authn_params_none_covered():
         "token_e": ["service_e", "service_f"],
     }
     expected_used = set()
-    assert identify_required_authn_params(req_authn_params, auth_service_names) == (
-        expected,
+    result = identify_required_authn_params(
+        req_authn_params, req_authz_tokens, auth_service_names
+    )
+    assert result == (
+        expected_params,
+        expected_authz,
         expected_used,
     )
 
@@ -159,8 +178,12 @@ def test_identify_required_authn_params_no_available_services():
         "token_b": ["service_b", "service_c"],
     }
     expected_used = set()
-    assert identify_required_authn_params(req_authn_params, auth_service_names) == (
-        expected,
+    result = identify_required_authn_params(
+        req_authn_params, req_authz_tokens, auth_service_names
+    )
+    assert result == (
+        expected_params,
+        expected_authz,
         expected_used,
     )
 
@@ -175,8 +198,164 @@ def test_identify_required_authn_params_empty_services_for_param():
         "token_x": [],
     }
     expected_used = set()
-    assert identify_required_authn_params(req_authn_params, auth_service_names) == (
-        expected,
+    result = identify_required_authn_params(
+        req_authn_params, req_authz_tokens, auth_service_names
+    )
+    assert result == (
+        expected_params,
+        expected_authz,
+        expected_used,
+    )
+
+
+def test_identify_auth_params_only_authz_empty():
+    """Test with empty req_authz_tokens and no authn params."""
+    req_authn_params: dict[str, list[str]] = {}
+    req_authz_tokens: list[str] = []
+    auth_service_names = ["s1"]
+    result = identify_required_authn_params(
+        req_authn_params, req_authz_tokens, auth_service_names
+    )
+    assert result == ({}, [], set())
+
+
+def test_identify_auth_params_authz_all_covered():
+    """Test when all req_authz_tokens are covered by auth_service_names."""
+    req_authn_params: dict[str, list[str]] = {}
+    req_authz_tokens = ["s1", "s2"]
+    auth_service_names = ["s1", "s2", "s3"]
+    result = identify_required_authn_params(
+        req_authn_params, req_authz_tokens, auth_service_names
+    )
+    assert result == ({}, [], {"s1", "s2"})
+
+
+def test_identify_auth_params_authz_partially_covered_by_available():
+    """Test when some req_authz_tokens are covered."""
+    req_authn_params: dict[str, list[str]] = {}
+    req_authz_tokens = ["s1", "s2"]
+    auth_service_names = ["s1", "s3"]
+    result = identify_required_authn_params(
+        req_authn_params, req_authz_tokens, auth_service_names
+    )
+    assert result == ({}, [], {"s1"})
+
+
+def test_identify_auth_params_authz_none_covered():
+    """Test when none of req_authz_tokens are covered by auth_service_names."""
+    req_authn_params: dict[str, list[str]] = {}
+    req_authz_tokens = ["s1", "s2"]
+    auth_service_names = ["s3", "s4"]
+    result = identify_required_authn_params(
+        req_authn_params, req_authz_tokens, auth_service_names
+    )
+    assert result == ({}, ["s1", "s2"], set())
+
+
+def test_identify_auth_params_authz_none_covered_empty_available():
+    """Test with req_authz_tokens but no available services."""
+    req_authn_params: dict[str, list[str]] = {}
+    req_authz_tokens = ["s1", "s2"]
+    auth_service_names: list[str] = []
+    result = identify_required_authn_params(
+        req_authn_params, req_authz_tokens, auth_service_names
+    )
+    assert result == ({}, ["s1", "s2"], set())
+
+
+def test_identify_auth_params_authn_covered_authz_uncovered():
+    """Test authn params covered, but authz tokens are not."""
+    req_authn_params = {"param1": ["s_authn1"]}
+    req_authz_tokens = ["s_authz_needed1", "s_authz_needed2"]
+    auth_service_names = ["s_authn1", "s_other"]
+    expected_params = {}
+    expected_authz: list[str] = ["s_authz_needed1", "s_authz_needed2"]
+    expected_used = {"s_authn1"}
+    result = identify_required_authn_params(
+        req_authn_params, req_authz_tokens, auth_service_names
+    )
+    assert result == (expected_params, expected_authz, expected_used)
+
+
+def test_identify_auth_params_authn_uncovered_authz_covered():
+    """Test authn params not covered, but authz tokens are covered."""
+    req_authn_params = {"param1": ["s_authn_needed"]}
+    req_authz_tokens = ["s_authz1"]
+    auth_service_names = ["s_authz1", "s_other"]
+    expected_params = {"param1": ["s_authn_needed"]}
+    expected_authz: list[str] = []
+    expected_used = {"s_authz1"}
+
+    result = identify_required_authn_params(
+        req_authn_params, req_authz_tokens, auth_service_names
+    )
+    assert result == (expected_params, expected_authz, expected_used)
+
+
+def test_identify_auth_params_authn_and_authz_covered_no_overlap():
+    """Test both authn and authz are covered by different services."""
+    req_authn_params = {"param1": ["s_authn1"]}
+    req_authz_tokens = ["s_authz1"]
+    auth_service_names = ["s_authn1", "s_authz1"]
+    expected_params = {}
+    expected_authz: list[str] = []
+    expected_used = {"s_authn1", "s_authz1"}
+    result = identify_required_authn_params(
+        req_authn_params, req_authz_tokens, auth_service_names
+    )
+    assert result == (expected_params, expected_authz, expected_used)
+
+
+def test_identify_auth_params_authn_and_authz_covered_with_overlap():
+    """Test both authn and authz are covered, with some services overlapping."""
+    req_authn_params = {"param1": ["s_common"], "param2": ["s_authn_specific_avail"]}
+    req_authz_tokens = ["s_common", "s_authz_specific_avail"]
+    auth_service_names = [
+        "s_common",
+        "s_authz_specific_avail",
+        "s_authn_specific_avail",
+    ]
+    expected_params = {}
+    expected_authz: list[str] = []
+    expected_used = {"s_common", "s_authz_specific_avail", "s_authn_specific_avail"}
+    result = identify_required_authn_params(
+        req_authn_params, req_authz_tokens, auth_service_names
+    )
+    assert result == (expected_params, expected_authz, expected_used)
+
+
+def test_identify_auth_params_authn_and_authz_covered_with_overlap_same_param():
+    """Test both authn and authz are covered, with some services overlapping within same param."""
+    req_authn_params = {"param1": ["s_common", "s_authn_specific_avail"]}
+    req_authz_tokens = ["s_common", "s_authz_specific_avail"]
+    auth_service_names = [
+        "s_common",
+        "s_authz_specific_avail",
+        "s_authn_specific_avail",
+    ]
+    expected_params = {}
+    expected_authz: list[str] = []
+    expected_used = {"s_common", "s_authz_specific_avail", "s_authn_specific_avail"}
+    result = identify_required_authn_params(
+        req_authn_params, req_authz_tokens, auth_service_names
+    )
+    assert result == (expected_params, expected_authz, expected_used)
+
+
+def test_identify_auth_params_complex_scenario():
+    """Test a more complex scenario with partial coverage for both authn and authz."""
+    req_authn_params = {"p1": ["s1", "s2"], "p2": ["s3"]}
+    req_authz_tokens = ["s4", "s6"]
+    auth_service_names = ["s1", "s4", "s5"]
+    expected_params = {"p2": ["s3"]}
+    expected_authz: list[str] = []
+    expected_used = {"s1", "s4"}
+    result = identify_required_authn_params(
+        req_authn_params, req_authz_tokens, auth_service_names
+    )
+    assert result == (
+        expected_params,
+        expected_authz,
         expected_used,
     )
 
