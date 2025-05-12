@@ -79,9 +79,9 @@ class ToolboxClient:
             else:  # regular parameter
                 params.append(p)
 
-        authn_params = identify_required_authn_params(
+        authn_params, _ = identify_required_authn_params(
             authn_params, auth_token_getters.keys()
-        )[0]
+        )
 
         tool = ToolboxTool(
             session=self.__session,
