@@ -159,13 +159,31 @@ class ToolboxSyncTool:
         """
         Binds parameters to values or callables that produce values.
 
-         Args:
-             bound_params: A mapping of parameter names to values or callables that
-                 produce values.
+        Args:
+            bound_params: A mapping of parameter names to values or callables that
+                produce values.
 
-         Returns:
-             A new ToolboxSyncTool instance with the specified parameters bound.
+        Returns:
+            A new ToolboxSyncTool instance with the specified parameters bound.
         """
 
         new_async_tool = self.__async_tool.bind_params(bound_params)
         return ToolboxSyncTool(new_async_tool, self.__loop, self.__thread)
+
+    def bind_param(
+        self,
+        param_name: str,
+        param_value: Union[Callable[[], Any], Any],
+    ) -> "ToolboxSyncTool":
+        """
+        Binds a parameter to the value or callables that produce it.
+
+        Args:
+            param_name: The name of the bound parameter.
+            param_value: The value of the bound parameter, or a callable that
+                returns the value.
+
+        Returns:
+            A new ToolboxSyncTool instance with the specified parameter bound.
+        """
+        return self.bind_params({param_name: param_value})
