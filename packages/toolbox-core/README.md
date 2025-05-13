@@ -60,13 +60,14 @@ pip install toolbox-core
 ```
 
 > [!NOTE]
+>
 > - The primary `ToolboxClient` is asynchronous and requires using `await` for
 >   loading and invoking tools, as shown in most examples.
-> * Asynchronous code needs to run within an event loop (e.g., using
+> - Asynchronous code needs to run within an event loop (e.g., using
 >   `asyncio.run()` or in an async framework). See the [Python `asyncio`
 >   documentation](https://docs.python.org/3/library/asyncio-task.html) for more
 >   details.
-> * If you prefer synchronous execution, refer to the [Synchronous
+> - If you prefer synchronous execution, refer to the [Synchronous
 >   Usage](#synchronous-usage) section below.
 
 ## Quickstart
