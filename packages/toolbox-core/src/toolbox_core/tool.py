@@ -307,11 +307,9 @@ class ToolboxTool:
                 f"Cannot register client the same headers in the client as well as tool."
             )
 
-        # create a read-only updated value for new_getters
-        new_getters = MappingProxyType(
-            dict(self.__auth_service_token_getters, **auth_token_getters)
-        )
-        # create a read-only updated for params that are still required
+        new_getters =  dict(self.__auth_service_token_getters, **auth_token_getters)
+
+        # find the updated required authn params and the auth token getters used
         new_req_authn_params, new_req_authz_tokens, used_auth_token_getters = (
             identify_required_authn_params(
                 self.__required_authn_params,
@@ -323,9 +321,10 @@ class ToolboxTool:
         # TODO: Add validation for used_auth_token_getters
 
         return self.__copy(
-            auth_service_token_getters=new_getters,
+            # create a read-only map for updated getters, params and tokens that are still required
+            auth_service_token_getters=MappingProxyType(new_getters),
             required_authn_params=MappingProxyType(new_req_authn_params),
-            required_authz_tokens=new_req_authz_tokens,
+            required_authz_tokens=tuple(new_req_authz_tokens),
         )
 
     def bind_params(
