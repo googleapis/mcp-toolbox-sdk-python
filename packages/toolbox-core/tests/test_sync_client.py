@@ -43,12 +43,9 @@ def sync_client_environment():
     # Force reset class state before the test.
     # This ensures any client created will start a new loop/thread.
 
-    assert (
-        not original_loop or not original_loop.is_running()
-    ), "Loop should not be running"
-    assert (
-        not original_thread or not original_thread.is_alive()
-    ), "Thread should not be running"
+    # Ensure no loop/thread is running from a previous misbehaving test or setup
+    assert original_loop is None or not original_loop.is_running()
+    assert original_thread is None or not original_thread.is_alive()
 
     ToolboxSyncClient._ToolboxSyncClient__loop = None
     ToolboxSyncClient._ToolboxSyncClient__thread = None
@@ -62,15 +59,11 @@ def sync_client_environment():
     if test_loop and test_loop.is_running():
         test_loop.call_soon_threadsafe(test_loop.stop)
     if test_thread and test_thread.is_alive():
-        test_thread.join(timeout=2)
+        test_thread.join(timeout=5)
 
     # Explicitly set to None to ensure a clean state for the next fixture use/test.
     ToolboxSyncClient._ToolboxSyncClient__loop = None
     ToolboxSyncClient._ToolboxSyncClient__thread = None
-
-    # Restoring original_loop/thread could be risky if they were from a
-    # non-test setup or a previous misbehaving test. For robust test-to-test
-    # isolation, ensuring these are None after cleanup is generally preferred.
 
 
 @pytest.fixture
@@ -185,70 +178,7 @@ def mock_tool_invoke(
     aio_resp.post(url, payload=response_payload, status=status, callback=callback)
 
 
-# --- Tests for ToolboxSyncClient ---
-
-
-def test_sync_client_creation_in_isolated_env(sync_client):
-    """Tests that a client is initialized correctly by the sync_client fixture."""
-    assert sync_client._ToolboxSyncClient__loop is not None, "Loop should be created"
-    assert (
-        sync_client._ToolboxSyncClient__thread is not None
-    ), "Thread should be created"
-    assert sync_client._ToolboxSyncClient__thread.is_alive(), "Thread should be running"
-    assert isinstance(
-        sync_client._ToolboxSyncClient__async_client, ToolboxClient
-    ), "Async client should be ToolboxClient instance"
-
-
-@pytest.mark.usefixtures("sync_client_environment")
-def test_sync_client_close_method():
-    """
-    Tests the close() method of ToolboxSyncClient when manually created.
-    The sync_client_environment ensures loop/thread cleanup.
-    """
-    mock_async_client_instance = AsyncMock(spec=ToolboxClient)
-    mock_async_client_instance.close = AsyncMock(return_value=None)
-
-    with patch(
-        "toolbox_core.sync_client.ToolboxClient",
-        return_value=mock_async_client_instance,
-    ) as MockedAsyncClientConst:
-        # Manually create client; sync_client_environment handles loop setup/teardown.
-        client = ToolboxSyncClient(TEST_BASE_URL)
-        MockedAsyncClientConst.assert_called_once_with(
-            TEST_BASE_URL, client_headers=None
-        )
-
-        client.close()  # This call closes the async_client's session.
-        mock_async_client_instance.close.assert_awaited_once()
-    # The sync_client_environment fixture handles stopping the loop/thread.
-
-
-@pytest.mark.usefixtures("sync_client_environment")
-def test_sync_client_context_manager(aioresponses, tool_schema_minimal):
-    """
-    Tests the context manager (__enter__ and __exit__) functionality.
-    The sync_client_environment ensures loop/thread cleanup.
-    """
-    with patch.object(
-        ToolboxSyncClient, "close", wraps=ToolboxSyncClient.close, autospec=True
-    ) as mock_close_method:
-        with ToolboxSyncClient(TEST_BASE_URL) as client:  # Manually creating client
-            assert isinstance(client, ToolboxSyncClient)
-            mock_tool_load(aioresponses, "dummy_tool_ctx", tool_schema_minimal)
-            client.load_tool("dummy_tool_ctx")
-        mock_close_method.assert_called_once()
-
-    with patch.object(
-        ToolboxSyncClient, "close", wraps=ToolboxSyncClient.close, autospec=True
-    ) as mock_close_method_exc:
-        with pytest.raises(ValueError, match="Test exception"):
-            with ToolboxSyncClient(
-                TEST_BASE_URL
-            ) as client_exc:  # Manually creating client
-                raise ValueError("Test exception")
-        mock_close_method_exc.assert_called_once()
-
+# --- Tests for General ToolboxSyncClient Functionality ---
 
 def test_sync_load_tool_success(aioresponses, test_tool_str_schema, sync_client):
     TOOL_NAME = "test_tool_sync_1"
@@ -338,120 +268,154 @@ def test_sync_load_tool_not_found_in_manifest(
     )
 
 
-def test_sync_add_headers_success(aioresponses, test_tool_str_schema, sync_client):
-    tool_name = "tool_after_add_headers_sync"
-    manifest = ManifestSchema(
-        serverVersion="0.0.0", tools={tool_name: test_tool_str_schema}
-    )
-    expected_payload = {"result": "added_sync_ok"}
-    headers_to_add = {"X-Custom-SyncHeader": "sync_value"}
+class TestSyncClientLifecycle:
+    """Tests for ToolboxSyncClient's specific lifecycle and internal management."""
 
-    def get_callback(url, **kwargs):
-        # The sync_client might have default headers. Check ours are present.
-        assert kwargs.get("headers") is not None
-        for key, value in headers_to_add.items():
-            assert kwargs["headers"].get(key) == value
-        return CallbackResult(status=200, payload=manifest.model_dump())
+    def test_sync_client_creation_in_isolated_env(self, sync_client):
+        """Tests that a client is initialized correctly by the sync_client fixture."""
+        assert sync_client._ToolboxSyncClient__loop is not None, "Loop should be created"
+        assert (
+            sync_client._ToolboxSyncClient__thread is not None
+        ), "Thread should be created"
+        assert sync_client._ToolboxSyncClient__thread.is_alive(), "Thread should be running"
+        assert isinstance(
+            sync_client._ToolboxSyncClient__async_client, ToolboxClient
+        ), "Async client should be ToolboxClient instance"
 
-    aioresponses.get(f"{TEST_BASE_URL}/api/tool/{tool_name}", callback=get_callback)
+    @pytest.mark.usefixtures("sync_client_environment")
+    def test_sync_client_close_method(self):
+        """
+        Tests the close() method of ToolboxSyncClient when manually created.
+        The sync_client_environment ensures loop/thread cleanup.
+        """
+        mock_async_client_instance = AsyncMock(spec=ToolboxClient)
+        # AsyncMock methods are already AsyncMocks
+        # mock_async_client_instance.close = AsyncMock(return_value=None)
 
-    def post_callback(url, **kwargs):
-        assert kwargs.get("headers") is not None
-        for key, value in headers_to_add.items():
-            assert kwargs["headers"].get(key) == value
-        return CallbackResult(status=200, payload=expected_payload)
+        with patch(
+            "toolbox_core.sync_client.ToolboxClient",
+            return_value=mock_async_client_instance,
+        ) as MockedAsyncClientConst:
+            client = ToolboxSyncClient(TEST_BASE_URL)
+            # The sync client passes its internal loop to the async client.
+            MockedAsyncClientConst.assert_called_once_with(
+                TEST_BASE_URL, client_headers=None
+            )
 
-    aioresponses.post(
-        f"{TEST_BASE_URL}/api/tool/{tool_name}/invoke", callback=post_callback
-    )
+            client.close()  # This call closes the async_client's session.
+            mock_async_client_instance.close.assert_awaited_once()
+        # The sync_client_environment fixture handles stopping the loop/thread.
 
-    sync_client.add_headers(headers_to_add)
-    tool = sync_client.load_tool(tool_name)
-    result = tool(param1="test")
-    assert result == expected_payload["result"]
+    @pytest.mark.usefixtures("sync_client_environment")
+    def test_sync_client_context_manager(self, aioresponses, tool_schema_minimal):
+        """
+        Tests the context manager (__enter__ and __exit__) functionality.
+        The sync_client_environment ensures loop/thread cleanup.
+        """
+        with patch.object(
+            ToolboxSyncClient, "close", wraps=ToolboxSyncClient.close, autospec=True
+        ) as mock_close_method:
+            with ToolboxSyncClient(TEST_BASE_URL) as client:
+                assert isinstance(client, ToolboxSyncClient)
+                mock_tool_load(aioresponses, "dummy_tool_ctx", tool_schema_minimal)
+                client.load_tool("dummy_tool_ctx")
+            mock_close_method.assert_called_once()
 
+        with patch.object(
+            ToolboxSyncClient, "close", wraps=ToolboxSyncClient.close, autospec=True
+        ) as mock_close_method_exc:
+            with pytest.raises(ValueError, match="Test exception"):
+                with ToolboxSyncClient(
+                    TEST_BASE_URL
+                ) as client_exc:
+                    raise ValueError("Test exception")
+            mock_close_method_exc.assert_called_once()
 
-@pytest.mark.usefixtures("sync_client_environment")
-def test_sync_add_headers_duplicate_fail():
-    """
-    Tests that adding a duplicate header via add_headers raises ValueError.
-    Manually create client to control initial headers.
-    """
-    initial_headers = {"X-Initial-Header": "initial_value"}
-    mock_async_client = AsyncMock(spec=ToolboxClient)
+    @pytest.mark.usefixtures("sync_client_environment")
+    def test_load_tool_raises_if_loop_or_thread_none(self):
+        """
+        Tests that load_tool and load_toolset raise ValueError if the class-level
+        event loop or thread is None. sync_client_environment ensures a clean
+        slate before this test, and client creation will set up the loop/thread.
+        """
+        client = ToolboxSyncClient(TEST_BASE_URL)  # Loop/thread are started here.
 
-    # This mock simulates the behavior of the underlying async client's add_headers
-    async def mock_add_headers_async_error(headers_to_add):
-        # Simulate error if header already exists in the "async client's current headers"
-        if (
-            "X-Initial-Header" in headers_to_add
-            and hasattr(mock_async_client, "_current_headers")
-            and "X-Initial-Header" in mock_async_client._current_headers
-        ):
-            raise ValueError("Client header(s) `X-Initial-Header` already registered")
+        original_class_loop = ToolboxSyncClient._ToolboxSyncClient__loop
+        original_class_thread = ToolboxSyncClient._ToolboxSyncClient__thread
+        assert (
+            original_class_loop is not None
+        ), "Loop should have been created by client init"
+        assert (
+            original_class_thread is not None
+        ), "Thread should have been created by client init"
 
-    mock_async_client.add_headers = (
-        mock_add_headers_async_error  # Assign as a coroutine
-    )
-
-    # Patch ToolboxClient constructor to inject initial_headers into the mock async_client state
-    def side_effect_constructor(base_url, client_headers=None):
-        # Store the initial headers on the mock_async_client instance for the test
-        mock_async_client._current_headers = (
-            client_headers.copy() if client_headers else {}
+        # Manually break the class's loop to trigger the error condition in load_tool
+        ToolboxSyncClient._ToolboxSyncClient__loop = None
+        with pytest.raises(ValueError, match="Background loop or thread cannot be None."):
+            client.load_tool("any_tool_should_fail")
+        ToolboxSyncClient._ToolboxSyncClient__loop = (
+            original_class_loop  # Restore for next check
         )
-        return mock_async_client
 
-    with patch(
-        "toolbox_core.sync_client.ToolboxClient", side_effect=side_effect_constructor
-    ) as MockedAsyncClientConst:
-        # Client is created with initial_headers, which are passed to the (mocked) ToolboxClient
-        client = ToolboxSyncClient(TEST_BASE_URL, client_headers=initial_headers)
-        MockedAsyncClientConst.assert_called_with(
-            TEST_BASE_URL, client_headers=initial_headers
+        ToolboxSyncClient._ToolboxSyncClient__thread = None
+        with pytest.raises(ValueError, match="Background loop or thread cannot be None."):
+            client.load_toolset("any_toolset_should_fail")
+        ToolboxSyncClient._ToolboxSyncClient__thread = original_class_thread  # Restore
+
+        client.close() # Clean up manually created client
+        # sync_client_environment will handle the final cleanup of original_class_loop/thread.
+
+
+class TestSyncClientHeaders:
+    """Additive tests for client header functionality specific to ToolboxSyncClient if any,
+    or counterparts to async client header tests."""
+
+    def test_sync_add_headers_success(self, aioresponses, test_tool_str_schema, sync_client):
+        tool_name = "tool_after_add_headers_sync"
+        manifest = ManifestSchema(
+            serverVersion="0.0.0", tools={tool_name: test_tool_str_schema}
+        )
+        expected_payload = {"result": "added_sync_ok"}
+        headers_to_add = {"X-Custom-SyncHeader": "sync_value"}
+
+        def get_callback(url, **kwargs):
+            # The sync_client might have default headers. Check ours are present.
+            assert kwargs.get("headers") is not None
+            for key, value in headers_to_add.items():
+                assert kwargs["headers"].get(key) == value
+            return CallbackResult(status=200, payload=manifest.model_dump())
+
+        aioresponses.get(f"{TEST_BASE_URL}/api/tool/{tool_name}", callback=get_callback)
+
+        def post_callback(url, **kwargs):
+            assert kwargs.get("headers") is not None
+            for key, value in headers_to_add.items():
+                assert kwargs["headers"].get(key) == value
+            return CallbackResult(status=200, payload=expected_payload)
+
+        aioresponses.post(
+            f"{TEST_BASE_URL}/api/tool/{tool_name}/invoke", callback=post_callback
         )
 
-        with pytest.raises(
-            ValueError,
-            match="Client header\\(s\\) `X-Initial-Header` already registered",
-        ):
-            # This call to client.add_headers will internally call mock_async_client.add_headers
-            client.add_headers({"X-Initial-Header": "another_value"})
+        sync_client.add_headers(headers_to_add)
+        tool = sync_client.load_tool(tool_name)
+        result = tool(param1="test")
+        assert result == expected_payload["result"]
 
+    @pytest.mark.usefixtures("sync_client_environment")
+    def test_sync_add_headers_duplicate_fail(self):
+        """
+        Tests that adding a duplicate header via add_headers raises ValueError.
+        Manually create client to control initial headers.
+        """
+        initial_headers = {"X-Initial-Header": "initial_value"}
 
-@pytest.mark.usefixtures("sync_client_environment")
-def test_load_tool_raises_if_loop_or_thread_none():
-    """
-    Tests that load_tool and load_toolset raise ValueError if the class-level
-    event loop or thread is None. sync_client_environment ensures a clean
-    slate before this test, and client creation will set up the loop/thread.
-    """
-    client = ToolboxSyncClient(TEST_BASE_URL)  # Loop/thread are started here.
-
-    original_class_loop = ToolboxSyncClient._ToolboxSyncClient__loop
-    original_class_thread = ToolboxSyncClient._ToolboxSyncClient__thread
-    assert (
-        original_class_loop is not None
-    ), "Loop should have been created by client init"
-    assert (
-        original_class_thread is not None
-    ), "Thread should have been created by client init"
-
-    # Manually break the class's loop to trigger the error condition in load_tool
-    ToolboxSyncClient._ToolboxSyncClient__loop = None
-    with pytest.raises(ValueError, match="Background loop or thread cannot be None."):
-        client.load_tool("any_tool_should_fail")
-    ToolboxSyncClient._ToolboxSyncClient__loop = (
-        original_class_loop  # Restore for next check
-    )
-
-    ToolboxSyncClient._ToolboxSyncClient__thread = None
-    with pytest.raises(ValueError, match="Background loop or thread cannot be None."):
-        client.load_toolset("any_toolset_should_fail")
-    ToolboxSyncClient._ToolboxSyncClient__thread = original_class_thread  # Restore
-
-    client.close()
-    # sync_client_environment will handle the final cleanup of original_class_loop/thread.
+        with ToolboxSyncClient(TEST_BASE_URL, client_headers=initial_headers) as client:
+            with pytest.raises(
+                ValueError,
+                match="Client header\\(s\\) `X-Initial-Header` already registered",
+            ):
+                client.add_headers({"X-Initial-Header": "another_value"})
 
 
 class TestSyncAuth:
@@ -550,7 +514,7 @@ class TestSyncAuth:
         aioresponses.post(
             f"{TEST_BASE_URL}/api/tool/{tool_name_auth}/invoke",
             payload={"error": "Missing token"},
-            status=400,
+            status=401,
         )
 
         tool = sync_client.load_tool(tool_name_auth)
