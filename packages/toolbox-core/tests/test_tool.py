@@ -16,13 +16,13 @@
 import inspect
 from typing import AsyncGenerator, Callable, Mapping
 from unittest.mock import AsyncMock, Mock
+from warnings import catch_warnings, simplefilter
 
 import pytest
 import pytest_asyncio
 from aiohttp import ClientSession
 from aioresponses import aioresponses
 from pydantic import ValidationError
-from warnings import catch_warnings, simplefilter
 
 from toolbox_core.protocol import ParameterSchema
 from toolbox_core.tool import ToolboxTool, create_func_docstring, resolve_value
@@ -357,7 +357,9 @@ def test_tool_init_basic(http_session, sample_tool_params, sample_tool_descripti
             bound_params={},
             client_headers={},
         )
-    assert len(record) == 0, f"ToolboxTool instantiation unexpectedly warned: {[f'{w.category.__name__}: {w.message}' for w in record]}"
+    assert (
+        len(record) == 0
+    ), f"ToolboxTool instantiation unexpectedly warned: {[f'{w.category.__name__}: {w.message}' for w in record]}"
 
     assert tool_instance.__name__ == TEST_TOOL_NAME
     assert inspect.iscoroutinefunction(tool_instance.__call__)
@@ -572,7 +574,10 @@ def test_tool_init_no_http_warning_if_https(
             bound_params={},
             client_headers=static_client_header,
         )
-    assert len(record) == 0, f"Expected no warnings, but got: {[f'{w.category.__name__}: {w.message}' for w in record]}"
+    assert (
+        len(record) == 0
+    ), f"Expected no warnings, but got: {[f'{w.category.__name__}: {w.message}' for w in record]}"
+
 
 def test_tool_init_no_http_warning_if_no_sensitive_info_on_http(
     http_session: ClientSession,
@@ -598,4 +603,6 @@ def test_tool_init_no_http_warning_if_no_sensitive_info_on_http(
             bound_params={},
             client_headers={},
         )
-    assert len(record) == 0, f"Expected no warnings, but got: {[f'{w.category.__name__}: {w.message}' for w in record]}"
+    assert (
+        len(record) == 0
+    ), f"Expected no warnings, but got: {[f'{w.category.__name__}: {w.message}' for w in record]}"
