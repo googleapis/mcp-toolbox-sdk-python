@@ -44,7 +44,7 @@ def create_func_docstring(description: str, params: Sequence[ParameterSchema]) -
     return docstring
 
 
-def identify_required_authn_params(
+def identify_auth_requirements(
     req_authn_params: Mapping[str, list[str]],
     req_authz_tokens: Sequence[str],
     auth_service_names: Iterable[str],
