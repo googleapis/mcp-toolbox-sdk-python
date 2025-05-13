@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from unittest.mock import patch, AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
 import google.auth.exceptions
+import pytest
 
 from toolbox_core import auth_methods
 
@@ -119,6 +119,7 @@ async def test_aget_google_id_token_refresh_error(
 
 
 # --- Synchronous Tests ---
+
 
 @patch("toolbox_core.auth_methods.Request")
 @patch("toolbox_core.auth_methods.AuthorizedSession")
