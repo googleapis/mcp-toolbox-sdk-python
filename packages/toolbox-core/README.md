@@ -17,35 +17,36 @@ involving Large Language Models (LLMs).
 <!-- TOC ignore:true -->
 <!-- TOC -->
 
-- [Installation](#installation)
-- [Quickstart](#quickstart)
-- [Usage](#usage)
-- [Loading Tools](#loading-tools)
-  - [Load a toolset](#load-a-toolset)
-  - [Load a single tool](#load-a-single-tool)
-- [Invoking Tools](#invoking-tools)
-- [Synchronous Usage](#synchronous-usage)
-- [Use with LangGraph](#use-with-langgraph)
-- [Authenticating to the Toolbox Server](#authenticating-to-the-toolbox-server)
-  - [When is Client-to-Server Authentication Needed?](#when-is-client-to-server-authentication-needed)
-  - [How it works](#how-it-works)
-  - [Configuration](#configuration)
-  - [Authenticating with Google Cloud Servers](#authenticating-with-google-cloud-servers)
-  - [Step by Step Guide for Cloud Run](#step-by-step-guide-for-cloud-run)
-- [Authenticating Tools](#authenticating-tools)
-  - [When is Authentication Needed?](#when-is-authentication-needed)
-  - [Supported Authentication Mechanisms](#supported-authentication-mechanisms)
-  - [Step 1: Configure Tools in Toolbox Service](#step-1-configure-tools-in-toolbox-service)
-  - [Step 2: Configure SDK Client](#step-2-configure-sdk-client)
-    - [Provide an ID Token Retriever Function](#provide-an-id-token-retriever-function)
-    - [Option A: Add Authentication to a Loaded Tool](#option-a-add-authentication-to-a-loaded-tool)
-    - [Option B: Add Authentication While Loading Tools](#option-b-add-authentication-while-loading-tools)
-  - [Complete Authentication Example](#complete-authentication-example)
-- [Binding Parameter Values](#binding-parameter-values)
-  - [Why Bind Parameters?](#why-bind-parameters)
-  - [Option A: Binding Parameters to a Loaded Tool](#option-a-binding-parameters-to-a-loaded-tool)
-  - [Option B: Binding Parameters While Loading Tools](#option-b-binding-parameters-while-loading-tools)
-    - [Binding Dynamic Values](#binding-dynamic-values)
+- [MCP Toolbox Core SDK](#mcp-toolbox-core-sdk)
+    - [Installation](#installation)
+    - [Quickstart](#quickstart)
+    - [Usage](#usage)
+    - [Loading Tools](#loading-tools)
+        - [Load a toolset](#load-a-toolset)
+        - [Load a single tool](#load-a-single-tool)
+    - [Invoking Tools](#invoking-tools)
+    - [Synchronous Usage](#synchronous-usage)
+    - [Use with LangGraph](#use-with-langgraph)
+    - [Authenticating to the Toolbox Server](#authenticating-to-the-toolbox-server)
+        - [When is Client-to-Server Authentication Needed?](#when-is-client-to-server-authentication-needed)
+        - [How it works](#how-it-works)
+        - [Configuration](#configuration)
+        - [Authenticating with Google Cloud Servers](#authenticating-with-google-cloud-servers)
+        - [Step by Step Guide for Cloud Run](#step-by-step-guide-for-cloud-run)
+    - [Authenticating Tools](#authenticating-tools)
+        - [When is Authentication Needed?](#when-is-authentication-needed)
+        - [Supported Authentication Mechanisms](#supported-authentication-mechanisms)
+        - [Step 1: Configure Tools in Toolbox Service](#step-1-configure-tools-in-toolbox-service)
+        - [Step 2: Configure SDK Client](#step-2-configure-sdk-client)
+            - [Provide an ID Token Retriever Function](#provide-an-id-token-retriever-function)
+            - [Option A: Add Authentication to a Loaded Tool](#option-a-add-authentication-to-a-loaded-tool)
+            - [Option B: Add Authentication While Loading Tools](#option-b-add-authentication-while-loading-tools)
+        - [Complete Authentication Example](#complete-authentication-example)
+    - [Binding Parameter Values](#binding-parameter-values)
+        - [Why Bind Parameters?](#why-bind-parameters)
+        - [Option A: Binding Parameters to a Loaded Tool](#option-a-binding-parameters-to-a-loaded-tool)
+        - [Option B: Binding Parameters While Loading Tools](#option-b-binding-parameters-while-loading-tools)
+        - [Binding Dynamic Values](#binding-dynamic-values)
 - [Contributing](#contributing)
 - [License](#license)
 - [Support](#support)
@@ -59,7 +60,7 @@ pip install toolbox-core
 ```
 
 > [!NOTE]
-> * The primary `ToolboxClient` is asynchronous and requires using `await` for
+> - The primary `ToolboxClient` is asynchronous and requires using `await` for
 >   loading and invoking tools, as shown in most examples.
 > * Asynchronous code needs to run within an event loop (e.g., using
 >   `asyncio.run()` or in an async framework). See the [Python `asyncio`
@@ -72,6 +73,7 @@ pip install toolbox-core
 
 Here's a minimal example to get you started. Ensure your Toolbox service is
 running and accessible.
+
 ```py
 import asyncio
 from toolbox_core import ToolboxClient
@@ -323,15 +325,18 @@ ensuring only authorized users or applications can invoke them, especially when
 accessing sensitive data.
 
 ### When is Authentication Needed?
+
 Authentication is configured per-tool within the Toolbox service itself. If a
 tool you intend to use is marked as requiring authentication in the service, you
 must configure the SDK client to provide the necessary credentials (currently
 Oauth2 tokens) when invoking that specific tool.
 
 ### Supported Authentication Mechanisms
+
 The Toolbox service enables secure tool usage through **Authenticated Parameters**. For detailed information on how these mechanisms work within the Toolbox service and how to configure them, please refer to [Toolbox Service Documentation - Authenticated Parameters](https://googleapis.github.io/genai-toolbox/resources/tools/#authenticated-parameters)
 
 ### Step 1: Configure Tools in Toolbox Service
+
 First, ensure the target tool(s) are configured correctly in the Toolbox service
 to require authentication. Refer to the [Toolbox Service Documentation -
 Authenticated
@@ -434,9 +439,9 @@ fixed and will not be requested or modified by the LLM during tool use.
 
 ### Why Bind Parameters?
 
-* **Protecting sensitive information:**  API keys, secrets, etc.
-* **Enforcing consistency:** Ensuring specific values for certain parameters.
-* **Pre-filling known data:**  Providing defaults or context.
+- **Protecting sensitive information:**  API keys, secrets, etc.
+- **Enforcing consistency:** Ensuring specific values for certain parameters.
+- **Pre-filling known data:**  Providing defaults or context.
 
 > [!IMPORTANT]
 > The parameter names used for binding (e.g., `"api_key"`) must exactly match the
@@ -463,7 +468,6 @@ bound_tool = tool.bind_params({"param": "value"})
 
 Specify bound parameters directly when loading tools. This applies the binding
 only to the tools loaded in that specific call.
-
 
 ```py
 bound_tool = await toolbox.load_tool("my-tool", bound_params={"param": "value"})
