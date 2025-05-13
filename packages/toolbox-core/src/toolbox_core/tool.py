@@ -16,6 +16,7 @@ import copy
 from inspect import Signature
 from types import MappingProxyType
 from typing import Any, Callable, Coroutine, Mapping, Optional, Sequence, Union
+from warnings import warn
 
 from aiohttp import ClientSession
 
@@ -117,6 +118,17 @@ class ToolboxTool:
         self.__bound_parameters = bound_params
         # map of client headers to their value/callable/coroutine
         self.__client_headers = client_headers
+
+        # ID tokens contain sensitive user information (claims). Transmitting
+        # these over HTTP exposes the data to interception and unauthorized
+        # access. Always use HTTPS to ensure secure communication and protect
+        # user privacy.
+        if (
+            required_authn_params or required_authz_tokens or client_headers
+        ) and not self.__url.startswith("https://"):
+            warn(
+                "Sending ID token over HTTP. User data may be exposed. Use HTTPS for secure communication."
+            )
 
     @property
     def _name(self) -> str:
@@ -327,7 +339,8 @@ class ToolboxTool:
             )
 
         return self.__copy(
-            # create a read-only map for updated getters, params and tokens that are still required
+            # create read-only values for updated getters, params and tokens
+            # that are still required
             auth_service_token_getters=MappingProxyType(new_getters),
             required_authn_params=MappingProxyType(new_req_authn_params),
             required_authz_tokens=tuple(new_req_authz_tokens),
