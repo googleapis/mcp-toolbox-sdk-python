@@ -11,8 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+
 import inspect
-from typing import AsyncGenerator, Callable
+from typing import AsyncGenerator, Callable, Mapping
 from unittest.mock import AsyncMock, Mock
 
 import pytest
@@ -90,6 +92,12 @@ def auth_getters(auth_token_value) -> dict[str, Callable[[], str]]:
 @pytest.fixture
 def auth_header_key() -> str:
     return "test-auth_token"
+
+
+@pytest.fixture
+def unused_auth_getters() -> dict[str, Callable[[], str]]:
+    """Provides an auth getter for a service not required by sample_tool."""
+    return {"unused-auth-service": lambda: "unused-token-value"}
 
 
 def test_create_func_docstring_one_param_real_schema():
@@ -432,3 +440,32 @@ def test_tool_add_auth_token_getters_conflict_with_existing_client_header(
 
     with pytest.raises(ValueError, match=expected_error_message):
         tool_instance.add_auth_token_getters(new_auth_getters_causing_conflict)
+
+
+def test_add_auth_token_getters_unused_token(
+    http_session: ClientSession,
+    sample_tool_params: list[ParameterSchema],
+    sample_tool_description: str,
+    unused_auth_getters: Mapping[str, Callable[[], str]],
+):
+    """
+    Tests ValueError when add_auth_token_getters is called with a getter for
+    an unused authentication service.
+    """
+    tool_instance = ToolboxTool(
+        session=http_session,
+        base_url=TEST_BASE_URL,
+        name=TEST_TOOL_NAME,
+        description=sample_tool_description,
+        params=sample_tool_params,
+        required_authn_params={},
+        required_authz_tokens=[],
+        auth_service_token_getters={},
+        bound_params={},
+        client_headers={},
+    )
+
+    expected_error_message = "Authentication source\(s\) \`unused-auth-service\` unused by tool \`sample_tool\`."
+
+    with pytest.raises(ValueError, match=expected_error_message):
+        tool_instance.add_auth_token_getters(unused_auth_getters)
