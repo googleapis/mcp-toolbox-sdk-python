@@ -119,6 +119,17 @@ class ToolboxTool:
         # map of client headers to their value/callable/coroutine
         self.__client_headers = client_headers
 
+        # ID tokens contain sensitive user information (claims). Transmitting
+        # these over HTTP exposes the data to interception and unauthorized
+        # access. Always use HTTPS to ensure secure communication and protect
+        # user privacy.
+        if (
+            required_authn_params or required_authz_tokens or client_headers
+        ) and not self.__url.startswith("https://"):
+            warn(
+                "Sending ID token over HTTP. User data may be exposed. Use HTTPS for secure communication."
+            )
+
     @property
     def _name(self) -> str:
         return self.__name__
@@ -246,27 +257,18 @@ class ToolboxTool:
             payload[param] = await resolve_value(value)
 
         # create headers for auth services
-        auth_headers = {}
+        headers = {}
         for auth_service, token_getter in self.__auth_service_token_getters.items():
-            auth_headers[self.__get_auth_header(auth_service)] = await resolve_value(
+            headers[self.__get_auth_header(auth_service)] = await resolve_value(
                 token_getter
             )
         for client_header_name, client_header_val in self.__client_headers.items():
-            auth_headers[client_header_name] = await resolve_value(client_header_val)
-
-        # ID tokens contain sensitive user information (claims). Transmitting
-        # these over HTTP exposes the data to interception and unauthorized
-        # access. Always use HTTPS to ensure secure communication and protect
-        # user privacy.
-        if auth_headers and not self.__url.startswith("https://"):
-            warn(
-                "Sending ID token over HTTP. User data may be exposed. Use HTTPS for secure communication."
-            )
+            headers[client_header_name] = await resolve_value(client_header_val)
 
         async with self.__session.post(
             self.__url,
             json=payload,
-            headers=auth_headers,
+            headers=headers,
         ) as resp:
             body = await resp.json()
             if resp.status < 200 or resp.status >= 300:
