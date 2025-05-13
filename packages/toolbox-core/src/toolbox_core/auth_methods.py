@@ -16,9 +16,9 @@
 # and are intended to be passed in the "Authorization" header of HTTP requests.
 #
 # Example User Experience:
-# from toolbox_core import toolbox_auth_methods
+# from toolbox_core import auth_methods
 #
-# auth_token_provider = toolbox_auth_methods.aget_google_id_token
+# auth_token_provider = auth_methods.aget_google_id_token
 # toolbox = ToolboxClient(
 #     URL,
 #     client_headers={"Authorization": auth_token_provider},
