@@ -180,6 +180,7 @@ def mock_tool_invoke(
 
 # --- Tests for General ToolboxSyncClient Functionality ---
 
+
 def test_sync_load_tool_success(aioresponses, test_tool_str_schema, sync_client):
     TOOL_NAME = "test_tool_sync_1"
     mock_tool_load(aioresponses, TOOL_NAME, test_tool_str_schema)
@@ -273,11 +274,15 @@ class TestSyncClientLifecycle:
 
     def test_sync_client_creation_in_isolated_env(self, sync_client):
         """Tests that a client is initialized correctly by the sync_client fixture."""
-        assert sync_client._ToolboxSyncClient__loop is not None, "Loop should be created"
+        assert (
+            sync_client._ToolboxSyncClient__loop is not None
+        ), "Loop should be created"
         assert (
             sync_client._ToolboxSyncClient__thread is not None
         ), "Thread should be created"
-        assert sync_client._ToolboxSyncClient__thread.is_alive(), "Thread should be running"
+        assert (
+            sync_client._ToolboxSyncClient__thread.is_alive()
+        ), "Thread should be running"
         assert isinstance(
             sync_client._ToolboxSyncClient__async_client, ToolboxClient
         ), "Async client should be ToolboxClient instance"
@@ -325,9 +330,7 @@ class TestSyncClientLifecycle:
             ToolboxSyncClient, "close", wraps=ToolboxSyncClient.close, autospec=True
         ) as mock_close_method_exc:
             with pytest.raises(ValueError, match="Test exception"):
-                with ToolboxSyncClient(
-                    TEST_BASE_URL
-                ) as client_exc:
+                with ToolboxSyncClient(TEST_BASE_URL) as client_exc:
                     raise ValueError("Test exception")
             mock_close_method_exc.assert_called_once()
 
@@ -351,18 +354,22 @@ class TestSyncClientLifecycle:
 
         # Manually break the class's loop to trigger the error condition in load_tool
         ToolboxSyncClient._ToolboxSyncClient__loop = None
-        with pytest.raises(ValueError, match="Background loop or thread cannot be None."):
+        with pytest.raises(
+            ValueError, match="Background loop or thread cannot be None."
+        ):
             client.load_tool("any_tool_should_fail")
         ToolboxSyncClient._ToolboxSyncClient__loop = (
             original_class_loop  # Restore for next check
         )
 
         ToolboxSyncClient._ToolboxSyncClient__thread = None
-        with pytest.raises(ValueError, match="Background loop or thread cannot be None."):
+        with pytest.raises(
+            ValueError, match="Background loop or thread cannot be None."
+        ):
             client.load_toolset("any_toolset_should_fail")
         ToolboxSyncClient._ToolboxSyncClient__thread = original_class_thread  # Restore
 
-        client.close() # Clean up manually created client
+        client.close()  # Clean up manually created client
         # sync_client_environment will handle the final cleanup of original_class_loop/thread.
 
 
@@ -370,7 +377,9 @@ class TestSyncClientHeaders:
     """Additive tests for client header functionality specific to ToolboxSyncClient if any,
     or counterparts to async client header tests."""
 
-    def test_sync_add_headers_success(self, aioresponses, test_tool_str_schema, sync_client):
+    def test_sync_add_headers_success(
+        self, aioresponses, test_tool_str_schema, sync_client
+    ):
         tool_name = "tool_after_add_headers_sync"
         manifest = ManifestSchema(
             serverVersion="0.0.0", tools={tool_name: test_tool_str_schema}
