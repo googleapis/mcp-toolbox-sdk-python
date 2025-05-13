@@ -130,7 +130,7 @@ class TestAuth:
         tool = toolbox.load_tool("get-row-by-id-auth")
         with pytest.raises(
             Exception,
-            match="tool invocation not authorized. Please make sure your specify correct auth headers",
+            match="One or more of the following authn services are required to invoke this tool: my-test-auth",
         ):
             tool(id="2")
 

@@ -18,7 +18,7 @@ from aiohttp import ClientSession
 
 from .protocol import ManifestSchema, ToolSchema
 from .tool import ToolboxTool
-from .utils import identify_required_authn_params, resolve_value
+from .utils import identify_auth_requirements, resolve_value
 
 
 class ToolboxClient:
@@ -79,10 +79,9 @@ class ToolboxClient:
             else:  # regular parameter
                 params.append(p)
 
-        authn_params, _, used_auth_keys = identify_required_authn_params(
-            # TODO: Add schema.authRequired as second arg
+        authn_params, authz_tokens, used_auth_keys = identify_auth_requirements(
             authn_params,
-            [],
+            schema.authRequired,
             auth_token_getters.keys(),
         )
 
@@ -94,6 +93,7 @@ class ToolboxClient:
             # create a read-only values to prevent mutation
             params=tuple(params),
             required_authn_params=types.MappingProxyType(authn_params),
+            required_authz_tokens=authz_tokens,
             auth_service_token_getters=types.MappingProxyType(auth_token_getters),
             bound_params=types.MappingProxyType(bound_params),
             client_headers=types.MappingProxyType(client_headers),

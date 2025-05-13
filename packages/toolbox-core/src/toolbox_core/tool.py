@@ -16,13 +16,14 @@ import copy
 from inspect import Signature
 from types import MappingProxyType
 from typing import Any, Callable, Coroutine, Mapping, Optional, Sequence, Union
+from warnings import warn
 
 from aiohttp import ClientSession
 
 from .protocol import ParameterSchema
 from .utils import (
     create_func_docstring,
-    identify_required_authn_params,
+    identify_auth_requirements,
     params_to_pydantic_model,
     resolve_value,
 )
@@ -49,6 +50,7 @@ class ToolboxTool:
         description: str,
         params: Sequence[ParameterSchema],
         required_authn_params: Mapping[str, list[str]],
+        required_authz_tokens: Sequence[str],
         auth_service_token_getters: Mapping[str, Callable[[], str]],
         bound_params: Mapping[str, Union[Callable[[], Any], Any]],
         client_headers: Mapping[str, Union[Callable, Coroutine, str]],
@@ -63,12 +65,14 @@ class ToolboxTool:
             name: The name of the remote tool.
             description: The description of the remote tool.
             params: The args of the tool.
-            required_authn_params: A map of required authenticated parameters to a list
-                of alternative services that can provide values for them.
-            auth_service_token_getters: A dict of authService -> token (or callables that
-                produce a token)
-            bound_params: A mapping of parameter names to bind to specific values or
-                callables that are called to produce values as needed.
+            required_authn_params: A map of required authenticated parameters to
+                a list of alternative services that can provide values for them.
+            required_authz_tokens: A sequence of alternative services for
+                providing authorization token for the tool invocation.
+            auth_service_token_getters: A dict of authService -> token (or
+                callables that produce a token)
+            bound_params: A mapping of parameter names to bind to specific
+                values or callables that are called to produce values as needed.
             client_headers: Client specific headers bound to the tool.
         """
         # used to invoke the toolbox API
@@ -106,12 +110,25 @@ class ToolboxTool:
 
         # map of parameter name to auth service required by it
         self.__required_authn_params = required_authn_params
+        # sequence of authorization tokens required by it
+        self.__required_authz_tokens = required_authz_tokens
         # map of authService -> token_getter
         self.__auth_service_token_getters = auth_service_token_getters
         # map of parameter name to value (or callable that produces that value)
         self.__bound_parameters = bound_params
         # map of client headers to their value/callable/coroutine
         self.__client_headers = client_headers
+
+        # ID tokens contain sensitive user information (claims). Transmitting
+        # these over HTTP exposes the data to interception and unauthorized
+        # access. Always use HTTPS to ensure secure communication and protect
+        # user privacy.
+        if (
+            required_authn_params or required_authz_tokens or client_headers
+        ) and not self.__url.startswith("https://"):
+            warn(
+                "Sending ID token over HTTP. User data may be exposed. Use HTTPS for secure communication."
+            )
 
     @property
     def _name(self) -> str:
@@ -149,6 +166,7 @@ class ToolboxTool:
         description: Optional[str] = None,
         params: Optional[Sequence[ParameterSchema]] = None,
         required_authn_params: Optional[Mapping[str, list[str]]] = None,
+        required_authz_tokens: Optional[Sequence[str]] = None,
         auth_service_token_getters: Optional[Mapping[str, Callable[[], str]]] = None,
         bound_params: Optional[Mapping[str, Union[Callable[[], Any], Any]]] = None,
         client_headers: Optional[Mapping[str, Union[Callable, Coroutine, str]]] = None,
@@ -162,12 +180,14 @@ class ToolboxTool:
             name: The name of the remote tool.
             description: The description of the remote tool.
             params: The args of the tool.
-            required_authn_params: A map of required authenticated parameters to a list
-                of alternative services that can provide values for them.
-            auth_service_token_getters: A dict of authService -> token (or callables
-                that produce a token)
-            bound_params: A mapping of parameter names to bind to specific values or
-                callables that are called to produce values as needed.
+            required_authn_params: A map of required authenticated parameters to
+                a list of alternative services that can provide values for them.
+            required_authz_tokens: A sequence of alternative services for
+                providing authorization token for the tool invocation.
+            auth_service_token_getters: A dict of authService -> token (or
+                callables that produce a token)
+            bound_params: A mapping of parameter names to bind to specific
+                values or callables that are called to produce values as needed.
             client_headers: Client specific headers bound to the tool.
         """
         check = lambda val, default: val if val is not None else default
@@ -179,6 +199,9 @@ class ToolboxTool:
             params=check(params, self.__params),
             required_authn_params=check(
                 required_authn_params, self.__required_authn_params
+            ),
+            required_authz_tokens=check(
+                required_authz_tokens, self.__required_authz_tokens
             ),
             auth_service_token_getters=check(
                 auth_service_token_getters, self.__auth_service_token_getters
@@ -207,11 +230,15 @@ class ToolboxTool:
         """
 
         # check if any auth services need to be specified yet
-        if len(self.__required_authn_params) > 0:
+        if (
+            len(self.__required_authn_params) > 0
+            or len(self.__required_authz_tokens) > 0
+        ):
             # Gather all the required auth services into a set
             req_auth_services = set()
             for s in self.__required_authn_params.values():
                 req_auth_services.update(s)
+            req_auth_services.update(self.__required_authz_tokens)
             raise ValueError(
                 f"One or more of the following authn services are required to invoke this tool"
                 f": {','.join(req_auth_services)}"
@@ -292,23 +319,31 @@ class ToolboxTool:
                 f"Cannot register client the same headers in the client as well as tool."
             )
 
-        # create a read-only updated value for new_getters
-        new_getters = MappingProxyType(
-            dict(self.__auth_service_token_getters, **auth_token_getters)
-        )
-        # create a read-only updated for params that are still required
-        new_req_authn_params = MappingProxyType(
-            identify_required_authn_params(
-                # TODO: Add authRequired
+        new_getters = dict(self.__auth_service_token_getters, **auth_token_getters)
+
+        # find the updated required authn params, authz tokens and the auth
+        # token getters used
+        new_req_authn_params, new_req_authz_tokens, used_auth_token_getters = (
+            identify_auth_requirements(
                 self.__required_authn_params,
-                [],
+                self.__required_authz_tokens,
                 auth_token_getters.keys(),
-            )[0]
+            )
         )
 
+        # ensure no auth token getter provided remains unused
+        unused_auth = set(incoming_services) - used_auth_token_getters
+        if unused_auth:
+            raise ValueError(
+                f"Authentication source(s) `{', '.join(unused_auth)}` unused by tool `{self.__name__}`."
+            )
+
         return self.__copy(
-            auth_service_token_getters=new_getters,
-            required_authn_params=new_req_authn_params,
+            # create read-only values for updated getters, params and tokens
+            # that are still required
+            auth_service_token_getters=MappingProxyType(new_getters),
+            required_authn_params=MappingProxyType(new_req_authn_params),
+            required_authz_tokens=tuple(new_req_authz_tokens),
         )
 
     def bind_params(
