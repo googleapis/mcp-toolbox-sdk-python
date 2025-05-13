@@ -541,7 +541,7 @@ class TestSyncAuth:
 
         tool = sync_client.load_tool(tool_name_auth)
         with pytest.raises(
-            ValueError,
+            PermissionError,
             match="One or more of the following authn services are required to invoke this tool: my-auth-service",
         ):
             tool(argA=15, argB=True)
