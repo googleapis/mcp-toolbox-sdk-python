@@ -176,8 +176,6 @@ print(result)
 > often leading to better performance and resource utilization, especially in
 > applications handling concurrent requests.
 
-
-
 ## Use with LangGraph
 
 The Toolbox Core SDK integrates smoothly with frameworks like LangGraph,
@@ -241,6 +239,7 @@ platforms like Cloud Run, GKE,  or any environment where unauthenticated access 
 This client-to-server authentication ensures that the Toolbox server can verify the identity of the client making the request before any tool is loaded or called. It is different from [Authenticating Tools](#authenticating-tools), which deals with providing credentials for specific tools within an already connected Toolbox session.
 
 ### When is Client-to-Server Authentication Needed?
+
 You'll need this type of authentication if your Toolbox server is configured to deny unauthenticated requests. For example:
 
 - Your Toolbox server is deployed on Cloud Run and configured to "Require authentication."
@@ -309,7 +308,6 @@ For Toolbox servers hosted on Google Cloud (e.g., Cloud Run) and requiring
 
     # Now, you can use the client as usual.
     ```
-
 
 ## Authenticating Tools
 
