@@ -27,37 +27,37 @@ class ToolboxTool(BaseTool):
 
     def __init__(
         self,
-        core_sync_tool: ToolboxCoreSyncTool,
+        core_tool: ToolboxCoreSyncTool,
     ) -> None:
         """
         Initializes a ToolboxTool instance.
 
         Args:
-            core_sync_tool: The underlying core sync ToolboxTool instance.
+            core_tool: The underlying core sync ToolboxTool instance.
         """
 
         # Due to how pydantic works, we must initialize the underlying
         # BaseTool class before assigning values to member variables.
         super().__init__(
-            name=core_sync_tool.__name__,
-            description=core_sync_tool.__doc__,
-            args_schema=core_sync_tool._async_tool._pydantic_model,
+            name=core_tool.__name__,
+            description=core_tool.__doc__,
+            args_schema=core_tool._async_tool._pydantic_model,
         )
-        self.__core_sync_tool = core_sync_tool
+        self.__core_tool = core_tool
 
     def _run(self, **kwargs: Any) -> str:
-        return self.__core_sync_tool(**kwargs)
+        return self.__core_tool(**kwargs)
 
     async def _arun(self, **kwargs: Any) -> str:
-        coro = self.__core_sync_tool._async_tool(**kwargs)
+        coro = self.__core_tool._async_tool(**kwargs)
 
         # If a loop has not been provided, attempt to run in current thread.
-        if not self.__core_sync_tool._loop:
+        if not self.__core_tool._loop:
             return await coro
 
         # Otherwise, run in the background thread.
         return await asyncio.wrap_future(
-            asyncio.run_coroutine_threadsafe(coro, self.__core_sync_tool._loop)
+            asyncio.run_coroutine_threadsafe(coro, self.__core_tool._loop)
         )
 
     def add_auth_token_getters(
@@ -79,10 +79,10 @@ class ToolboxTool(BaseTool):
             ValueError: If any of the provided auth parameters is already
                 registered.
         """
-        new_core_sync_tool = self.__core_sync_tool.add_auth_token_getters(
+        new_core_tool = self.__core_tool.add_auth_token_getters(
             auth_token_getters
         )
-        return ToolboxTool(core_sync_tool=new_core_sync_tool)
+        return ToolboxTool(core_tool=new_core_tool)
 
     def add_auth_token_getter(
         self, auth_source: str, get_id_token: Callable[[], str]
@@ -123,8 +123,8 @@ class ToolboxTool(BaseTool):
         Raises:
             ValueError: If any of the provided bound params is already bound.
         """
-        new_core_sync_tool = self.__core_sync_tool.bind_params(bound_params)
-        return ToolboxTool(core_sync_tool=new_core_sync_tool)
+        new_core_tool = self.__core_tool.bind_params(bound_params)
+        return ToolboxTool(core_tool=new_core_tool)
 
     def bind_param(
         self,

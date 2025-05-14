@@ -30,35 +30,35 @@ class TestToolboxClient:
     def toolbox_client(self):
         client = ToolboxClient(URL)
         assert isinstance(client, ToolboxClient)
-        assert client._ToolboxClient__core_sync_client is not None
-        assert client._ToolboxClient__core_sync_client._async_client is not None
-        assert client._ToolboxClient__core_sync_client._loop is not None
-        assert client._ToolboxClient__core_sync_client._loop.is_running()
-        assert client._ToolboxClient__core_sync_client._thread is not None
-        assert client._ToolboxClient__core_sync_client._thread.is_alive()
+        assert client._ToolboxClient__core_client is not None
+        assert client._ToolboxClient__core_client._async_client is not None
+        assert client._ToolboxClient__core_client._loop is not None
+        assert client._ToolboxClient__core_client._loop.is_running()
+        assert client._ToolboxClient__core_client._thread is not None
+        assert client._ToolboxClient__core_client._thread.is_alive()
         return client
 
     @patch("toolbox_core.sync_client.ToolboxSyncClient.load_tool")
     def test_load_tool(self, mock_core_load_tool, toolbox_client):
-        mock_core_sync_tool_instance = Mock(
+        mock_core_tool_instance = Mock(
             spec=ToolboxCoreSyncTool
         )  # Spec with Core Sync Tool
-        mock_core_sync_tool_instance.__name__ = "mock-core-sync-tool"
-        mock_core_sync_tool_instance.__doc__ = "mock core sync description"
+        mock_core_tool_instance.__name__ = "mock-core-sync-tool"
+        mock_core_tool_instance.__doc__ = "mock core sync description"
 
         mock_underlying_async_tool = Mock(
             spec=ToolboxCoreTool
         )  # Core Async Tool for pydantic model
         mock_underlying_async_tool._pydantic_model = BaseModel
-        mock_core_sync_tool_instance._async_tool = mock_underlying_async_tool
+        mock_core_tool_instance._async_tool = mock_underlying_async_tool
 
-        mock_core_load_tool.return_value = mock_core_sync_tool_instance
+        mock_core_load_tool.return_value = mock_core_tool_instance
 
         langchain_tool = toolbox_client.load_tool("test_tool")
 
         assert isinstance(langchain_tool, ToolboxTool)
-        assert langchain_tool.name == mock_core_sync_tool_instance.__name__
-        assert langchain_tool.description == mock_core_sync_tool_instance.__doc__
+        assert langchain_tool.name == mock_core_tool_instance.__name__
+        assert langchain_tool.description == mock_core_tool_instance.__doc__
         assert langchain_tool.args_schema == mock_underlying_async_tool._pydantic_model
 
         mock_core_load_tool.assert_called_once_with(
@@ -67,23 +67,23 @@ class TestToolboxClient:
 
     @patch("toolbox_core.sync_client.ToolboxSyncClient.load_toolset")
     def test_load_toolset(self, mock_core_load_toolset, toolbox_client):
-        mock_core_sync_tool_instance1 = Mock(spec=ToolboxCoreSyncTool)
-        mock_core_sync_tool_instance1.__name__ = "mock-core-sync-tool-0"
-        mock_core_sync_tool_instance1.__doc__ = "desc 0"
+        mock_core_tool_instance1 = Mock(spec=ToolboxCoreSyncTool)
+        mock_core_tool_instance1.__name__ = "mock-core-sync-tool-0"
+        mock_core_tool_instance1.__doc__ = "desc 0"
         mock_async_tool0 = Mock(spec=ToolboxCoreTool)
         mock_async_tool0._pydantic_model = BaseModel
-        mock_core_sync_tool_instance1._async_tool = mock_async_tool0
+        mock_core_tool_instance1._async_tool = mock_async_tool0
 
-        mock_core_sync_tool_instance2 = Mock(spec=ToolboxCoreSyncTool)
-        mock_core_sync_tool_instance2.__name__ = "mock-core-sync-tool-1"
-        mock_core_sync_tool_instance2.__doc__ = "desc 1"
+        mock_core_tool_instance2 = Mock(spec=ToolboxCoreSyncTool)
+        mock_core_tool_instance2.__name__ = "mock-core-sync-tool-1"
+        mock_core_tool_instance2.__doc__ = "desc 1"
         mock_async_tool1 = Mock(spec=ToolboxCoreTool)
         mock_async_tool1._pydantic_model = BaseModel
-        mock_core_sync_tool_instance2._async_tool = mock_async_tool1
+        mock_core_tool_instance2._async_tool = mock_async_tool1
 
         mock_core_load_toolset.return_value = [
-            mock_core_sync_tool_instance1,
-            mock_core_sync_tool_instance2,
+            mock_core_tool_instance1,
+            mock_core_tool_instance2,
         ]
 
         langchain_tools = toolbox_client.load_toolset()
@@ -114,7 +114,7 @@ class TestToolboxClient:
         assert langchain_tool.name == mock_core_tool_instance.__name__
         assert langchain_tool.description == mock_core_tool_instance.__doc__
 
-        toolbox_client._ToolboxClient__core_sync_client._async_client.load_tool.assert_called_once_with(
+        toolbox_client._ToolboxClient__core_client._async_client.load_tool.assert_called_once_with(
             name="test_tool", auth_token_getters={}, bound_params={}
         )
 
@@ -145,18 +145,18 @@ class TestToolboxClient:
         assert isinstance(langchain_tools[0], ToolboxTool)
         assert isinstance(langchain_tools[1], ToolboxTool)
 
-        toolbox_client._ToolboxClient__core_sync_client._async_client.load_toolset.assert_called_once_with(
+        toolbox_client._ToolboxClient__core_client._async_client.load_toolset.assert_called_once_with(
             name=None, auth_token_getters={}, bound_params={}, strict=False
         )
 
     @patch("toolbox_core.sync_client.ToolboxSyncClient.load_tool")
     def test_load_tool_with_args(self, mock_core_load_tool, toolbox_client):
-        mock_core_sync_tool_instance = Mock(spec=ToolboxCoreSyncTool)
-        mock_core_sync_tool_instance.__name__ = "mock-tool"
+        mock_core_tool_instance = Mock(spec=ToolboxCoreSyncTool)
+        mock_core_tool_instance.__name__ = "mock-tool"
         mock_async_tool = Mock(spec=ToolboxCoreTool)
         mock_async_tool._pydantic_model = BaseModel
-        mock_core_sync_tool_instance._async_tool = mock_async_tool
-        mock_core_load_tool.return_value = mock_core_sync_tool_instance
+        mock_core_tool_instance._async_tool = mock_async_tool
+        mock_core_load_tool.return_value = mock_core_tool_instance
 
         auth_token_getters = {"token_getter1": lambda: "value1"}
         auth_tokens_deprecated = {"token_deprecated": lambda: "value_dep"}
@@ -216,12 +216,12 @@ class TestToolboxClient:
 
     @patch("toolbox_core.sync_client.ToolboxSyncClient.load_toolset")
     def test_load_toolset_with_args(self, mock_core_load_toolset, toolbox_client):
-        mock_core_sync_tool_instance = Mock(spec=ToolboxCoreSyncTool)
-        mock_core_sync_tool_instance.__name__ = "mock-tool-0"
+        mock_core_tool_instance = Mock(spec=ToolboxCoreSyncTool)
+        mock_core_tool_instance.__name__ = "mock-tool-0"
         mock_async_tool = Mock(spec=ToolboxCoreTool)
         mock_async_tool._pydantic_model = BaseModel
-        mock_core_sync_tool_instance._async_tool = mock_async_tool
-        mock_core_load_toolset.return_value = [mock_core_sync_tool_instance]
+        mock_core_tool_instance._async_tool = mock_async_tool
+        mock_core_load_toolset.return_value = [mock_core_tool_instance]
 
         auth_token_getters = {"token_getter1": lambda: "value1"}
         auth_tokens_deprecated = {"token_deprecated": lambda: "value_dep"}
@@ -277,7 +277,7 @@ class TestToolboxClient:
         assert any("auth_headers` is deprecated" in m for m in messages)
 
         assert isinstance(tool, ToolboxTool)
-        toolbox_client._ToolboxClient__core_sync_client._async_client.load_tool.assert_called_with(
+        toolbox_client._ToolboxClient__core_client._async_client.load_tool.assert_called_with(
             name="test_tool",
             auth_token_getters=auth_token_getters,
             bound_params=bound_params,
@@ -313,7 +313,7 @@ class TestToolboxClient:
         assert any("auth_headers` is deprecated" in m for m in messages)
 
         assert len(tools) == 1
-        toolbox_client._ToolboxClient__core_sync_client._async_client.load_toolset.assert_called_with(
+        toolbox_client._ToolboxClient__core_client._async_client.load_toolset.assert_called_with(
             name="my_toolset",
             auth_token_getters=auth_token_getters,
             bound_params=bound_params,

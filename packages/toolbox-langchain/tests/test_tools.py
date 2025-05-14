@@ -66,7 +66,7 @@ class TestToolboxTool:
         return mock
 
     @pytest.fixture
-    def mock_core_sync_tool(self, mock_core_async_tool):
+    def mock_core_tool(self, mock_core_async_tool):
         sync_mock = Mock(spec=ToolboxCoreSyncTool)
         sync_mock.__name__ = mock_core_async_tool.__name__
         sync_mock.__doc__ = mock_core_async_tool.__doc__
@@ -94,19 +94,19 @@ class TestToolboxTool:
         return sync_mock
 
     @pytest.fixture
-    def toolbox_tool(self, mock_core_sync_tool):
-        return ToolboxTool(core_sync_tool=mock_core_sync_tool)
+    def toolbox_tool(self, mock_core_tool):
+        return ToolboxTool(core_tool=mock_core_tool)
 
     @pytest.fixture
     def auth_toolbox_tool(self, mock_core_sync_auth_tool):
-        return ToolboxTool(core_sync_tool=mock_core_sync_auth_tool)
+        return ToolboxTool(core_tool=mock_core_sync_auth_tool)
 
-    def test_toolbox_tool_init(self, mock_core_sync_tool):
-        tool = ToolboxTool(core_sync_tool=mock_core_sync_tool)
-        core_sync_tool_in_tool = tool._ToolboxTool__core_sync_tool
-        assert core_sync_tool_in_tool.__name__ == mock_core_sync_tool.__name__
-        assert core_sync_tool_in_tool.__doc__ == mock_core_sync_tool.__doc__
-        assert tool.args_schema == mock_core_sync_tool._async_tool._pydantic_model
+    def test_toolbox_tool_init(self, mock_core_tool):
+        tool = ToolboxTool(core_tool=mock_core_tool)
+        core_tool_in_tool = tool._ToolboxTool__core_tool
+        assert core_tool_in_tool.__name__ == mock_core_tool.__name__
+        assert core_tool_in_tool.__doc__ == mock_core_tool.__doc__
+        assert tool.args_schema == mock_core_tool._async_tool._pydantic_model
 
     @pytest.mark.parametrize(
         "params, expected_bound_params_on_core",
@@ -124,29 +124,29 @@ class TestToolboxTool:
         params,
         expected_bound_params_on_core,
         toolbox_tool,
-        mock_core_sync_tool,
+        mock_core_tool,
     ):
-        mock_core_sync_tool.bind_params.return_value = mock_core_sync_tool
+        mock_core_tool.bind_params.return_value = mock_core_tool
         new_langchain_tool = toolbox_tool.bind_params(params)
-        mock_core_sync_tool.bind_params.assert_called_once_with(params)
+        mock_core_tool.bind_params.assert_called_once_with(params)
         assert isinstance(new_langchain_tool, ToolboxTool)
         assert (
-            new_langchain_tool._ToolboxTool__core_sync_tool
-            == mock_core_sync_tool.bind_params.return_value
+            new_langchain_tool._ToolboxTool__core_tool
+            == mock_core_tool.bind_params.return_value
         )
 
-    def test_toolbox_tool_bind_param(self, toolbox_tool, mock_core_sync_tool):
-        # ToolboxTool.bind_param calls core_sync_tool.bind_params
-        mock_core_sync_tool.bind_params.return_value = mock_core_sync_tool
+    def test_toolbox_tool_bind_param(self, toolbox_tool, mock_core_tool):
+        # ToolboxTool.bind_param calls core_tool.bind_params
+        mock_core_tool.bind_params.return_value = mock_core_tool
         new_langchain_tool = toolbox_tool.bind_param("param1", "bound-value")
         # *** Fix: Assert that bind_params is called on the core tool ***
-        mock_core_sync_tool.bind_params.assert_called_once_with(
+        mock_core_tool.bind_params.assert_called_once_with(
             {"param1": "bound-value"}
         )
         assert isinstance(new_langchain_tool, ToolboxTool)
         assert (
-            new_langchain_tool._ToolboxTool__core_sync_tool
-            == mock_core_sync_tool.bind_params.return_value
+            new_langchain_tool._ToolboxTool__core_tool
+            == mock_core_tool.bind_params.return_value
         )
 
     @pytest.mark.parametrize(
@@ -186,7 +186,7 @@ class TestToolboxTool:
         )
         assert isinstance(new_langchain_tool, ToolboxTool)
         assert (
-            new_langchain_tool._ToolboxTool__core_sync_tool
+            new_langchain_tool._ToolboxTool__core_tool
             == mock_core_sync_auth_tool.add_auth_token_getters.return_value
         )
 
@@ -194,7 +194,7 @@ class TestToolboxTool:
         self, auth_toolbox_tool, mock_core_sync_auth_tool
     ):
         get_id_token = lambda: "test-token"
-        # ToolboxTool.add_auth_token_getter calls core_sync_tool.add_auth_token_getters
+        # ToolboxTool.add_auth_token_getter calls core_tool.add_auth_token_getters
         mock_core_sync_auth_tool.add_auth_token_getters.return_value = (
             mock_core_sync_auth_tool
         )
@@ -209,6 +209,6 @@ class TestToolboxTool:
         )
         assert isinstance(new_langchain_tool, ToolboxTool)
         assert (
-            new_langchain_tool._ToolboxTool__core_sync_tool
+            new_langchain_tool._ToolboxTool__core_tool
             == mock_core_sync_auth_tool.add_auth_token_getters.return_value
         )
