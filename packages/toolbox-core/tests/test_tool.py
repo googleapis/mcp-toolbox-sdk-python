@@ -11,9 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+
 import inspect
-from typing import AsyncGenerator, Callable
+from typing import AsyncGenerator, Callable, Mapping
 from unittest.mock import AsyncMock, Mock
+from warnings import catch_warnings, simplefilter
 
 import pytest
 import pytest_asyncio
@@ -25,6 +28,7 @@ from toolbox_core.protocol import ParameterSchema
 from toolbox_core.tool import ToolboxTool, create_func_docstring, resolve_value
 
 TEST_BASE_URL = "http://toolbox.example.com"
+HTTPS_BASE_URL = "https://toolbox.example.com"
 TEST_TOOL_NAME = "sample_tool"
 
 
@@ -90,6 +94,12 @@ def auth_getters(auth_token_value) -> dict[str, Callable[[], str]]:
 @pytest.fixture
 def auth_header_key() -> str:
     return "test-auth_token"
+
+
+@pytest.fixture
+def unused_auth_getters() -> dict[str, Callable[[], str]]:
+    """Provides an auth getter for a service not required by sample_tool."""
+    return {"unused-auth-service": lambda: "unused-token-value"}
 
 
 def test_create_func_docstring_one_param_real_schema():
@@ -187,7 +197,7 @@ async def test_tool_creation_callable_and_run(
     Tests creating a ToolboxTool, checks callability, and simulates a run.
     """
     tool_name = TEST_TOOL_NAME
-    base_url = TEST_BASE_URL
+    base_url = HTTPS_BASE_URL
     invoke_url = f"{base_url}/api/tool/{tool_name}/invoke"
 
     input_args = {"message": "hello world", "count": 5}
@@ -205,6 +215,7 @@ async def test_tool_creation_callable_and_run(
             description=sample_tool_description,
             params=sample_tool_params,
             required_authn_params={},
+            required_authz_tokens=[],
             auth_service_token_getters={},
             bound_params={},
             client_headers={},
@@ -237,7 +248,7 @@ async def test_tool_run_with_pydantic_validation_error(
     due to Pydantic validation *before* making an HTTP request.
     """
     tool_name = TEST_TOOL_NAME
-    base_url = TEST_BASE_URL
+    base_url = HTTPS_BASE_URL
     invoke_url = f"{base_url}/api/tool/{tool_name}/invoke"
 
     with aioresponses() as m:
@@ -250,6 +261,7 @@ async def test_tool_run_with_pydantic_validation_error(
             description=sample_tool_description,
             params=sample_tool_params,
             required_authn_params={},
+            required_authz_tokens=[],
             auth_service_token_getters={},
             bound_params={},
             client_headers={},
@@ -330,17 +342,25 @@ async def test_resolve_value_async_callable():
 
 def test_tool_init_basic(http_session, sample_tool_params, sample_tool_description):
     """Tests basic tool initialization without headers or auth."""
-    tool_instance = ToolboxTool(
-        session=http_session,
-        base_url=TEST_BASE_URL,
-        name=TEST_TOOL_NAME,
-        description=sample_tool_description,
-        params=sample_tool_params,
-        required_authn_params={},
-        auth_service_token_getters={},
-        bound_params={},
-        client_headers={},
-    )
+    with catch_warnings(record=True) as record:
+        simplefilter("always")
+
+        tool_instance = ToolboxTool(
+            session=http_session,
+            base_url=HTTPS_BASE_URL,
+            name=TEST_TOOL_NAME,
+            description=sample_tool_description,
+            params=sample_tool_params,
+            required_authn_params={},
+            required_authz_tokens=[],
+            auth_service_token_getters={},
+            bound_params={},
+            client_headers={},
+        )
+    assert (
+        len(record) == 0
+    ), f"ToolboxTool instantiation unexpectedly warned: {[f'{w.category.__name__}: {w.message}' for w in record]}"
+
     assert tool_instance.__name__ == TEST_TOOL_NAME
     assert inspect.iscoroutinefunction(tool_instance.__call__)
     assert "message" in tool_instance.__signature__.parameters
@@ -356,11 +376,12 @@ def test_tool_init_with_client_headers(
     """Tests tool initialization *with* client headers."""
     tool_instance = ToolboxTool(
         session=http_session,
-        base_url=TEST_BASE_URL,
+        base_url=HTTPS_BASE_URL,
         name=TEST_TOOL_NAME,
         description=sample_tool_description,
         params=sample_tool_params,
         required_authn_params={},
+        required_authz_tokens=[],
         auth_service_token_getters={},
         bound_params={},
         client_headers=static_client_header,
@@ -383,11 +404,12 @@ def test_tool_init_header_auth_conflict(
     ):
         ToolboxTool(
             session=http_session,
-            base_url=TEST_BASE_URL,
+            base_url=HTTPS_BASE_URL,
             name="auth_conflict_tool",
             description=sample_tool_description,
             params=sample_tool_auth_params,
             required_authn_params={},
+            required_authz_tokens=[],
             auth_service_token_getters=auth_getters,
             bound_params={},
             client_headers=conflicting_client_header,
@@ -405,11 +427,12 @@ def test_tool_add_auth_token_getters_conflict_with_existing_client_header(
     """
     tool_instance = ToolboxTool(
         session=http_session,
-        base_url=TEST_BASE_URL,
+        base_url=HTTPS_BASE_URL,
         name="tool_with_client_header",
         description=sample_tool_description,
         params=sample_tool_params,
         required_authn_params={},
+        required_authz_tokens=[],
         auth_service_token_getters={},
         bound_params={},
         client_headers={
@@ -426,3 +449,160 @@ def test_tool_add_auth_token_getters_conflict_with_existing_client_header(
 
     with pytest.raises(ValueError, match=expected_error_message):
         tool_instance.add_auth_token_getters(new_auth_getters_causing_conflict)
+
+
+def test_add_auth_token_getters_unused_token(
+    http_session: ClientSession,
+    sample_tool_params: list[ParameterSchema],
+    sample_tool_description: str,
+    unused_auth_getters: Mapping[str, Callable[[], str]],
+):
+    """
+    Tests ValueError when add_auth_token_getters is called with a getter for
+    an unused authentication service.
+    """
+    tool_instance = ToolboxTool(
+        session=http_session,
+        base_url=HTTPS_BASE_URL,
+        name=TEST_TOOL_NAME,
+        description=sample_tool_description,
+        params=sample_tool_params,
+        required_authn_params={},
+        required_authz_tokens=[],
+        auth_service_token_getters={},
+        bound_params={},
+        client_headers={},
+    )
+
+    expected_error_message = "Authentication source\(s\) \`unused-auth-service\` unused by tool \`sample_tool\`."
+
+    with pytest.raises(ValueError, match=expected_error_message):
+        tool_instance.add_auth_token_getters(unused_auth_getters)
+
+
+# --- Test for the HTTP Warning ---
+@pytest.mark.parametrize(
+    "trigger_condition_params",
+    [
+        {"client_headers": {"X-Some-Header": "value"}},
+        {"required_authn_params": {"param1": ["auth-service1"]}},
+        {"required_authz_tokens": ["auth-service2"]},
+        {
+            "client_headers": {"X-Some-Header": "value"},
+            "required_authn_params": {"param1": ["auth-service1"]},
+        },
+        {
+            "client_headers": {"X-Some-Header": "value"},
+            "required_authz_tokens": ["auth-service2"],
+        },
+        {
+            "required_authn_params": {"param1": ["auth-service1"]},
+            "required_authz_tokens": ["auth-service2"],
+        },
+        {
+            "client_headers": {"X-Some-Header": "value"},
+            "required_authn_params": {"param1": ["auth-service1"]},
+            "required_authz_tokens": ["auth-service2"],
+        },
+    ],
+    ids=[
+        "client_headers_only",
+        "authn_params_only",
+        "authz_tokens_only",
+        "headers_and_authn",
+        "headers_and_authz",
+        "authn_and_authz",
+        "all_three_conditions",
+    ],
+)
+def test_tool_init_http_warning_when_sensitive_info_over_http(
+    http_session: ClientSession,
+    sample_tool_params: list[ParameterSchema],
+    sample_tool_description: str,
+    trigger_condition_params: dict,
+):
+    """
+    Tests that a UserWarning is issued if client headers, auth params, or
+    auth tokens are present and the base_url is HTTP.
+    """
+    expected_warning_message = (
+        "Sending ID token over HTTP. User data may be exposed. "
+        "Use HTTPS for secure communication."
+    )
+
+    init_kwargs = {
+        "session": http_session,
+        "base_url": TEST_BASE_URL,
+        "name": "http_warning_tool",
+        "description": sample_tool_description,
+        "params": sample_tool_params,
+        "required_authn_params": {},
+        "required_authz_tokens": [],
+        "auth_service_token_getters": {},
+        "bound_params": {},
+        "client_headers": {},
+    }
+    # Apply the specific conditions for this parametrized test
+    init_kwargs.update(trigger_condition_params)
+
+    with pytest.warns(UserWarning, match=expected_warning_message):
+        ToolboxTool(**init_kwargs)
+
+
+def test_tool_init_no_http_warning_if_https(
+    http_session: ClientSession,
+    sample_tool_params: list[ParameterSchema],
+    sample_tool_description: str,
+    static_client_header: dict,
+):
+    """
+    Tests that NO UserWarning is issued if client headers are present but
+    the base_url is HTTPS.
+    """
+    with catch_warnings(record=True) as record:
+        simplefilter("always")
+
+        ToolboxTool(
+            session=http_session,
+            base_url=HTTPS_BASE_URL,
+            name="https_tool",
+            description=sample_tool_description,
+            params=sample_tool_params,
+            required_authn_params={},
+            required_authz_tokens=[],
+            auth_service_token_getters={},
+            bound_params={},
+            client_headers=static_client_header,
+        )
+    assert (
+        len(record) == 0
+    ), f"Expected no warnings, but got: {[f'{w.category.__name__}: {w.message}' for w in record]}"
+
+
+def test_tool_init_no_http_warning_if_no_sensitive_info_on_http(
+    http_session: ClientSession,
+    sample_tool_params: list[ParameterSchema],
+    sample_tool_description: str,
+):
+    """
+    Tests that NO UserWarning is issued if the URL is HTTP but there are
+    no client headers, auth params, or auth tokens.
+    """
+    with catch_warnings(record=True) as record:
+        simplefilter("always")
+
+        ToolboxTool(
+            session=http_session,
+            base_url=TEST_BASE_URL,
+            name="http_tool_no_sensitive",
+            description=sample_tool_description,
+            params=sample_tool_params,
+            required_authn_params={},
+            required_authz_tokens=[],
+            auth_service_token_getters={},
+            bound_params={},
+            client_headers={},
+        )
+    assert (
+        len(record) == 0
+    ), f"Expected no warnings, but got: {[f'{w.category.__name__}: {w.message}' for w in record]}"
