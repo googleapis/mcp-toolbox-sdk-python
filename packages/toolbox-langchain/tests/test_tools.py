@@ -140,9 +140,7 @@ class TestToolboxTool:
         mock_core_tool.bind_params.return_value = mock_core_tool
         new_langchain_tool = toolbox_tool.bind_param("param1", "bound-value")
         # *** Fix: Assert that bind_params is called on the core tool ***
-        mock_core_tool.bind_params.assert_called_once_with(
-            {"param1": "bound-value"}
-        )
+        mock_core_tool.bind_params.assert_called_once_with({"param1": "bound-value"})
         assert isinstance(new_langchain_tool, ToolboxTool)
         assert (
             new_langchain_tool._ToolboxTool__core_tool
