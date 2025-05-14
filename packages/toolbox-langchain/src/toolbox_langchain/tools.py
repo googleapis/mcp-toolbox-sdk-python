@@ -79,9 +79,7 @@ class ToolboxTool(BaseTool):
             ValueError: If any of the provided auth parameters is already
                 registered.
         """
-        new_core_tool = self.__core_tool.add_auth_token_getters(
-            auth_token_getters
-        )
+        new_core_tool = self.__core_tool.add_auth_token_getters(auth_token_getters)
         return ToolboxTool(core_tool=new_core_tool)
 
     def add_auth_token_getter(
