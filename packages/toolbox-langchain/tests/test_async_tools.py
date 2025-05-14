@@ -327,12 +327,9 @@ class TestAsyncToolboxTool:
         result = await tool_with_getter.ainvoke({"param2": 123})
         assert result == "test-result"
 
-        modified_core_tool_in_new_tool = (
-            tool_with_getter._AsyncToolboxTool__core_tool
-        )
+        modified_core_tool_in_new_tool = tool_with_getter._AsyncToolboxTool__core_tool
         assert (
-            modified_core_tool_in_new_tool._ToolboxTool__base_url
-            == "http://test-url"
+            modified_core_tool_in_new_tool._ToolboxTool__base_url == "http://test-url"
         )
         assert (
             modified_core_tool_in_new_tool._ToolboxTool__url
