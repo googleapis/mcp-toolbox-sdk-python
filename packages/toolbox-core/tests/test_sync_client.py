@@ -26,6 +26,7 @@ from toolbox_core.client import ToolboxClient
 from toolbox_core.protocol import ManifestSchema, ParameterSchema, ToolSchema
 from toolbox_core.sync_client import ToolboxSyncClient
 from toolbox_core.sync_tool import ToolboxSyncTool
+from toolbox_core.tool import ToolboxTool
 
 TEST_BASE_URL = "http://toolbox.example.com"
 
@@ -232,6 +233,41 @@ def test_sync_load_toolset_success(
     tool1 = next(t for t in tools if t.__name__ == TOOL1_NAME)
     result1 = tool1(param1="hello")
     assert result1 == f"{TOOL1_NAME}_ok"
+
+
+def test_sync_tool_internal_properties(aioresponses, tool_schema_minimal, sync_client):
+    """
+    Tests that the internal properties _async_tool, _loop, and _thread
+    of a ToolboxSyncTool instance are correctly initialized and accessible.
+    This directly covers the respective @property methods in ToolboxSyncTool.
+    """
+    TOOL_NAME = "test_tool_for_internal_properties"
+    mock_tool_load(aioresponses, TOOL_NAME, tool_schema_minimal)
+
+    loaded_sync_tool = sync_client.load_tool(TOOL_NAME)
+
+    assert isinstance(loaded_sync_tool, ToolboxSyncTool)
+
+    # 1. Test the _async_tool property
+    internal_async_tool = loaded_sync_tool._async_tool
+    assert isinstance(internal_async_tool, ToolboxTool)
+    assert internal_async_tool.__name__ == TOOL_NAME
+
+    # 2. Test the _loop property
+    internal_loop = loaded_sync_tool._loop
+    assert isinstance(internal_loop, AbstractEventLoop)
+    assert internal_loop is sync_client._ToolboxSyncClient__loop
+    assert (
+        internal_loop.is_running()
+    ), "The event loop used by ToolboxSyncTool should be running."
+
+    # 3. Test the _thread property
+    internal_thread = loaded_sync_tool._thread
+    assert isinstance(internal_thread, Thread)
+    assert internal_thread is sync_client._ToolboxSyncClient__thread
+    assert (
+        internal_thread.is_alive()
+    ), "The thread used by ToolboxSyncTool should be alive."
 
 
 def test_sync_invoke_tool_server_error(aioresponses, test_tool_str_schema, sync_client):
