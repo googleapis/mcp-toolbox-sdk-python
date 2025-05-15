@@ -14,6 +14,7 @@
 
 
 import inspect
+from types import MappingProxyType
 from typing import AsyncGenerator, Callable, Mapping
 from unittest.mock import AsyncMock, Mock
 from warnings import catch_warnings, simplefilter
@@ -100,6 +101,27 @@ def auth_header_key() -> str:
 def unused_auth_getters() -> dict[str, Callable[[], str]]:
     """Provides an auth getter for a service not required by sample_tool."""
     return {"unused-auth-service": lambda: "unused-token-value"}
+
+
+@pytest.fixture
+def toolbox_tool(
+    http_session: ClientSession,
+    sample_tool_params: list[ParameterSchema],
+    sample_tool_description: str,
+) -> ToolboxTool:
+    """Fixture for a ToolboxTool instance with common test setup."""
+    return ToolboxTool(
+        session=http_session,
+        base_url=TEST_BASE_URL,
+        name=TEST_TOOL_NAME,
+        description=sample_tool_description,
+        params=sample_tool_params,
+        required_authn_params={"message": ["service_a"]},
+        required_authz_tokens=["service_b"],
+        auth_service_token_getters={"service_x": lambda: "token_x"},
+        bound_params={"fixed_param": "fixed_value"},
+        client_headers={"X-Test-Client": "client_header_value"},
+    )
 
 
 def test_create_func_docstring_one_param_real_schema():
@@ -478,6 +500,82 @@ def test_add_auth_token_getters_unused_token(
 
     with pytest.raises(ValueError, match=expected_error_message):
         tool_instance.add_auth_token_getters(unused_auth_getters)
+
+
+def test_toolbox_tool_underscore_name_property(toolbox_tool: ToolboxTool):
+    """Tests the _name property."""
+    assert toolbox_tool._name == TEST_TOOL_NAME
+
+
+def test_toolbox_tool_underscore_description_property(toolbox_tool: ToolboxTool):
+    """Tests the _description property."""
+    assert (
+        toolbox_tool._description
+        == "A sample tool that processes a message and a count."
+    )
+
+
+def test_toolbox_tool_underscore_params_property(
+    toolbox_tool: ToolboxTool, sample_tool_params: list[ParameterSchema]
+):
+    """Tests the _params property returns a deep copy."""
+    params_copy = toolbox_tool._params
+    assert params_copy == sample_tool_params
+    assert (
+        params_copy is not toolbox_tool._ToolboxTool__params
+    )  # Ensure it's a deepcopy
+    # Verify modifying the copy does not affect the original
+    params_copy.append(
+        ParameterSchema(name="new_param", type="integer", description="A new parameter")
+    )
+    assert (
+        len(toolbox_tool._ToolboxTool__params) == 2
+    )  # Original should remain unchanged
+
+
+def test_toolbox_tool_underscore_bound_params_property(toolbox_tool: ToolboxTool):
+    """Tests the _bound_params property returns an immutable MappingProxyType."""
+    bound_params = toolbox_tool._bound_params
+    assert bound_params == {"fixed_param": "fixed_value"}
+    assert isinstance(bound_params, MappingProxyType)
+    # Verify immutability
+    with pytest.raises(TypeError):
+        bound_params["new_param"] = "new_value"
+
+
+def test_toolbox_tool_underscore_required_auth_params_property(
+    toolbox_tool: ToolboxTool,
+):
+    """Tests the _required_auth_params property returns an immutable MappingProxyType."""
+    required_auth_params = toolbox_tool._required_auth_params
+    assert required_auth_params == {"message": ["service_a"]}
+    assert isinstance(required_auth_params, MappingProxyType)
+    # Verify immutability
+    with pytest.raises(TypeError):
+        required_auth_params["new_param"] = ["new_service"]
+
+
+def test_toolbox_tool_underscore_auth_service_token_getters_property(
+    toolbox_tool: ToolboxTool,
+):
+    """Tests the _auth_service_token_getters property returns an immutable MappingProxyType."""
+    auth_getters = toolbox_tool._auth_service_token_getters
+    assert "service_x" in auth_getters
+    assert auth_getters["service_x"]() == "token_x"
+    assert isinstance(auth_getters, MappingProxyType)
+    # Verify immutability
+    with pytest.raises(TypeError):
+        auth_getters["new_service"] = lambda: "new_token"
+
+
+def test_toolbox_tool_underscore_client_headers_property(toolbox_tool: ToolboxTool):
+    """Tests the _client_headers property returns an immutable MappingProxyType."""
+    client_headers = toolbox_tool._client_headers
+    assert client_headers == {"X-Test-Client": "client_header_value"}
+    assert isinstance(client_headers, MappingProxyType)
+    # Verify immutability
+    with pytest.raises(TypeError):
+        client_headers["new_header"] = "new_value"
 
 
 # --- Test for the HTTP Warning ---
