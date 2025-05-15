@@ -227,7 +227,7 @@ tools = toolbox.load_toolset()
 
 auth_tool = tools[0].add_auth_token_getter("my_auth", get_auth_token) # Single token
 
-multi_auth_tool = tools[0].add_auth_token_getters({"my_auth", get_auth_token}) # Multiple tokens
+multi_auth_tool = tools[0].add_auth_token_getters({"auth_1": get_auth_1}, {"auth_2": get_auth_2}) # Multiple tokens
 
 # OR
 
