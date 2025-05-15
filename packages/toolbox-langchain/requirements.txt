@@ -1,4 +1,4 @@
--e packages/toolbox-core
+-e ../toolbox-core
 langchain-core==0.3.56
 PyYAML==6.0.2
 pydantic==2.11.4
