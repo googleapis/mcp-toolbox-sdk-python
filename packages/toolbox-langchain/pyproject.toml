@@ -9,8 +9,7 @@ authors = [
     {name = "Google LLC", email = "googleapis-packages@google.com"}
 ]
 dependencies = [
-    # TODO: Replace with actual package dependency (eg. "toolbox-core>=0.2.0,<1.0.0")
-    "toolbox-core @ git+https://github.com/googleapis/mcp-toolbox-sdk-python.git@anubhav-lc-wraps-core#subdirectory=packages/toolbox-core",
+    "toolbox-core>=0.2.0,<1.0.0",
     "langchain-core>=0.2.23,<1.0.0",
     "PyYAML>=6.0.1,<7.0.0",
     "pydantic>=2.7.0,<3.0.0",
