@@ -605,29 +605,3 @@ class TestSyncAuth:
                 tool_name_auth,
                 auth_token_getters={UNUSED_AUTH_SERVICE: lambda: "token"},
             )
-
-
-# --- Tests for @property methods of ToolboxSyncClient ---
-
-
-@pytest.fixture
-def sync_client_with_mocks() -> Generator[ToolboxSyncClient, Any, Any]:
-    """
-    Fixture to create a ToolboxSyncClient with mocked internal async client
-    without relying on actual network calls during init.
-    """
-    with patch(
-        "toolbox_core.sync_client.ToolboxClient", autospec=True
-    ) as MockToolboxClient:
-        # Mock the async client's constructor to return an AsyncMock instance
-        mock_async_client_instance = AsyncMock(spec=ToolboxClient)
-        MockToolboxClient.return_value = mock_async_client_instance
-
-        # Mock the run_coroutine_threadsafe and its result()
-        with patch("asyncio.run_coroutine_threadsafe") as mock_run_coroutine_threadsafe:
-            mock_future = Mock()
-            mock_future.result.return_value = mock_async_client_instance
-            mock_run_coroutine_threadsafe.return_value = mock_future
-
-            client = ToolboxSyncClient(TEST_BASE_URL)
-            yield client
