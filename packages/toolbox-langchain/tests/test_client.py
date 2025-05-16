@@ -16,9 +16,8 @@ from unittest.mock import Mock, patch
 
 import pytest
 from pydantic import BaseModel
-
-from toolbox_core.sync_tool import ToolboxSyncTool as ToolboxCoreSyncTool
 from toolbox_core.protocol import ParameterSchema as CoreParameterSchema
+from toolbox_core.sync_tool import ToolboxSyncTool as ToolboxCoreSyncTool
 from toolbox_core.utils import params_to_pydantic_model
 
 from toolbox_langchain.client import ToolboxClient
@@ -26,42 +25,69 @@ from toolbox_langchain.tools import ToolboxTool
 
 URL = "http://test_url"
 
-def create_mock_core_sync_tool(name="mock-sync-tool", doc="Mock sync description.", model_name="MockSyncModel", params=None):
+
+def create_mock_core_sync_tool(
+    name="mock-sync-tool",
+    doc="Mock sync description.",
+    model_name="MockSyncModel",
+    params=None,
+):
     mock_tool = Mock(spec=ToolboxCoreSyncTool)
     mock_tool.__name__ = name
     mock_tool.__doc__ = doc
     mock_tool._name = model_name
     if params is None:
-        mock_tool._params = [CoreParameterSchema(name="param1", type="string", description="Param 1")]
+        mock_tool._params = [
+            CoreParameterSchema(name="param1", type="string", description="Param 1")
+        ]
     else:
         mock_tool._params = params
     return mock_tool
 
-def assert_pydantic_models_equivalent(model_cls1: type[BaseModel], model_cls2: type[BaseModel], expected_model_name: str):
+
+def assert_pydantic_models_equivalent(
+    model_cls1: type[BaseModel], model_cls2: type[BaseModel], expected_model_name: str
+):
     assert issubclass(model_cls1, BaseModel), "model_cls1 is not a Pydantic BaseModel"
     assert issubclass(model_cls2, BaseModel), "model_cls2 is not a Pydantic BaseModel"
-    
-    assert model_cls1.__name__ == expected_model_name, f"model_cls1 name mismatch: expected {expected_model_name}, got {model_cls1.__name__}"
-    assert model_cls2.__name__ == expected_model_name, f"model_cls2 name mismatch: expected {expected_model_name}, got {model_cls2.__name__}"
+
+    assert (
+        model_cls1.__name__ == expected_model_name
+    ), f"model_cls1 name mismatch: expected {expected_model_name}, got {model_cls1.__name__}"
+    assert (
+        model_cls2.__name__ == expected_model_name
+    ), f"model_cls2 name mismatch: expected {expected_model_name}, got {model_cls2.__name__}"
 
     fields1 = model_cls1.model_fields
     fields2 = model_cls2.model_fields
 
-    assert fields1.keys() == fields2.keys(), \
-        f"Field names mismatch: {fields1.keys()} != {fields2.keys()}"
+    assert (
+        fields1.keys() == fields2.keys()
+    ), f"Field names mismatch: {fields1.keys()} != {fields2.keys()}"
 
     for field_name in fields1.keys():
         field_info1 = fields1[field_name]
         field_info2 = fields2[field_name]
 
-        assert field_info1.annotation == field_info2.annotation, \
-            f"Field '{field_name}': Annotation mismatch ({field_info1.annotation} != {field_info2.annotation})"
-        assert field_info1.description == field_info2.description, \
-            f"Field '{field_name}': Description mismatch ('{field_info1.description}' != '{field_info2.description}')"
-        is_required1 = field_info1.is_required() if hasattr(field_info1, 'is_required') else not field_info1.is_nullable()
-        is_required2 = field_info2.is_required() if hasattr(field_info2, 'is_required') else not field_info2.is_nullable()
-        assert is_required1 == is_required2, \
-            f"Field '{field_name}': Required status mismatch ({is_required1} != {is_required2})"
+        assert (
+            field_info1.annotation == field_info2.annotation
+        ), f"Field '{field_name}': Annotation mismatch ({field_info1.annotation} != {field_info2.annotation})"
+        assert (
+            field_info1.description == field_info2.description
+        ), f"Field '{field_name}': Description mismatch ('{field_info1.description}' != '{field_info2.description}')"
+        is_required1 = (
+            field_info1.is_required()
+            if hasattr(field_info1, "is_required")
+            else not field_info1.is_nullable()
+        )
+        is_required2 = (
+            field_info2.is_required()
+            if hasattr(field_info2, "is_required")
+            else not field_info2.is_nullable()
+        )
+        assert (
+            is_required1 == is_required2
+        ), f"Field '{field_name}': Required status mismatch ({is_required1} != {is_required2})"
 
 
 class TestToolboxClient:
@@ -78,26 +104,29 @@ class TestToolboxClient:
             name="test_tool_sync",
             doc="Sync tool description.",
             model_name="TestToolSyncModel",
-            params=[CoreParameterSchema(name="sp1", type="integer", description="Sync Param 1")]
+            params=[
+                CoreParameterSchema(
+                    name="sp1", type="integer", description="Sync Param 1"
+                )
+            ],
         )
         mock_core_load_tool.return_value = mock_core_tool_instance
-        
+
         langchain_tool = toolbox_client.load_tool("test_tool")
-        
+
         assert isinstance(langchain_tool, ToolboxTool)
         assert langchain_tool.name == mock_core_tool_instance.__name__
         assert langchain_tool.description == mock_core_tool_instance.__doc__
-        
+
         # Generate the expected schema once for comparison
         expected_args_schema = params_to_pydantic_model(
-            mock_core_tool_instance._name,
-            mock_core_tool_instance._params
+            mock_core_tool_instance._name, mock_core_tool_instance._params
         )
-        
+
         assert_pydantic_models_equivalent(
-            langchain_tool.args_schema, 
+            langchain_tool.args_schema,
             expected_args_schema,
-            mock_core_tool_instance._name
+            mock_core_tool_instance._name,
         )
 
         mock_core_load_tool.assert_called_once_with(
@@ -106,8 +135,12 @@ class TestToolboxClient:
 
     @patch("toolbox_core.sync_client.ToolboxSyncClient.load_toolset")
     def test_load_toolset(self, mock_core_load_toolset, toolbox_client):
-        mock_core_tool_instance1 = create_mock_core_sync_tool(name="tool-0", doc="desc 0", model_name="T0Model")
-        mock_core_tool_instance2 = create_mock_core_sync_tool(name="tool-1", doc="desc 1", model_name="T1Model", params=[])
+        mock_core_tool_instance1 = create_mock_core_sync_tool(
+            name="tool-0", doc="desc 0", model_name="T0Model"
+        )
+        mock_core_tool_instance2 = create_mock_core_sync_tool(
+            name="tool-1", doc="desc 1", model_name="T1Model", params=[]
+        )
 
         mock_core_load_toolset.return_value = [
             mock_core_tool_instance1,
@@ -116,22 +149,21 @@ class TestToolboxClient:
 
         langchain_tools = toolbox_client.load_toolset()
         assert len(langchain_tools) == 2
-        
+
         tool_instances_mocks = [mock_core_tool_instance1, mock_core_tool_instance2]
         for i, tool_instance_mock in enumerate(tool_instances_mocks):
             langchain_tool = langchain_tools[i]
             assert isinstance(langchain_tool, ToolboxTool)
             assert langchain_tool.name == tool_instance_mock.__name__
             assert langchain_tool.description == tool_instance_mock.__doc__
-            
+
             expected_args_schema = params_to_pydantic_model(
-                tool_instance_mock._name, 
-                tool_instance_mock._params
+                tool_instance_mock._name, tool_instance_mock._params
             )
             assert_pydantic_models_equivalent(
-                langchain_tool.args_schema, 
+                langchain_tool.args_schema,
                 expected_args_schema,
-                tool_instance_mock._name
+                tool_instance_mock._name,
             )
 
         mock_core_load_toolset.assert_called_once_with(
@@ -144,7 +176,7 @@ class TestToolboxClient:
         mock_core_sync_tool_instance = create_mock_core_sync_tool(
             name="test_async_loaded_tool",
             doc="Async loaded sync tool description.",
-            model_name="AsyncTestToolModel"
+            model_name="AsyncTestToolModel",
         )
         mock_sync_core_load_tool.return_value = mock_core_sync_tool_instance
 
@@ -153,17 +185,16 @@ class TestToolboxClient:
         assert isinstance(langchain_tool, ToolboxTool)
         assert langchain_tool.name == mock_core_sync_tool_instance.__name__
         assert langchain_tool.description == mock_core_sync_tool_instance.__doc__
-        
+
         expected_args_schema = params_to_pydantic_model(
-            mock_core_sync_tool_instance._name,
-            mock_core_sync_tool_instance._params
+            mock_core_sync_tool_instance._name, mock_core_sync_tool_instance._params
         )
         assert_pydantic_models_equivalent(
-            langchain_tool.args_schema, 
+            langchain_tool.args_schema,
             expected_args_schema,
-            mock_core_sync_tool_instance._name
+            mock_core_sync_tool_instance._name,
         )
-        
+
         mock_sync_core_load_tool.assert_called_once_with(
             name="test_tool", auth_token_getters={}, bound_params={}
         )
@@ -171,8 +202,15 @@ class TestToolboxClient:
     @pytest.mark.asyncio
     @patch("toolbox_core.sync_client.ToolboxSyncClient.load_toolset")
     async def test_aload_toolset(self, mock_sync_core_load_toolset, toolbox_client):
-        mock_core_sync_tool1 = create_mock_core_sync_tool(name="async-tool-0", doc="async desc 0", model_name="AT0Model")
-        mock_core_sync_tool2 = create_mock_core_sync_tool(name="async-tool-1", doc="async desc 1", model_name="AT1Model", params=[CoreParameterSchema(name="p1", type="string", description="P1")])
+        mock_core_sync_tool1 = create_mock_core_sync_tool(
+            name="async-tool-0", doc="async desc 0", model_name="AT0Model"
+        )
+        mock_core_sync_tool2 = create_mock_core_sync_tool(
+            name="async-tool-1",
+            doc="async desc 1",
+            model_name="AT1Model",
+            params=[CoreParameterSchema(name="p1", type="string", description="P1")],
+        )
 
         mock_sync_core_load_toolset.return_value = [
             mock_core_sync_tool1,
@@ -181,21 +219,20 @@ class TestToolboxClient:
 
         langchain_tools = await toolbox_client.aload_toolset()
         assert len(langchain_tools) == 2
-        
+
         tool_instances_mocks = [mock_core_sync_tool1, mock_core_sync_tool2]
         for i, tool_instance_mock in enumerate(tool_instances_mocks):
             langchain_tool = langchain_tools[i]
             assert isinstance(langchain_tool, ToolboxTool)
             assert langchain_tool.name == tool_instance_mock.__name__
-            
+
             expected_args_schema = params_to_pydantic_model(
-                tool_instance_mock._name, 
-                tool_instance_mock._params
+                tool_instance_mock._name, tool_instance_mock._params
             )
             assert_pydantic_models_equivalent(
-                langchain_tool.args_schema, 
+                langchain_tool.args_schema,
                 expected_args_schema,
-                tool_instance_mock._name
+                tool_instance_mock._name,
             )
 
         mock_sync_core_load_toolset.assert_called_once_with(
@@ -223,10 +260,16 @@ class TestToolboxClient:
         assert len(record) == 2
         messages = sorted([str(r.message) for r in record])
         # Warning for auth_headers when auth_token_getters is also present
-        assert "Both `auth_token_getters` and `auth_headers` are provided. `auth_headers` is deprecated, and `auth_token_getters` will be used." in messages
+        assert (
+            "Both `auth_token_getters` and `auth_headers` are provided. `auth_headers` is deprecated, and `auth_token_getters` will be used."
+            in messages
+        )
         # Warning for auth_tokens when auth_token_getters is also present
-        assert "Both `auth_token_getters` and `auth_tokens` are provided. `auth_tokens` is deprecated, and `auth_token_getters` will be used." in messages
-    
+        assert (
+            "Both `auth_token_getters` and `auth_tokens` are provided. `auth_tokens` is deprecated, and `auth_token_getters` will be used."
+            in messages
+        )
+
         assert isinstance(tool, ToolboxTool)
         mock_core_load_tool.assert_called_with(
             name="test_tool_name",
@@ -234,38 +277,47 @@ class TestToolboxClient:
             bound_params=bound_params,
         )
         mock_core_load_tool.reset_mock()
-    
+
         # Scenario 2: auth_tokens and auth_headers provided, auth_token_getters is default (empty initially)
         with pytest.warns(DeprecationWarning) as record:
             toolbox_client.load_tool(
                 "test_tool_name_2",
-                auth_tokens=auth_tokens_deprecated, # This will be used for auth_token_getters
-                auth_headers=auth_headers_deprecated, # This will warn as auth_token_getters is now populated
+                auth_tokens=auth_tokens_deprecated,  # This will be used for auth_token_getters
+                auth_headers=auth_headers_deprecated,  # This will warn as auth_token_getters is now populated
                 bound_params=bound_params,
             )
         assert len(record) == 2
         messages = sorted([str(r.message) for r in record])
-        
-        assert messages[0] == "Argument `auth_tokens` is deprecated. Use `auth_token_getters` instead."
-        assert messages[1] == "Both `auth_token_getters` and `auth_headers` are provided. `auth_headers` is deprecated, and `auth_token_getters` will be used."
-        
-        expected_getters_for_call = auth_tokens_deprecated 
-    
+
+        assert (
+            messages[0]
+            == "Argument `auth_tokens` is deprecated. Use `auth_token_getters` instead."
+        )
+        assert (
+            messages[1]
+            == "Both `auth_token_getters` and `auth_headers` are provided. `auth_headers` is deprecated, and `auth_token_getters` will be used."
+        )
+
+        expected_getters_for_call = auth_tokens_deprecated
+
         mock_core_load_tool.assert_called_with(
             name="test_tool_name_2",
             auth_token_getters=expected_getters_for_call,
             bound_params=bound_params,
         )
         mock_core_load_tool.reset_mock()
-    
-        with pytest.warns(DeprecationWarning, match="Argument `auth_headers` is deprecated. Use `auth_token_getters` instead.") as record:
+
+        with pytest.warns(
+            DeprecationWarning,
+            match="Argument `auth_headers` is deprecated. Use `auth_token_getters` instead.",
+        ) as record:
             toolbox_client.load_tool(
                 "test_tool_name_3",
                 auth_headers=auth_headers_deprecated,
                 bound_params=bound_params,
             )
         assert len(record) == 1
-        
+
         mock_core_load_tool.assert_called_with(
             name="test_tool_name_3",
             auth_token_getters=auth_headers_deprecated,
@@ -306,7 +358,9 @@ class TestToolboxClient:
     @pytest.mark.asyncio
     @patch("toolbox_core.sync_client.ToolboxSyncClient.load_tool")
     async def test_aload_tool_with_args(self, mock_sync_core_load_tool, toolbox_client):
-        mock_core_tool_instance = create_mock_core_sync_tool(model_name="MyAsyncToolModel")
+        mock_core_tool_instance = create_mock_core_sync_tool(
+            model_name="MyAsyncToolModel"
+        )
         mock_sync_core_load_tool.return_value = mock_core_tool_instance
 
         auth_token_getters = {"token_getter1": lambda: "value1"}
@@ -336,7 +390,9 @@ class TestToolboxClient:
     async def test_aload_toolset_with_args(
         self, mock_sync_core_load_toolset, toolbox_client
     ):
-        mock_core_tool_instance = create_mock_core_sync_tool(model_name="MyAsyncSetModel")
+        mock_core_tool_instance = create_mock_core_sync_tool(
+            model_name="MyAsyncSetModel"
+        )
         mock_sync_core_load_toolset.return_value = [mock_core_tool_instance]
 
         auth_token_getters = {"token_getter1": lambda: "value1"}
