@@ -68,18 +68,6 @@ class ToolboxSyncTool:
         )
 
     @property
-    def _async_tool(self) -> ToolboxTool:
-        return self.__async_tool
-
-    @property
-    def _loop(self) -> AbstractEventLoop:
-        return self.__loop
-
-    @property
-    def _thread(self) -> Thread:
-        return self.__thread
-
-    @property
     def __name__(self) -> str:
         return self.__async_tool.__name__
 
