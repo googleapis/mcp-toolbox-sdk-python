@@ -67,21 +67,18 @@ def sync_client_environment():
 
 
 @pytest.fixture
-def sync_client(sync_client_environment, request):
+def sync_client(sync_client_environment):
     """
     Provides a ToolboxSyncClient instance within an isolated environment.
     The client's underlying async session is automatically closed after the test.
     The class-level loop/thread are managed by sync_client_environment.
     """
-    # `sync_client_environment` has prepared the class state.
     client = ToolboxSyncClient(TEST_BASE_URL)
 
-    def finalizer():
-        client.close()  # Closes the async_client's session.
-        # Loop/thread shutdown is handled by sync_client_environment's teardown.
+    yield client
 
-    request.addfinalizer(finalizer)
-    return client
+    client.close()  # Closes the async_client's session.
+    # Loop/thread shutdown is handled by sync_client_environment's teardown.
 
 
 @pytest.fixture()
