@@ -85,12 +85,10 @@ class ToolboxClient:
                 )
                 auth_token_getters = auth_headers
 
-        core_tool = await wrap_future(
-            self.__core_client._load_tool_future(
-                name=tool_name,
-                auth_token_getters=auth_token_getters,
-                bound_params=bound_params,
-            )
+        core_tool = await self.__core_client._load_tool_coro(
+            name=tool_name,
+            auth_token_getters=auth_token_getters,
+            bound_params=bound_params,
         )
         return ToolboxTool(core_tool=core_tool)
 
@@ -151,13 +149,11 @@ class ToolboxClient:
                 )
                 auth_token_getters = auth_headers
 
-        core_tools = await wrap_future(
-            self.__core_client._load_toolset_future(
-                name=toolset_name,
-                auth_token_getters=auth_token_getters,
-                bound_params=bound_params,
-                strict=strict,
-            )
+        core_tools = await self.__core_client._load_toolset_coro(
+            name=toolset_name,
+            auth_token_getters=auth_token_getters,
+            bound_params=bound_params,
+            strict=strict,
         )
 
         tools = []
