@@ -12,11 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import asyncio
+from asyncio import wrap_future
 from typing import Any, Callable, Union
 
 from langchain_core.tools import BaseTool
 from toolbox_core.sync_tool import ToolboxSyncTool as ToolboxCoreSyncTool
+from toolbox_core.utils import params_to_pydantic_model
 
 
 class ToolboxTool(BaseTool):
@@ -41,7 +42,7 @@ class ToolboxTool(BaseTool):
         super().__init__(
             name=core_tool.__name__,
             description=core_tool.__doc__,
-            args_schema=core_tool._async_tool._pydantic_model,
+            args_schema=params_to_pydantic_model(core_tool._name, core_tool._params),
         )
         self.__core_tool = core_tool
 
@@ -49,16 +50,7 @@ class ToolboxTool(BaseTool):
         return self.__core_tool(**kwargs)
 
     async def _arun(self, **kwargs: Any) -> str:
-        coro = self.__core_tool._async_tool(**kwargs)
-
-        # If a loop has not been provided, attempt to run in current thread.
-        if not self.__core_tool._loop:
-            return await coro
-
-        # Otherwise, run in the background thread.
-        return await asyncio.wrap_future(
-            asyncio.run_coroutine_threadsafe(coro, self.__core_tool._loop)
-        )
+        return await wrap_future(self.__core_tool._call_future(**kwargs))
 
     def add_auth_token_getters(
         self, auth_token_getters: dict[str, Callable[[], str]]
