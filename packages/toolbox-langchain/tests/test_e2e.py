@@ -36,7 +36,6 @@ This file covers the following use cases:
 
 import pytest
 import pytest_asyncio
-from langchain_core.tools import ToolException
 from pydantic import ValidationError
 
 from toolbox_langchain.client import ToolboxClient
@@ -54,7 +53,7 @@ class TestE2EClientAsync:
     @pytest_asyncio.fixture(scope="function")
     async def get_n_rows_tool(self, toolbox):
         tool = await toolbox.aload_tool("get-n-rows")
-        assert tool._ToolboxTool__async_tool._AsyncToolboxTool__name == "get-n-rows"
+        assert tool._ToolboxTool__core_tool.__name__ == "get-n-rows"
         return tool
 
     #### Basic e2e tests
@@ -71,7 +70,7 @@ class TestE2EClientAsync:
         toolset = await toolbox.aload_toolset(toolset_name)
         assert len(toolset) == expected_length
         for tool in toolset:
-            name = tool._ToolboxTool__async_tool._AsyncToolboxTool__name
+            name = tool._ToolboxTool__core_tool.__name__
             assert name in expected_tools
 
     async def test_aload_toolset_all(self, toolbox):
@@ -85,7 +84,7 @@ class TestE2EClientAsync:
             "get-row-by-content-auth",
         ]
         for tool in toolset:
-            name = tool._ToolboxTool__async_tool._AsyncToolboxTool__name
+            name = tool._ToolboxTool__core_tool.__name__
             assert name in tool_names
 
     async def test_run_tool_async(self, get_n_rows_tool):
@@ -114,11 +113,14 @@ class TestE2EClientAsync:
     @pytest.mark.asyncio
     async def test_run_tool_unauth_with_auth(self, toolbox, auth_token2):
         """Tests running a tool that doesn't require auth, with auth provided."""
-        tool = await toolbox.aload_tool(
-            "get-row-by-id", auth_token_getters={"my-test-auth": lambda: auth_token2}
-        )
-        response = await tool.ainvoke({"id": "2"})
-        assert "row2" in response
+        with pytest.raises(
+            ValueError,
+            match="Validation failed for tool 'get-row-by-id': unused auth tokens: my-test-auth.",
+        ):
+            await toolbox.aload_tool(
+                "get-row-by-id",
+                auth_token_getters={"my-test-auth": lambda: auth_token2},
+            )
 
     async def test_run_tool_no_auth(self, toolbox):
         """Tests running a tool requiring auth without providing auth."""
@@ -127,7 +129,7 @@ class TestE2EClientAsync:
         )
         with pytest.raises(
             PermissionError,
-            match="Tool get-row-by-id-auth requires authentication, but no valid authentication sources are registered. Please register the required sources before use.",
+            match="One or more of the following authn services are required to invoke this tool: my-test-auth",
         ):
             await tool.ainvoke({"id": "2"})
 
@@ -138,8 +140,8 @@ class TestE2EClientAsync:
         )
         auth_tool = tool.add_auth_token_getter("my-test-auth", lambda: auth_token2)
         with pytest.raises(
-            ToolException,
-            match="{'status': 'Unauthorized', 'error': 'tool invocation not authorized. Please make sure your specify correct auth headers'}",
+            Exception,
+            match="tool invocation not authorized. Please make sure your specify correct auth headers",
         ):
             await auth_tool.ainvoke({"id": "2"})
 
@@ -157,7 +159,7 @@ class TestE2EClientAsync:
         tool = await toolbox.aload_tool("get-row-by-email-auth")
         with pytest.raises(
             PermissionError,
-            match="Parameter\(s\) `email` of tool get-row-by-email-auth require authentication\, but no valid authentication sources are registered\. Please register the required sources before use\.",
+            match="One or more of the following authn services are required to invoke this tool: my-test-auth",
         ):
             await tool.ainvoke({"email": ""})
 
@@ -179,8 +181,8 @@ class TestE2EClientAsync:
             auth_token_getters={"my-test-auth": lambda: auth_token1},
         )
         with pytest.raises(
-            ToolException,
-            match="{'status': 'Bad Request', 'error': 'provided parameters were invalid: error parsing authenticated parameter \"data\": no field named row_data in claims'}",
+            Exception,
+            match='provided parameters were invalid: error parsing authenticated parameter "data": no field named row_data in claims',
         ):
             await tool.ainvoke({})
 
@@ -196,7 +198,7 @@ class TestE2EClientSync:
     @pytest.fixture(scope="function")
     def get_n_rows_tool(self, toolbox):
         tool = toolbox.load_tool("get-n-rows")
-        assert tool._ToolboxTool__async_tool._AsyncToolboxTool__name == "get-n-rows"
+        assert tool._ToolboxTool__core_tool.__name__ == "get-n-rows"
         return tool
 
     #### Basic e2e tests
@@ -213,7 +215,7 @@ class TestE2EClientSync:
         toolset = toolbox.load_toolset(toolset_name)
         assert len(toolset) == expected_length
         for tool in toolset:
-            name = tool._ToolboxTool__async_tool._AsyncToolboxTool__name
+            name = tool._ToolboxTool__core_tool.__name__
             assert name in expected_tools
 
     def test_aload_toolset_all(self, toolbox):
@@ -227,7 +229,7 @@ class TestE2EClientSync:
             "get-row-by-content-auth",
         ]
         for tool in toolset:
-            name = tool._ToolboxTool__async_tool._AsyncToolboxTool__name
+            name = tool._ToolboxTool__core_tool.__name__
             assert name in tool_names
 
     @pytest.mark.asyncio
@@ -256,11 +258,14 @@ class TestE2EClientSync:
     #### Auth tests
     def test_run_tool_unauth_with_auth(self, toolbox, auth_token2):
         """Tests running a tool that doesn't require auth, with auth provided."""
-        tool = toolbox.load_tool(
-            "get-row-by-id", auth_token_getters={"my-test-auth": lambda: auth_token2}
-        )
-        response = tool.invoke({"id": "2"})
-        assert "row2" in response
+        with pytest.raises(
+            ValueError,
+            match="Validation failed for tool 'get-row-by-id': unused auth tokens: my-test-auth.",
+        ):
+            toolbox.load_tool(
+                "get-row-by-id",
+                auth_token_getters={"my-test-auth": lambda: auth_token2},
+            )
 
     def test_run_tool_no_auth(self, toolbox):
         """Tests running a tool requiring auth without providing auth."""
@@ -269,7 +274,7 @@ class TestE2EClientSync:
         )
         with pytest.raises(
             PermissionError,
-            match="Tool get-row-by-id-auth requires authentication, but no valid authentication sources are registered. Please register the required sources before use.",
+            match="One or more of the following authn services are required to invoke this tool: my-test-auth",
         ):
             tool.invoke({"id": "2"})
 
@@ -280,8 +285,8 @@ class TestE2EClientSync:
         )
         auth_tool = tool.add_auth_token_getter("my-test-auth", lambda: auth_token2)
         with pytest.raises(
-            ToolException,
-            match="{'status': 'Unauthorized', 'error': 'tool invocation not authorized. Please make sure your specify correct auth headers'}",
+            Exception,
+            match="tool invocation not authorized. Please make sure your specify correct auth headers",
         ):
             auth_tool.invoke({"id": "2"})
 
@@ -299,7 +304,7 @@ class TestE2EClientSync:
         tool = toolbox.load_tool("get-row-by-email-auth")
         with pytest.raises(
             PermissionError,
-            match="Parameter\(s\) `email` of tool get-row-by-email-auth require authentication\, but no valid authentication sources are registered\. Please register the required sources before use\.",
+            match="One or more of the following authn services are required to invoke this tool: my-test-auth",
         ):
             tool.invoke({"email": ""})
 
@@ -321,7 +326,7 @@ class TestE2EClientSync:
             auth_token_getters={"my-test-auth": lambda: auth_token1},
         )
         with pytest.raises(
-            ToolException,
-            match="{'status': 'Bad Request', 'error': 'provided parameters were invalid: error parsing authenticated parameter \"data\": no field named row_data in claims'}",
+            Exception,
+            match='provided parameters were invalid: error parsing authenticated parameter "data": no field named row_data in claims',
         ):
             tool.invoke({})
