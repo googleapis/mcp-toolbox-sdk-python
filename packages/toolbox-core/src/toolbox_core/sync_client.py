@@ -144,7 +144,7 @@ class ToolboxSyncClient:
         if not self.__loop or not self.__thread:
             raise ValueError("Background loop or thread cannot be None.")
 
-        async_tools = asyncio.run_coroutine_threadsafe(coro, self.__loop).result()  # type: ignore
+        async_tools = asyncio.run_coroutine_threadsafe(coro, self.__loop).result()
         return [
             ToolboxSyncTool(async_tool, self.__loop, self.__thread)
             for async_tool in async_tools
@@ -154,7 +154,7 @@ class ToolboxSyncClient:
         self, headers: Mapping[str, Union[Callable, Coroutine, str]]
     ) -> None:
         """
-        Synchronously Add headers to be included in each request sent through this client.
+        Add headers to be included in each request sent through this client.
 
         Args:
             headers: Headers to include in each request sent through this client.
@@ -162,10 +162,7 @@ class ToolboxSyncClient:
         Raises:
             ValueError: If any of the headers are already registered in the client.
         """
-        coro = self.__async_client.add_headers(headers)
-
-        # We have already created a new loop in the init method in case it does not already exist
-        asyncio.run_coroutine_threadsafe(coro, self.__loop).result()  # type: ignore
+        self.__async_client.add_headers(headers)
 
     def __enter__(self):
         """Enter the runtime context related to this client instance."""

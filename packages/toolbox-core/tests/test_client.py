@@ -1443,7 +1443,7 @@ class TestClientHeaders:
         )
 
         async with ToolboxClient(TEST_BASE_URL) as client:
-            await client.add_headers(static_header)
+            client.add_headers(static_header)
             assert client._ToolboxClient__client_headers == static_header
 
             tool = await client.load_tool(tool_name)
