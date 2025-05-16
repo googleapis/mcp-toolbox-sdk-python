@@ -16,6 +16,7 @@ from typing import Any, Callable, Union
 
 from langchain_core.tools import BaseTool
 from toolbox_core.tool import ToolboxTool as ToolboxCoreTool
+from toolbox_core.utils import params_to_pydantic_model
 
 
 # This class is an internal implementation detail and is not exposed to the
@@ -43,7 +44,7 @@ class AsyncToolboxTool(BaseTool):
         super().__init__(
             name=core_tool.__name__,
             description=core_tool.__doc__,
-            args_schema=core_tool._pydantic_model,
+            args_schema=params_to_pydantic_model(core_tool._name, core_tool._params),
         )
         self.__core_tool = core_tool
 
