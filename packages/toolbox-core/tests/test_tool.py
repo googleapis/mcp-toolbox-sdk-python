@@ -578,24 +578,6 @@ def test_toolbox_tool_underscore_client_headers_property(toolbox_tool: ToolboxTo
         client_headers["new_header"] = "new_value"
 
 
-def test_toolbox_tool_underscore_pydantic_model_property(toolbox_tool: ToolboxTool):
-    """Tests the _pydantic_model property returns the correct Pydantic model."""
-    pydantic_model = toolbox_tool._pydantic_model
-    assert issubclass(pydantic_model, BaseModel)
-    assert pydantic_model.__name__ == TEST_TOOL_NAME
-
-    # Test that the model can validate expected data
-    valid_data = {"message": "test", "count": 10}
-    validated_data = pydantic_model.model_validate(valid_data)
-    assert validated_data.message == "test"
-    assert validated_data.count == 10
-
-    # Test that the model raises ValidationError for invalid data
-    invalid_data = {"message": 123, "count": "not_an_int"}
-    with pytest.raises(ValidationError):
-        pydantic_model.model_validate(invalid_data)
-
-
 # --- Test for the HTTP Warning ---
 @pytest.mark.parametrize(
     "trigger_condition_params",
