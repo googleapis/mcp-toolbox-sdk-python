@@ -15,6 +15,7 @@
 
 import asyncio
 from asyncio import AbstractEventLoop
+from concurrent.futures import Future
 from inspect import Signature
 from threading import Thread
 from typing import Any, Callable, Coroutine, Mapping, Sequence, Union
@@ -129,6 +130,32 @@ class ToolboxSyncTool:
     def _client_headers(self) -> Mapping[str, Union[Callable, Coroutine, str]]:
         return self.__async_tool._client_headers
 
+    def _call_future(self, *args: Any, **kwargs: Any) -> Future[str]:
+        """
+        Asynchronously calls the remote tool with the provided arguments.
+
+        This method schedules the actual remote tool invocation on a background
+        event loop and immediately returns a `concurrent.futures.Future`.
+        This allows the caller to perform other operations while the remote
+        tool execution is in progress.
+
+        To obtain the result of the tool's execution, call `.result()` on
+        the returned Future object. This will block until the remote tool
+        responds or an error occurs.
+
+        Args:
+            *args: Positional arguments for the tool.
+            **kwargs: Keyword arguments for the tool.
+
+        Returns:
+            A `concurrent.futures.Future` that will eventually resolve to the
+            string result returned by the remote tool's execution. If the
+            remote tool call fails, the future will resolve to an exception.
+
+        """
+        coro = self.__async_tool(*args, **kwargs)
+        return asyncio.run_coroutine_threadsafe(coro, self.__loop)
+
     def __call__(self, *args: Any, **kwargs: Any) -> str:
         """
         Synchronously calls the remote tool with the provided arguments.
@@ -142,9 +169,9 @@ class ToolboxSyncTool:
 
         Returns:
             The string result returned by the remote tool execution.
+
         """
-        coro = self.__async_tool(*args, **kwargs)
-        return asyncio.run_coroutine_threadsafe(coro, self.__loop).result()
+        return self._call_future(*args, **kwargs).result()
 
     def add_auth_token_getters(
         self,
