@@ -228,7 +228,7 @@ workflow.add_edge("tools", "agent")
 app = workflow.compile()
 ```
 
-## Authenticating to the Toolbox Server
+## Client to Server Authentication
 
 This section describes how to authenticate the ToolboxClient itself when
 connecting to a Toolbox server instance that requires authentication. This is
