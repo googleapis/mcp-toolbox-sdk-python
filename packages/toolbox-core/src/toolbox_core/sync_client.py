@@ -63,18 +63,6 @@ class ToolboxSyncClient:
             create_client(), self.__class__.__loop
         ).result()
 
-    @property
-    def _async_client(self) -> ToolboxClient:
-        return self.__async_client
-
-    @property
-    def _loop(self) -> Optional[AbstractEventLoop]:
-        return self.__class__.__loop
-
-    @property
-    def _thread(self) -> Optional[Thread]:
-        return self.__class__.__thread
-
     def close(self):
         """
         Synchronously closes the underlying client session. Doing so will cause

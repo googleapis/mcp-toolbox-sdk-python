@@ -669,27 +669,3 @@ def sync_client_with_mocks() -> Generator[ToolboxSyncClient, Any, Any]:
 
             client = ToolboxSyncClient(TEST_BASE_URL)
             yield client
-
-
-def test_sync_client_underscore_async_client_property(
-    sync_client_with_mocks: ToolboxSyncClient,
-):
-    """Tests the _async_client property."""
-    assert isinstance(sync_client_with_mocks._async_client, AsyncMock)
-
-
-def test_sync_client_underscore_loop_property(
-    sync_client_with_mocks: ToolboxSyncClient,
-):
-    """Tests the _loop property."""
-    assert sync_client_with_mocks._loop is not None
-    assert isinstance(sync_client_with_mocks._loop, AbstractEventLoop)
-
-
-def test_sync_client_underscore_thread_property(
-    sync_client_with_mocks: ToolboxSyncClient,
-):
-    """Tests the _thread property."""
-    assert sync_client_with_mocks._thread is not None
-    assert isinstance(sync_client_with_mocks._thread, Thread)
-    assert sync_client_with_mocks._thread.is_alive()
