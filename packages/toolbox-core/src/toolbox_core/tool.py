@@ -159,10 +159,6 @@ class ToolboxTool:
     def _client_headers(self) -> Mapping[str, Union[Callable, Coroutine, str]]:
         return MappingProxyType(self.__client_headers)
 
-    @property
-    def _pydantic_model(self) -> type[BaseModel]:
-        return self.__pydantic_model
-
     def __copy(
         self,
         session: Optional[ClientSession] = None,
