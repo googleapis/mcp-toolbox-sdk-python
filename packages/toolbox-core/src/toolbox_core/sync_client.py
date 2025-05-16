@@ -20,6 +20,7 @@ from typing import Any, Callable, Coroutine, Mapping, Optional, Union
 
 from .client import ToolboxClient
 from .sync_tool import ToolboxSyncTool
+from concurrent.futures import Future
 
 
 class ToolboxSyncClient:
@@ -85,6 +86,46 @@ class ToolboxSyncClient:
         coro = self.__async_client.close()
         asyncio.run_coroutine_threadsafe(coro, self.__loop).result()
 
+    def load_tool_future(
+        self,
+        name: str,
+        auth_token_getters: dict[str, Callable[[], str]] = {},
+        bound_params: Mapping[str, Union[Callable[[], Any], Any]] = {},
+    ) -> Future[ToolboxSyncTool]:
+        """
+        Returns a future that loads a tool from the server.
+        """
+        if not self.__loop or not self.__thread:
+            raise ValueError("Background loop or thread cannot be None.")
+
+        async def async_worker() -> ToolboxSyncTool:
+            async_tool = await self.__async_client.load_tool(name, auth_token_getters, bound_params)
+            return ToolboxSyncTool(async_tool, self.__loop, self.__thread)
+        return asyncio.run_coroutine_threadsafe(async_worker(), self.__loop)
+
+    def load_toolset_future(
+        self,
+        name: Optional[str] = None,
+        auth_token_getters: dict[str, Callable[[], str]] = {},
+        bound_params: Mapping[str, Union[Callable[[], Any], Any]] = {},
+        strict: bool = False,
+    ) -> Future[list[ToolboxSyncTool]]:
+        """
+        Returns a future that fetches a toolset and loads all tools defined within it.
+        """
+        if not self.__loop or not self.__thread:
+            raise ValueError("Background loop or thread cannot be None.")
+
+        async def async_worker() -> list[ToolboxSyncTool]:
+            async_tools = await self.__async_client.load_toolset(
+                name, auth_token_getters, bound_params, strict
+            )
+            return [
+                ToolboxSyncTool(async_tool, self.__loop, self.__thread)
+                for async_tool in async_tools
+            ]
+        return asyncio.run_coroutine_threadsafe(async_worker(), self.__loop)
+
     def load_tool(
         self,
         name: str,
@@ -110,13 +151,7 @@ class ToolboxSyncClient:
                 for execution. The specific arguments and behavior of the callable
                 depend on the tool itself.
         """
-        coro = self.__async_client.load_tool(name, auth_token_getters, bound_params)
-
-        if not self.__loop or not self.__thread:
-            raise ValueError("Background loop or thread cannot be None.")
-
-        async_tool = asyncio.run_coroutine_threadsafe(coro, self.__loop).result()
-        return ToolboxSyncTool(async_tool, self.__loop, self.__thread)
+        return self.load_tool_future(name, auth_token_getters, bound_params).result()
 
     def load_toolset(
         self,
@@ -147,18 +182,7 @@ class ToolboxSyncClient:
         Raises:
             ValueError: If validation fails based on the `strict` flag.
         """
-        coro = self.__async_client.load_toolset(
-            name, auth_token_getters, bound_params, strict
-        )
-
-        if not self.__loop or not self.__thread:
-            raise ValueError("Background loop or thread cannot be None.")
-
-        async_tools = asyncio.run_coroutine_threadsafe(coro, self.__loop).result()
-        return [
-            ToolboxSyncTool(async_tool, self.__loop, self.__thread)
-            for async_tool in async_tools
-        ]
+        return self.load_toolset_future(name, auth_token_getters, bound_params, strict).result()
 
     def add_headers(
         self, headers: Mapping[str, Union[Callable, Coroutine, str]]

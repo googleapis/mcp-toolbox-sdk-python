@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import asyncio
+from asyncio import wrap_future
 from typing import Any, Callable, Union
 
 from deprecated import deprecated
@@ -50,16 +50,7 @@ class ToolboxTool(BaseTool):
         return self.__core_tool(**kwargs)
 
     async def _arun(self, **kwargs: Any) -> str:
-        coro = self.__core_tool._async_tool(**kwargs)
-
-        # If a loop has not been provided, attempt to run in current thread.
-        if not self.__core_tool._loop:
-            return await coro
-
-        # Otherwise, run in the background thread.
-        return await asyncio.wrap_future(
-            asyncio.run_coroutine_threadsafe(coro, self.__core_tool._loop)
-        )
+        return await wrap_future(self.__core_tool.call_future(**kwargs))
 
     def add_auth_token_getters(
         self, auth_token_getters: dict[str, Callable[[], str]]

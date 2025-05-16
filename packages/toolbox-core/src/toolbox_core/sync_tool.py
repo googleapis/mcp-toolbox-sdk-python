@@ -21,6 +21,7 @@ from typing import Any, Callable, Coroutine, Mapping, Sequence, Union
 
 from .protocol import ParameterSchema
 from .tool import ToolboxTool
+from concurrent.futures import Future
 
 
 class ToolboxSyncTool:
@@ -129,6 +130,13 @@ class ToolboxSyncTool:
     def _client_headers(self) -> Mapping[str, Union[Callable, Coroutine, str]]:
         return self.__async_tool._client_headers
 
+    def call_future(self, *args: Any, **kwargs: Any) -> Future[str]:
+        """
+        Returns future that calls the remote tool with the provided arguments.
+        """
+        coro = self.__async_tool(*args, **kwargs)
+        return asyncio.run_coroutine_threadsafe(coro, self.__loop)
+
     def __call__(self, *args: Any, **kwargs: Any) -> str:
         """
         Synchronously calls the remote tool with the provided arguments.
@@ -143,8 +151,7 @@ class ToolboxSyncTool:
         Returns:
             The string result returned by the remote tool execution.
         """
-        coro = self.__async_tool(*args, **kwargs)
-        return asyncio.run_coroutine_threadsafe(coro, self.__loop).result()
+        return self.call_future(*args, **kwargs).result()
 
     def add_auth_token_getters(
         self,
