@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from asyncio import wrap_future
+from asyncio import to_thread
 from typing import Any, Callable, Optional, Union
 from warnings import warn
 
@@ -85,12 +85,11 @@ class ToolboxClient:
                 )
                 auth_token_getters = auth_headers
 
-        core_tool = await wrap_future(
-            self.__core_client._load_tool_future(
-                name=tool_name,
-                auth_token_getters=auth_token_getters,
-                bound_params=bound_params,
-            )
+        core_tool = await to_thread(
+            self.__core_client.load_tool,
+            name=tool_name,
+            auth_token_getters=auth_token_getters,
+            bound_params=bound_params,
         )
         return ToolboxTool(core_tool=core_tool)
 
@@ -151,13 +150,12 @@ class ToolboxClient:
                 )
                 auth_token_getters = auth_headers
 
-        core_tools = await wrap_future(
-            self.__core_client._load_toolset_future(
-                name=toolset_name,
-                auth_token_getters=auth_token_getters,
-                bound_params=bound_params,
-                strict=strict,
-            )
+        core_tools = await to_thread(
+            self.__core_client.load_toolset,
+            name=toolset_name,
+            auth_token_getters=auth_token_getters,
+            bound_params=bound_params,
+            strict=strict,
         )
 
         tools = []

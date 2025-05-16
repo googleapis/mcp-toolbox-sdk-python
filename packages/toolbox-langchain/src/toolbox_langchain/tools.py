@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from asyncio import wrap_future
+from asyncio import to_thread
 from typing import Any, Callable, Union
 
 from langchain_core.tools import BaseTool
@@ -50,7 +50,7 @@ class ToolboxTool(BaseTool):
         return self.__core_tool(**kwargs)
 
     async def _arun(self, **kwargs: Any) -> str:
-        return await wrap_future(self.__core_tool._call_future(**kwargs))
+        return await to_thread(self.__core_tool, **kwargs)
 
     def add_auth_token_getters(
         self, auth_token_getters: dict[str, Callable[[], str]]
