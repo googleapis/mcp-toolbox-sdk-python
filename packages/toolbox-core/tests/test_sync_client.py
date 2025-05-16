@@ -14,8 +14,6 @@
 
 
 import inspect
-from asyncio import AbstractEventLoop
-from threading import Thread
 from typing import Any, Callable, Generator, Mapping, Optional
 from unittest.mock import AsyncMock, Mock, patch
 
@@ -26,7 +24,6 @@ from toolbox_core.client import ToolboxClient
 from toolbox_core.protocol import ManifestSchema, ParameterSchema, ToolSchema
 from toolbox_core.sync_client import ToolboxSyncClient
 from toolbox_core.sync_tool import ToolboxSyncTool
-from toolbox_core.tool import ToolboxTool
 
 TEST_BASE_URL = "http://toolbox.example.com"
 
