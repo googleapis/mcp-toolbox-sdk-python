@@ -17,12 +17,11 @@ import asyncio
 from asyncio import AbstractEventLoop
 from inspect import Signature
 from threading import Thread
-from typing import Any, Callable, Coroutine, Mapping, Sequence, TypeVar, Union
+from typing import Any, Callable, Coroutine, Mapping, Sequence, Union
 
 from .protocol import ParameterSchema
 from .tool import ToolboxTool
-
-T = TypeVar("T")
+from concurrent.futures import Future
 
 
 class ToolboxSyncTool:
@@ -68,6 +67,18 @@ class ToolboxSyncTool:
         self.__qualname__ = (
             f"{self.__class__.__qualname__}.{self.__async_tool.__name__}"
         )
+
+    @property
+    def _async_tool(self) -> ToolboxTool:
+        return self.__async_tool
+
+    @property
+    def _loop(self) -> AbstractEventLoop:
+        return self.__loop
+
+    @property
+    def _thread(self) -> Thread:
+        return self.__thread
 
     @property
     def __name__(self) -> str:
@@ -119,6 +130,13 @@ class ToolboxSyncTool:
     def _client_headers(self) -> Mapping[str, Union[Callable, Coroutine, str]]:
         return self.__async_tool._client_headers
 
+    def call_future(self, *args: Any, **kwargs: Any) -> Future[str]:
+        """
+        Returns future that calls the remote tool with the provided arguments.
+        """
+        coro = self.__async_tool(*args, **kwargs)
+        return asyncio.run_coroutine_threadsafe(coro, self.__loop)
+
     def __call__(self, *args: Any, **kwargs: Any) -> str:
         """
         Synchronously calls the remote tool with the provided arguments.
@@ -133,8 +151,7 @@ class ToolboxSyncTool:
         Returns:
             The string result returned by the remote tool execution.
         """
-        coro = self.__async_tool(*args, **kwargs)
-        return asyncio.run_coroutine_threadsafe(coro, self.__loop).result()
+        return self.call_future(*args, **kwargs).result()
 
     def add_auth_token_getters(
         self,

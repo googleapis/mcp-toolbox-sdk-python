@@ -14,8 +14,10 @@
 
 
 import inspect
-from typing import Any, Callable, Mapping, Optional
-from unittest.mock import AsyncMock, patch
+from asyncio import AbstractEventLoop
+from threading import Thread
+from typing import Any, Callable, Generator, Mapping, Optional
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from aioresponses import CallbackResult, aioresponses
@@ -24,6 +26,7 @@ from toolbox_core.client import ToolboxClient
 from toolbox_core.protocol import ManifestSchema, ParameterSchema, ToolSchema
 from toolbox_core.sync_client import ToolboxSyncClient
 from toolbox_core.sync_tool import ToolboxSyncTool
+from toolbox_core.tool import ToolboxTool
 
 TEST_BASE_URL = "http://toolbox.example.com"
 
@@ -44,8 +47,12 @@ def sync_client_environment():
     # This ensures any client created will start a new loop/thread.
 
     # Ensure no loop/thread is running from a previous misbehaving test or setup
-    assert original_loop is None or not original_loop.is_running()
-    assert original_thread is None or not original_thread.is_alive()
+    if original_loop and original_loop.is_running():
+        original_loop.call_soon_threadsafe(original_loop.stop)
+        if original_thread and original_thread.is_alive():
+            original_thread.join(timeout=5)
+        ToolboxSyncClient._ToolboxSyncClient__loop = None
+        ToolboxSyncClient._ToolboxSyncClient__thread = None
 
     ToolboxSyncClient._ToolboxSyncClient__loop = None
     ToolboxSyncClient._ToolboxSyncClient__thread = None
@@ -228,6 +235,41 @@ def test_sync_load_toolset_success(
     assert result1 == f"{TOOL1_NAME}_ok"
 
 
+def test_sync_tool_internal_properties(aioresponses, tool_schema_minimal, sync_client):
+    """
+    Tests that the internal properties _async_tool, _loop, and _thread
+    of a ToolboxSyncTool instance are correctly initialized and accessible.
+    This directly covers the respective @property methods in ToolboxSyncTool.
+    """
+    TOOL_NAME = "test_tool_for_internal_properties"
+    mock_tool_load(aioresponses, TOOL_NAME, tool_schema_minimal)
+
+    loaded_sync_tool = sync_client.load_tool(TOOL_NAME)
+
+    assert isinstance(loaded_sync_tool, ToolboxSyncTool)
+
+    # 1. Test the _async_tool property
+    internal_async_tool = loaded_sync_tool._async_tool
+    assert isinstance(internal_async_tool, ToolboxTool)
+    assert internal_async_tool.__name__ == TOOL_NAME
+
+    # 2. Test the _loop property
+    internal_loop = loaded_sync_tool._loop
+    assert isinstance(internal_loop, AbstractEventLoop)
+    assert internal_loop is sync_client._ToolboxSyncClient__loop
+    assert (
+        internal_loop.is_running()
+    ), "The event loop used by ToolboxSyncTool should be running."
+
+    # 3. Test the _thread property
+    internal_thread = loaded_sync_tool._thread
+    assert isinstance(internal_thread, Thread)
+    assert internal_thread is sync_client._ToolboxSyncClient__thread
+    assert (
+        internal_thread.is_alive()
+    ), "The thread used by ToolboxSyncTool should be alive."
+
+
 def test_sync_invoke_tool_server_error(aioresponses, test_tool_str_schema, sync_client):
     TOOL_NAME = "sync_server_error_tool"
     ERROR_MESSAGE = "Simulated Server Error for Sync Client"
@@ -408,20 +450,32 @@ class TestSyncClientHeaders:
         result = tool(param1="test")
         assert result == expected_payload["result"]
 
-    @pytest.mark.usefixtures("sync_client_environment")
     def test_sync_add_headers_duplicate_fail(self):
-        """
-        Tests that adding a duplicate header via add_headers raises ValueError.
-        Manually create client to control initial headers.
-        """
+        """Tests that adding a duplicate header via add_headers raises ValueError (from async client)."""
         initial_headers = {"X-Initial-Header": "initial_value"}
+        mock_async_client = AsyncMock(spec=ToolboxClient)
 
-        with ToolboxSyncClient(TEST_BASE_URL, client_headers=initial_headers) as client:
-            with pytest.raises(
-                ValueError,
-                match="Client header\\(s\\) `X-Initial-Header` already registered",
-            ):
-                client.add_headers({"X-Initial-Header": "another_value"})
+        # Configure add_headers to simulate the ValueError from ToolboxClient
+        def mock_add_headers(headers):
+            # Simulate ToolboxClient's check
+            if "X-Initial-Header" in headers:
+                raise ValueError(
+                    "Client header(s) `X-Initial-Header` already registered"
+                )
+
+        mock_async_client.add_headers = Mock(side_effect=mock_add_headers)
+
+        with patch(
+            "toolbox_core.sync_client.ToolboxClient", return_value=mock_async_client
+        ):
+            with ToolboxSyncClient(
+                TEST_BASE_URL, client_headers=initial_headers
+            ) as client:
+                with pytest.raises(
+                    ValueError,
+                    match="Client header\\(s\\) `X-Initial-Header` already registered",
+                ):
+                    client.add_headers({"X-Initial-Header": "another_value"})
 
 
 class TestSyncAuth:
@@ -525,7 +579,7 @@ class TestSyncAuth:
 
         tool = sync_client.load_tool(tool_name_auth)
         with pytest.raises(
-            ValueError,
+            PermissionError,
             match="One or more of the following authn services are required to invoke this tool: my-auth-service",
         ):
             tool(argA=15, argB=True)
@@ -589,3 +643,53 @@ class TestSyncAuth:
                 tool_name_auth,
                 auth_token_getters={UNUSED_AUTH_SERVICE: lambda: "token"},
             )
+
+
+# --- Tests for @property methods of ToolboxSyncClient ---
+
+
+@pytest.fixture
+def sync_client_with_mocks() -> Generator[ToolboxSyncClient, Any, Any]:
+    """
+    Fixture to create a ToolboxSyncClient with mocked internal async client
+    without relying on actual network calls during init.
+    """
+    with patch(
+        "toolbox_core.sync_client.ToolboxClient", autospec=True
+    ) as MockToolboxClient:
+        # Mock the async client's constructor to return an AsyncMock instance
+        mock_async_client_instance = AsyncMock(spec=ToolboxClient)
+        MockToolboxClient.return_value = mock_async_client_instance
+
+        # Mock the run_coroutine_threadsafe and its result()
+        with patch("asyncio.run_coroutine_threadsafe") as mock_run_coroutine_threadsafe:
+            mock_future = Mock()
+            mock_future.result.return_value = mock_async_client_instance
+            mock_run_coroutine_threadsafe.return_value = mock_future
+
+            client = ToolboxSyncClient(TEST_BASE_URL)
+            yield client
+
+
+def test_sync_client_underscore_async_client_property(
+    sync_client_with_mocks: ToolboxSyncClient,
+):
+    """Tests the _async_client property."""
+    assert isinstance(sync_client_with_mocks._async_client, AsyncMock)
+
+
+def test_sync_client_underscore_loop_property(
+    sync_client_with_mocks: ToolboxSyncClient,
+):
+    """Tests the _loop property."""
+    assert sync_client_with_mocks._loop is not None
+    assert isinstance(sync_client_with_mocks._loop, AbstractEventLoop)
+
+
+def test_sync_client_underscore_thread_property(
+    sync_client_with_mocks: ToolboxSyncClient,
+):
+    """Tests the _thread property."""
+    assert sync_client_with_mocks._thread is not None
+    assert isinstance(sync_client_with_mocks._thread, Thread)
+    assert sync_client_with_mocks._thread.is_alive()

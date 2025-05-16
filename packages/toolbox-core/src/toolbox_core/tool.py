@@ -19,6 +19,7 @@ from typing import Any, Callable, Coroutine, Mapping, Optional, Sequence, Union
 from warnings import warn
 
 from aiohttp import ClientSession
+from pydantic import BaseModel
 
 from .protocol import ParameterSchema
 from .utils import (
@@ -158,6 +159,10 @@ class ToolboxTool:
     def _client_headers(self) -> Mapping[str, Union[Callable, Coroutine, str]]:
         return MappingProxyType(self.__client_headers)
 
+    @property
+    def _pydantic_model(self) -> type[BaseModel]:
+        return self.__pydantic_model
+
     def __copy(
         self,
         session: Optional[ClientSession] = None,
@@ -239,7 +244,7 @@ class ToolboxTool:
             for s in self.__required_authn_params.values():
                 req_auth_services.update(s)
             req_auth_services.update(self.__required_authz_tokens)
-            raise ValueError(
+            raise PermissionError(
                 f"One or more of the following authn services are required to invoke this tool"
                 f": {','.join(req_auth_services)}"
             )

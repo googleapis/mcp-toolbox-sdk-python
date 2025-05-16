@@ -15,10 +15,11 @@
 steps:
   - id: Install library requirements
     name: 'python:${_VERSION}'
+    dir: 'packages/toolbox-langchain'
     args:
       - install
       - '-r'
-      - 'packages/toolbox-langchain/requirements.txt'
+      - 'requirements.txt'
       - '--user'
     entrypoint: pip
   - id: Install test requirements

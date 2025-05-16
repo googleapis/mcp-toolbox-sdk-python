@@ -12,11 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import types  # For MappingProxyType
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 import pytest_asyncio
 from pydantic import ValidationError
+from toolbox_core.protocol import ParameterSchema as CoreParameterSchema
+from toolbox_core.tool import ToolboxTool as ToolboxCoreTool
 
 from toolbox_langchain.async_tools import AsyncToolboxTool
 
@@ -24,7 +27,7 @@ from toolbox_langchain.async_tools import AsyncToolboxTool
 @pytest.mark.asyncio
 class TestAsyncToolboxTool:
     @pytest.fixture
-    def tool_schema(self):
+    def tool_schema_dict(self):
         return {
             "description": "Test Tool Description",
             "parameters": [
@@ -34,9 +37,10 @@ class TestAsyncToolboxTool:
         }
 
     @pytest.fixture
-    def auth_tool_schema(self):
+    def auth_tool_schema_dict(self):
         return {
             "description": "Test Tool Description",
+            "authRequired": ["test-auth-source"],
             "parameters": [
                 {
                     "name": "param1",
@@ -48,133 +52,193 @@ class TestAsyncToolboxTool:
             ],
         }
 
+    def _create_core_tool_from_dict(
+        self, session, name, schema_dict, url, initial_auth_getters=None
+    ):
+        core_params_schemas = [
+            CoreParameterSchema(**p) for p in schema_dict["parameters"]
+        ]
+
+        tool_constructor_params = []
+        required_authn_for_core = {}
+        for p_schema in core_params_schemas:
+            if p_schema.authSources:
+                required_authn_for_core[p_schema.name] = p_schema.authSources
+            else:
+                tool_constructor_params.append(p_schema)
+
+        return ToolboxCoreTool(
+            session=session,
+            base_url=url,
+            name=name,
+            description=schema_dict["description"],
+            params=tool_constructor_params,
+            required_authn_params=types.MappingProxyType(required_authn_for_core),
+            required_authz_tokens=schema_dict.get("authRequired", []),
+            auth_service_token_getters=types.MappingProxyType(
+                initial_auth_getters or {}
+            ),
+            bound_params=types.MappingProxyType({}),
+            client_headers=types.MappingProxyType({}),
+        )
+
     @pytest_asyncio.fixture
     @patch("aiohttp.ClientSession")
-    async def toolbox_tool(self, MockClientSession, tool_schema):
+    async def toolbox_tool(self, MockClientSession, tool_schema_dict):
         mock_session = MockClientSession.return_value
-        mock_session.post.return_value.__aenter__.return_value.raise_for_status = Mock()
-        mock_session.post.return_value.__aenter__.return_value.json = AsyncMock(
-            return_value={"result": "test-result"}
-        )
-        tool = AsyncToolboxTool(
+        mock_response = mock_session.post.return_value.__aenter__.return_value
+        mock_response.raise_for_status = Mock()
+        mock_response.json = AsyncMock(return_value={"result": "test-result"})
+        mock_response.status = 200  # *** Fix: Set status for the mock response ***
+
+        core_tool_instance = self._create_core_tool_from_dict(
+            session=mock_session,
             name="test_tool",
-            schema=tool_schema,
+            schema_dict=tool_schema_dict,
             url="http://test_url",
-            session=mock_session,
         )
+        tool = AsyncToolboxTool(core_tool=core_tool_instance)
         return tool
 
     @pytest_asyncio.fixture
     @patch("aiohttp.ClientSession")
-    async def auth_toolbox_tool(self, MockClientSession, auth_tool_schema):
+    async def auth_toolbox_tool(self, MockClientSession, auth_tool_schema_dict):
         mock_session = MockClientSession.return_value
-        mock_session.post.return_value.__aenter__.return_value.raise_for_status = Mock()
-        mock_session.post.return_value.__aenter__.return_value.json = AsyncMock(
-            return_value={"result": "test-result"}
+        mock_response = mock_session.post.return_value.__aenter__.return_value
+        mock_response.raise_for_status = Mock()
+        mock_response.json = AsyncMock(return_value={"result": "test-result"})
+        mock_response.status = 200  # *** Fix: Set status for the mock response ***
+
+        core_tool_instance = self._create_core_tool_from_dict(
+            session=mock_session,
+            name="test_tool",
+            schema_dict=auth_tool_schema_dict,
+            url="https://test-url",
         )
-        with pytest.warns(
-            UserWarning,
-            match=r"Parameter\(s\) `param1` of tool test_tool require authentication",
-        ):
-            tool = AsyncToolboxTool(
-                name="test_tool",
-                schema=auth_tool_schema,
-                url="https://test-url",
-                session=mock_session,
-            )
+        tool = AsyncToolboxTool(core_tool=core_tool_instance)
         return tool
 
     @patch("aiohttp.ClientSession")
-    async def test_toolbox_tool_init(self, MockClientSession, tool_schema):
+    async def test_toolbox_tool_init(self, MockClientSession, tool_schema_dict):
         mock_session = MockClientSession.return_value
-        tool = AsyncToolboxTool(
-            name="test_tool",
-            schema=tool_schema,
-            url="https://test-url",
+        mock_response = mock_session.post.return_value.__aenter__.return_value
+        mock_response.status = 200
+        core_tool_instance = self._create_core_tool_from_dict(
             session=mock_session,
+            name="test_tool",
+            schema_dict=tool_schema_dict,
+            url="https://test-url",
         )
+        tool = AsyncToolboxTool(core_tool=core_tool_instance)
         assert tool.name == "test_tool"
-        assert tool.description == "Test Tool Description"
+        assert tool.description == core_tool_instance.__doc__
 
     @pytest.mark.parametrize(
-        "params, expected_bound_params",
+        "params_to_bind",
         [
-            ({"param1": "bound-value"}, {"param1": "bound-value"}),
-            ({"param1": lambda: "bound-value"}, {"param1": lambda: "bound-value"}),
-            (
-                {"param1": "bound-value", "param2": 123},
-                {"param1": "bound-value", "param2": 123},
-            ),
+            ({"param1": "bound-value"}),
+            ({"param1": lambda: "bound-value"}),
+            ({"param1": "bound-value", "param2": 123}),
         ],
     )
-    async def test_toolbox_tool_bind_params(
-        self, toolbox_tool, params, expected_bound_params
-    ):
-        tool = toolbox_tool.bind_params(params)
-        for key, value in expected_bound_params.items():
-            if callable(value):
-                assert value() == tool._AsyncToolboxTool__bound_params[key]()
-            else:
-                assert value == tool._AsyncToolboxTool__bound_params[key]
-
-    @pytest.mark.parametrize("strict", [True, False])
-    async def test_toolbox_tool_bind_params_invalid(self, toolbox_tool, strict):
-        if strict:
-            with pytest.raises(ValueError) as e:
-                tool = toolbox_tool.bind_params(
-                    {"param3": "bound-value"}, strict=strict
-                )
-            assert "Parameter(s) param3 missing and cannot be bound." in str(e.value)
-        else:
-            with pytest.warns(UserWarning) as record:
-                tool = toolbox_tool.bind_params(
-                    {"param3": "bound-value"}, strict=strict
-                )
-            assert len(record) == 1
-            assert "Parameter(s) param3 missing and cannot be bound." in str(
-                record[0].message
+    async def test_toolbox_tool_bind_params(self, toolbox_tool, params_to_bind):
+        original_core_tool = toolbox_tool._AsyncToolboxTool__core_tool
+        with patch.object(
+            original_core_tool, "bind_params", wraps=original_core_tool.bind_params
+        ) as mock_core_bind_params:
+            new_langchain_tool = toolbox_tool.bind_params(params_to_bind)
+            mock_core_bind_params.assert_called_once_with(params_to_bind)
+            assert isinstance(
+                new_langchain_tool._AsyncToolboxTool__core_tool, ToolboxCoreTool
             )
+            new_core_tool_signature_params = (
+                new_langchain_tool._AsyncToolboxTool__core_tool.__signature__.parameters
+            )
+            for bound_param_name in params_to_bind.keys():
+                assert bound_param_name not in new_core_tool_signature_params
+
+    async def test_toolbox_tool_bind_params_invalid(self, toolbox_tool):
+        with pytest.raises(
+            ValueError, match="unable to bind parameters: no parameter named param3"
+        ):
+            toolbox_tool.bind_params({"param3": "bound-value"})
 
     async def test_toolbox_tool_bind_params_duplicate(self, toolbox_tool):
         tool = toolbox_tool.bind_params({"param1": "bound-value"})
-        with pytest.raises(ValueError) as e:
-            tool = tool.bind_params({"param1": "bound-value"})
-        assert "Parameter(s) `param1` already bound in tool `test_tool`." in str(
-            e.value
-        )
+        with pytest.raises(
+            ValueError,
+            match="cannot re-bind parameter: parameter 'param1' is already bound",
+        ):
+            tool.bind_params({"param1": "bound-value"})
 
     async def test_toolbox_tool_bind_params_invalid_params(self, auth_toolbox_tool):
-        with pytest.raises(ValueError) as e:
+        auth_core_tool = auth_toolbox_tool._AsyncToolboxTool__core_tool
+        # Verify that 'param1' is not in the list of bindable parameters for the core tool
+        # because it requires authentication.
+        assert "param1" not in [p.name for p in auth_core_tool._ToolboxTool__params]
+        with pytest.raises(
+            ValueError, match="unable to bind parameters: no parameter named param1"
+        ):
             auth_toolbox_tool.bind_params({"param1": "bound-value"})
-        assert "Parameter(s) param1 already authenticated and cannot be bound." in str(
-            e.value
+
+    async def test_toolbox_tool_add_valid_auth_token_getter(self, auth_toolbox_tool):
+        get_token_lambda = lambda: "test-token-value"
+        original_core_tool = auth_toolbox_tool._AsyncToolboxTool__core_tool
+        with patch.object(
+            original_core_tool,
+            "add_auth_token_getters",
+            wraps=original_core_tool.add_auth_token_getters,
+        ) as mock_core_add_getters:
+            tool = auth_toolbox_tool.add_auth_token_getters(
+                {"test-auth-source": get_token_lambda}
+            )
+            mock_core_add_getters.assert_called_once_with(
+                {"test-auth-source": get_token_lambda}
+            )
+            core_tool_after_add = tool._AsyncToolboxTool__core_tool
+            assert (
+                "test-auth-source"
+                in core_tool_after_add._ToolboxTool__auth_service_token_getters
+            )
+            assert (
+                core_tool_after_add._ToolboxTool__auth_service_token_getters[
+                    "test-auth-source"
+                ]
+                is get_token_lambda
+            )
+            assert not core_tool_after_add._ToolboxTool__required_authn_params.get(
+                "param1"
+            )
+            assert (
+                "test-auth-source"
+                not in core_tool_after_add._ToolboxTool__required_authz_tokens
+            )
+
+    async def test_toolbox_tool_add_unused_auth_token_getter_raises_error(
+        self, auth_toolbox_tool
+    ):
+        unused_lambda = lambda: "another-token"
+        with pytest.raises(ValueError) as excinfo:
+            auth_toolbox_tool.add_auth_token_getters(
+                {"another-auth-source": unused_lambda}
+            )
+        assert (
+            "Authentication source(s) `another-auth-source` unused by tool `test_tool`"
+            in str(excinfo.value)
         )
 
-    @pytest.mark.parametrize(
-        "auth_token_getters, expected_auth_token_getters",
-        [
-            (
-                {"test-auth-source": lambda: "test-token"},
-                {"test-auth-source": lambda: "test-token"},
-            ),
-            (
+        valid_lambda = lambda: "test-token"
+        with pytest.raises(ValueError) as excinfo_mixed:
+            auth_toolbox_tool.add_auth_token_getters(
                 {
-                    "test-auth-source": lambda: "test-token",
-                    "another-auth-source": lambda: "another-token",
-                },
-                {
-                    "test-auth-source": lambda: "test-token",
-                    "another-auth-source": lambda: "another-token",
-                },
-            ),
-        ],
-    )
-    async def test_toolbox_tool_add_auth_token_getters(
-        self, auth_toolbox_tool, auth_token_getters, expected_auth_token_getters
-    ):
-        tool = auth_toolbox_tool.add_auth_token_getters(auth_token_getters)
-        for source, getter in expected_auth_token_getters.items():
-            assert tool._AsyncToolboxTool__auth_token_getters[source]() == getter()
+                    "test-auth-source": valid_lambda,
+                    "another-auth-source": unused_lambda,
+                }
+            )
+        assert (
+            "Authentication source(s) `another-auth-source` unused by tool `test_tool`"
+            in str(excinfo_mixed.value)
+        )
 
     async def test_toolbox_tool_add_auth_token_getters_duplicate(
         self, auth_toolbox_tool
@@ -182,45 +246,44 @@ class TestAsyncToolboxTool:
         tool = auth_toolbox_tool.add_auth_token_getters(
             {"test-auth-source": lambda: "test-token"}
         )
-        with pytest.raises(ValueError) as e:
-            tool = tool.add_auth_token_getters(
-                {"test-auth-source": lambda: "test-token"}
-            )
-        assert (
-            "Authentication source(s) `test-auth-source` already registered in tool `test_tool`."
-            in str(e.value)
-        )
+        with pytest.raises(
+            ValueError,
+            match="Authentication source\\(s\\) `test-auth-source` already registered in tool `test_tool`\\.",
+        ):
+            tool.add_auth_token_getters({"test-auth-source": lambda: "test-token"})
 
-    async def test_toolbox_tool_validate_auth_strict(self, auth_toolbox_tool):
-        with pytest.raises(PermissionError) as e:
-            auth_toolbox_tool._AsyncToolboxTool__validate_auth(strict=True)
-        assert "Parameter(s) `param1` of tool test_tool require authentication" in str(
-            e.value
-        )
+    async def test_toolbox_tool_call_requires_auth_strict(self, auth_toolbox_tool):
+        with pytest.raises(
+            PermissionError,
+            match="One or more of the following authn services are required to invoke this tool: test-auth-source",
+        ):
+            await auth_toolbox_tool.ainvoke({"param2": 123})
 
     async def test_toolbox_tool_call(self, toolbox_tool):
         result = await toolbox_tool.ainvoke({"param1": "test-value", "param2": 123})
         assert result == "test-result"
-        toolbox_tool._AsyncToolboxTool__session.post.assert_called_once_with(
+        core_tool = toolbox_tool._AsyncToolboxTool__core_tool
+        core_tool._ToolboxTool__session.post.assert_called_once_with(
             "http://test_url/api/tool/test_tool/invoke",
             json={"param1": "test-value", "param2": 123},
             headers={},
         )
 
     @pytest.mark.parametrize(
-        "bound_param, expected_value",
+        "bound_param_map, expected_value",
         [
             ({"param1": "bound-value"}, "bound-value"),
             ({"param1": lambda: "dynamic-value"}, "dynamic-value"),
         ],
     )
     async def test_toolbox_tool_call_with_bound_params(
-        self, toolbox_tool, bound_param, expected_value
+        self, toolbox_tool, bound_param_map, expected_value
     ):
-        tool = toolbox_tool.bind_params(bound_param)
+        tool = toolbox_tool.bind_params(bound_param_map)
         result = await tool.ainvoke({"param2": 123})
         assert result == "test-result"
-        toolbox_tool._AsyncToolboxTool__session.post.assert_called_once_with(
+        core_tool = tool._AsyncToolboxTool__core_tool
+        core_tool._ToolboxTool__session.post.assert_called_once_with(
             "http://test_url/api/tool/test_tool/invoke",
             json={"param1": expected_value, "param2": 123},
             headers={},
@@ -232,28 +295,52 @@ class TestAsyncToolboxTool:
         )
         result = await tool.ainvoke({"param2": 123})
         assert result == "test-result"
-        auth_toolbox_tool._AsyncToolboxTool__session.post.assert_called_once_with(
+        core_tool = tool._AsyncToolboxTool__core_tool
+        core_tool._ToolboxTool__session.post.assert_called_once_with(
             "https://test-url/api/tool/test_tool/invoke",
             json={"param2": 123},
             headers={"test-auth-source_token": "test-token"},
         )
 
-    async def test_toolbox_tool_call_with_auth_tokens_insecure(self, auth_toolbox_tool):
+    async def test_toolbox_tool_call_with_auth_tokens_insecure(
+        self, auth_toolbox_tool, auth_tool_schema_dict
+    ):
+        core_tool_of_auth_tool = auth_toolbox_tool._AsyncToolboxTool__core_tool
+        mock_session = core_tool_of_auth_tool._ToolboxTool__session
+
         with pytest.warns(
             UserWarning,
             match="Sending ID token over HTTP. User data may be exposed. Use HTTPS for secure communication.",
         ):
-            auth_toolbox_tool._AsyncToolboxTool__url = "http://test-url"
-            tool = auth_toolbox_tool.add_auth_token_getters(
-                {"test-auth-source": lambda: "test-token"}
+            insecure_core_tool = self._create_core_tool_from_dict(
+                session=mock_session,
+                name="test_tool",
+                schema_dict=auth_tool_schema_dict,
+                url="http://test-url",
             )
-            result = await tool.ainvoke({"param2": 123})
-            assert result == "test-result"
-            auth_toolbox_tool._AsyncToolboxTool__session.post.assert_called_once_with(
-                "http://test-url/api/tool/test_tool/invoke",
-                json={"param2": 123},
-                headers={"test-auth-source_token": "test-token"},
-            )
+
+        insecure_auth_langchain_tool = AsyncToolboxTool(core_tool=insecure_core_tool)
+
+        tool_with_getter = insecure_auth_langchain_tool.add_auth_token_getters(
+            {"test-auth-source": lambda: "test-token"}
+        )
+        result = await tool_with_getter.ainvoke({"param2": 123})
+        assert result == "test-result"
+
+        modified_core_tool_in_new_tool = tool_with_getter._AsyncToolboxTool__core_tool
+        assert (
+            modified_core_tool_in_new_tool._ToolboxTool__base_url == "http://test-url"
+        )
+        assert (
+            modified_core_tool_in_new_tool._ToolboxTool__url
+            == "http://test-url/api/tool/test_tool/invoke"
+        )
+
+        modified_core_tool_in_new_tool._ToolboxTool__session.post.assert_called_once_with(
+            "http://test-url/api/tool/test_tool/invoke",
+            json={"param2": 123},
+            headers={"test-auth-source_token": "test-token"},
+        )
 
     async def test_toolbox_tool_call_with_invalid_input(self, toolbox_tool):
         with pytest.raises(ValidationError) as e:
