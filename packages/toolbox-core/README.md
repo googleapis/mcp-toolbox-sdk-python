@@ -1,4 +1,5 @@
 ![MCP Toolbox Logo](https://raw.githubusercontent.com/googleapis/genai-toolbox/main/logo.png)
+
 # MCP Toolbox Core SDK
 
 [![PyPI version](https://badge.fury.io/py/toolbox-core.svg)](https://badge.fury.io/py/toolbox-core) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/toolbox-core)](https://pypi.org/project/toolbox-core/) [![Coverage Status](https://coveralls.io/repos/github/googleapis/genai-toolbox/badge.svg?branch=main)](https://coveralls.io/github/googleapis/genai-toolbox?branch=main)
@@ -20,25 +21,31 @@ involving Large Language Models (LLMs).
 - [Quickstart](#quickstart)
 - [Usage](#usage)
 - [Loading Tools](#loading-tools)
-    - [Load a toolset](#load-a-toolset)
-    - [Load a single tool](#load-a-single-tool)
+  - [Load a toolset](#load-a-toolset)
+  - [Load a single tool](#load-a-single-tool)
 - [Invoking Tools](#invoking-tools)
 - [Synchronous Usage](#synchronous-usage)
 - [Use with LangGraph](#use-with-langgraph)
+- [Authenticating to the Toolbox Server](#authenticating-to-the-toolbox-server)
+  - [When is Client-to-Server Authentication Needed?](#when-is-client-to-server-authentication-needed)
+  - [How it works](#how-it-works)
+  - [Configuration](#configuration)
+  - [Authenticating with Google Cloud Servers](#authenticating-with-google-cloud-servers)
+  - [Step by Step Guide for Cloud Run](#step-by-step-guide-for-cloud-run)
 - [Authenticating Tools](#authenticating-tools)
-    - [When is Authentication Needed?](#when-is-authentication-needed)
-    - [Supported Authentication Mechanisms](#supported-authentication-mechanisms)
-    - [Step 1: Configure Tools in Toolbox Service](#step-1-configure-tools-in-toolbox-service)
-    - [Step 2: Configure SDK Client](#step-2-configure-sdk-client)
-        - [Provide an ID Token Retriever Function](#provide-an-id-token-retriever-function)
-        - [Option A: Add Authentication to a Loaded Tool](#option-a-add-authentication-to-a-loaded-tool)
-        - [Option B: Add Authentication While Loading Tools](#option-b-add-authentication-while-loading-tools)
-    - [Complete Authentication Example](#complete-authentication-example)
+  - [When is Authentication Needed?](#when-is-authentication-needed)
+  - [Supported Authentication Mechanisms](#supported-authentication-mechanisms)
+  - [Step 1: Configure Tools in Toolbox Service](#step-1-configure-tools-in-toolbox-service)
+  - [Step 2: Configure SDK Client](#step-2-configure-sdk-client)
+    - [Provide an ID Token Retriever Function](#provide-an-id-token-retriever-function)
+    - [Option A: Add Authentication to a Loaded Tool](#option-a-add-authentication-to-a-loaded-tool)
+    - [Option B: Add Authentication While Loading Tools](#option-b-add-authentication-while-loading-tools)
+  - [Complete Authentication Example](#complete-authentication-example)
 - [Binding Parameter Values](#binding-parameter-values)
-    - [Why Bind Parameters?](#why-bind-parameters)
-    - [Option A: Binding Parameters to a Loaded Tool](#option-a-binding-parameters-to-a-loaded-tool)
-    - [Option B: Binding Parameters While Loading Tools](#option-b-binding-parameters-while-loading-tools)
-    - [Binding Dynamic Values](#binding-dynamic-values)
+  - [Why Bind Parameters?](#why-bind-parameters)
+  - [Option A: Binding Parameters to a Loaded Tool](#option-a-binding-parameters-to-a-loaded-tool)
+  - [Option B: Binding Parameters While Loading Tools](#option-b-binding-parameters-while-loading-tools)
+  - [Binding Dynamic Values](#binding-dynamic-values)
 - [Contributing](#contributing)
 - [License](#license)
 - [Support](#support)
@@ -52,19 +59,21 @@ pip install toolbox-core
 ```
 
 > [!NOTE]
-> * The primary `ToolboxClient` is asynchronous and requires using `await` for
+>
+> - The primary `ToolboxClient` is asynchronous and requires using `await` for
 >   loading and invoking tools, as shown in most examples.
-> * Asynchronous code needs to run within an event loop (e.g., using
+> - Asynchronous code needs to run within an event loop (e.g., using
 >   `asyncio.run()` or in an async framework). See the [Python `asyncio`
 >   documentation](https://docs.python.org/3/library/asyncio-task.html) for more
 >   details.
-> * If you prefer synchronous execution, refer to the [Synchronous
+> - If you prefer synchronous execution, refer to the [Synchronous
 >   Usage](#synchronous-usage) section below.
 
 ## Quickstart
 
 Here's a minimal example to get you started. Ensure your Toolbox service is
 running and accessible.
+
 ```py
 import asyncio
 from toolbox_core import ToolboxClient
@@ -166,8 +175,6 @@ print(result)
 > often leading to better performance and resource utilization, especially in
 > applications handling concurrent requests.
 
-
-
 ## Use with LangGraph
 
 The Toolbox Core SDK integrates smoothly with frameworks like LangGraph,
@@ -221,6 +228,86 @@ workflow.add_edge("tools", "agent")
 app = workflow.compile()
 ```
 
+## Client to Server Authentication
+
+This section describes how to authenticate the ToolboxClient itself when
+connecting to a Toolbox server instance that requires authentication. This is
+crucial for securing your Toolbox server endpoint, especially when deployed on
+platforms like Cloud Run, GKE,  or any environment where unauthenticated access is restricted.
+
+This client-to-server authentication ensures that the Toolbox server can verify the identity of the client making the request before any tool is loaded or called. It is different from [Authenticating Tools](#authenticating-tools), which deals with providing credentials for specific tools within an already connected Toolbox session.
+
+### When is Client-to-Server Authentication Needed?
+
+You'll need this type of authentication if your Toolbox server is configured to deny unauthenticated requests. For example:
+
+- Your Toolbox server is deployed on Cloud Run and configured to "Require authentication."
+- Your server is behind an Identity-Aware Proxy (IAP) or a similar authentication layer.
+- You have custom authentication middleware on your self-hosted Toolbox server.
+
+Without proper client authentication in these scenarios, attempts to connect or
+make calls (like `load_tool`) will likely fail with `Unauthorized` errors.
+
+### How it works
+
+The `ToolboxClient` (and `ToolboxSyncClient`) allows you to specify functions (or coroutines for the async client) that dynamically generate HTTP headers for every request sent to the Toolbox server. The most common use case is to add an Authorization header with a bearer token (e.g., a Google ID token).
+
+These header-generating functions are called just before each request, ensuring
+that fresh credentials or header values can be used.
+
+### Configuration
+
+You can configure these dynamic headers in two ways:
+
+1. **During Client Initialization**
+
+    ```python
+    from toolbox_core import ToolboxClient
+
+    client = ToolboxClient("toolbox-url", headers={"header1": header1_getter, "header2": header2_getter, ...})
+    ```
+
+1. **After Client Initialization**
+
+    ```python
+    from toolbox_core import ToolboxClient
+
+    client = ToolboxClient("toolbox-url")
+    client.add_headers({"header1": header1_getter, "header2": header2_getter, ...})
+    ```
+
+### Authenticating with Google Cloud Servers
+
+For Toolbox servers hosted on Google Cloud (e.g., Cloud Run) and requiring
+`Google ID token` authentication, the helper module
+[auth_methods](src/toolbox_core/auth_methods.py) provides utility functions.
+
+### Step by Step Guide for Cloud Run
+
+1. **Configure Permissions**: [Grant](https://cloud.google.com/run/docs/securing/managing-access#service-add-principals) the `roles/run.invoker` IAM role on the Cloud
+   Run service to the principal. This could be your `user account email` or a
+   `service account`.
+2. **Configure Credentials**
+    - Local Development: Set up
+   [ADC](https://cloud.google.com/docs/authentication/set-up-adc-local-dev-environment).
+    - Google Cloud Environments: When running within Google Cloud (e.g., Compute
+      Engine, GKE, another Cloud Run service, Cloud Functions), ADC is typically
+      configured automatically, using the environment's default service account.
+3. **Connect to the Toolbox Server**
+
+    ```python
+    from toolbox_core import auth_methods
+
+    auth_token_provider = auth_methods.aget_google_id_token # can also use sync method
+    client = ToolboxClient(
+        URL,
+        client_headers={"Authorization": auth_token_provider},
+    )
+    tools = await client.load_toolset()
+
+    # Now, you can use the client as usual.
+    ```
+
 ## Authenticating Tools
 
 > [!WARNING]
@@ -236,15 +323,18 @@ ensuring only authorized users or applications can invoke them, especially when
 accessing sensitive data.
 
 ### When is Authentication Needed?
+
 Authentication is configured per-tool within the Toolbox service itself. If a
 tool you intend to use is marked as requiring authentication in the service, you
 must configure the SDK client to provide the necessary credentials (currently
 Oauth2 tokens) when invoking that specific tool.
 
 ### Supported Authentication Mechanisms
+
 The Toolbox service enables secure tool usage through **Authenticated Parameters**. For detailed information on how these mechanisms work within the Toolbox service and how to configure them, please refer to [Toolbox Service Documentation - Authenticated Parameters](https://googleapis.github.io/genai-toolbox/resources/tools/#authenticated-parameters)
 
 ### Step 1: Configure Tools in Toolbox Service
+
 First, ensure the target tool(s) are configured correctly in the Toolbox service
 to require authentication. Refer to the [Toolbox Service Documentation -
 Authenticated
@@ -347,9 +437,9 @@ fixed and will not be requested or modified by the LLM during tool use.
 
 ### Why Bind Parameters?
 
-* **Protecting sensitive information:**  API keys, secrets, etc.
-* **Enforcing consistency:** Ensuring specific values for certain parameters.
-* **Pre-filling known data:**  Providing defaults or context.
+- **Protecting sensitive information:**  API keys, secrets, etc.
+- **Enforcing consistency:** Ensuring specific values for certain parameters.
+- **Pre-filling known data:**  Providing defaults or context.
 
 > [!IMPORTANT]
 > The parameter names used for binding (e.g., `"api_key"`) must exactly match the
@@ -376,7 +466,6 @@ bound_tool = tool.bind_params({"param": "value"})
 
 Specify bound parameters directly when loading tools. This applies the binding
 only to the tools loaded in that specific call.
-
 
 ```py
 bound_tool = await toolbox.load_tool("my-tool", bound_params={"param": "value"})
