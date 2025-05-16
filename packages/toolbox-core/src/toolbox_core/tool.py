@@ -19,7 +19,6 @@ from typing import Any, Callable, Coroutine, Mapping, Optional, Sequence, Union
 from warnings import warn
 
 from aiohttp import ClientSession
-from pydantic import BaseModel
 
 from .protocol import ParameterSchema
 from .utils import (

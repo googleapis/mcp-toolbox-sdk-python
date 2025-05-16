@@ -14,7 +14,7 @@
 
 
 import inspect
-from typing import Any, Callable, Generator, Mapping, Optional
+from typing import Any, Callable, Mapping, Optional
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
