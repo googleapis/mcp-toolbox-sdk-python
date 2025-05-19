@@ -90,19 +90,19 @@ class TestE2EClientAsync:
     async def test_run_tool_async(self, get_n_rows_tool):
         response = await get_n_rows_tool.acall(num_rows="2")
 
-        assert "row1" in response
-        assert "row2" in response
-        assert "row3" not in response
+        assert "row1" in response.content
+        assert "row2" in response.content
+        assert "row3" not in response.content
 
     async def test_run_tool_sync(self, get_n_rows_tool):
         response = get_n_rows_tool.call(num_rows="2")
 
-        assert "row1" in response
-        assert "row2" in response
-        assert "row3" not in response
+        assert "row1" in response.content
+        assert "row2" in response.content
+        assert "row3" not in response.content
 
     async def test_run_tool_missing_params(self, get_n_rows_tool):
-        with pytest.raises(ValidationError, match="Field required"):
+        with pytest.raises(TypeError, match="missing a required argument: 'num_rows'"):
             await get_n_rows_tool.acall()
 
     async def test_run_tool_wrong_param_type(self, get_n_rows_tool):
@@ -152,7 +152,7 @@ class TestE2EClientAsync:
         )
         auth_tool = tool.add_auth_token_getter("my-test-auth", lambda: auth_token1)
         response = await auth_tool.acall(id="2")
-        assert "row2" in response
+        assert "row2" in response.content
 
     async def test_run_tool_param_auth_no_auth(self, toolbox):
         """Tests running a tool with a param requiring auth, without auth."""
@@ -170,9 +170,9 @@ class TestE2EClientAsync:
             auth_token_getters={"my-test-auth": lambda: auth_token1},
         )
         response = await tool.acall()
-        assert "row4" in response
-        assert "row5" in response
-        assert "row6" in response
+        assert "row4" in response.content
+        assert "row5" in response.content
+        assert "row6" in response.content
 
     async def test_run_tool_param_auth_no_field(self, toolbox, auth_token1):
         """Tests running a tool with a param requiring auth, with insufficient auth."""
@@ -236,16 +236,16 @@ class TestE2EClientSync:
     async def test_run_tool_async(self, get_n_rows_tool):
         response = await get_n_rows_tool.acall(num_rows="2")
 
-        assert "row1" in response
-        assert "row2" in response
-        assert "row3" not in response
+        assert "row1" in response.content
+        assert "row2" in response.content
+        assert "row3" not in response.content
 
     def test_run_tool_sync(self, get_n_rows_tool):
         response = get_n_rows_tool.call(num_rows="2")
 
-        assert "row1" in response
-        assert "row2" in response
-        assert "row3" not in response
+        assert "row1" in response.content
+        assert "row2" in response.content
+        assert "row3" not in response.content
 
     def test_run_tool_missing_params(self, get_n_rows_tool):
         with pytest.raises(ValidationError, match="Field required"):
@@ -297,7 +297,7 @@ class TestE2EClientSync:
         )
         auth_tool = tool.add_auth_token_getter("my-test-auth", lambda: auth_token1)
         response = auth_tool.call(id="2")
-        assert "row2" in response
+        assert "row2" in response.content
 
     def test_run_tool_param_auth_no_auth(self, toolbox):
         """Tests running a tool with a param requiring auth, without auth."""
@@ -315,9 +315,9 @@ class TestE2EClientSync:
             auth_token_getters={"my-test-auth": lambda: auth_token1},
         )
         response = tool.call()
-        assert "row4" in response
-        assert "row5" in response
-        assert "row6" in response
+        assert "row4" in response.content
+        assert "row5" in response.content
+        assert "row6" in response.content
 
     def test_run_tool_param_auth_no_field(self, toolbox, auth_token1):
         """Tests running a tool with a param requiring auth, with insufficient auth."""
