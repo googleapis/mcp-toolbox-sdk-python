@@ -17,6 +17,7 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 import pytest_asyncio
+from llama_index.core.tools.types import ToolOutput
 from pydantic import ValidationError
 from toolbox_core.protocol import ParameterSchema as CoreParameterSchema
 from toolbox_core.tool import ToolboxTool as ToolboxCoreTool
@@ -261,7 +262,14 @@ class TestAsyncToolboxTool:
 
     async def test_toolbox_tool_call(self, toolbox_tool):
         result = await toolbox_tool.acall(param1="test-value", param2=123)
-        assert result == "test-result"
+        assert result == ToolOutput(
+            content="test-result",
+            tool_name="test_tool",
+            raw_input={"param1": "test-value", "param2": 123},
+            raw_output="test-result",
+            is_error=False,
+        )
+
         core_tool = toolbox_tool._AsyncToolboxTool__core_tool
         core_tool._ToolboxTool__session.post.assert_called_once_with(
             "http://test_url/api/tool/test_tool/invoke",
@@ -281,7 +289,13 @@ class TestAsyncToolboxTool:
     ):
         tool = toolbox_tool.bind_params(bound_param_map)
         result = await tool.acall(param2=123)
-        assert result == "test-result"
+        assert result == ToolOutput(
+            content="test-result",
+            tool_name="test_tool",
+            raw_input={"param2": 123},
+            raw_output="test-result",
+            is_error=False,
+        )
         core_tool = tool._AsyncToolboxTool__core_tool
         core_tool._ToolboxTool__session.post.assert_called_once_with(
             "http://test_url/api/tool/test_tool/invoke",
@@ -294,7 +308,14 @@ class TestAsyncToolboxTool:
             {"test-auth-source": lambda: "test-token"}
         )
         result = await tool.acall(param2=123)
-        assert result == "test-result"
+        assert result == ToolOutput(
+            content="test-result",
+            tool_name="test_tool",
+            raw_input={"param2": 123},
+            raw_output="test-result",
+            is_error=False,
+        )
+
         core_tool = tool._AsyncToolboxTool__core_tool
         core_tool._ToolboxTool__session.post.assert_called_once_with(
             "https://test-url/api/tool/test_tool/invoke",
@@ -325,7 +346,13 @@ class TestAsyncToolboxTool:
             {"test-auth-source": lambda: "test-token"}
         )
         result = await tool_with_getter.acall(param2=123)
-        assert result == "test-result"
+        assert result == ToolOutput(
+            content="test-result",
+            tool_name="test_tool",
+            raw_input={"param2": 123},
+            raw_output="test-result",
+            is_error=False,
+        )
 
         modified_core_tool_in_new_tool = tool_with_getter._AsyncToolboxTool__core_tool
         assert (

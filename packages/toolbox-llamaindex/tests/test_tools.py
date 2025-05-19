@@ -16,6 +16,7 @@ import asyncio
 from unittest.mock import AsyncMock, Mock, call, patch
 
 import pytest
+from llama_index.core.tools.types import ToolOutput
 from pydantic import BaseModel
 from toolbox_core.protocol import ParameterSchema as CoreParameterSchema
 from toolbox_core.sync_tool import ToolboxSyncTool as ToolboxCoreSyncTool
@@ -271,8 +272,14 @@ class TestToolboxTool:
 
     def test_toolbox_tool_run(self, toolbox_tool, mock_core_tool):
         kwargs_to_run = {"param1": "run_value1", "param2": 100}
-        expected_result = "sync_run_output"
-        mock_core_tool.return_value = expected_result
+        expected_result = ToolOutput(
+            content="sync_run_output",
+            tool_name="test_tool_name_for_llamaindex",
+            raw_input=kwargs_to_run,
+            raw_output="sync_run_output",
+            is_error=False,
+        )
+        mock_core_tool.return_value = "sync_run_output"
 
         result = toolbox_tool.call(**kwargs_to_run)
 
@@ -286,9 +293,15 @@ class TestToolboxTool:
         self, mock_to_thread_in_tools, toolbox_tool, mock_core_tool
     ):
         kwargs_to_run = {"param1": "arun_value1", "param2": 200}
-        expected_result = "async_run_output"
+        expected_result = ToolOutput(
+            content="async_run_output",
+            tool_name="test_tool_name_for_llamaindex",
+            raw_input=kwargs_to_run,
+            raw_output="async_run_output",
+            is_error=False,
+        )
 
-        mock_core_tool.return_value = expected_result
+        mock_core_tool.return_value = "async_run_output"
 
         async def to_thread_side_effect(func, *args, **kwargs_for_func):
             return func(**kwargs_for_func)
