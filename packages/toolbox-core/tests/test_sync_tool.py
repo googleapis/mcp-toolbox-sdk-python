@@ -237,6 +237,39 @@ def test_toolbox_sync_tool_add_auth_token_getters(
     )
 
 
+def test_toolbox_sync_tool_add_auth_token_getter(
+    toolbox_sync_tool: ToolboxSyncTool,
+    mock_async_tool: MagicMock,
+    event_loop: asyncio.AbstractEventLoop,
+    mock_thread: MagicMock,
+):
+    """Tests the add_auth_token_getter method."""
+    auth_service = "service1"
+    auth_token_getter = lambda: "token1"
+
+    new_mock_async_tool = mock_async_tool.add_auth_token_getters.return_value
+    new_mock_async_tool.__name__ = "new_async_tool_with_auth"
+
+    new_sync_tool = toolbox_sync_tool.add_auth_token_getter(
+        auth_service, auth_token_getter
+    )
+
+    mock_async_tool.add_auth_token_getters.assert_called_once_with(
+        {auth_service: auth_token_getter}
+    )
+
+    assert isinstance(new_sync_tool, ToolboxSyncTool)
+    assert new_sync_tool is not toolbox_sync_tool
+    assert new_sync_tool._ToolboxSyncTool__async_tool is new_mock_async_tool
+    assert new_sync_tool._ToolboxSyncTool__loop is event_loop  # Should be the same loop
+    assert (
+        new_sync_tool._ToolboxSyncTool__thread is mock_thread
+    )  # Should be the same thread
+    assert (
+        new_sync_tool.__qualname__ == f"ToolboxSyncTool.{new_mock_async_tool.__name__}"
+    )
+
+
 def test_toolbox_sync_tool_bind_params(
     toolbox_sync_tool: ToolboxSyncTool,
     mock_async_tool: MagicMock,
