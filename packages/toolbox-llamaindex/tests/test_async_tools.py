@@ -130,8 +130,8 @@ class TestAsyncToolboxTool:
             url="https://test-url",
         )
         tool = AsyncToolboxTool(core_tool=core_tool_instance)
-        assert tool.name == "test_tool"
-        assert tool.description == core_tool_instance.__doc__
+        assert tool.metadata.name == "test_tool"
+        assert tool.metadata.description == core_tool_instance.__doc__
 
     @pytest.mark.parametrize(
         "params_to_bind",
@@ -257,10 +257,10 @@ class TestAsyncToolboxTool:
             PermissionError,
             match="One or more of the following authn services are required to invoke this tool: test-auth-source",
         ):
-            await auth_toolbox_tool.acall({"param2": 123})
+            await auth_toolbox_tool.acall(param2=123)
 
     async def test_toolbox_tool_call(self, toolbox_tool):
-        result = await toolbox_tool.acall({"param1": "test-value", "param2": 123})
+        result = await toolbox_tool.acall(param1="test-value", param2=123)
         assert result == "test-result"
         core_tool = toolbox_tool._AsyncToolboxTool__core_tool
         core_tool._ToolboxTool__session.post.assert_called_once_with(
@@ -280,7 +280,7 @@ class TestAsyncToolboxTool:
         self, toolbox_tool, bound_param_map, expected_value
     ):
         tool = toolbox_tool.bind_params(bound_param_map)
-        result = await tool.acall({"param2": 123})
+        result = await tool.acall(param2=123)
         assert result == "test-result"
         core_tool = tool._AsyncToolboxTool__core_tool
         core_tool._ToolboxTool__session.post.assert_called_once_with(
@@ -293,7 +293,7 @@ class TestAsyncToolboxTool:
         tool = auth_toolbox_tool.add_auth_token_getters(
             {"test-auth-source": lambda: "test-token"}
         )
-        result = await tool.acall({"param2": 123})
+        result = await tool.acall(param2=123)
         assert result == "test-result"
         core_tool = tool._AsyncToolboxTool__core_tool
         core_tool._ToolboxTool__session.post.assert_called_once_with(
@@ -324,7 +324,7 @@ class TestAsyncToolboxTool:
         tool_with_getter = insecure_auth_langchain_tool.add_auth_token_getters(
             {"test-auth-source": lambda: "test-token"}
         )
-        result = await tool_with_getter.acall({"param2": 123})
+        result = await tool_with_getter.acall(param2=123)
         assert result == "test-result"
 
         modified_core_tool_in_new_tool = tool_with_getter._AsyncToolboxTool__core_tool
@@ -342,20 +342,18 @@ class TestAsyncToolboxTool:
             headers={"test-auth-source_token": "test-token"},
         )
 
+    async def test_toolbox_tool_call_with_empty_input(self, toolbox_tool):
+        with pytest.raises(TypeError) as e:
+            await toolbox_tool.acall()
+        assert "missing a required argument: 'param1'" in str(e.value)
+
     async def test_toolbox_tool_call_with_invalid_input(self, toolbox_tool):
         with pytest.raises(ValidationError) as e:
-            await toolbox_tool.acall({"param1": 123, "param2": "invalid"})
+            await toolbox_tool.acall(param1=123, param2="invalid")
         assert "2 validation errors for test_tool" in str(e.value)
         assert "param1\n  Input should be a valid string" in str(e.value)
         assert "param2\n  Input should be a valid integer" in str(e.value)
 
-    async def test_toolbox_tool_call_with_empty_input(self, toolbox_tool):
-        with pytest.raises(ValidationError) as e:
-            await toolbox_tool.acall({})
-        assert "2 validation errors for test_tool" in str(e.value)
-        assert "param1\n  Field required" in str(e.value)
-        assert "param2\n  Field required" in str(e.value)
-
     async def test_toolbox_tool_run_not_implemented(self, toolbox_tool):
         with pytest.raises(NotImplementedError):
-            toolbox_tool._run()
+            toolbox_tool.call()

@@ -136,7 +136,7 @@ class TestAsyncToolboxClient:
         )
         assert isinstance(tool, AsyncToolboxTool)
         assert (
-            tool.name == tool_name
+            tool.metadata.name == tool_name
         )  # AsyncToolboxTool gets its name from the core_tool
 
     async def test_aload_tool_auth_headers_deprecated(self, mock_client):
@@ -236,7 +236,7 @@ class TestAsyncToolboxClient:
         assert len(tools) == 2
         for tool in tools:
             assert isinstance(tool, AsyncToolboxTool)
-            assert tool.name in ["test_tool_1", "test_tool_2"]
+            assert tool.metadata.name in ["test_tool_1", "test_tool_2"]
 
     async def test_aload_toolset_with_toolset_name(self, mock_client):
         toolset_name = "test_toolset_1"

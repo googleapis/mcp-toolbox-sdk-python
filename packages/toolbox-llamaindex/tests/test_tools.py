@@ -180,15 +180,15 @@ class TestToolboxTool:
     def test_toolbox_tool_init(self, mock_core_tool):
         tool = ToolboxTool(core_tool=mock_core_tool)
 
-        assert tool.name == mock_core_tool.__name__
-        assert tool.description == mock_core_tool.__doc__
+        assert tool.metadata.name == mock_core_tool.__name__
+        assert tool.metadata.description == mock_core_tool.__doc__
         assert tool._ToolboxTool__core_tool == mock_core_tool
 
         expected_args_schema = params_to_pydantic_model(
             mock_core_tool._name, mock_core_tool._params
         )
         assert_pydantic_models_equivalent(
-            tool.args_schema, expected_args_schema, mock_core_tool._name
+            tool.metadata.fn_schema, expected_args_schema, mock_core_tool._name
         )
 
     @pytest.mark.parametrize(
@@ -274,7 +274,7 @@ class TestToolboxTool:
         expected_result = "sync_run_output"
         mock_core_tool.return_value = expected_result
 
-        result = toolbox_tool._run(**kwargs_to_run)
+        result = toolbox_tool.call(**kwargs_to_run)
 
         assert result == expected_result
         assert mock_core_tool.call_count == 1
@@ -295,7 +295,7 @@ class TestToolboxTool:
 
         mock_to_thread_in_tools.side_effect = to_thread_side_effect
 
-        result = await toolbox_tool._arun(**kwargs_to_run)
+        result = await toolbox_tool.acall(**kwargs_to_run)
 
         assert result == expected_result
         mock_to_thread_in_tools.assert_awaited_once_with(

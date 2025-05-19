@@ -48,6 +48,9 @@ class AsyncToolboxTool(AsyncBaseTool):
 
     @property
     def metadata(self) -> ToolMetadata:
+        if self.__core_tool.__doc__ is None:
+            raise ValueError("No description found for the tool.")
+
         return ToolMetadata(
             name=self.__core_tool.__name__,
             description=self.__core_tool.__doc__,
@@ -70,7 +73,13 @@ class AsyncToolboxTool(AsyncBaseTool):
             A dictionary containing the parsed JSON response from the tool
             invocation.
         """
-        return await self.__core_tool(**kwargs)
+        output_content = await self.__core_tool(**kwargs)
+        return ToolOutput(
+            content=output_content,
+            tool_name=self.__core_tool.__name__,
+            raw_input=kwargs,
+            raw_output=output_content,
+        )
 
     def add_auth_token_getters(
         self, auth_token_getters: dict[str, Callable[[], str]]

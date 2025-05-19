@@ -38,7 +38,6 @@ class ToolboxTool(AsyncBaseTool):
         Args:
             core_tool: The underlying core sync ToolboxTool instance.
         """
-
         # Due to how pydantic works, we must initialize the underlying
         # AsyncBaseTool class before assigning values to member variables.
         super().__init__()
@@ -47,7 +46,9 @@ class ToolboxTool(AsyncBaseTool):
 
     @property
     def metadata(self) -> ToolMetadata:
-        async_tool = self.__async_tool
+        if self.__core_tool.__doc__ is None:
+            raise ValueError("No description found for the tool.")
+
         return ToolMetadata(
             name=self.__core_tool.__name__,
             description=self.__core_tool.__doc__,
@@ -57,10 +58,22 @@ class ToolboxTool(AsyncBaseTool):
         )
 
     def call(self, **kwargs: Any) -> ToolOutput:  # type: ignore
-        return self.__core_tool(**kwargs)
+        output_content = self.__core_tool(**kwargs)
+        return ToolOutput(
+            content=output_content,
+            tool_name=self.__core_tool.__name__,
+            raw_input=kwargs,
+            raw_output=output_content,
+        )
 
     async def acall(self, **kwargs: Any) -> ToolOutput:  # type: ignore
-        return await to_thread(self.__core_tool, **kwargs)
+        output_content = await to_thread(self.__core_tool, **kwargs)
+        return ToolOutput(
+            content=output_content,
+            tool_name=self.__core_tool.__name__,
+            raw_input=kwargs,
+            raw_output=output_content,
+        )
 
     def add_auth_token_getters(
         self, auth_token_getters: dict[str, Callable[[], str]]

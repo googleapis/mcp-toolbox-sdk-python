@@ -115,8 +115,8 @@ class TestToolboxClient:
         llamaindex_tool = toolbox_client.load_tool("test_tool")
 
         assert isinstance(llamaindex_tool, ToolboxTool)
-        assert llamaindex_tool.name == mock_core_tool_instance.__name__
-        assert llamaindex_tool.description == mock_core_tool_instance.__doc__
+        assert llamaindex_tool.metadata.name == mock_core_tool_instance.__name__
+        assert llamaindex_tool.metadata.description == mock_core_tool_instance.__doc__
 
         # Generate the expected schema once for comparison
         expected_args_schema = params_to_pydantic_model(
@@ -124,7 +124,7 @@ class TestToolboxClient:
         )
 
         assert_pydantic_models_equivalent(
-            llamaindex_tool.args_schema,
+            llamaindex_tool.metadata.fn_schema,
             expected_args_schema,
             mock_core_tool_instance._name,
         )
@@ -154,14 +154,14 @@ class TestToolboxClient:
         for i, tool_instance_mock in enumerate(tool_instances_mocks):
             llamaindex_tool = llamaindex_tools[i]
             assert isinstance(llamaindex_tool, ToolboxTool)
-            assert llamaindex_tool.name == tool_instance_mock.__name__
-            assert llamaindex_tool.description == tool_instance_mock.__doc__
+            assert llamaindex_tool.metadata.name == tool_instance_mock.__name__
+            assert llamaindex_tool.metadata.description == tool_instance_mock.__doc__
 
             expected_args_schema = params_to_pydantic_model(
                 tool_instance_mock._name, tool_instance_mock._params
             )
             assert_pydantic_models_equivalent(
-                llamaindex_tool.args_schema,
+                llamaindex_tool.metadata.fn_schema,
                 expected_args_schema,
                 tool_instance_mock._name,
             )
@@ -183,14 +183,16 @@ class TestToolboxClient:
         llamaindex_tool = await toolbox_client.aload_tool("test_tool")
 
         assert isinstance(llamaindex_tool, ToolboxTool)
-        assert llamaindex_tool.name == mock_core_sync_tool_instance.__name__
-        assert llamaindex_tool.description == mock_core_sync_tool_instance.__doc__
+        assert llamaindex_tool.metadata.name == mock_core_sync_tool_instance.__name__
+        assert (
+            llamaindex_tool.metadata.description == mock_core_sync_tool_instance.__doc__
+        )
 
         expected_args_schema = params_to_pydantic_model(
             mock_core_sync_tool_instance._name, mock_core_sync_tool_instance._params
         )
         assert_pydantic_models_equivalent(
-            llamaindex_tool.args_schema,
+            llamaindex_tool.metadata.fn_schema,
             expected_args_schema,
             mock_core_sync_tool_instance._name,
         )
@@ -224,13 +226,13 @@ class TestToolboxClient:
         for i, tool_instance_mock in enumerate(tool_instances_mocks):
             llamaindex_tool = llamaindex_tools[i]
             assert isinstance(llamaindex_tool, ToolboxTool)
-            assert llamaindex_tool.name == tool_instance_mock.__name__
+            assert llamaindex_tool.metadata.name == tool_instance_mock.__name__
 
             expected_args_schema = params_to_pydantic_model(
                 tool_instance_mock._name, tool_instance_mock._params
             )
             assert_pydantic_models_equivalent(
-                llamaindex_tool.args_schema,
+                llamaindex_tool.metadata.fn_schema,
                 expected_args_schema,
                 tool_instance_mock._name,
             )
