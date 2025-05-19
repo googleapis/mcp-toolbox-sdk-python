@@ -152,9 +152,9 @@ class ToolboxSyncTool:
 
         Raises:
             ValueError: If an auth source has already been registered either to
-            the tool or to the corresponding client.
-        """
+                the tool or to the corresponding client.
 
+        """
         new_async_tool = self.__async_tool.add_auth_token_getters(auth_token_getters)
         return ToolboxSyncTool(new_async_tool, self.__loop, self.__thread)
 
@@ -175,7 +175,7 @@ class ToolboxSyncTool:
 
         Raises:
             ValueError: If the auth source has already been registered either to
-            the tool or to the corresponding client.
+                the tool or to the corresponding client.
 
         """
         return self.add_auth_token_getters({auth_source: get_id_token})
@@ -187,8 +187,8 @@ class ToolboxSyncTool:
         Binds parameters to values or callables that produce values.
 
         Args:
-            bound_params: A mapping of parameter names to values or callables that
-                produce values.
+            bound_params: A mapping of parameter names to values or callables
+                that produce values.
 
         Returns:
             A new ToolboxSyncTool instance with the specified parameters bound.
@@ -198,7 +198,6 @@ class ToolboxSyncTool:
                 tool's definition.
 
         """
-
         new_async_tool = self.__async_tool.bind_params(bound_params)
         return ToolboxSyncTool(new_async_tool, self.__loop, self.__thread)
 
