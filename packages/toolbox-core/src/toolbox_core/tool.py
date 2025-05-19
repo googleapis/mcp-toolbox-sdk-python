@@ -346,6 +346,28 @@ class ToolboxTool:
             required_authz_tokens=tuple(new_req_authz_tokens),
         )
 
+    def add_auth_token_getter(
+        self, auth_source: str, get_id_token: Callable[[], str]
+    ) -> "ToolboxTool":
+        """
+        Registers auth token getter functions that are used for AuthServices
+        when tools are invoked.
+
+        Args:
+            auth_source: The name of the authentication source.
+            get_id_token: A function that returns the ID token.
+
+        Returns:
+            A new ToolboxTool instance with the specified authentication token
+            getters registered.
+
+        Raises
+            ValueError: If the auth source has already been registered either
+            to the tool or to the corresponding client.
+
+        """
+        return self.add_auth_token_getters({auth_source: get_id_token})
+
     def bind_params(
         self, bound_params: Mapping[str, Union[Callable[[], Any], Any]]
     ) -> "ToolboxTool":
