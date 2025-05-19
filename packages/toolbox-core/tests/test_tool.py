@@ -528,7 +528,10 @@ def test_add_auth_token_getter_unused_token(
     expected_error_message = "Authentication source\(s\) \`unused-auth-service\` unused by tool \`sample_tool\`."
 
     with pytest.raises(ValueError, match=expected_error_message):
-        tool_instance.add_auth_token_getter(next(iter(unused_auth_getters)), unused_auth_getters[next(iter(unused_auth_getters))])
+        tool_instance.add_auth_token_getter(
+            next(iter(unused_auth_getters)),
+            unused_auth_getters[next(iter(unused_auth_getters))],
+        )
 
 
 def test_toolbox_tool_underscore_name_property(toolbox_tool: ToolboxTool):
