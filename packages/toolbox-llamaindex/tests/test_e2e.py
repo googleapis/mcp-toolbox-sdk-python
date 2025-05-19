@@ -248,7 +248,7 @@ class TestE2EClientSync:
         assert "row3" not in response.content
 
     def test_run_tool_missing_params(self, get_n_rows_tool):
-        with pytest.raises(ValidationError, match="Field required"):
+        with pytest.raises(TypeError, match="missing a required argument: 'num_rows'"):
             get_n_rows_tool.call()
 
     def test_run_tool_wrong_param_type(self, get_n_rows_tool):
