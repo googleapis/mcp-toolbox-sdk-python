@@ -227,7 +227,7 @@ class ToolboxClient:
             bound_params: A mapping of parameter names to bind to specific values or
                 callables that are called to produce values as needed.
             strict: If True, raises an error if *any* loaded tool instance fails
-                to utilize at least one provided parameter or auth token (if any
+                to utilize all of the given parameters or auth tokens. (if any
                 provided). If False (default), raises an error only if a
                 user-provided parameter or auth token cannot be applied to *any*
                 loaded tool across the set.
