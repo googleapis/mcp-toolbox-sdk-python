@@ -459,6 +459,10 @@ specific tool instance.
 toolbox = ToolboxClient("http://127.0.0.1:5000")
 tool = await toolbox.load_tool("my-tool")
 
+bound_tool = tool.bind_param("param", "value")
+
+# OR
+
 bound_tool = tool.bind_params({"param": "value"})
 ```
 
