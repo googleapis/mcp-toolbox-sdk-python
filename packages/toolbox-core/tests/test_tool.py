@@ -502,6 +502,38 @@ def test_add_auth_token_getters_unused_token(
         tool_instance.add_auth_token_getters(unused_auth_getters)
 
 
+def test_add_auth_token_getter_unused_token(
+    http_session: ClientSession,
+    sample_tool_params: list[ParameterSchema],
+    sample_tool_description: str,
+    unused_auth_getters: Mapping[str, Callable[[], str]],
+):
+    """
+    Tests ValueError when add_auth_token_getters is called with a getter for
+    an unused authentication service.
+    """
+    tool_instance = ToolboxTool(
+        session=http_session,
+        base_url=HTTPS_BASE_URL,
+        name=TEST_TOOL_NAME,
+        description=sample_tool_description,
+        params=sample_tool_params,
+        required_authn_params={},
+        required_authz_tokens=[],
+        auth_service_token_getters={},
+        bound_params={},
+        client_headers={},
+    )
+
+    expected_error_message = "Authentication source\(s\) \`unused-auth-service\` unused by tool \`sample_tool\`."
+
+    with pytest.raises(ValueError, match=expected_error_message):
+        tool_instance.add_auth_token_getter(
+            next(iter(unused_auth_getters)),
+            unused_auth_getters[next(iter(unused_auth_getters))],
+        )
+
+
 def test_toolbox_tool_underscore_name_property(toolbox_tool: ToolboxTool):
     """Tests the _name property."""
     assert toolbox_tool._name == TEST_TOOL_NAME

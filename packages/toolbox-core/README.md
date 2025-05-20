@@ -381,7 +381,7 @@ loaded. This modifies the specific tool instance.
 toolbox = ToolboxClient("http://127.0.0.1:5000")
 tool = await toolbox.load_tool("my-tool")
 
-auth_tool = tool.add_auth_token_getters({"my_auth": get_auth_token})  # Single token
+auth_tool = tool.add_auth_token_getter("my_auth", get_auth_token)  # Single token
 
 # OR
 
@@ -458,6 +458,10 @@ specific tool instance.
 ```py
 toolbox = ToolboxClient("http://127.0.0.1:5000")
 tool = await toolbox.load_tool("my-tool")
+
+bound_tool = tool.bind_param("param", "value")
+
+# OR
 
 bound_tool = tool.bind_params({"param": "value"})
 ```

@@ -139,20 +139,46 @@ class ToolboxSyncTool:
         auth_token_getters: Mapping[str, Callable[[], str]],
     ) -> "ToolboxSyncTool":
         """
-        Registers an auth token getter function that is used for AuthServices when tools
-        are invoked.
+        Registers auth token getter functions that are used for AuthServices
+        when tools are invoked.
 
         Args:
             auth_token_getters: A mapping of authentication service names to
                 callables that return the corresponding authentication token.
 
         Returns:
-            A new ToolboxSyncTool instance with the specified authentication token
-            getters registered.
-        """
+            A new ToolboxSyncTool instance with the specified authentication
+            token getters registered.
 
+        Raises:
+            ValueError: If an auth source has already been registered either to
+                the tool or to the corresponding client.
+
+        """
         new_async_tool = self.__async_tool.add_auth_token_getters(auth_token_getters)
         return ToolboxSyncTool(new_async_tool, self.__loop, self.__thread)
+
+    def add_auth_token_getter(
+        self, auth_source: str, get_id_token: Callable[[], str]
+    ) -> "ToolboxSyncTool":
+        """
+        Registers an auth token getter function that is used for AuthService
+        when tools are invoked.
+
+        Args:
+            auth_source: The name of the authentication source.
+            get_id_token: A function that returns the ID token.
+
+        Returns:
+            A new ToolboxSyncTool instance with the specified authentication
+            token getter registered.
+
+        Raises:
+            ValueError: If the auth source has already been registered either to
+                the tool or to the corresponding client.
+
+        """
+        return self.add_auth_token_getters({auth_source: get_id_token})
 
     def bind_params(
         self, bound_params: Mapping[str, Union[Callable[[], Any], Any]]
@@ -161,13 +187,17 @@ class ToolboxSyncTool:
         Binds parameters to values or callables that produce values.
 
         Args:
-            bound_params: A mapping of parameter names to values or callables that
-                produce values.
+            bound_params: A mapping of parameter names to values or callables
+                that produce values.
 
         Returns:
             A new ToolboxSyncTool instance with the specified parameters bound.
-        """
 
+        Raises:
+            ValueError: If a parameter is already bound or is not defined by the
+                tool's definition.
+
+        """
         new_async_tool = self.__async_tool.bind_params(bound_params)
         return ToolboxSyncTool(new_async_tool, self.__loop, self.__thread)
 
@@ -177,7 +207,7 @@ class ToolboxSyncTool:
         param_value: Union[Callable[[], Any], Any],
     ) -> "ToolboxSyncTool":
         """
-        Binds a parameter to the value or callables that produce it.
+        Binds a parameter to the value or callable that produce the value.
 
         Args:
             param_name: The name of the bound parameter.
@@ -186,5 +216,10 @@ class ToolboxSyncTool:
 
         Returns:
             A new ToolboxSyncTool instance with the specified parameter bound.
+
+        Raises:
+            ValueError: If the parameter is already bound or is not defined by
+                the tool's definition.
+
         """
         return self.bind_params({param_name: param_value})
