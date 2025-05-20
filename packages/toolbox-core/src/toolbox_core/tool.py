@@ -350,7 +350,7 @@ class ToolboxTool:
         self, auth_source: str, get_id_token: Callable[[], str]
     ) -> "ToolboxTool":
         """
-        Registers an auth token getter function that is used for AuthServices
+        Registers an auth token getter function that is used for AuthService
         when tools are invoked.
 
         Args:
