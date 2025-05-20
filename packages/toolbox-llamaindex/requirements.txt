@@ -1,3 +1,4 @@
+-e ../toolbox-core
 llama-index==0.12.34
 PyYAML==6.0.2
 pydantic==2.11.4

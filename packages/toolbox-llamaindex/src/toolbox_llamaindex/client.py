@@ -12,22 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import asyncio
-from threading import Thread
-from typing import Any, Awaitable, Callable, Optional, TypeVar, Union
+from asyncio import to_thread
+from typing import Any, Callable, Optional, Union
+from warnings import warn
 
-from aiohttp import ClientSession
+from toolbox_core.sync_client import ToolboxSyncClient as ToolboxCoreSyncClient
+from toolbox_core.sync_tool import ToolboxSyncTool
 
-from .async_client import AsyncToolboxClient
 from .tools import ToolboxTool
-
-T = TypeVar("T")
 
 
 class ToolboxClient:
-    __session: Optional[ClientSession] = None
-    __loop: Optional[asyncio.AbstractEventLoop] = None
-    __thread: Optional[Thread] = None
 
     def __init__(
         self,
@@ -39,94 +34,73 @@ class ToolboxClient:
         Args:
             url: The base URL of the Toolbox service.
         """
-
-        # Running a loop in a background thread allows us to support async
-        # methods from non-async environments.
-        if ToolboxClient.__loop is None:
-            loop = asyncio.new_event_loop()
-            thread = Thread(target=loop.run_forever, daemon=True)
-            thread.start()
-            ToolboxClient.__thread = thread
-            ToolboxClient.__loop = loop
-
-        async def __start_session() -> None:
-
-            # Use a default session if none is provided. This leverages connection
-            # pooling for better performance by reusing a single session throughout
-            # the application's lifetime.
-            if ToolboxClient.__session is None:
-                ToolboxClient.__session = ClientSession()
-
-        coro = __start_session()
-
-        asyncio.run_coroutine_threadsafe(coro, ToolboxClient.__loop).result()
-
-        if not ToolboxClient.__session:
-            raise ValueError("Session cannot be None.")
-        self.__async_client = AsyncToolboxClient(url, ToolboxClient.__session)
-
-    def __run_as_sync(self, coro: Awaitable[T]) -> T:
-        """Run an async coroutine synchronously"""
-        if not self.__loop:
-            raise Exception(
-                "Cannot call synchronous methods before the background loop is initialized."
-            )
-        return asyncio.run_coroutine_threadsafe(coro, self.__loop).result()
-
-    async def __run_as_async(self, coro: Awaitable[T]) -> T:
-        """Run an async coroutine asynchronously"""
-
-        # If a loop has not been provided, attempt to run in current thread.
-        if not self.__loop:
-            return await coro
-
-        # Otherwise, run in the background thread.
-        return await asyncio.wrap_future(
-            asyncio.run_coroutine_threadsafe(coro, self.__loop)
-        )
+        self.__core_client = ToolboxCoreSyncClient(url=url)
 
     async def aload_tool(
         self,
         tool_name: str,
-        auth_tokens: dict[str, Callable[[], str]] = {},
+        auth_token_getters: dict[str, Callable[[], str]] = {},
+        auth_tokens: Optional[dict[str, Callable[[], str]]] = None,
         auth_headers: Optional[dict[str, Callable[[], str]]] = None,
         bound_params: dict[str, Union[Any, Callable[[], Any]]] = {},
-        strict: bool = True,
     ) -> ToolboxTool:
         """
         Loads the tool with the given tool name from the Toolbox service.
 
         Args:
             tool_name: The name of the tool to load.
-            auth_tokens: An optional mapping of authentication source names to
-                functions that retrieve ID tokens.
-            auth_headers: Deprecated. Use `auth_tokens` instead.
+            auth_token_getters: An optional mapping of authentication source
+                names to functions that retrieve ID tokens.
+            auth_tokens: Deprecated. Use `auth_token_getters` instead.
+            auth_headers: Deprecated. Use `auth_token_getters` instead.
             bound_params: An optional mapping of parameter names to their
                 bound values.
-            strict: If True, raises a ValueError if any of the given bound
-                parameters are missing from the schema or require
-                authentication. If False, only issues a warning.
 
         Returns:
             A tool loaded from the Toolbox.
         """
-        async_tool = await self.__run_as_async(
-            self.__async_client.aload_tool(
-                tool_name, auth_tokens, auth_headers, bound_params, strict
-            )
-        )
+        if auth_tokens:
+            if auth_token_getters:
+                warn(
+                    "Both `auth_token_getters` and `auth_tokens` are provided. `auth_tokens` is deprecated, and `auth_token_getters` will be used.",
+                    DeprecationWarning,
+                )
+            else:
+                warn(
+                    "Argument `auth_tokens` is deprecated. Use `auth_token_getters` instead.",
+                    DeprecationWarning,
+                )
+                auth_token_getters = auth_tokens
 
-        if not self.__loop or not self.__thread:
-            raise ValueError("Background loop or thread cannot be None.")
-        return ToolboxTool(async_tool, self.__loop, self.__thread)
+        if auth_headers:
+            if auth_token_getters:
+                warn(
+                    "Both `auth_token_getters` and `auth_headers` are provided. `auth_headers` is deprecated, and `auth_token_getters` will be used.",
+                    DeprecationWarning,
+                )
+            else:
+                warn(
+                    "Argument `auth_headers` is deprecated. Use `auth_token_getters` instead.",
+                    DeprecationWarning,
+                )
+                auth_token_getters = auth_headers
+
+        core_tool = await to_thread(
+            self.__core_client.load_tool,
+            name=tool_name,
+            auth_token_getters=auth_token_getters,
+            bound_params=bound_params,
+        )
+        return ToolboxTool(core_tool=core_tool)
 
     async def aload_toolset(
         self,
         toolset_name: Optional[str] = None,
-        auth_tokens: dict[str, Callable[[], str]] = {},
+        auth_token_getters: dict[str, Callable[[], str]] = {},
+        auth_tokens: Optional[dict[str, Callable[[], str]]] = None,
         auth_headers: Optional[dict[str, Callable[[], str]]] = None,
         bound_params: dict[str, Union[Any, Callable[[], Any]]] = {},
-        strict: bool = True,
+        strict: bool = False,
     ) -> list[ToolboxTool]:
         """
         Loads tools from the Toolbox service, optionally filtered by toolset
@@ -135,74 +109,124 @@ class ToolboxClient:
         Args:
             toolset_name: The name of the toolset to load. If not provided,
                 all tools are loaded.
-            auth_tokens: An optional mapping of authentication source names to
-                functions that retrieve ID tokens.
-            auth_headers: Deprecated. Use `auth_tokens` instead.
+            auth_token_getters: An optional mapping of authentication source
+                names to functions that retrieve ID tokens.
+            auth_tokens: Deprecated. Use `auth_token_getters` instead.
+            auth_headers: Deprecated. Use `auth_token_getters` instead.
             bound_params: An optional mapping of parameter names to their
                 bound values.
-            strict: If True, raises a ValueError if any of the given bound
-                parameters are missing from the schema or require
-                authentication. If False, only issues a warning.
+            strict: If True, raises an error if *any* loaded tool instance fails
+                to utilize at least one provided parameter or auth token (if any
+                provided). If False (default), raises an error only if a
+                user-provided parameter or auth token cannot be applied to *any*
+                loaded tool across the set.
 
         Returns:
             A list of all tools loaded from the Toolbox.
         """
-        async_tools = await self.__run_as_async(
-            self.__async_client.aload_toolset(
-                toolset_name, auth_tokens, auth_headers, bound_params, strict
-            )
+        if auth_tokens:
+            if auth_token_getters:
+                warn(
+                    "Both `auth_token_getters` and `auth_tokens` are provided. `auth_tokens` is deprecated, and `auth_token_getters` will be used.",
+                    DeprecationWarning,
+                )
+            else:
+                warn(
+                    "Argument `auth_tokens` is deprecated. Use `auth_token_getters` instead.",
+                    DeprecationWarning,
+                )
+                auth_token_getters = auth_tokens
+
+        if auth_headers:
+            if auth_token_getters:
+                warn(
+                    "Both `auth_token_getters` and `auth_headers` are provided. `auth_headers` is deprecated, and `auth_token_getters` will be used.",
+                    DeprecationWarning,
+                )
+            else:
+                warn(
+                    "Argument `auth_headers` is deprecated. Use `auth_token_getters` instead.",
+                    DeprecationWarning,
+                )
+                auth_token_getters = auth_headers
+
+        core_tools = await to_thread(
+            self.__core_client.load_toolset,
+            name=toolset_name,
+            auth_token_getters=auth_token_getters,
+            bound_params=bound_params,
+            strict=strict,
         )
 
-        tools: list[ToolboxTool] = []
-
-        if not self.__loop or not self.__thread:
-            raise ValueError("Background loop or thread cannot be None.")
-        for async_tool in async_tools:
-            tools.append(ToolboxTool(async_tool, self.__loop, self.__thread))
+        tools = []
+        for core_tool in core_tools:
+            tools.append(ToolboxTool(core_tool=core_tool))
         return tools
 
     def load_tool(
         self,
         tool_name: str,
-        auth_tokens: dict[str, Callable[[], str]] = {},
+        auth_token_getters: dict[str, Callable[[], str]] = {},
+        auth_tokens: Optional[dict[str, Callable[[], str]]] = None,
         auth_headers: Optional[dict[str, Callable[[], str]]] = None,
         bound_params: dict[str, Union[Any, Callable[[], Any]]] = {},
-        strict: bool = True,
     ) -> ToolboxTool:
         """
         Loads the tool with the given tool name from the Toolbox service.
 
         Args:
             tool_name: The name of the tool to load.
-            auth_tokens: An optional mapping of authentication source names to
-                functions that retrieve ID tokens.
-            auth_headers: Deprecated. Use `auth_tokens` instead.
+            auth_token_getters: An optional mapping of authentication source
+                names to functions that retrieve ID tokens.
+            auth_tokens: Deprecated. Use `auth_token_getters` instead.
+            auth_headers: Deprecated. Use `auth_token_getters` instead.
             bound_params: An optional mapping of parameter names to their
                 bound values.
-            strict: If True, raises a ValueError if any of the given bound
-                parameters are missing from the schema or require
-                authentication. If False, only issues a warning.
 
         Returns:
             A tool loaded from the Toolbox.
         """
-        async_tool = self.__run_as_sync(
-            self.__async_client.aload_tool(
-                tool_name, auth_tokens, auth_headers, bound_params, strict
-            )
-        )
+        if auth_tokens:
+            if auth_token_getters:
+                warn(
+                    "Both `auth_token_getters` and `auth_tokens` are provided. `auth_tokens` is deprecated, and `auth_token_getters` will be used.",
+                    DeprecationWarning,
+                )
+            else:
+                warn(
+                    "Argument `auth_tokens` is deprecated. Use `auth_token_getters` instead.",
+                    DeprecationWarning,
+                )
+                auth_token_getters = auth_tokens
 
-        if not self.__loop or not self.__thread:
-            raise ValueError("Background loop or thread cannot be None.")
-        return ToolboxTool(async_tool, self.__loop, self.__thread)
+        if auth_headers:
+            if auth_token_getters:
+                warn(
+                    "Both `auth_token_getters` and `auth_headers` are provided. `auth_headers` is deprecated, and `auth_token_getters` will be used.",
+                    DeprecationWarning,
+                )
+            else:
+                warn(
+                    "Argument `auth_headers` is deprecated. Use `auth_token_getters` instead.",
+                    DeprecationWarning,
+                )
+                auth_token_getters = auth_headers
+
+        core_sync_tool = self.__core_client.load_tool(
+            name=tool_name,
+            auth_token_getters=auth_token_getters,
+            bound_params=bound_params,
+        )
+        return ToolboxTool(core_tool=core_sync_tool)
 
     def load_toolset(
         self,
         toolset_name: Optional[str] = None,
-        auth_tokens: dict[str, Callable[[], str]] = {},
+        auth_token_getters: dict[str, Callable[[], str]] = {},
+        auth_tokens: Optional[dict[str, Callable[[], str]]] = None,
         auth_headers: Optional[dict[str, Callable[[], str]]] = None,
         bound_params: dict[str, Union[Any, Callable[[], Any]]] = {},
-        strict: bool = True,
+        strict: bool = False,
     ) -> list[ToolboxTool]:
         """
         Loads tools from the Toolbox service, optionally filtered by toolset
@@ -211,27 +235,55 @@ class ToolboxClient:
         Args:
             toolset_name: The name of the toolset to load. If not provided,
                 all tools are loaded.
-            auth_tokens: An optional mapping of authentication source names to
-                functions that retrieve ID tokens.
-            auth_headers: Deprecated. Use `auth_tokens` instead.
+            auth_token_getters: An optional mapping of authentication source
+                names to functions that retrieve ID tokens.
+            auth_tokens: Deprecated. Use `auth_token_getters` instead.
+            auth_headers: Deprecated. Use `auth_token_getters` instead.
             bound_params: An optional mapping of parameter names to their
                 bound values.
-            strict: If True, raises a ValueError if any of the given bound
-                parameters are missing from the schema or require
-                authentication. If False, only issues a warning.
+            strict: If True, raises an error if *any* loaded tool instance fails
+                to utilize at least one provided parameter or auth token (if any
+                provided). If False (default), raises an error only if a
+                user-provided parameter or auth token cannot be applied to *any*
+                loaded tool across the set.
 
         Returns:
             A list of all tools loaded from the Toolbox.
         """
-        async_tools = self.__run_as_sync(
-            self.__async_client.aload_toolset(
-                toolset_name, auth_tokens, auth_headers, bound_params, strict
-            )
+        if auth_tokens:
+            if auth_token_getters:
+                warn(
+                    "Both `auth_token_getters` and `auth_tokens` are provided. `auth_tokens` is deprecated, and `auth_token_getters` will be used.",
+                    DeprecationWarning,
+                )
+            else:
+                warn(
+                    "Argument `auth_tokens` is deprecated. Use `auth_token_getters` instead.",
+                    DeprecationWarning,
+                )
+                auth_token_getters = auth_tokens
+
+        if auth_headers:
+            if auth_token_getters:
+                warn(
+                    "Both `auth_token_getters` and `auth_headers` are provided. `auth_headers` is deprecated, and `auth_token_getters` will be used.",
+                    DeprecationWarning,
+                )
+            else:
+                warn(
+                    "Argument `auth_headers` is deprecated. Use `auth_token_getters` instead.",
+                    DeprecationWarning,
+                )
+                auth_token_getters = auth_headers
+
+        core_sync_tools = self.__core_client.load_toolset(
+            name=toolset_name,
+            auth_token_getters=auth_token_getters,
+            bound_params=bound_params,
+            strict=strict,
         )
 
-        if not self.__loop or not self.__thread:
-            raise ValueError("Background loop or thread cannot be None.")
-        tools: list[ToolboxTool] = []
-        for async_tool in async_tools:
-            tools.append(ToolboxTool(async_tool, self.__loop, self.__thread))
+        tools = []
+        for core_sync_tool in core_sync_tools:
+            tools.append(ToolboxTool(core_tool=core_sync_tool))
         return tools

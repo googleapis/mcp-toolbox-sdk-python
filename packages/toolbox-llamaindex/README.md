@@ -9,29 +9,27 @@ applications, enabling advanced orchestration and interaction with GenAI models.
 ## Table of Contents
 <!-- TOC -->
 
-- [MCP Toolbox LlamaIndex SDK](#mcp-toolbox-llamaindex-sdk)
-    - [Installation](#installation)
-    - [Quickstart](#quickstart)
-- [TODO: add link](#todo-add-link)
-    - [Usage](#usage)
-    - [Loading Tools](#loading-tools)
-        - [Load a toolset](#load-a-toolset)
-        - [Load a single tool](#load-a-single-tool)
-    - [Use with LlamaIndex](#use-with-llamaindex)
-        - [Maintain state](#maintain-state)
-    - [Manual usage](#manual-usage)
-    - [Authenticating Tools](#authenticating-tools)
-        - [Supported Authentication Mechanisms](#supported-authentication-mechanisms)
-        - [Configure Tools](#configure-tools)
-        - [Configure SDK](#configure-sdk)
-            - [Add Authentication to a Tool](#add-authentication-to-a-tool)
-            - [Add Authentication While Loading](#add-authentication-while-loading)
-        - [Complete Example](#complete-example)
-    - [Binding Parameter Values](#binding-parameter-values)
-        - [Binding Parameters to a Tool](#binding-parameters-to-a-tool)
-        - [Binding Parameters While Loading](#binding-parameters-while-loading)
-        - [Binding Dynamic Values](#binding-dynamic-values)
-    - [Asynchronous Usage](#asynchronous-usage)
+- [Installation](#installation)
+- [Quickstart](#quickstart)
+- [Usage](#usage)
+- [Loading Tools](#loading-tools)
+    - [Load a toolset](#load-a-toolset)
+    - [Load a single tool](#load-a-single-tool)
+- [Use with LlamaIndex](#use-with-llamaindex)
+    - [Maintain state](#maintain-state)
+- [Manual usage](#manual-usage)
+- [Authenticating Tools](#authenticating-tools)
+    - [Supported Authentication Mechanisms](#supported-authentication-mechanisms)
+    - [Configure Tools](#configure-tools)
+    - [Configure SDK](#configure-sdk)
+        - [Add Authentication to a Tool](#add-authentication-to-a-tool)
+        - [Add Authentication While Loading](#add-authentication-while-loading)
+    - [Complete Example](#complete-example)
+- [Binding Parameter Values](#binding-parameter-values)
+    - [Binding Parameters to a Tool](#binding-parameters-to-a-tool)
+    - [Binding Parameters While Loading](#binding-parameters-while-loading)
+    - [Binding Dynamic Values](#binding-dynamic-values)
+- [Asynchronous Usage](#asynchronous-usage)
 
 <!-- /TOC -->
 
@@ -44,8 +42,7 @@ pip install toolbox-llamaindex
 ## Quickstart
 
 Here's a minimal example to get you started using
-# TODO: add link
-[LlamaIndex]():
+[LlamaIndex](https://docs.llamaindex.ai/en/stable/#getting-started):
 
 ```py
 import asyncio
@@ -111,7 +108,7 @@ available to your LLM agent.
 
 ## Use with LlamaIndex
 
-LangChain's agents can dynamically choose and execute tools based on the user
+LlamaIndex's agents can dynamically choose and execute tools based on the user
 input. Include tools loaded from the Toolbox SDK in the agent's toolkit:
 
 ```py
@@ -165,7 +162,7 @@ print(response)
 Execute a tool manually using the `call` method:
 
 ```py
-result = tools[0].call({"name": "Alice", "age": 30})
+result = tools[0].call(name="Alice", age=30)
 ```
 
 This is useful for testing tools or when you need precise control over tool
@@ -210,21 +207,21 @@ async def get_auth_token():
 toolbox = ToolboxClient("http://127.0.0.1:5000")
 tools = toolbox.load_toolset()
 
-auth_tool = tools[0].add_auth_token("my_auth", get_auth_token) # Single token
+auth_tool = tools[0].add_auth_token_getter("my_auth", get_auth_token) # Single token
 
-multi_auth_tool = tools[0].add_auth_tokens({"my_auth", get_auth_token}) # Multiple tokens
+multi_auth_tool = tools[0].add_auth_token_getters({"auth_1": get_auth_1}, {"auth_2": get_auth_2}) # Multiple tokens
 
 # OR
 
-auth_tools = [tool.add_auth_token("my_auth", get_auth_token) for tool in tools]
+auth_tools = [tool.add_auth_token_getter("my_auth", get_auth_token) for tool in tools]
 ```
 
 #### Add Authentication While Loading
 
 ```py
-auth_tool = toolbox.load_tool(auth_tokens={"my_auth": get_auth_token})
+auth_tool = toolbox.load_tool(auth_token_getters={"my_auth": get_auth_token})
 
-auth_tools = toolbox.load_toolset(auth_tokens={"my_auth": get_auth_token})
+auth_tools = toolbox.load_toolset(auth_token_getters={"my_auth": get_auth_token})
 ```
 
 > [!NOTE]
@@ -245,8 +242,8 @@ async def get_auth_token():
 toolbox = ToolboxClient("http://127.0.0.1:5000")
 tool = toolbox.load_tool("my-tool")
 
-auth_tool = tool.add_auth_token("my_auth", get_auth_token)
-result = auth_tool.call({"input": "some input"})
+auth_tool = tool.add_auth_token_getter("my_auth", get_auth_token)
+result = auth_tool.call(input="some input")
 print(result)
 ```
 

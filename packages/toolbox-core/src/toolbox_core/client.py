@@ -11,6 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+
 import types
 from typing import Any, Callable, Coroutine, Mapping, Optional, Union
 
@@ -18,7 +20,7 @@ from aiohttp import ClientSession
 
 from .protocol import ManifestSchema, ToolSchema
 from .tool import ToolboxTool
-from .utils import identify_required_authn_params, resolve_value
+from .utils import identify_auth_requirements, resolve_value
 
 
 class ToolboxClient:
@@ -79,8 +81,10 @@ class ToolboxClient:
             else:  # regular parameter
                 params.append(p)
 
-        authn_params = identify_required_authn_params(
-            authn_params, auth_token_getters.keys()
+        authn_params, authz_tokens, used_auth_keys = identify_auth_requirements(
+            authn_params,
+            schema.authRequired,
+            auth_token_getters.keys(),
         )
 
         tool = ToolboxTool(
@@ -88,18 +92,16 @@ class ToolboxClient:
             base_url=self.__base_url,
             name=name,
             description=schema.description,
-            params=params,
-            # create a read-only values for the maps to prevent mutation
+            # create a read-only values to prevent mutation
+            params=tuple(params),
             required_authn_params=types.MappingProxyType(authn_params),
+            required_authz_tokens=authz_tokens,
             auth_service_token_getters=types.MappingProxyType(auth_token_getters),
             bound_params=types.MappingProxyType(bound_params),
             client_headers=types.MappingProxyType(client_headers),
         )
 
         used_bound_keys = set(bound_params.keys())
-        used_auth_keys: set[str] = set()
-        for required_sources in authn_params.values():
-            used_auth_keys.update(required_sources)
 
         return tool, used_auth_keys, used_bound_keys
 
@@ -160,6 +162,9 @@ class ToolboxClient:
                 for execution. The specific arguments and behavior of the callable
                 depend on the tool itself.
 
+        Raises:
+            ValueError: If the loaded tool instance fails to utilize at least
+                one provided parameter or auth token (if any provided).
         """
         # Resolve client headers
         resolved_headers = {
@@ -176,14 +181,32 @@ class ToolboxClient:
         # parse the provided definition to a tool
         if name not in manifest.tools:
             # TODO: Better exception
-            raise Exception(f"Tool '{name}' not found!")
-        tool, _, _ = self.__parse_tool(
+            raise ValueError(f"Tool '{name}' not found!")
+        tool, used_auth_keys, used_bound_keys = self.__parse_tool(
             name,
             manifest.tools[name],
             auth_token_getters,
             bound_params,
             self.__client_headers,
         )
+
+        provided_auth_keys = set(auth_token_getters.keys())
+        provided_bound_keys = set(bound_params.keys())
+
+        unused_auth = provided_auth_keys - used_auth_keys
+        unused_bound = provided_bound_keys - used_bound_keys
+
+        if unused_auth or unused_bound:
+            error_messages = []
+            if unused_auth:
+                error_messages.append(f"unused auth tokens: {', '.join(unused_auth)}")
+            if unused_bound:
+                error_messages.append(
+                    f"unused bound parameters: {', '.join(unused_bound)}"
+                )
+            raise ValueError(
+                f"Validation failed for tool '{name}': { '; '.join(error_messages) }."
+            )
 
         return tool
 
@@ -192,47 +215,104 @@ class ToolboxClient:
         name: Optional[str] = None,
         auth_token_getters: dict[str, Callable[[], str]] = {},
         bound_params: Mapping[str, Union[Callable[[], Any], Any]] = {},
+        strict: bool = False,
     ) -> list[ToolboxTool]:
         """
         Asynchronously fetches a toolset and loads all tools defined within it.
 
         Args:
-            name: Name of the toolset to load tools.
+            name: Name of the toolset to load. If None, loads the default toolset.
             auth_token_getters: A mapping of authentication service names to
                 callables that return the corresponding authentication token.
             bound_params: A mapping of parameter names to bind to specific values or
                 callables that are called to produce values as needed.
+            strict: If True, raises an error if *any* loaded tool instance fails
+                to utilize all of the given parameters or auth tokens. (if any
+                provided). If False (default), raises an error only if a
+                user-provided parameter or auth token cannot be applied to *any*
+                loaded tool across the set.
 
         Returns:
             list[ToolboxTool]: A list of callables, one for each tool defined
             in the toolset.
+
+        Raises:
+            ValueError: If validation fails based on the `strict` flag.
         """
+
         # Resolve client headers
         original_headers = self.__client_headers
         resolved_headers = {
             header_name: await resolve_value(original_headers[header_name])
             for header_name in original_headers
         }
-        # Request the definition of the tool from the server
+        # Request the definition of the toolset from the server
         url = f"{self.__base_url}/api/toolset/{name or ''}"
         async with self.__session.get(url, headers=resolved_headers) as response:
             json = await response.json()
         manifest: ManifestSchema = ManifestSchema(**json)
 
-        # parse each tools name and schema into a list of ToolboxTools
-        tools = [
-            self.__parse_tool(
-                n, s, auth_token_getters, bound_params, self.__client_headers
-            )[0]
-            for n, s in manifest.tools.items()
-        ]
+        tools: list[ToolboxTool] = []
+        overall_used_auth_keys: set[str] = set()
+        overall_used_bound_params: set[str] = set()
+        provided_auth_keys = set(auth_token_getters.keys())
+        provided_bound_keys = set(bound_params.keys())
+
+        # parse each tool's name and schema into a list of ToolboxTools
+        for tool_name, schema in manifest.tools.items():
+            tool, used_auth_keys, used_bound_keys = self.__parse_tool(
+                tool_name,
+                schema,
+                auth_token_getters,
+                bound_params,
+                self.__client_headers,
+            )
+            tools.append(tool)
+
+            if strict:
+                unused_auth = provided_auth_keys - used_auth_keys
+                unused_bound = provided_bound_keys - used_bound_keys
+                if unused_auth or unused_bound:
+                    error_messages = []
+                    if unused_auth:
+                        error_messages.append(
+                            f"unused auth tokens: {', '.join(unused_auth)}"
+                        )
+                    if unused_bound:
+                        error_messages.append(
+                            f"unused bound parameters: {', '.join(unused_bound)}"
+                        )
+                    raise ValueError(
+                        f"Validation failed for tool '{tool_name}': { '; '.join(error_messages) }."
+                    )
+            else:
+                overall_used_auth_keys.update(used_auth_keys)
+                overall_used_bound_params.update(used_bound_keys)
+
+        unused_auth = provided_auth_keys - overall_used_auth_keys
+        unused_bound = provided_bound_keys - overall_used_bound_params
+
+        if unused_auth or unused_bound:
+            error_messages = []
+            if unused_auth:
+                error_messages.append(
+                    f"unused auth tokens could not be applied to any tool: {', '.join(unused_auth)}"
+                )
+            if unused_bound:
+                error_messages.append(
+                    f"unused bound parameters could not be applied to any tool: {', '.join(unused_bound)}"
+                )
+            raise ValueError(
+                f"Validation failed for toolset '{name or 'default'}': { '; '.join(error_messages) }."
+            )
+
         return tools
 
-    async def add_headers(
+    def add_headers(
         self, headers: Mapping[str, Union[Callable, Coroutine, str]]
     ) -> None:
         """
-        Asynchronously Add headers to be included in each request sent through this client.
+        Add headers to be included in each request sent through this client.
 
         Args:
             headers: Headers to include in each request sent through this client.

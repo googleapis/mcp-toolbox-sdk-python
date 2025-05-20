@@ -105,7 +105,7 @@ class TestBindParams:
         self, toolbox: ToolboxClient, get_n_rows_tool: ToolboxTool
     ):
         """Bind a param to an existing tool."""
-        new_tool = get_n_rows_tool.bind_parameters({"num_rows": "3"})
+        new_tool = get_n_rows_tool.bind_params({"num_rows": "3"})
         response = await new_tool()
         assert isinstance(response, str)
         assert "row1" in response
@@ -117,7 +117,7 @@ class TestBindParams:
         self, toolbox: ToolboxClient, get_n_rows_tool: ToolboxTool
     ):
         """Bind a callable param to an existing tool."""
-        new_tool = get_n_rows_tool.bind_parameters({"num_rows": lambda: "3"})
+        new_tool = get_n_rows_tool.bind_params({"num_rows": lambda: "3"})
         response = await new_tool()
         assert isinstance(response, str)
         assert "row1" in response
@@ -133,18 +133,22 @@ class TestAuth:
         self, toolbox: ToolboxClient, auth_token2: str
     ):
         """Tests running a tool that doesn't require auth, with auth provided."""
-        tool = await toolbox.load_tool(
-            "get-row-by-id", auth_token_getters={"my-test-auth": lambda: auth_token2}
-        )
-        response = await tool(id="2")
-        assert "row2" in response
+
+        with pytest.raises(
+            ValueError,
+            match=rf"Validation failed for tool 'get-row-by-id': unused auth tokens: my-test-auth",
+        ):
+            await toolbox.load_tool(
+                "get-row-by-id",
+                auth_token_getters={"my-test-auth": lambda: auth_token2},
+            )
 
     async def test_run_tool_no_auth(self, toolbox: ToolboxClient):
         """Tests running a tool requiring auth without providing auth."""
         tool = await toolbox.load_tool("get-row-by-id-auth")
         with pytest.raises(
-            Exception,
-            match="tool invocation not authorized. Please make sure your specify correct auth headers",
+            PermissionError,
+            match="One or more of the following authn services are required to invoke this tool: my-test-auth",
         ):
             await tool(id="2")
 
@@ -184,7 +188,7 @@ class TestAuth:
         """Tests running a tool with a param requiring auth, without auth."""
         tool = await toolbox.load_tool("get-row-by-email-auth")
         with pytest.raises(
-            Exception,
+            PermissionError,
             match="One or more of the following authn services are required to invoke this tool: my-test-auth",
         ):
             await tool()

@@ -12,14 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 import asyncio
 from threading import Thread
-from typing import Any, Callable, Coroutine, Mapping, Optional, TypeVar, Union
+from typing import Any, Callable, Coroutine, Mapping, Optional, Union
 
 from .client import ToolboxClient
 from .sync_tool import ToolboxSyncTool
-
-T = TypeVar("T")
 
 
 class ToolboxSyncClient:
@@ -57,9 +56,8 @@ class ToolboxSyncClient:
         async def create_client():
             return ToolboxClient(url, client_headers=client_headers)
 
-        # Ignoring type since we're already checking the existence of a loop above.
         self.__async_client = asyncio.run_coroutine_threadsafe(
-            create_client(), self.__class__.__loop  # type: ignore
+            create_client(), self.__class__.__loop
         ).result()
 
     def close(self):
@@ -101,40 +99,49 @@ class ToolboxSyncClient:
         """
         coro = self.__async_client.load_tool(name, auth_token_getters, bound_params)
 
-        # We have already created a new loop in the init method in case it does not already exist
-        async_tool = asyncio.run_coroutine_threadsafe(coro, self.__loop).result()  # type: ignore
-
         if not self.__loop or not self.__thread:
             raise ValueError("Background loop or thread cannot be None.")
+
+        async_tool = asyncio.run_coroutine_threadsafe(coro, self.__loop).result()
         return ToolboxSyncTool(async_tool, self.__loop, self.__thread)
 
     def load_toolset(
         self,
-        name: str,
+        name: Optional[str] = None,
         auth_token_getters: dict[str, Callable[[], str]] = {},
         bound_params: Mapping[str, Union[Callable[[], Any], Any]] = {},
+        strict: bool = False,
     ) -> list[ToolboxSyncTool]:
         """
         Synchronously fetches a toolset and loads all tools defined within it.
 
         Args:
-            name: Name of the toolset to load tools.
+            name: Name of the toolset to load. If None, loads the default toolset.
             auth_token_getters: A mapping of authentication service names to
                 callables that return the corresponding authentication token.
             bound_params: A mapping of parameter names to bind to specific values or
                 callables that are called to produce values as needed.
+            strict: If True, raises an error if *any* loaded tool instance fails
+                to utilize all of the given parameters or auth tokens. (if any
+                provided). If False (default), raises an error only if a
+                user-provided parameter or auth token cannot be applied to *any*
+                loaded tool across the set.
 
         Returns:
             list[ToolboxSyncTool]: A list of callables, one for each tool defined
             in the toolset.
-        """
-        coro = self.__async_client.load_toolset(name, auth_token_getters, bound_params)
 
-        # We have already created a new loop in the init method in case it does not already exist
-        async_tools = asyncio.run_coroutine_threadsafe(coro, self.__loop).result()  # type: ignore
+        Raises:
+            ValueError: If validation fails based on the `strict` flag.
+        """
+        coro = self.__async_client.load_toolset(
+            name, auth_token_getters, bound_params, strict
+        )
 
         if not self.__loop or not self.__thread:
             raise ValueError("Background loop or thread cannot be None.")
+
+        async_tools = asyncio.run_coroutine_threadsafe(coro, self.__loop).result()
         return [
             ToolboxSyncTool(async_tool, self.__loop, self.__thread)
             for async_tool in async_tools
@@ -144,7 +151,7 @@ class ToolboxSyncClient:
         self, headers: Mapping[str, Union[Callable, Coroutine, str]]
     ) -> None:
         """
-        Synchronously Add headers to be included in each request sent through this client.
+        Add headers to be included in each request sent through this client.
 
         Args:
             headers: Headers to include in each request sent through this client.
@@ -152,10 +159,7 @@ class ToolboxSyncClient:
         Raises:
             ValueError: If any of the headers are already registered in the client.
         """
-        coro = self.__async_client.add_headers(headers)
-
-        # We have already created a new loop in the init method in case it does not already exist
-        asyncio.run_coroutine_threadsafe(coro, self.__loop).result()  # type: ignore
+        self.__async_client.add_headers(headers)
 
     def __enter__(self):
         """Enter the runtime context related to this client instance."""
