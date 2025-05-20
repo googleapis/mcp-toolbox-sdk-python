@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.2.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-llamaindex-v0.1.1...toolbox-llamaindex-v0.2.0) (2025-05-20)
+
+
+### ⚠ BREAKING CHANGES
+
+* **toolbox-llamaindex:** Base toolbox-llamaindex over toolbox-core ([#244](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/244))
+
+### Features
+
+* **toolbox-llamaindex:** Base toolbox-llamaindex over toolbox-core ([#244](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/244)) ([64aa5a8](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/64aa5a89d299ff1e0be4899d90b22df8cbcecb23))
+
+
+### Bug Fixes
+
+* **deps:** update python-nonmajor ([#180](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/180)) ([8d909a9](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/8d909a9e19abed4a02e30a4dfc48e06afdbb01ea))
+
+
+### Miscellaneous Chores
+
+* Auto-update core package dependency version ([#251](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/251)) ([1c49d2c](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/1c49d2c6e717adc8ec5f08c0d0464e343f9ce4f2))
+* **deps:** update dependency pydantic to v2.11.4 ([#200](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/200)) ([758f620](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/758f620e25427396b52d257722d7f71312421ad1))
+* **deps:** update python-nonmajor ([#207](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/207)) ([83ba029](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/83ba029280089d1c0d4974e5910830048586fa49))
+* **deps:** update python-nonmajor ([#250](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/250)) ([8fb9762](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/8fb976258dda5549218f9f4e75257983866790f0))
+* move to correct readme ([#198](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/198)) ([99d0ad0](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/99d0ad043071b89a937ee90bffb3f24ecc03a2e7))
+* move toolbox-llamaindex package ([#192](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/192)) ([293854f](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/293854ff514c015968d205ab731dcd040a143df6))
+* release 0.1.0 ([#24](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/24)) ([6fff8e2](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/6fff8e2ea18bd6df9f30d7790b6076cf0b32cc75))
+* update toolbox version ([#194](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/194)) ([1ea3179](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/1ea31794bb90eed27a121fdc902ea4a09feb2ca6))
+* update toolbox version ([#226](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/226)) ([2a92def](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/2a92def08825417b32faa523a3355eba34351955))
+
 ## [0.1.1](https://github.com/googleapis/genai-toolbox-llamaindex-python/compare/v0.1.0...v0.1.1) (2025-04-04)
 
 
