@@ -122,7 +122,7 @@ def params_to_pydantic_model(
 
 
 async def resolve_value(
-    source: Union[Callable[[], Awaitable[Any]], Callable[[], Any], Any],
+    source: Union[Callable[[], Any], Callable[[], Awaitable[Any]], Any],
 ) -> Any:
     """
     Asynchronously or synchronously resolves a given source to its value.

@@ -15,7 +15,7 @@
 import copy
 from inspect import Signature
 from types import MappingProxyType
-from typing import Any, Callable, Coroutine, Mapping, Optional, Sequence, Union
+from typing import Any, Awaitable, Callable, Mapping, Optional, Sequence, Union
 from warnings import warn
 
 from aiohttp import ClientSession
@@ -51,9 +51,15 @@ class ToolboxTool:
         params: Sequence[ParameterSchema],
         required_authn_params: Mapping[str, list[str]],
         required_authz_tokens: Sequence[str],
-        auth_service_token_getters: Mapping[str, Callable[[], str]],
-        bound_params: Mapping[str, Union[Callable[[], Any], Any]],
-        client_headers: Mapping[str, Union[Callable, Coroutine, str]],
+        auth_service_token_getters: Mapping[
+            str, Union[Callable[[], str], Callable[[], Awaitable[str]]]
+        ],
+        bound_params: Mapping[
+            str, Union[Callable[[], Any], Callable[[], Awaitable[Any]], Any]
+        ],
+        client_headers: Mapping[
+            str, Union[Callable[[], str], Callable[[], Awaitable[str]], str]
+        ],
     ):
         """
         Initializes a callable that will trigger the tool invocation through the
@@ -143,7 +149,9 @@ class ToolboxTool:
         return copy.deepcopy(self.__params)
 
     @property
-    def _bound_params(self) -> Mapping[str, Union[Callable[[], Any], Any]]:
+    def _bound_params(
+        self,
+    ) -> Mapping[str, Union[Callable[[], Any], Callable[[], Awaitable[Any]], Any]]:
         return MappingProxyType(self.__bound_parameters)
 
     @property
@@ -151,11 +159,15 @@ class ToolboxTool:
         return MappingProxyType(self.__required_authn_params)
 
     @property
-    def _auth_service_token_getters(self) -> Mapping[str, Callable[[], str]]:
+    def _auth_service_token_getters(
+        self,
+    ) -> Mapping[str, Union[Callable[[], str], Callable[[], Awaitable[str]]]]:
         return MappingProxyType(self.__auth_service_token_getters)
 
     @property
-    def _client_headers(self) -> Mapping[str, Union[Callable, Coroutine, str]]:
+    def _client_headers(
+        self,
+    ) -> Mapping[str, Union[Callable[[], str], Callable[[], Awaitable[str]], str]]:
         return MappingProxyType(self.__client_headers)
 
     def __copy(
@@ -167,9 +179,15 @@ class ToolboxTool:
         params: Optional[Sequence[ParameterSchema]] = None,
         required_authn_params: Optional[Mapping[str, list[str]]] = None,
         required_authz_tokens: Optional[Sequence[str]] = None,
-        auth_service_token_getters: Optional[Mapping[str, Callable[[], str]]] = None,
-        bound_params: Optional[Mapping[str, Union[Callable[[], Any], Any]]] = None,
-        client_headers: Optional[Mapping[str, Union[Callable, Coroutine, str]]] = None,
+        auth_service_token_getters: Optional[
+            Mapping[str, Union[Callable[[], str], Callable[[], Awaitable[str]]]]
+        ] = None,
+        bound_params: Optional[
+            Mapping[str, Union[Callable[[], Any], Callable[[], Awaitable[Any]], Any]]
+        ] = None,
+        client_headers: Optional[
+            Mapping[str, Union[Callable[[], str], Callable[[], Awaitable[str]], str]]
+        ] = None,
     ) -> "ToolboxTool":
         """
         Creates a copy of the ToolboxTool, overriding specific fields.
@@ -278,7 +296,9 @@ class ToolboxTool:
 
     def add_auth_token_getters(
         self,
-        auth_token_getters: Mapping[str, Callable[[], str]],
+        auth_token_getters: Mapping[
+            str, Union[Callable[[], str], Callable[[], Awaitable[str]]]
+        ],
     ) -> "ToolboxTool":
         """
         Registers auth token getter functions that are used for AuthServices
@@ -347,7 +367,9 @@ class ToolboxTool:
         )
 
     def add_auth_token_getter(
-        self, auth_source: str, get_id_token: Callable[[], str]
+        self,
+        auth_source: str,
+        get_id_token: Union[Callable[[], str], Callable[[], Awaitable[str]]],
     ) -> "ToolboxTool":
         """
         Registers an auth token getter function that is used for AuthService
@@ -369,7 +391,10 @@ class ToolboxTool:
         return self.add_auth_token_getters({auth_source: get_id_token})
 
     def bind_params(
-        self, bound_params: Mapping[str, Union[Callable[[], Any], Any]]
+        self,
+        bound_params: Mapping[
+            str, Union[Callable[[], Any], Callable[[], Awaitable[Any]], Any]
+        ],
     ) -> "ToolboxTool":
         """
         Binds parameters to values or callables that produce values.
@@ -413,7 +438,7 @@ class ToolboxTool:
     def bind_param(
         self,
         param_name: str,
-        param_value: Union[Callable[[], Any], Any],
+        param_value: Union[Callable[[], Any], Callable[[], Awaitable[Any]], Any],
     ) -> "ToolboxTool":
         """
         Binds a parameter to the value or callable that produce the value.

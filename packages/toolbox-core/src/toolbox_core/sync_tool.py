@@ -17,7 +17,7 @@ import asyncio
 from asyncio import AbstractEventLoop
 from inspect import Signature
 from threading import Thread
-from typing import Any, Callable, Coroutine, Mapping, Sequence, Union
+from typing import Any, Awaitable, Callable, Mapping, Sequence, Union
 
 from .protocol import ParameterSchema
 from .tool import ToolboxTool
@@ -102,7 +102,9 @@ class ToolboxSyncTool:
         return self.__async_tool._params
 
     @property
-    def _bound_params(self) -> Mapping[str, Union[Callable[[], Any], Any]]:
+    def _bound_params(
+        self,
+    ) -> Mapping[str, Union[Callable[[], Any], Callable[[], Awaitable[Any]], Any]]:
         return self.__async_tool._bound_params
 
     @property
@@ -110,11 +112,15 @@ class ToolboxSyncTool:
         return self.__async_tool._required_auth_params
 
     @property
-    def _auth_service_token_getters(self) -> Mapping[str, Callable[[], str]]:
+    def _auth_service_token_getters(
+        self,
+    ) -> Mapping[str, Union[Callable[[], str], Callable[[], Awaitable[str]]]]:
         return self.__async_tool._auth_service_token_getters
 
     @property
-    def _client_headers(self) -> Mapping[str, Union[Callable, Coroutine, str]]:
+    def _client_headers(
+        self,
+    ) -> Mapping[str, Union[Callable[[], str], Callable[[], Awaitable[str]], str]]:
         return self.__async_tool._client_headers
 
     def __call__(self, *args: Any, **kwargs: Any) -> str:
@@ -136,7 +142,9 @@ class ToolboxSyncTool:
 
     def add_auth_token_getters(
         self,
-        auth_token_getters: Mapping[str, Callable[[], str]],
+        auth_token_getters: Mapping[
+            str, Union[Callable[[], str], Callable[[], Awaitable[str]]]
+        ],
     ) -> "ToolboxSyncTool":
         """
         Registers auth token getter functions that are used for AuthServices
@@ -159,7 +167,9 @@ class ToolboxSyncTool:
         return ToolboxSyncTool(new_async_tool, self.__loop, self.__thread)
 
     def add_auth_token_getter(
-        self, auth_source: str, get_id_token: Callable[[], str]
+        self,
+        auth_source: str,
+        get_id_token: Union[Callable[[], str], Callable[[], Awaitable[str]]],
     ) -> "ToolboxSyncTool":
         """
         Registers an auth token getter function that is used for AuthService
@@ -181,7 +191,10 @@ class ToolboxSyncTool:
         return self.add_auth_token_getters({auth_source: get_id_token})
 
     def bind_params(
-        self, bound_params: Mapping[str, Union[Callable[[], Any], Any]]
+        self,
+        bound_params: Mapping[
+            str, Union[Callable[[], Any], Callable[[], Awaitable[Any]], Any]
+        ],
     ) -> "ToolboxSyncTool":
         """
         Binds parameters to values or callables that produce values.
@@ -204,7 +217,7 @@ class ToolboxSyncTool:
     def bind_param(
         self,
         param_name: str,
-        param_value: Union[Callable[[], Any], Any],
+        param_value: Union[Callable[[], Any], Callable[[], Awaitable[Any]], Any],
     ) -> "ToolboxSyncTool":
         """
         Binds a parameter to the value or callable that produce the value.
