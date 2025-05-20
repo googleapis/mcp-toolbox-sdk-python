@@ -5,7 +5,6 @@
 
 ### ⚠ BREAKING CHANGES
 
-* **toolbox-langchain:** Base toolbox-langchain over toolbox-core ([#229](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/229))
 * **toolbox-core:** Throw PermissionError on unauthenticated tool invocation ([#233](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/233))
 * **toolbox-core:** Simplify add_headers to make it sync in async client ([#231](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/231))
 * **toolbox-core:** Standardize on ValueError for improved error consistency ([#219](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/219))
