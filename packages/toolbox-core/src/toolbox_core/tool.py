@@ -281,8 +281,8 @@ class ToolboxTool:
         auth_token_getters: Mapping[str, Callable[[], str]],
     ) -> "ToolboxTool":
         """
-        Registers an auth token getter function that is used for AuthServices when tools
-        are invoked.
+        Registers auth token getter functions that are used for AuthServices
+        when tools are invoked.
 
         Args:
             auth_token_getters: A mapping of authentication service names to
@@ -292,9 +292,9 @@ class ToolboxTool:
             A new ToolboxTool instance with the specified authentication token
             getters registered.
 
-        Raises
-            ValueError: If the auth source has already been registered either
-            to the tool or to the corresponding client.
+        Raises:
+            ValueError: If an auth source has already been registered either to
+            the tool or to the corresponding client.
         """
 
         # throw an error if the authentication source is already registered
@@ -350,7 +350,7 @@ class ToolboxTool:
         self, auth_source: str, get_id_token: Callable[[], str]
     ) -> "ToolboxTool":
         """
-        Registers auth token getter functions that are used for AuthServices
+        Registers an auth token getter function that is used for AuthServices
         when tools are invoked.
 
         Args:
@@ -359,11 +359,11 @@ class ToolboxTool:
 
         Returns:
             A new ToolboxTool instance with the specified authentication token
-            getters registered.
+            getter registered.
 
-        Raises
-            ValueError: If the auth source has already been registered either
-            to the tool or to the corresponding client.
+        Raises:
+            ValueError: If the auth source has already been registered either to
+            the tool or to the corresponding client.
 
         """
         return self.add_auth_token_getters({auth_source: get_id_token})
@@ -380,6 +380,11 @@ class ToolboxTool:
 
         Returns:
             A new ToolboxTool instance with the specified parameters bound.
+        
+        Raises:
+            ValueError: If a parameter is already bound or is not defined by the
+                tool's definition.
+
         """
         param_names = set(p.name for p in self.__params)
         for name in bound_params.keys():
@@ -411,7 +416,7 @@ class ToolboxTool:
         param_value: Union[Callable[[], Any], Any],
     ) -> "ToolboxTool":
         """
-        Binds a parameter to the value or callables that produce it.
+        Binds a parameter to the value or callable that produce the value.
 
         Args:
             param_name: The name of the bound parameter.
@@ -419,6 +424,11 @@ class ToolboxTool:
                 returns the value.
 
         Returns:
-            A new ToolboxTool instance with the specified parameters bound.
+            A new ToolboxTool instance with the specified parameter bound.
+
+        Raises:
+            ValueError: If the parameter is already bound or is not defined by
+                the tool's definition.
+
         """
         return self.bind_params({param_name: param_value})
