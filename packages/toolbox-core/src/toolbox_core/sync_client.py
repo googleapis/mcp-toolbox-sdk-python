@@ -15,7 +15,7 @@
 
 import asyncio
 from threading import Thread
-from typing import Any, Callable, Coroutine, Mapping, Optional, Union
+from typing import Any, Awaitable, Callable, Mapping, Optional, Union
 
 from .client import ToolboxClient
 from .sync_tool import ToolboxSyncTool
@@ -35,7 +35,9 @@ class ToolboxSyncClient:
     def __init__(
         self,
         url: str,
-        client_headers: Optional[Mapping[str, Union[Callable, Coroutine, str]]] = None,
+        client_headers: Optional[
+            Mapping[str, Union[Callable[[], str], Callable[[], Awaitable[str]], str]]
+        ] = None,
     ):
         """
         Initializes the ToolboxSyncClient.
@@ -75,8 +77,12 @@ class ToolboxSyncClient:
     def load_tool(
         self,
         name: str,
-        auth_token_getters: dict[str, Callable[[], str]] = {},
-        bound_params: Mapping[str, Union[Callable[[], Any], Any]] = {},
+        auth_token_getters: Mapping[
+            str, Union[Callable[[], str], Callable[[], Awaitable[str]]]
+        ] = {},
+        bound_params: Mapping[
+            str, Union[Callable[[], Any], Callable[[], Awaitable[Any]], Any]
+        ] = {},
     ) -> ToolboxSyncTool:
         """
         Synchronously loads a tool from the server.
@@ -108,8 +114,12 @@ class ToolboxSyncClient:
     def load_toolset(
         self,
         name: Optional[str] = None,
-        auth_token_getters: dict[str, Callable[[], str]] = {},
-        bound_params: Mapping[str, Union[Callable[[], Any], Any]] = {},
+        auth_token_getters: Mapping[
+            str, Union[Callable[[], str], Callable[[], Awaitable[str]]]
+        ] = {},
+        bound_params: Mapping[
+            str, Union[Callable[[], Any], Callable[[], Awaitable[Any]], Any]
+        ] = {},
         strict: bool = False,
     ) -> list[ToolboxSyncTool]:
         """
@@ -148,7 +158,10 @@ class ToolboxSyncClient:
         ]
 
     def add_headers(
-        self, headers: Mapping[str, Union[Callable, Coroutine, str]]
+        self,
+        headers: Mapping[
+            str, Union[Callable[[], str], Callable[[], Awaitable[str]], str]
+        ],
     ) -> None:
         """
         Add headers to be included in each request sent through this client.

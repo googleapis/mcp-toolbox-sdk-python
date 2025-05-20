@@ -13,8 +13,8 @@
 # limitations under the License.
 
 
-import types
-from typing import Any, Callable, Coroutine, Mapping, Optional, Union
+from types import MappingProxyType
+from typing import Any, Awaitable, Callable, Mapping, Optional, Union
 
 from aiohttp import ClientSession
 
@@ -38,7 +38,9 @@ class ToolboxClient:
         self,
         url: str,
         session: Optional[ClientSession] = None,
-        client_headers: Optional[Mapping[str, Union[Callable, Coroutine, str]]] = None,
+        client_headers: Optional[
+            Mapping[str, Union[Callable[[], str], Callable[[], Awaitable[str]], str]]
+        ] = None,
     ):
         """
         Initializes the ToolboxClient.
@@ -64,15 +66,23 @@ class ToolboxClient:
         self,
         name: str,
         schema: ToolSchema,
-        auth_token_getters: dict[str, Callable[[], str]],
-        all_bound_params: Mapping[str, Union[Callable[[], Any], Any]],
-        client_headers: Mapping[str, Union[Callable, Coroutine, str]],
+        auth_token_getters: Mapping[
+            str, Union[Callable[[], str], Callable[[], Awaitable[str]]]
+        ],
+        all_bound_params: Mapping[
+            str, Union[Callable[[], Any], Callable[[], Awaitable[Any]], Any]
+        ],
+        client_headers: Mapping[
+            str, Union[Callable[[], str], Callable[[], Awaitable[str]], str]
+        ],
     ) -> tuple[ToolboxTool, set[str], set[str]]:
         """Internal helper to create a callable tool from its schema."""
         # sort into reg, authn, and bound params
         params = []
         authn_params: dict[str, list[str]] = {}
-        bound_params: dict[str, Callable[[], str]] = {}
+        bound_params: dict[
+            str, Union[Callable[[], Any], Callable[[], Awaitable[Any]], Any]
+        ] = {}
         for p in schema.parameters:
             if p.authSources:  # authn parameter
                 authn_params[p.name] = p.authSources
@@ -94,11 +104,11 @@ class ToolboxClient:
             description=schema.description,
             # create a read-only values to prevent mutation
             params=tuple(params),
-            required_authn_params=types.MappingProxyType(authn_params),
+            required_authn_params=MappingProxyType(authn_params),
             required_authz_tokens=authz_tokens,
-            auth_service_token_getters=types.MappingProxyType(auth_token_getters),
-            bound_params=types.MappingProxyType(bound_params),
-            client_headers=types.MappingProxyType(client_headers),
+            auth_service_token_getters=MappingProxyType(auth_token_getters),
+            bound_params=MappingProxyType(bound_params),
+            client_headers=MappingProxyType(client_headers),
         )
 
         used_bound_keys = set(bound_params.keys())
@@ -140,8 +150,12 @@ class ToolboxClient:
     async def load_tool(
         self,
         name: str,
-        auth_token_getters: dict[str, Callable[[], str]] = {},
-        bound_params: Mapping[str, Union[Callable[[], Any], Any]] = {},
+        auth_token_getters: Mapping[
+            str, Union[Callable[[], str], Callable[[], Awaitable[str]]]
+        ] = {},
+        bound_params: Mapping[
+            str, Union[Callable[[], Any], Callable[[], Awaitable[Any]], Any]
+        ] = {},
     ) -> ToolboxTool:
         """
         Asynchronously loads a tool from the server.
@@ -213,8 +227,12 @@ class ToolboxClient:
     async def load_toolset(
         self,
         name: Optional[str] = None,
-        auth_token_getters: dict[str, Callable[[], str]] = {},
-        bound_params: Mapping[str, Union[Callable[[], Any], Any]] = {},
+        auth_token_getters: Mapping[
+            str, Union[Callable[[], str], Callable[[], Awaitable[str]]]
+        ] = {},
+        bound_params: Mapping[
+            str, Union[Callable[[], Any], Callable[[], Awaitable[Any]], Any]
+        ] = {},
         strict: bool = False,
     ) -> list[ToolboxTool]:
         """
@@ -309,7 +327,8 @@ class ToolboxClient:
         return tools
 
     def add_headers(
-        self, headers: Mapping[str, Union[Callable, Coroutine, str]]
+        self,
+        headers: Mapping[str, Union[Callable[[], str], Callable[[], Awaitable[str]]]],
     ) -> None:
         """
         Add headers to be included in each request sent through this client.
