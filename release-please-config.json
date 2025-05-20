@@ -19,12 +19,14 @@
       "packages/toolbox-langchain": {
         "component": "toolbox-langchain",
         "extra-files": [
+          "pyproject.toml",
           "src/toolbox_langchain/version.py"
         ]
       },
        "packages/toolbox-llamaindex": {
         "component": "toolbox-llamaindex",
         "extra-files": [
+          "pyproject.toml",
           "src/toolbox_llamaindex/version.py"
         ]
       }
