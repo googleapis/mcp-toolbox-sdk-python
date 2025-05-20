@@ -380,7 +380,7 @@ class ToolboxTool:
 
         Returns:
             A new ToolboxTool instance with the specified parameters bound.
-        
+
         Raises:
             ValueError: If a parameter is already bound or is not defined by the
                 tool's definition.
