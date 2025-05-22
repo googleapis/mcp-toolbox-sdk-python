@@ -50,7 +50,7 @@ class TestAsyncAuthMethods:
     @pytest.mark.asyncio
     @patch("toolbox_core.auth_methods._decode_jwt_and_get_expiry")
     @patch("toolbox_core.auth_methods._aiohttp_requests.Request")
-    @patch("toolbox_core.auth_methods.default_async", new_callable=AsyncMock)
+    @patch("toolbox_core.auth_methods.default_async", new_callable=MagicMock)
     async def test_aget_google_id_token_success_first_call(
         self, mock_default_async, mock_async_req_class, mock_decode_expiry
     ):
@@ -83,7 +83,7 @@ class TestAsyncAuthMethods:
     @pytest.mark.asyncio
     @patch("toolbox_core.auth_methods._decode_jwt_and_get_expiry")
     @patch("toolbox_core.auth_methods._aiohttp_requests.Request")
-    @patch("toolbox_core.auth_methods.default_async", new_callable=AsyncMock)
+    @patch("toolbox_core.auth_methods.default_async", new_callable=MagicMock)
     async def test_aget_google_id_token_success_uses_cache(
         self, mock_default_async, mock_async_req_class, mock_decode_expiry
     ):
@@ -105,7 +105,7 @@ class TestAsyncAuthMethods:
     @pytest.mark.asyncio
     @patch("toolbox_core.auth_methods._decode_jwt_and_get_expiry")
     @patch("toolbox_core.auth_methods._aiohttp_requests.Request")
-    @patch("toolbox_core.auth_methods.default_async", new_callable=AsyncMock)
+    @patch("toolbox_core.auth_methods.default_async", new_callable=MagicMock)
     async def test_aget_google_id_token_refreshes_expired_cache(
         self, mock_default_async, mock_async_req_class, mock_decode_expiry
     ):
@@ -137,7 +137,7 @@ class TestAsyncAuthMethods:
 
     @pytest.mark.asyncio
     @patch("toolbox_core.auth_methods._aiohttp_requests.Request")
-    @patch("toolbox_core.auth_methods.default_async", new_callable=AsyncMock)
+    @patch("toolbox_core.auth_methods.default_async", new_callable=MagicMock)
     async def test_aget_google_id_token_fetch_failure(
         self, mock_default_async, mock_async_req_class
     ):
@@ -157,7 +157,7 @@ class TestAsyncAuthMethods:
 
     @pytest.mark.asyncio
     @patch("toolbox_core.auth_methods._aiohttp_requests.Request")
-    @patch("toolbox_core.auth_methods.default_async", new_callable=AsyncMock)
+    @patch("toolbox_core.auth_methods.default_async", new_callable=MagicMock)
     async def test_aget_google_id_token_refresh_raises_exception(
         self, mock_default_async, mock_async_req_class
     ):
@@ -178,7 +178,7 @@ class TestAsyncAuthMethods:
     @pytest.mark.asyncio
     @patch("toolbox_core.auth_methods._decode_jwt_and_get_expiry")
     @patch("toolbox_core.auth_methods._aiohttp_requests.Request")
-    @patch("toolbox_core.auth_methods.default_async", new_callable=AsyncMock)
+    @patch("toolbox_core.auth_methods.default_async", new_callable=MagicMock)
     async def test_aget_google_id_token_no_expiry_info(
         self, mock_default_async, mock_async_req_class, mock_decode_expiry
     ):
