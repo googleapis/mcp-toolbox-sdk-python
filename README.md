@@ -68,9 +68,9 @@ README for detailed installation and usage instructions:
 
 | Package | Target Use Case | Integration | Path | Details (README) | PyPI Status |
 | :------ | :---------- | :---------- | :---------------------- | :---------- | :--------- 
-| `toolbox-core` | Framework-agnostic / Custom applications | Use directly / Custom | `packages/toolbox-core/` | 📄 [View README](https://github.com/googleapis/mcp-toolbox-sdk-python/blob/main/packages/toolbox-core/README.md) | [![PyPI version](https://badge.fury.io/py/toolbox-core.svg)](https://badge.fury.io/py/toolbox-core) |
-| `toolbox-langchain` | LangChain / LangGraph applications | LangChain / LangGraph | `packages/toolbox-langchain/` | 📄 [View README](https://github.com/googleapis/mcp-toolbox-sdk-python/blob/main/packages/toolbox-langchain/README.md) | [![PyPI version](https://badge.fury.io/py/toolbox-langchain.svg)](https://badge.fury.io/py/toolbox-langchain) |
-| `toolbox-llamaindex` | LlamaIndex  applications                 | LlamaIndex            | `packages/toolbox-llamaindex/` | 📄 [View README](https://github.com/googleapis/mcp-toolbox-sdk-python/blob/main/packages/toolbox-llamaindex/README.md) | [![PyPI version](https://badge.fury.io/py/toolbox-llamaindex.svg)](https://badge.fury.io/py/toolbox-llamaindex) |
+| `toolbox-core` | Framework-agnostic / Custom applications | Use directly / Custom | `packages/toolbox-core/` | 📄 [View README](https://github.com/googleapis/mcp-toolbox-sdk-python/blob/main/packages/toolbox-core/README.md) | [![PyPI version](https://badge.fury.io/py/toolbox-core.svg)](https://badge.fury.io/py/toolbox-core.svg) |
+| `toolbox-langchain` | LangChain / LangGraph applications | LangChain / LangGraph | `packages/toolbox-langchain/` | 📄 [View README](https://github.com/googleapis/mcp-toolbox-sdk-python/blob/main/packages/toolbox-langchain/README.md) | [![PyPI version](https://badge.fury.io/py/toolbox-langchain.svg)](https://badge.fury.io/py/toolbox-langchain.svg) |
+| `toolbox-llamaindex` | LlamaIndex  applications                 | LlamaIndex            | `packages/toolbox-llamaindex/` | 📄 [View README](https://github.com/googleapis/mcp-toolbox-sdk-python/blob/main/packages/toolbox-llamaindex/README.md) | [![PyPI version](https://badge.fury.io/py/toolbox-llamaindex.svg)](https://badge.fury.io/py/toolbox-llamaindex.svg) |
 
 ## Getting Started
 
