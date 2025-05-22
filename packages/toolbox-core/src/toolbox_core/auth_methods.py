@@ -29,15 +29,14 @@ tools = await toolbox.load_toolset()
 
 import time
 from functools import partial
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
 import google.auth
-from google.auth._credentials_async import Credentials
 import jwt
+from google.auth._credentials_async import Credentials
 from google.auth._default_async import default_async
 from google.auth.transport import _aiohttp_requests
 from google.auth.transport.requests import AuthorizedSession, Request
-
 
 # --- Constants and Configuration ---
 # Prefix for Authorization header tokens
