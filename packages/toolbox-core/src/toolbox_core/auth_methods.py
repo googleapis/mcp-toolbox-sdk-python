@@ -94,7 +94,7 @@ def _is_cached_token_valid(
     return time.time() < (expires_at - margin_seconds)
 
 
-def _update_token_cache(cache: Dict[str, Any], new_id_token: Optional[str]):
+def _update_token_cache(cache: Dict[str, Any], new_id_token: Optional[str]) -> None:
     """
     Updates the global token cache with a new token and its expiry.
 
