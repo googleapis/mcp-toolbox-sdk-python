@@ -66,10 +66,6 @@ class ToolboxSyncClient:
         """
         Synchronously closes the underlying client session. Doing so will cause
         any tools created by this Client to cease to function.
-
-        If the session was provided externally during initialization, the caller
-        is responsible for its lifecycle, but calling close here will still
-        attempt to close it.
         """
         coro = self.__async_client.close()
         asyncio.run_coroutine_threadsafe(coro, self.__loop).result()
