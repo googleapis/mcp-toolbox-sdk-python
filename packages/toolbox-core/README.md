@@ -21,8 +21,10 @@ involving Large Language Models (LLMs).
 - [Quickstart](#quickstart)
 - [Usage](#usage)
   - [Client Lifecycle Management](#client-lifecycle-management)
-      - [Scenario 1: ToolboxClient Manages the Session Default & Common](#scenario-1-toolboxclient-manages-the-session-default--common)
-      - [Scenario 2: Providing an External aiohttp.ClientSession](#scenario-2-providing-an-external-aiohttpclientsession)
+    - [Scenario 1: ToolboxClient Manages the Session Default & Common](#scenario-1-toolboxclient-manages-the-session-default--common)
+      - [Recommended Method: async with](#recommended-method-async-with)
+      - [Alternative: Explicit await client.close](#alternative-explicit-await-clientclose)
+    - [Scenario 2: Providing an External aiohttp.ClientSession](#scenario-2-providing-an-external-aiohttpclientsession)
 - [Loading Tools](#loading-tools)
   - [Load a toolset](#load-a-toolset)
   - [Load a single tool](#load-a-single-tool)
@@ -143,21 +145,21 @@ The `ToolboxClient` uses an `aiohttp.ClientSession` for its asynchronous network
 
 If you initialize `ToolboxClient` without passing a `session` argument, it creates and manages its own `aiohttp.ClientSession`. In this case, you must ensure the `ToolboxClient` instance is closed to also close the underlying session.
 
-  * Recommended Method: `async with`
-  ```py
-  async def main():
-    async with ToolboxClient(toolbox_url) as client:
-        # ... use client ...
-  ```
-  * Alternative: Explicit `await client.close()`
-  ```py
-  async def main():
-    client = ToolboxClient(toolbox_url)
-    try:
-        # ... use client ...
-    finally:
-        await client.close()
-  ```
+##### Recommended Method: `async with`
+```py
+async def main():
+  async with ToolboxClient(toolbox_url) as client:
+      # ... use client ...
+```
+##### Alternative: Explicit `await client.close()`
+```py
+async def main():
+  client = ToolboxClient(toolbox_url)
+  try:
+      # ... use client ...
+  finally:
+      await client.close()
+```
 
 #### **Scenario 2:** Providing an External `aiohttp.ClientSession`
 
