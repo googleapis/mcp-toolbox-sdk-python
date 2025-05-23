@@ -145,8 +145,7 @@ class ToolboxClient:
         any tools created by this Client to cease to function.
 
         If the session was provided externally during initialization, the caller
-        is responsible for its lifecycle, but calling close here will still
-        attempt to close it.
+        is responsible for its lifecycle.
         """
         if self.__manage_session:
             await self.__session.close()
