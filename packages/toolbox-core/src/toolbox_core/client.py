@@ -28,7 +28,8 @@ class ToolboxClient:
     An asynchronous client for interacting with a Toolbox service.
 
     Provides methods to discover and load tools defined by a remote Toolbox
-    service endpoint. It manages an underlying `aiohttp.ClientSession`.
+    service endpoint. It manages an underlying `aiohttp.ClientSession`, if one
+    is not provided.
     """
 
     __base_url: str
