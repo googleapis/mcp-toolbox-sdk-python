@@ -20,37 +20,38 @@ involving Large Language Models (LLMs).
 - [Installation](#installation)
 - [Quickstart](#quickstart)
 - [Usage](#usage)
-  - [Client Lifecycle Management](#client-lifecycle-management)
-    - [Scenario 1: ToolboxClient Manages the Session Default & Common](#scenario-1-toolboxclient-manages-the-session-default--common)
-      - [Recommended Method: async with](#recommended-method-async-with)
-      - [Alternative: Explicit await client.close](#alternative-explicit-await-clientclose)
-    - [Scenario 2: Providing an External aiohttp.ClientSession](#scenario-2-providing-an-external-aiohttpclientsession)
+    - [Client Lifecycle Management](#client-lifecycle-management)
+        - [Scenario 1: ToolboxClient Manages the Session Default & Common](#scenario-1-toolboxclient-manages-the-session-default--common)
+            - [Recommended Method: async with](#recommended-method-async-with)
+            - [Alternative: Explicit await client.close](#alternative-explicit-await-clientclose)
+        - [Scenario 2: Providing an External aiohttp.ClientSession](#scenario-2-providing-an-external-aiohttpclientsession)
 - [Loading Tools](#loading-tools)
-  - [Load a toolset](#load-a-toolset)
-  - [Load a single tool](#load-a-single-tool)
+    - [Load a toolset](#load-a-toolset)
+    - [Load a single tool](#load-a-single-tool)
 - [Invoking Tools](#invoking-tools)
 - [Synchronous Usage](#synchronous-usage)
+    - [Client Lifecycle Management](#client-lifecycle-management)
 - [Use with LangGraph](#use-with-langgraph)
 - [Client to Server Authentication](#client-to-server-authentication)
-  - [When is Client-to-Server Authentication Needed?](#when-is-client-to-server-authentication-needed)
-  - [How it works](#how-it-works)
-  - [Configuration](#configuration)
-  - [Authenticating with Google Cloud Servers](#authenticating-with-google-cloud-servers)
-  - [Step by Step Guide for Cloud Run](#step-by-step-guide-for-cloud-run)
+    - [When is Client-to-Server Authentication Needed?](#when-is-client-to-server-authentication-needed)
+    - [How it works](#how-it-works)
+    - [Configuration](#configuration)
+    - [Authenticating with Google Cloud Servers](#authenticating-with-google-cloud-servers)
+    - [Step by Step Guide for Cloud Run](#step-by-step-guide-for-cloud-run)
 - [Authenticating Tools](#authenticating-tools)
-  - [When is Authentication Needed?](#when-is-authentication-needed)
-  - [Supported Authentication Mechanisms](#supported-authentication-mechanisms)
-  - [Step 1: Configure Tools in Toolbox Service](#step-1-configure-tools-in-toolbox-service)
-  - [Step 2: Configure SDK Client](#step-2-configure-sdk-client)
-    - [Provide an ID Token Retriever Function](#provide-an-id-token-retriever-function)
-    - [Option A: Add Authentication to a Loaded Tool](#option-a-add-authentication-to-a-loaded-tool)
-    - [Option B: Add Authentication While Loading Tools](#option-b-add-authentication-while-loading-tools)
-  - [Complete Authentication Example](#complete-authentication-example)
+    - [When is Authentication Needed?](#when-is-authentication-needed)
+    - [Supported Authentication Mechanisms](#supported-authentication-mechanisms)
+    - [Step 1: Configure Tools in Toolbox Service](#step-1-configure-tools-in-toolbox-service)
+    - [Step 2: Configure SDK Client](#step-2-configure-sdk-client)
+        - [Provide an ID Token Retriever Function](#provide-an-id-token-retriever-function)
+        - [Option A: Add Authentication to a Loaded Tool](#option-a-add-authentication-to-a-loaded-tool)
+        - [Option B: Add Authentication While Loading Tools](#option-b-add-authentication-while-loading-tools)
+    - [Complete Authentication Example](#complete-authentication-example)
 - [Binding Parameter Values](#binding-parameter-values)
-  - [Why Bind Parameters?](#why-bind-parameters)
-  - [Option A: Binding Parameters to a Loaded Tool](#option-a-binding-parameters-to-a-loaded-tool)
-  - [Option B: Binding Parameters While Loading Tools](#option-b-binding-parameters-while-loading-tools)
-  - [Binding Dynamic Values](#binding-dynamic-values)
+    - [Why Bind Parameters?](#why-bind-parameters)
+    - [Option A: Binding Parameters to a Loaded Tool](#option-a-binding-parameters-to-a-loaded-tool)
+    - [Option B: Binding Parameters While Loading Tools](#option-b-binding-parameters-while-loading-tools)
+    - [Binding Dynamic Values](#binding-dynamic-values)
 - [Contributing](#contributing)
 - [License](#license)
 - [Support](#support)
@@ -76,18 +77,18 @@ pip install toolbox-core
 
 > [!IMPORTANT]
 >
-> The `ToolboxClient` interacts with network resources using an underlying HTTP
-> client session. If `ToolboxClient` creates this session internally (i.e., you
-> do not provide a session during initialization), then the `ToolboxClient` is
-> responsible for closing it. You must ensure the `ToolboxClient` is closed
-> using `async with ToolboxClient(...) as client:` or by explicitly calling
-> `await client.close()`. This will release the internally managed session and
-> prevent resource leak warnings (like `"Unclosed client session"` from
-> `aiohttp`). If you provide an external `aiohttp.ClientSession` during
-> `ToolboxClient` initialization, then you are responsible for managing the
-> lifecycle (including closing) of that external session. `ToolboxClient`'s
-> `close()` method or context manager *will not* close an externally provided
-> session.
+> The `ToolboxClient` (and its synchronous counterpart `ToolboxSyncClient`)
+> interacts with network resources using an underlying HTTP client session. If
+> `ToolboxClient` creates this session internally (i.e., you do not provide a
+> session during initialization), then the `ToolboxClient` is responsible for
+> closing it. You must ensure the `ToolboxClient` is closed using `async with
+> ToolboxClient(...) as client:` or by explicitly calling `await
+> client.close()`. This will release the internally managed session and prevent
+> resource leak warnings (like `"Unclosed client session"` from `aiohttp`). If
+> you provide an external `aiohttp.ClientSession` during `ToolboxClient`
+> initialization, then you are responsible for managing the lifecycle (including
+> closing) of that external session. `ToolboxClient`'s `close()` method or
+> context manager *will not* close an externally provided session.
 
 ## Quickstart
 
@@ -101,9 +102,9 @@ from toolbox_core import ToolboxClient
 async def main():
     # Replace with the actual URL where your Toolbox service is running
     async with ToolboxClient("http://127.0.0.1:5000") as toolbox:
-      weather_tool = await toolbox.load_tool("get_weather")
-      result = await weather_tool(location="London")
-      print(result)
+        weather_tool = await toolbox.load_tool("get_weather")
+        result = await weather_tool(location="London")
+        print(result)
 
 if __name__ == "__main__":
     asyncio.run(main())
@@ -132,7 +133,7 @@ Toolbox service.
 from toolbox_core import ToolboxClient
 
 # Replace with your Toolbox service's URL
-toolbox = ToolboxClient("http://127.0.0.1:5000")
+with ToolboxClient("http://127.0.0.1:5000") as toolbox:
 ```
 
 All interactions for loading and invoking tools happen through this client.
@@ -148,17 +149,17 @@ If you initialize `ToolboxClient` without passing a `session` argument, it creat
 ##### Recommended Method: `async with`
 ```py
 async def main():
-  async with ToolboxClient(toolbox_url) as client:
-      # ... use client ...
+    async with ToolboxClient(toolbox_url) as client:
+        # ... use client ...
 ```
 ##### Alternative: Explicit `await client.close()`
 ```py
 async def main():
-  client = ToolboxClient(toolbox_url)
-  try:
-      # ... use client ...
-  finally:
-      await client.close()
+    client = ToolboxClient(toolbox_url)
+    try:
+        # ... use client ...
+    finally:
+        await client.close()
 ```
 
 #### Scenario 2: Providing an External `aiohttp.ClientSession`
@@ -245,10 +246,33 @@ The `ToolboxSyncClient` handles communication with the Toolbox service synchrono
 ```py
 from toolbox_core import ToolboxSyncClient
 
-toolbox = ToolboxSyncClient("http://127.0.0.1:5000")
-weather_tool = toolbox.load_tool("get_weather")
-result = weather_tool(location="Paris")
-print(result)
+with ToolboxSyncClient("http://127.0.0.1:5000") as toolbox:
+    weather_tool = toolbox.load_tool("get_weather")
+    result = weather_tool(location="Paris")
+    print(result)
+```
+
+### Client Lifecycle Management
+
+`ToolboxSyncClient` creates its own underlying HTTP client internally, so you
+must ensure `ToolboxSyncClient` is closed. The recommended method is using a
+`with` statement:
+
+```py
+async def main():
+    with ToolboxSyncClient(toolbox_url) as client:
+        # ... use client ...
+```
+
+Alternatively, if not using `with`, explicitly call `toolbox.close()` in a `finally` block.
+
+```py
+async def main():
+    client = ToolboxSyncClient(toolbox_url)
+    try:
+        # ... use client ...
+    finally:
+        client.close()
 ```
 
 > [!TIP]
@@ -283,33 +307,33 @@ from langgraph.graph import StateGraph, MessagesState, START, END
 from langgraph.prebuilt import ToolNode
 from langchain.tools import StructuredTool
 
-toolbox = ToolboxClient("http://127.0.0.1:5000")
-tools = await toolbox.load_toolset()
-wrapped_tools = [StructuredTool.from_function(tool, parse_docstring=True) for tool in tools]
-model_with_tools = ChatVertexAI(model="gemini-1.5-pro-002").bind_tools(wrapped_tools)
+async with ToolboxClient("http://127.0.0.1:5000") as toolbox:
+    tools = await toolbox.load_toolset()
+    wrapped_tools = [StructuredTool.from_function(tool, parse_docstring=True) for tool in tools]
+    model_with_tools = ChatVertexAI(model="gemini-1.5-pro-002").bind_tools(wrapped_tools)
 
-def call_model(state: MessagesState):
-    messages = state["messages"]
-    response = model_with_tools.invoke(messages)
-    return {"messages": [response]}
+    def call_model(state: MessagesState):
+        messages = state["messages"]
+        response = model_with_tools.invoke(messages)
+        return {"messages": [response]}
 
-def should_continue(state: MessagesState):
-    messages = state["messages"]
-    last_message = messages[-1]
-    if last_message.tool_calls:
-        return "tools"
-    return END
+    def should_continue(state: MessagesState):
+        messages = state["messages"]
+        last_message = messages[-1]
+        if last_message.tool_calls:
+            return "tools"
+        return END
 
-workflow = StateGraph(MessagesState)
+    workflow = StateGraph(MessagesState)
 
-workflow.add_node("agent", call_model)
-workflow.add_node("tools", ToolNode(wrapped_tools))
+    workflow.add_node("agent", call_model)
+    workflow.add_node("tools", ToolNode(wrapped_tools))
 
-workflow.add_edge(START, "agent")
-workflow.add_conditional_edges("agent", should_continue, ["tools", END])
-workflow.add_edge("tools", "agent")
+    workflow.add_edge(START, "agent")
+    workflow.add_conditional_edges("agent", should_continue, ["tools", END])
+    workflow.add_edge("tools", "agent")
 
-app = workflow.compile()
+    app = workflow.compile()
 ```
 
 ## Client to Server Authentication
@@ -348,7 +372,7 @@ You can configure these dynamic headers in two ways:
     ```python
     from toolbox_core import ToolboxClient
 
-    client = ToolboxClient("toolbox-url", headers={"header1": header1_getter, "header2": header2_getter, ...})
+    async with ToolboxClient("toolbox-url", headers={"header1": header1_getter, "header2": header2_getter, ...}) as client:
     ```
 
 1. **After Client Initialization**
@@ -356,8 +380,8 @@ You can configure these dynamic headers in two ways:
     ```python
     from toolbox_core import ToolboxClient
 
-    client = ToolboxClient("toolbox-url")
-    client.add_headers({"header1": header1_getter, "header2": header2_getter, ...})
+    async with ToolboxClient("toolbox-url") as client:
+        client.add_headers({"header1": header1_getter, "header2": header2_getter, ...})
     ```
 
 ### Authenticating with Google Cloud Servers
@@ -383,13 +407,13 @@ For Toolbox servers hosted on Google Cloud (e.g., Cloud Run) and requiring
     from toolbox_core import auth_methods
 
     auth_token_provider = auth_methods.aget_google_id_token # can also use sync method
-    client = ToolboxClient(
+    async with ToolboxClient(
         URL,
         client_headers={"Authorization": auth_token_provider},
-    )
-    tools = await client.load_toolset()
+    ) as client:
+        tools = await client.load_toolset()
 
-    # Now, you can use the client as usual.
+        # Now, you can use the client as usual.
     ```
 
 ## Authenticating Tools
@@ -462,17 +486,17 @@ You can add the token retriever function to a tool object *after* it has been
 loaded. This modifies the specific tool instance.
 
 ```py
-toolbox = ToolboxClient("http://127.0.0.1:5000")
-tool = await toolbox.load_tool("my-tool")
+async with ToolboxClient("http://127.0.0.1:5000") as toolbox:
+    tool = await toolbox.load_tool("my-tool")
 
-auth_tool = tool.add_auth_token_getter("my_auth", get_auth_token)  # Single token
+    auth_tool = tool.add_auth_token_getter("my_auth", get_auth_token)  # Single token
 
-# OR
+    # OR
 
-multi_auth_tool = tool.add_auth_token_getters({
-    "my_auth_1", get_auth_token_1,
-    "my_auth_2", get_auth_token_2,
-})  # Multiple tokens
+    multi_auth_tool = tool.add_auth_token_getters({
+        "my_auth_1", get_auth_token_1,
+        "my_auth_2", get_auth_token_2,
+    })  # Multiple tokens
 ```
 
 #### Option B: Add Authentication While Loading Tools
@@ -505,12 +529,12 @@ async def get_auth_token():
     # This example just returns a placeholder. Replace with your actual token retrieval.
     return "YOUR_ID_TOKEN" # Placeholder
 
-toolbox = ToolboxClient("http://127.0.0.1:5000")
-tool = await toolbox.load_tool("my-tool")
+async with ToolboxClient("http://127.0.0.1:5000") as toolbox:
+    tool = await toolbox.load_tool("my-tool")
 
-auth_tool = tool.add_auth_token_getters({"my_auth": get_auth_token})
-result = auth_tool(input="some input")
-print(result)
+    auth_tool = tool.add_auth_token_getters({"my_auth": get_auth_token})
+    result = auth_tool(input="some input")
+    print(result)
 ```
 
 ## Binding Parameter Values
@@ -540,14 +564,14 @@ Bind values to a tool object *after* it has been loaded. This modifies the
 specific tool instance.
 
 ```py
-toolbox = ToolboxClient("http://127.0.0.1:5000")
-tool = await toolbox.load_tool("my-tool")
+async with ToolboxClient("http://127.0.0.1:5000") as toolbox:
+    tool = await toolbox.load_tool("my-tool")
 
-bound_tool = tool.bind_param("param", "value")
+    bound_tool = tool.bind_param("param", "value")
 
-# OR
+    # OR
 
-bound_tool = tool.bind_params({"param": "value"})
+    bound_tool = tool.bind_params({"param": "value"})
 ```
 
 ### Option B: Binding Parameters While Loading Tools
@@ -574,8 +598,8 @@ invoked to dynamically determine the parameter's value at runtime.
 
 ```py
 async def get_dynamic_value():
-  # Logic to determine the value
-  return "dynamic_value"
+    # Logic to determine the value
+    return "dynamic_value"
 
 dynamic_bound_tool = tool.bind_param("param", get_dynamic_value)
 ```
