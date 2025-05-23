@@ -141,7 +141,7 @@ All interactions for loading and invoking tools happen through this client.
 
 The `ToolboxClient` uses an `aiohttp.ClientSession` for its asynchronous network requests. Proper management of this session is key to avoiding resource leaks and warnings.
 
-#### **Scenario 1:** `ToolboxClient` Manages the Session (Default & Common)
+#### Scenario 1: `ToolboxClient` Manages the Session (Default & Common)
 
 If you initialize `ToolboxClient` without passing a `session` argument, it creates and manages its own `aiohttp.ClientSession`. In this case, you must ensure the `ToolboxClient` instance is closed to also close the underlying session.
 
@@ -161,7 +161,7 @@ async def main():
       await client.close()
 ```
 
-#### **Scenario 2:** Providing an External `aiohttp.ClientSession`
+#### Scenario 2: Providing an External `aiohttp.ClientSession`
 
 You can pass an existing `aiohttp.ClientSession` instance to `ToolboxClient`
 using the `session` parameter. This is useful if you want to share a session
