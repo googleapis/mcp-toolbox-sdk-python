@@ -33,6 +33,7 @@ class ToolboxClient:
 
     __base_url: str
     __session: ClientSession
+    __manage_session: bool
 
     def __init__(
         self,
@@ -56,7 +57,9 @@ class ToolboxClient:
         self.__base_url = url
 
         # If no aiohttp.ClientSession is provided, make our own
+        self.__manage_session = False
         if session is None:
+            self.__manage_session = True
             session = ClientSession()
         self.__session = session
 
@@ -145,7 +148,8 @@ class ToolboxClient:
         is responsible for its lifecycle, but calling close here will still
         attempt to close it.
         """
-        await self.__session.close()
+        if self.__manage_session:
+            await self.__session.close()
 
     async def load_tool(
         self,
