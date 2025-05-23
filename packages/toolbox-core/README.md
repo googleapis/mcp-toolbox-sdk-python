@@ -259,20 +259,18 @@ must ensure `ToolboxSyncClient` is closed. The recommended method is using a
 `with` statement:
 
 ```py
-async def main():
-    with ToolboxSyncClient(toolbox_url) as client:
-        # ... use client ...
+with ToolboxSyncClient(toolbox_url) as client:
+    # ... use client ...
 ```
 
 Alternatively, if not using `with`, explicitly call `toolbox.close()` in a `finally` block.
 
 ```py
-async def main():
-    client = ToolboxSyncClient(toolbox_url)
-    try:
-        # ... use client ...
-    finally:
-        client.close()
+client = ToolboxSyncClient(toolbox_url)
+try:
+    # ... use client ...
+finally:
+    client.close()
 ```
 
 > [!TIP]
