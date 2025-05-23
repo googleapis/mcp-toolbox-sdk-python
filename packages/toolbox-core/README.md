@@ -82,7 +82,7 @@ pip install toolbox-core
 > `aiohttp`). If you provide an external `aiohttp.ClientSession` during
 > `ToolboxClient` initialization, then you are responsible for managing the
 > lifecycle (including closing) of that external session. `ToolboxClient`'s
-> `close()` method or context manager will not close an externally provided
+> `close()` method or context manager *will not* close an externally provided
 > session.
 
 ## Quickstart
