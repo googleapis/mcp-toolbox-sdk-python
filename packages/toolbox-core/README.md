@@ -20,13 +20,14 @@ involving Large Language Models (LLMs).
 - [Installation](#installation)
 - [Quickstart](#quickstart)
 - [Usage](#usage)
+  - [Client Lifecycle Management](#client-lifecycle-management)
 - [Loading Tools](#loading-tools)
   - [Load a toolset](#load-a-toolset)
   - [Load a single tool](#load-a-single-tool)
 - [Invoking Tools](#invoking-tools)
 - [Synchronous Usage](#synchronous-usage)
 - [Use with LangGraph](#use-with-langgraph)
-- [Authenticating to the Toolbox Server](#authenticating-to-the-toolbox-server)
+- [Client to Server Authentication](#client-to-server-authentication)
   - [When is Client-to-Server Authentication Needed?](#when-is-client-to-server-authentication-needed)
   - [How it works](#how-it-works)
   - [Configuration](#configuration)
@@ -69,6 +70,21 @@ pip install toolbox-core
 > - If you prefer synchronous execution, refer to the [Synchronous
 >   Usage](#synchronous-usage) section below.
 
+> [!IMPORTANT]
+>
+> The `ToolboxClient` interacts with network resources using an underlying HTTP
+> client session. If `ToolboxClient` creates this session internally (i.e., you
+> do not provide a session during initialization), then the `ToolboxClient` is
+> responsible for closing it. You must ensure the `ToolboxClient` is closed
+> using `async with ToolboxClient(...) as client:` or by explicitly calling
+> `await client.close()`. This will release the internally managed session and
+> prevent resource leak warnings (like `"Unclosed client session"` from
+> `aiohttp`). If you provide an external `aiohttp.ClientSession` during
+> `ToolboxClient` initialization, then you are responsible for managing the
+> lifecycle (including closing) of that external session. `ToolboxClient`'s
+> `close()` method or context manager will not close an externally provided
+> session.
+
 ## Quickstart
 
 Here's a minimal example to get you started. Ensure your Toolbox service is
@@ -80,14 +96,28 @@ from toolbox_core import ToolboxClient
 
 async def main():
     # Replace with the actual URL where your Toolbox service is running
-    toolbox = ToolboxClient("http://127.0.0.1:5000")
-    weather_tool = await toolbox.load_tool("get_weather")
-    result = await weather_tool(location="London")
-    print(result)
+    async with ToolboxClient("http://127.0.0.1:5000") as toolbox:
+      weather_tool = await toolbox.load_tool("get_weather")
+      result = await weather_tool(location="London")
+      print(result)
 
 if __name__ == "__main__":
     asyncio.run(main())
 ```
+
+> [!IMPORTANT]
+> If you initialize `ToolboxClient` without providing an external session and
+> cannot use `async with`, you must explicitly close the client using `await
+> toolbox.close()` in a `finally` block. This ensures the internally created
+> session is closed.
+>
+>  ```py
+>  toolbox = ToolboxClient("http://127.0.0.1:5000")
+>  try:
+>      # ... use toolbox ...
+>  finally:
+>      await toolbox.close()
+>  ```
 
 ## Usage
 
@@ -102,6 +132,56 @@ toolbox = ToolboxClient("http://127.0.0.1:5000")
 ```
 
 All interactions for loading and invoking tools happen through this client.
+
+### Client Lifecycle Management
+
+The `ToolboxClient` uses an `aiohttp.ClientSession` for its asynchronous network requests. Proper management of this session is key to avoiding resource leaks and warnings.
+
+* **Scenario 1: `ToolboxClient` Manages the Session (Default & Common)**
+
+If you initialize `ToolboxClient` without passing a `session` argument, it creates and manages its own `aiohttp.ClientSession`. In this case, you must ensure the `ToolboxClient` instance is closed to also close the underlying session.
+
+  * Recommended Method: `async with`
+  ```py
+  async def main():
+    async with ToolboxClient(toolbox_url) as client:
+        # ... use client ...
+  ```
+  * Alternative: Explicit `await client.close()`
+  ```py
+  async def main():
+    client = ToolboxClient(toolbox_url)
+    try:
+        # ... use client ...
+    finally:
+        await client.close()
+  ```
+
+* **Scenario 2: Providing an External `aiohttp.ClientSession`**
+
+You can pass an existing `aiohttp.ClientSession` instance to `ToolboxClient`
+using the `session` parameter. This is useful if you want to share a session
+across multiple clients or have custom session configurations.
+
+If you provide an external session, you are fully responsible for managing its
+lifecycle (including closing it). The `ToolboxClient`'s `close()` method or its
+`async with` statement *will not* close an externally provided session.
+
+```py
+import aiohttp
+
+async def main():
+    async with aiohttp.ClientSession() as external_session:
+        async with ToolboxClient(toolbox_url, session=external_session) as client:
+            # ... use client ...
+        # Exiting 'async with client'DOES NOT close the 'external_session'.
+    # 'external_session' is closed here by its own 'async with' block.
+```
+
+> [!NOTE]
+> Failure to close an internally created `aiohttp.ClientSession` (by not closing
+> the `ToolboxClient` that created it) will lead to `aiohttp` warnings such as
+> `"Unclosed client session"`.
 
 ## Loading Tools
 
