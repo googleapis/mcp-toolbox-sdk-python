@@ -27,12 +27,11 @@ toolbox = ToolboxClient(
 tools = await toolbox.load_toolset()
 """
 
-import time
+from datetime import datetime, timedelta, timezone
 from functools import partial
 from typing import Any, Dict, Optional
 
 import google.auth
-import jwt
 from google.auth._credentials_async import Credentials
 from google.auth._default_async import default_async
 from google.auth.transport import _aiohttp_requests
@@ -51,26 +50,6 @@ _cached_google_id_token: Dict[str, Any] = {"token": None, "expires_at": 0}
 
 
 # --- Helper Functions ---
-def _decode_jwt_and_get_expiry(id_token: str) -> Optional[float]:
-    """
-    Decodes a JWT and extracts the 'exp' (expiration) claim.
-
-    Args:
-        id_token: The JWT string to decode.
-
-    Returns:
-        The 'exp' timestamp as a float if present and decoding is successful,
-        otherwise None.
-    """
-    try:
-        decoded_token = jwt.decode(
-            id_token, options={"verify_signature": False, "verify_aud": False}
-        )
-        return decoded_token.get("exp")
-    except jwt.PyJWTError:
-        return None
-
-
 def _is_cached_token_valid(
     cache: Dict[str, Any], margin_seconds: int = CACHE_REFRESH_MARGIN_SECONDS
 ) -> bool:
@@ -87,14 +66,24 @@ def _is_cached_token_valid(
     if not cache.get("token"):
         return False
 
-    expires_at = cache.get("expires_at")
-    if not isinstance(expires_at, (int, float)) or expires_at <= 0:
+    expires_at_value = cache.get("expires_at")
+    if not isinstance(expires_at_value, datetime):
         return False
 
-    return time.time() < (expires_at - margin_seconds)
+    # Ensure expires_at_value is timezone-aware (UTC).
+    if expires_at_value.tzinfo is None or expires_at_value.tzinfo.utcoffset(expires_at_value) is None:
+        expires_at_value = expires_at_value.replace(tzinfo=timezone.utc)
+
+    current_time_utc = datetime.now(timezone.utc)
+    if current_time_utc + timedelta(seconds=margin_seconds) < expires_at_value:
+        return True
+
+    return False
 
 
-def _update_token_cache(cache: Dict[str, Any], new_id_token: Optional[str]) -> None:
+def _update_token_cache(
+    cache: Dict[str, Any], new_id_token: Optional[str], expiry: Optional[datetime]
+) -> None:
     """
     Updates the global token cache with a new token and its expiry.
 
@@ -104,7 +93,7 @@ def _update_token_cache(cache: Dict[str, Any], new_id_token: Optional[str]) -> N
     """
     if new_id_token:
         cache["token"] = new_id_token
-        expiry_timestamp = _decode_jwt_and_get_expiry(new_id_token)
+        expiry_timestamp = expiry
         if expiry_timestamp:
             cache["expires_at"] = expiry_timestamp
         else:
@@ -139,8 +128,9 @@ def get_google_id_token() -> str:
     request = Request(session)
     credentials.refresh(request)
     new_id_token = getattr(credentials, "id_token", None)
+    expiry = getattr(credentials, "expiry")
 
-    _update_token_cache(_cached_google_id_token, new_id_token)
+    _update_token_cache(_cached_google_id_token, new_id_token, expiry)
     if new_id_token:
         return BEARER_TOKEN_PREFIX + new_id_token
     else:
@@ -168,8 +158,9 @@ async def aget_google_id_token() -> str:
     await credentials.refresh(_aiohttp_requests.Request())
     credentials.before_request = partial(Credentials.before_request, credentials)
     new_id_token = getattr(credentials, "id_token", None)
+    expiry = getattr(credentials, "expiry")
 
-    _update_token_cache(_cached_google_id_token, new_id_token)
+    _update_token_cache(_cached_google_id_token, new_id_token, expiry)
 
     if new_id_token:
         return BEARER_TOKEN_PREFIX + new_id_token
