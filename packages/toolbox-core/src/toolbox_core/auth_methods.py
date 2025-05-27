@@ -71,7 +71,10 @@ def _is_cached_token_valid(
         return False
 
     # Ensure expires_at_value is timezone-aware (UTC).
-    if expires_at_value.tzinfo is None or expires_at_value.tzinfo.utcoffset(expires_at_value) is None:
+    if (
+        expires_at_value.tzinfo is None
+        or expires_at_value.tzinfo.utcoffset(expires_at_value) is None
+    ):
         expires_at_value = expires_at_value.replace(tzinfo=timezone.utc)
 
     current_time_utc = datetime.now(timezone.utc)
