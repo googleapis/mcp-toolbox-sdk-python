@@ -14,9 +14,9 @@
 
 
 import inspect
+from asyncio import run_coroutine_threadsafe
 from typing import Any, Callable, Mapping, Optional
 from unittest.mock import AsyncMock, Mock, patch
-from asyncio import run_coroutine_threadsafe
 
 import pytest
 from aioresponses import CallbackResult, aioresponses
@@ -28,13 +28,14 @@ from toolbox_core.sync_tool import ToolboxSyncTool
 
 TEST_BASE_URL = "http://toolbox.example.com"
 
-    # The original `ToolboxSyncClient.close()` is a blocking method because it
-    # calls `.result()`. In the pytest environment, this blocking call creates a
-    # deadlock during the test teardown phase when it conflicts with the
-    # `sync_client_environment` fixture that also manages the background thread.
-    #
-    # By replacing `close` with our non-blocking version for the test run,
-    # we prevent this deadlock and allow the test suite to tear down cleanly.
+
+# The original `ToolboxSyncClient.close()` is a blocking method because it
+# calls `.result()`. In the pytest environment, this blocking call creates a
+# deadlock during the test teardown phase when it conflicts with the
+# `sync_client_environment` fixture that also manages the background thread.
+#
+# By replacing `close` with our non-blocking version for the test run,
+# we prevent this deadlock and allow the test suite to tear down cleanly.
 @pytest.fixture(autouse=True)
 def patch_sync_client_for_deadlock(monkeypatch):
     """
@@ -51,6 +52,7 @@ def patch_sync_client_for_deadlock(monkeypatch):
         run_coroutine_threadsafe(coro, loop)
 
     monkeypatch.setattr(ToolboxSyncClient, "close", non_blocking_close)
+
 
 @pytest.fixture
 def sync_client_environment():
