@@ -47,7 +47,7 @@ def sync_client_environment():
     if original_loop and original_loop.is_running():
         original_loop.call_soon_threadsafe(original_loop.stop)
         if original_thread and original_thread.is_alive():
-            original_thread.join(timeout=5)
+            original_thread.join()
         ToolboxSyncClient._ToolboxSyncClient__loop = None
         ToolboxSyncClient._ToolboxSyncClient__thread = None
 
@@ -63,7 +63,7 @@ def sync_client_environment():
     if test_loop and test_loop.is_running():
         test_loop.call_soon_threadsafe(test_loop.stop)
     if test_thread and test_thread.is_alive():
-        test_thread.join(timeout=5)
+        test_thread.join()
 
     # Explicitly set to None to ensure a clean state for the next fixture use/test.
     ToolboxSyncClient._ToolboxSyncClient__loop = None
