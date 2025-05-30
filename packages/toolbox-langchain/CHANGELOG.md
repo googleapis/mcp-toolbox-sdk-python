@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-langchain-v0.2.0...toolbox-langchain-v0.2.1) (2025-05-30)
+
+
+### Bug Fixes
+
+* **toolbox-core:** Prevent `ToolboxClient` from closing externally managed client sessions ([#260](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/260)) ([7520adf](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/7520adf8f75b2d8d9d254cfa43774ba876fcd222))
+
 ## [0.2.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-langchain-v0.1.0...toolbox-langchain-v0.2.0) (2025-05-20)
 
 
