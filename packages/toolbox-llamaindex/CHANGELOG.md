@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-llamaindex-v0.2.0...toolbox-llamaindex-v0.2.1) (2025-05-30)
+
+
+### Miscellaneous Chores
+
+* **toolbox-llamaindex:** Synchronize toolbox-python-sdks versions
+
 ## [0.2.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-llamaindex-v0.1.1...toolbox-llamaindex-v0.2.0) (2025-05-20)
 
 
