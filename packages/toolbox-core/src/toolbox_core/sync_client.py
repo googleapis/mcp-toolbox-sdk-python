@@ -67,9 +67,8 @@ class ToolboxSyncClient:
         Synchronously closes the underlying client session. Doing so will cause
         any tools created by this Client to cease to function.
         """
-        if not self.__async_client.__session.closed:
-            coro = self.__async_client.close()
-            run_coroutine_threadsafe(coro, self.__loop).result()
+        coro = self.__async_client.close()
+        run_coroutine_threadsafe(coro, self.__loop).result()
 
     def __del__(self):
         self.close()
