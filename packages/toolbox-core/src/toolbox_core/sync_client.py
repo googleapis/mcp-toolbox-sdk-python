@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-import asyncio
+from asyncio import AbstractEventLoop, new_event_loop, run_coroutine_threadsafe
 from threading import Thread
 from typing import Any, Awaitable, Callable, Mapping, Optional, Union
 
@@ -29,7 +29,7 @@ class ToolboxSyncClient:
     service endpoint.
     """
 
-    __loop: Optional[asyncio.AbstractEventLoop] = None
+    __loop: Optional[AbstractEventLoop] = None
     __thread: Optional[Thread] = None
 
     def __init__(
@@ -49,7 +49,7 @@ class ToolboxSyncClient:
         # Running a loop in a background thread allows us to support async
         # methods from non-async environments.
         if self.__class__.__loop is None:
-            loop = asyncio.new_event_loop()
+            loop = new_event_loop()
             thread = Thread(target=loop.run_forever, daemon=True)
             thread.start()
             self.__class__.__thread = thread
@@ -58,7 +58,7 @@ class ToolboxSyncClient:
         async def create_client():
             return ToolboxClient(url, client_headers=client_headers)
 
-        self.__async_client = asyncio.run_coroutine_threadsafe(
+        self.__async_client = run_coroutine_threadsafe(
             create_client(), self.__class__.__loop
         ).result()
 
@@ -67,8 +67,12 @@ class ToolboxSyncClient:
         Synchronously closes the underlying client session. Doing so will cause
         any tools created by this Client to cease to function.
         """
-        coro = self.__async_client.close()
-        asyncio.run_coroutine_threadsafe(coro, self.__loop).result()
+        if not self.__async_client.__session.closed:
+            coro = self.__async_client.close()
+            run_coroutine_threadsafe(coro, self.__loop).result()
+
+    def __del__(self):
+        self.close()
 
     def load_tool(
         self,
@@ -104,7 +108,7 @@ class ToolboxSyncClient:
         if not self.__loop or not self.__thread:
             raise ValueError("Background loop or thread cannot be None.")
 
-        async_tool = asyncio.run_coroutine_threadsafe(coro, self.__loop).result()
+        async_tool = run_coroutine_threadsafe(coro, self.__loop).result()
         return ToolboxSyncTool(async_tool, self.__loop, self.__thread)
 
     def load_toolset(
@@ -147,7 +151,7 @@ class ToolboxSyncClient:
         if not self.__loop or not self.__thread:
             raise ValueError("Background loop or thread cannot be None.")
 
-        async_tools = asyncio.run_coroutine_threadsafe(coro, self.__loop).result()
+        async_tools = run_coroutine_threadsafe(coro, self.__loop).result()
         return [
             ToolboxSyncTool(async_tool, self.__loop, self.__thread)
             for async_tool in async_tools

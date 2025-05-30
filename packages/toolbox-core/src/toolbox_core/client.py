@@ -13,6 +13,7 @@
 # limitations under the License.
 
 
+from asyncio import get_running_loop
 from types import MappingProxyType
 from typing import Any, Awaitable, Callable, Mapping, Optional, Union
 
@@ -140,6 +141,22 @@ class ToolboxClient:
         """
         await self.close()
 
+    def __del__(self):
+        # This method is a "best-effort" safety net.
+        # It should NOT be relied upon for guaranteed resource cleanup.
+        # Explicitly using "async with" or calling "await client.close()" is the correct way.
+        if self.__manage_session:
+            try:
+                loop = get_running_loop()
+            except RuntimeError:
+                loop = None
+
+            if loop and loop.is_running():
+                # If a loop is running, try to schedule the close operation.
+                # This is "fire-and-forget"; there's no guarantee it will complete
+                # before the loop or interpreter shuts down.
+                loop.create_task(self.__session.close())
+
     async def close(self):
         """
         Asynchronously closes the underlying client session. Doing so will cause
@@ -148,7 +165,7 @@ class ToolboxClient:
         If the session was provided externally during initialization, the caller
         is responsible for its lifecycle.
         """
-        if self.__manage_session:
+        if self.__manage_session and not self.__session.closed:
             await self.__session.close()
 
     async def load_tool(
