@@ -13,6 +13,7 @@
 # limitations under the License.
 
 
+from asyncio import get_running_loop
 from types import MappingProxyType
 from typing import Any, Awaitable, Callable, Mapping, Optional, Union
 
@@ -28,11 +29,13 @@ class ToolboxClient:
     An asynchronous client for interacting with a Toolbox service.
 
     Provides methods to discover and load tools defined by a remote Toolbox
-    service endpoint. It manages an underlying `aiohttp.ClientSession`.
+    service endpoint. It manages an underlying `aiohttp.ClientSession`, if one
+    is not provided.
     """
 
     __base_url: str
     __session: ClientSession
+    __manage_session: bool
 
     def __init__(
         self,
@@ -56,7 +59,9 @@ class ToolboxClient:
         self.__base_url = url
 
         # If no aiohttp.ClientSession is provided, make our own
+        self.__manage_session = False
         if session is None:
+            self.__manage_session = True
             session = ClientSession()
         self.__session = session
 
@@ -136,16 +141,32 @@ class ToolboxClient:
         """
         await self.close()
 
+    def __del__(self):
+        # This method is a "best-effort" safety net.
+        # It should NOT be relied upon for guaranteed resource cleanup.
+        # Explicitly using "async with" or calling "await client.close()" is the correct way.
+        if self.__manage_session:
+            try:
+                loop = get_running_loop()
+            except RuntimeError:
+                loop = None
+
+            if loop and loop.is_running():
+                # If a loop is running, try to schedule the close operation.
+                # This is "fire-and-forget"; there's no guarantee it will complete
+                # before the loop or interpreter shuts down.
+                loop.create_task(self.__session.close())
+
     async def close(self):
         """
         Asynchronously closes the underlying client session. Doing so will cause
         any tools created by this Client to cease to function.
 
         If the session was provided externally during initialization, the caller
-        is responsible for its lifecycle, but calling close here will still
-        attempt to close it.
+        is responsible for its lifecycle.
         """
-        await self.__session.close()
+        if self.__manage_session and not self.__session.closed:
+            await self.__session.close()
 
     async def load_tool(
         self,

@@ -17,7 +17,6 @@ from typing import Any, Callable, Optional, Union
 from warnings import warn
 
 from toolbox_core.sync_client import ToolboxSyncClient as ToolboxCoreSyncClient
-from toolbox_core.sync_tool import ToolboxSyncTool
 
 from .tools import ToolboxTool
 
