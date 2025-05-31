@@ -43,12 +43,12 @@ Changelog = "https://github.com/googleapis/mcp-toolbox-sdk-python/blob/main/pack
 test = [
     "black[jupyter]==25.1.0",
     "isort==6.0.1",
-    "mypy==1.15.0",
+    "mypy==1.16.0",
     "pytest==8.3.5",
     "pytest-aioresponses==0.3.0",
     "pytest-asyncio==0.26.0",
     "pytest-cov==6.1.1",
-    "pytest-mock==3.14.0",
+    "pytest-mock==3.14.1",
     "google-cloud-secret-manager==2.23.3",
     "google-cloud-storage==3.1.0",
 ]
