@@ -339,3 +339,22 @@ class TestAsyncToolboxClient:
         assert "Synchronous methods not supported by async client." in str(
             excinfo.value
         )
+    
+    @patch("toolbox_langchain.async_client.ToolboxCoreClient")
+    async def test_init_with_client_headers(
+        self, mock_core_client_constructor, mock_session
+    ):
+        """Tests that client_headers are passed to the core client during initialization."""
+        headers = {"X-Test-Header": "value"}
+        AsyncToolboxClient(URL, session=mock_session, client_headers=headers)
+        mock_core_client_constructor.assert_called_once_with(
+            url=URL, session=mock_session, client_headers=headers
+        )
+
+    async def test_add_headers(self, mock_client):
+        """Tests that add_headers calls the core client's add_headers."""
+        headers = {"X-Another-Header": lambda: "dynamic_value"}
+        mock_client.add_headers(headers)
+        mock_client._AsyncToolboxClient__core_client.add_headers.assert_called_once_with(
+            headers
+        )
