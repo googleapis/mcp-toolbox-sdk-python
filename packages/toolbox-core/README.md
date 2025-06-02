@@ -202,7 +202,7 @@ from langchain.tools import StructuredTool
 toolbox = ToolboxClient("http://127.0.0.1:5000")
 tools = await toolbox.load_toolset()
 wrapped_tools = [StructuredTool.from_function(tool, parse_docstring=True) for tool in tools]
-model_with_tools = ChatVertexAI(model="gemini-1.5-pro-002").bind_tools(wrapped_tools)
+model_with_tools = ChatVertexAI(model="gemini-2.0-flash-001").bind_tools(wrapped_tools)
 
 def call_model(state: MessagesState):
     messages = state["messages"]
