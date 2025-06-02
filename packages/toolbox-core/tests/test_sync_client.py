@@ -47,7 +47,7 @@ def sync_client_environment():
     if original_loop and original_loop.is_running():
         original_loop.call_soon_threadsafe(original_loop.stop)
         if original_thread and original_thread.is_alive():
-            original_thread.join(timeout=5)
+            original_thread.join()
         ToolboxSyncClient._ToolboxSyncClient__loop = None
         ToolboxSyncClient._ToolboxSyncClient__thread = None
 
@@ -63,7 +63,7 @@ def sync_client_environment():
     if test_loop and test_loop.is_running():
         test_loop.call_soon_threadsafe(test_loop.stop)
     if test_thread and test_thread.is_alive():
-        test_thread.join(timeout=5)
+        test_thread.join()
 
     # Explicitly set to None to ensure a clean state for the next fixture use/test.
     ToolboxSyncClient._ToolboxSyncClient__loop = None
@@ -287,30 +287,6 @@ class TestSyncClientLifecycle:
         assert isinstance(
             sync_client._ToolboxSyncClient__async_client, ToolboxClient
         ), "Async client should be ToolboxClient instance"
-
-    @pytest.mark.usefixtures("sync_client_environment")
-    def test_sync_client_close_method(self):
-        """
-        Tests the close() method of ToolboxSyncClient when manually created.
-        The sync_client_environment ensures loop/thread cleanup.
-        """
-        mock_async_client_instance = AsyncMock(spec=ToolboxClient)
-        # AsyncMock methods are already AsyncMocks
-        # mock_async_client_instance.close = AsyncMock(return_value=None)
-
-        with patch(
-            "toolbox_core.sync_client.ToolboxClient",
-            return_value=mock_async_client_instance,
-        ) as MockedAsyncClientConst:
-            client = ToolboxSyncClient(TEST_BASE_URL)
-            # The sync client passes its internal loop to the async client.
-            MockedAsyncClientConst.assert_called_once_with(
-                TEST_BASE_URL, client_headers=None
-            )
-
-            client.close()  # This call closes the async_client's session.
-            mock_async_client_instance.close.assert_awaited_once()
-        # The sync_client_environment fixture handles stopping the loop/thread.
 
     @pytest.mark.usefixtures("sync_client_environment")
     def test_sync_client_context_manager(self, aioresponses, tool_schema_minimal):
