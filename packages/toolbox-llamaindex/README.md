@@ -143,7 +143,7 @@ from llama_index.llms.google_genai import GoogleGenAI
 
 vertex_model = GoogleGenAI(
     model="gemini-2.0-flash-001",
-    vertexai_config={"project": "twisha-dev", "location": "us-central1"},
+    vertexai_config={"project": "project-id", "location": "us-central1"},
 )
 agent = AgentWorkflow.from_tools_or_functions(
     tools,
