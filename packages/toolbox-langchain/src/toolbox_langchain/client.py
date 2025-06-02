@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from asyncio import to_thread
-from typing import Any, Callable, Optional, Union, Mapping, Awaitable
+from typing import Any, Awaitable, Callable, Mapping, Optional, Union
 from warnings import warn
 
 from toolbox_core.sync_client import ToolboxSyncClient as ToolboxCoreSyncClient
@@ -36,7 +36,9 @@ class ToolboxClient:
         Args:
             url: The base URL of the Toolbox service.
         """
-        self.__core_client = ToolboxCoreSyncClient(url=url, client_headers=client_headers)
+        self.__core_client = ToolboxCoreSyncClient(
+            url=url, client_headers=client_headers
+        )
 
     async def aload_tool(
         self,
@@ -289,7 +291,7 @@ class ToolboxClient:
         for core_sync_tool in core_sync_tools:
             tools.append(ToolboxTool(core_tool=core_sync_tool))
         return tools
-    
+
     def add_headers(
         self,
         headers: Mapping[str, Union[Callable[[], str], Callable[[], Awaitable[str]]]],

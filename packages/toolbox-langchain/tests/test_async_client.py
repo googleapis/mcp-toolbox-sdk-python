@@ -339,7 +339,7 @@ class TestAsyncToolboxClient:
         assert "Synchronous methods not supported by async client." in str(
             excinfo.value
         )
-    
+
     @patch("toolbox_langchain.async_client.ToolboxCoreClient")
     async def test_init_with_client_headers(
         self, mock_core_client_constructor, mock_session
