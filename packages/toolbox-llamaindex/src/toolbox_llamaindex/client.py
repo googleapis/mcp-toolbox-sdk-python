@@ -37,7 +37,9 @@ class ToolboxClient:
         Args:
             url: The base URL of the Toolbox service.
         """
-        self.__core_client = ToolboxCoreSyncClient(url=url, client_headers=client_headers)
+        self.__core_client = ToolboxCoreSyncClient(
+            url=url, client_headers=client_headers
+        )
 
     async def aload_tool(
         self,
@@ -290,7 +292,7 @@ class ToolboxClient:
         for core_sync_tool in core_sync_tools:
             tools.append(ToolboxTool(core_tool=core_sync_tool))
         return tools
-    
+
     def add_headers(
         self,
         headers: Mapping[str, Union[Callable[[], str], Callable[[], Awaitable[str]]]],
