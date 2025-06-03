@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, Callable, Optional, Union
+from typing import Any, Awaitable, Callable, Mapping, Optional, Union
 from warnings import warn
 
 from aiohttp import ClientSession
@@ -30,6 +30,9 @@ class AsyncToolboxClient:
         self,
         url: str,
         session: ClientSession,
+        client_headers: Optional[
+            Mapping[str, Union[Callable[[], str], Callable[[], Awaitable[str]], str]]
+        ] = None,
     ):
         """
         Initializes the AsyncToolboxClient for the Toolbox service at the given URL.
@@ -38,7 +41,9 @@ class AsyncToolboxClient:
             url: The base URL of the Toolbox service.
             session: An HTTP client session.
         """
-        self.__core_client = ToolboxCoreClient(url=url, session=session)
+        self.__core_client = ToolboxCoreClient(
+            url=url, session=session, client_headers=client_headers
+        )
 
     async def aload_tool(
         self,
@@ -185,3 +190,16 @@ class AsyncToolboxClient:
         strict: bool = False,
     ) -> list[AsyncToolboxTool]:
         raise NotImplementedError("Synchronous methods not supported by async client.")
+
+    def add_headers(
+        self,
+        headers: Mapping[str, Union[Callable[[], str], Callable[[], Awaitable[str]]]],
+    ) -> None:
+        """
+        Add headers to be included in each request sent through this client.
+        Args:
+            headers: Headers to include in each request sent through this client.
+        Raises:
+            ValueError: If any of the headers are already registered in the client.
+        """
+        self.__core_client.add_headers(headers)

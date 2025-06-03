@@ -422,3 +422,21 @@ class TestToolboxClient:
             bound_params=bound_params,
             strict=True,
         )
+
+    @patch("toolbox_llamaindex.client.ToolboxCoreSyncClient")
+    def test_init_with_client_headers(self, mock_core_client_constructor):
+        """Tests that client_headers are passed to the core client during initialization."""
+        headers = {"X-Test-Header": "value"}
+        ToolboxClient(URL, client_headers=headers)
+        mock_core_client_constructor.assert_called_once_with(
+            url=URL, client_headers=headers
+        )
+
+    @patch("toolbox_llamaindex.client.ToolboxCoreSyncClient")
+    def test_add_headers(self, mock_core_client_constructor):
+        """Tests that add_headers calls the core client's add_headers."""
+        mock_core_instance = mock_core_client_constructor.return_value
+        client = ToolboxClient(URL)
+        headers = {"X-Another-Header": "dynamic_value"}
+        client.add_headers(headers)
+        mock_core_instance.add_headers.assert_called_once_with(headers)
