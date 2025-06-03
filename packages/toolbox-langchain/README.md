@@ -214,7 +214,7 @@ make calls (like `load_tool`) will likely fail with `Unauthorized` errors.
 
 ### How it works
 
-The `ToolboxClient` (and `ToolboxSyncClient`) allows you to specify functions (or coroutines for the async client) that dynamically generate HTTP headers for every request sent to the Toolbox server. The most common use case is to add an Authorization header with a bearer token (e.g., a Google ID token).
+The `ToolboxClient` allows you to specify functions (or coroutines for the async client) that dynamically generate HTTP headers for every request sent to the Toolbox server. The most common use case is to add an Authorization header with a bearer token (e.g., a Google ID token).
 
 These header-generating functions are called just before each request, ensuring
 that fresh credentials or header values can be used.
@@ -228,7 +228,7 @@ You can configure these dynamic headers in two ways:
     ```python
     from toolbox_langchain import ToolboxClient
 
-    client = ToolboxClient("toolbox-url", headers={"header1": header1_getter, "header2": header2_getter, ...})
+    client = new ToolboxClient("toolbox-url", headers={"header1": header1_getter, "header2": header2_getter, ...})
     ```
 
 1. **After Client Initialization**
@@ -236,7 +236,7 @@ You can configure these dynamic headers in two ways:
     ```python
     from toolbox_langchain import ToolboxClient
 
-    client = ToolboxClient("toolbox-url")
+    client = new ToolboxClient("toolbox-url")
     client.add_headers({"header1": header1_getter, "header2": header2_getter, ...})
     ```
 
@@ -260,14 +260,15 @@ For Toolbox servers hosted on Google Cloud (e.g., Cloud Run) and requiring
 3. **Connect to the Toolbox Server**
 
     ```python
+    from toolbox_langchain import ToolboxClient
     from toolbox_core import auth_methods
 
     auth_token_provider = auth_methods.aget_google_id_token # can also use sync method
-    client = ToolboxClient(
+    client = new ToolboxClient(
         URL,
         client_headers={"Authorization": auth_token_provider},
     )
-    tools = await client.load_toolset()
+    tools = client.load_toolset()
 
     # Now, you can use the client as usual.
     ```
