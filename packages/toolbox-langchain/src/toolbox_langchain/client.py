@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from asyncio import to_thread
-from typing import Any, Callable, Optional, Union
+from typing import Any, Awaitable, Callable, Mapping, Optional, Union
 from warnings import warn
 
 from toolbox_core.sync_client import ToolboxSyncClient as ToolboxCoreSyncClient
@@ -26,6 +26,9 @@ class ToolboxClient:
     def __init__(
         self,
         url: str,
+        client_headers: Optional[
+            Mapping[str, Union[Callable[[], str], Callable[[], Awaitable[str]], str]]
+        ] = None,
     ) -> None:
         """
         Initializes the ToolboxClient for the Toolbox service at the given URL.
@@ -33,7 +36,9 @@ class ToolboxClient:
         Args:
             url: The base URL of the Toolbox service.
         """
-        self.__core_client = ToolboxCoreSyncClient(url=url)
+        self.__core_client = ToolboxCoreSyncClient(
+            url=url, client_headers=client_headers
+        )
 
     async def aload_tool(
         self,
@@ -286,3 +291,18 @@ class ToolboxClient:
         for core_sync_tool in core_sync_tools:
             tools.append(ToolboxTool(core_tool=core_sync_tool))
         return tools
+
+    def add_headers(
+        self,
+        headers: Mapping[str, Union[Callable[[], str], Callable[[], Awaitable[str]]]],
+    ) -> None:
+        """
+        Add headers to be included in each request sent through this client.
+
+        Args:
+            headers: Headers to include in each request sent through this client.
+
+        Raises:
+            ValueError: If any of the headers are already registered in the client.
+        """
+        self.__core_client.add_headers(headers)
