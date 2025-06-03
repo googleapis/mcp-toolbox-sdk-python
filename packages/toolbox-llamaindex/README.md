@@ -173,14 +173,20 @@ connecting to a Toolbox server instance that requires authentication. This is
 crucial for securing your Toolbox server endpoint, especially when deployed on
 platforms like Cloud Run, GKE,  or any environment where unauthenticated access is restricted.
 
-This client-to-server authentication ensures that the Toolbox server can verify the identity of the client making the request before any tool is loaded or called. It is different from [Authenticating Tools](#authenticating-tools), which deals with providing credentials for specific tools within an already connected Toolbox session.
+This client-to-server authentication ensures that the Toolbox server can verify
+the identity of the client making the request before any tool is loaded or
+called. It is different from [Authenticating Tools](#authenticating-tools),
+which deals with providing credentials for specific tools within an already
+connected Toolbox session.
 
 ### When is Client-to-Server Authentication Needed?
 
-You'll need this type of authentication if your Toolbox server is configured to deny unauthenticated requests. For example:
+You'll need this type of authentication if your Toolbox server is configured to
+deny unauthenticated requests. For example:
 
 - Your Toolbox server is deployed on Cloud Run and configured to "Require authentication."
-- Your server is behind an Identity-Aware Proxy (IAP) or a similar authentication layer.
+- Your server is behind an Identity-Aware Proxy (IAP) or a similar
+  authentication layer.
 - You have custom authentication middleware on your self-hosted Toolbox server.
 
 Without proper client authentication in these scenarios, attempts to connect or
@@ -188,7 +194,10 @@ make calls (like `load_tool`) will likely fail with `Unauthorized` errors.
 
 ### How it works
 
-The `ToolboxClient` (and `ToolboxSyncClient`) allows you to specify functions (or coroutines for the async client) that dynamically generate HTTP headers for every request sent to the Toolbox server. The most common use case is to add an Authorization header with a bearer token (e.g., a Google ID token).
+The `ToolboxClient` (and `ToolboxSyncClient`) allows you to specify functions
+(or coroutines for the async client) that dynamically generate HTTP headers for
+every request sent to the Toolbox server. The most common use case is to add an
+Authorization header with a bearer token (e.g., a Google ID token).
 
 These header-generating functions are called just before each request, ensuring
 that fresh credentials or header values can be used.
@@ -202,7 +211,10 @@ You can configure these dynamic headers in two ways:
     ```python
     from toolbox_llamaindex import ToolboxClient
 
-    client = ToolboxClient("toolbox-url", headers={"header1": header1_getter, "header2": header2_getter, ...})
+    client = new ToolboxClient(
+        "toolbox-url", 
+        client_headers={"header1": header1_getter, "header2": header2_getter, ...}
+    )
     ```
 
 1. **After Client Initialization**
@@ -210,7 +222,7 @@ You can configure these dynamic headers in two ways:
     ```python
     from toolbox_llamaindex import ToolboxClient
 
-    client = ToolboxClient("toolbox-url")
+    client = new ToolboxClient("toolbox-url")
     client.add_headers({"header1": header1_getter, "header2": header2_getter, ...})
     ```
 
@@ -234,14 +246,15 @@ For Toolbox servers hosted on Google Cloud (e.g., Cloud Run) and requiring
 3. **Connect to the Toolbox Server**
 
     ```python
+    from toolbox_llamaindex import ToolboxClient
     from toolbox_core import auth_methods
 
     auth_token_provider = auth_methods.aget_google_id_token # can also use sync method
-    client = ToolboxClient(
+    client = new ToolboxClient(
         URL,
         client_headers={"Authorization": auth_token_provider},
     )
-    tools = await client.load_toolset()
+    tools = client.load_toolset()
 
     # Now, you can use the client as usual.
     ```
