@@ -200,7 +200,7 @@ You can configure these dynamic headers in two ways:
 1. **During Client Initialization**
 
     ```python
-    from toolbox_langchain import ToolboxClient
+    from toolbox_llamaindex import ToolboxClient
 
     client = ToolboxClient("toolbox-url", headers={"header1": header1_getter, "header2": header2_getter, ...})
     ```
@@ -208,7 +208,7 @@ You can configure these dynamic headers in two ways:
 1. **After Client Initialization**
 
     ```python
-    from toolbox_langchain import ToolboxClient
+    from toolbox_llamaindex import ToolboxClient
 
     client = ToolboxClient("toolbox-url")
     client.add_headers({"header1": header1_getter, "header2": header2_getter, ...})
