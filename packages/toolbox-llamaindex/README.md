@@ -254,7 +254,7 @@ For Toolbox servers hosted on Google Cloud (e.g., Cloud Run) and requiring
         URL,
         client_headers={"Authorization": auth_token_provider},
     )
-    tools = client.load_toolset()
+    tools = await client.aload_toolset()
 
     # Now, you can use the client as usual.
     ```
