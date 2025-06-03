@@ -194,10 +194,10 @@ make calls (like `load_tool`) will likely fail with `Unauthorized` errors.
 
 ### How it works
 
-The `ToolboxClient` (and `ToolboxSyncClient`) allows you to specify functions
-(or coroutines for the async client) that dynamically generate HTTP headers for
-every request sent to the Toolbox server. The most common use case is to add an
-Authorization header with a bearer token (e.g., a Google ID token).
+The `ToolboxClient` allows you to specify functions (or coroutines for the async
+client) that dynamically generate HTTP headers for every request sent to the
+Toolbox server. The most common use case is to add an Authorization header with
+a bearer token (e.g., a Google ID token).
 
 These header-generating functions are called just before each request, ensuring
 that fresh credentials or header values can be used.
