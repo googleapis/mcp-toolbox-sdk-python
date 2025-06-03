@@ -298,7 +298,7 @@ You can configure these dynamic headers in two ways:
     ```python
     from toolbox_core import ToolboxClient
 
-    async with ToolboxClient("toolbox-url", headers={"header1": header1_getter, "header2": header2_getter, ...}) as client:
+    async with ToolboxClient("toolbox-url", client_headers={"header1": header1_getter, "header2": header2_getter, ...}) as client:
     ```
 
 1. **After Client Initialization**
