@@ -211,7 +211,7 @@ You can configure these dynamic headers in two ways:
     ```python
     from toolbox_llamaindex import ToolboxClient
 
-    client = new ToolboxClient(
+    client = ToolboxClient(
         "toolbox-url", 
         client_headers={"header1": header1_getter, "header2": header2_getter, ...}
     )
@@ -222,7 +222,7 @@ You can configure these dynamic headers in two ways:
     ```python
     from toolbox_llamaindex import ToolboxClient
 
-    client = new ToolboxClient("toolbox-url")
+    client = ToolboxClient("toolbox-url")
     client.add_headers({"header1": header1_getter, "header2": header2_getter, ...})
     ```
 
@@ -250,7 +250,7 @@ For Toolbox servers hosted on Google Cloud (e.g., Cloud Run) and requiring
     from toolbox_core import auth_methods
 
     auth_token_provider = auth_methods.aget_google_id_token # can also use sync method
-    client = new ToolboxClient(
+    client = ToolboxClient(
         URL,
         client_headers={"Authorization": auth_token_provider},
     )
