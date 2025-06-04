@@ -22,15 +22,12 @@ import platform
 import subprocess
 import tempfile
 import time
-from asyncio import run_coroutine_threadsafe
 from typing import Generator
 
 import google
 import pytest_asyncio
 from google.auth import compute_engine
 from google.cloud import secretmanager, storage
-
-from toolbox_core import ToolboxSyncClient
 
 
 #### Define Utility Functions
@@ -95,38 +92,6 @@ def get_auth_token(client_id: str) -> str:
 
 
 #### Define Fixtures
-@pytest_asyncio.fixture(autouse=True)
-def patch_sync_client_for_deadlock(monkeypatch):
-    """
-    Automatically replaces the blocking `ToolboxSyncClient.close()` method
-    with a non-blocking version for the entire test run.
-
-    The original `ToolboxSyncClient.close()` is a blocking method because it
-    calls `.result()`. In the pytest environment, this blocking call creates a
-    deadlock during the test teardown phase when it conflicts with other fixtures
-    (like `sync_client_environment` or `toolbox_server`) that are also managing
-    background processes and threads.
-
-    By replacing `close` with this safe, non-blocking version, we prevent the
-    deadlock and allow the test suite's fixtures to tear down cleanly.
-    This change is only active during the test run.
-    """
-
-    def non_blocking_close(self):
-        """A replacement for close() that doesn't block."""
-        if hasattr(self.__class__, "_ToolboxSyncClient__loop") and hasattr(
-            self, "_ToolboxSyncClient__async_client"
-        ):
-            loop = self.__class__._ToolboxSyncClient__loop
-            async_client = self._ToolboxSyncClient__async_client
-
-            if loop and loop.is_running():
-                coro = async_client.close()
-                run_coroutine_threadsafe(coro, loop)
-
-    monkeypatch.setattr(ToolboxSyncClient, "close", non_blocking_close)
-
-
 @pytest_asyncio.fixture(scope="session")
 def project_id() -> str:
     return get_env_var("GOOGLE_CLOUD_PROJECT")
