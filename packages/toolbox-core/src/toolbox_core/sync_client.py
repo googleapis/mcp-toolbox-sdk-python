@@ -68,10 +68,7 @@ class ToolboxSyncClient:
         any tools created by this Client to cease to function.
         """
         coro = self.__async_client.close()
-        run_coroutine_threadsafe(coro, self.__loop).result(timeout=5)
-
-    def __del__(self):
-        self.close()
+        run_coroutine_threadsafe(coro, self.__loop).result()
 
     def load_tool(
         self,
