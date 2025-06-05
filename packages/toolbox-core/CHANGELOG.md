@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.2.1](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v0.2.0...toolbox-core-v0.2.1) (2025-06-05)
+
+
+### Features
+
+* Cache google id tokens ([#254](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/254)) ([4e832c8](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/4e832c8aa89f65f183f2cb13d55440292b1dc09d))
+
+
+### Bug Fixes
+
+* **deps:** update dependency pytest-asyncio to v1 ([#261](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/261)) ([9400621](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/94006211658fa5852e2a7e17497ec30e157cdc3e))
+* **deps:** update python-nonmajor ([#257](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/257)) ([79005ad](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/79005ada9960dc593eb116289a93175032a9ee1a))
+* **deps:** update python-nonmajor ([#266](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/266)) ([fecbf3d](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/fecbf3d58647aec670b2cf7bad929d4605ad2cc8))
+* **toolbox-core:** Prevent `ToolboxClient` from closing externally managed client sessions ([#260](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/260)) ([7520adf](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/7520adf8f75b2d8d9d254cfa43774ba876fcd222))
+
+
+### Miscellaneous Chores
+
+* **deps:** update dependency aiohttp to v3.12.9 ([#272](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/272)) ([813d60e](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/813d60e40f036faa2bf7d1c72457ceb39c1c37d1))
+* Update Gemini model to a stable version ([#263](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/263)) ([3661055](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/36610558b205b72de7e40c469cdaabb5a715c4a3))
+
+
+### Documentation
+
+* **toolbox-core:** fix readme ([#268](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/268)) ([5b806f1](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/5b806f1a221db0d50d126c33670b58037fcc78a1))
+* **toolbox-core:** Update README to include guidance on session lifecycle management ([#259](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/259)) ([9997fb6](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/9997fb6b5cc1195b6732ecba3823309951a3e096))
+
 ## [0.2.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v0.1.0...toolbox-core-v0.2.0) (2025-05-20)
 
 
