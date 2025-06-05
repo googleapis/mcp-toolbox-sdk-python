@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.2.1](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-llamaindex-v0.2.0...toolbox-llamaindex-v0.2.1) (2025-06-05)
+
+
+### Features
+
+* **toolbox-llamaindex:** Add client headers to Toolbox ([#265](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/265)) ([9853831](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/985383182c6ff319445b04a771edb3de995f9c8b))
+
+
+### Bug Fixes
+
+* **deps:** update dependency pytest-asyncio to v1 ([#261](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/261)) ([9400621](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/94006211658fa5852e2a7e17497ec30e157cdc3e))
+* **deps:** update python-nonmajor ([#257](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/257)) ([79005ad](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/79005ada9960dc593eb116289a93175032a9ee1a))
+* **deps:** update python-nonmajor ([#266](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/266)) ([fecbf3d](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/fecbf3d58647aec670b2cf7bad929d4605ad2cc8))
+
+
+### Miscellaneous Chores
+
+* **deps:** update dependency aiohttp to v3.12.9 ([#272](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/272)) ([813d60e](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/813d60e40f036faa2bf7d1c72457ceb39c1c37d1))
+* Update Gemini model to a stable version ([#263](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/263)) ([3661055](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/36610558b205b72de7e40c469cdaabb5a715c4a3))
+
+
+### Documentation
+
+* **toolbox-llamaindex:** fix readme ([#269](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/269)) ([17ba6d7](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/17ba6d7c2b47d4d2637a3d8f3d5d6e8cecd48a1a))
+
 ## [0.2.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-llamaindex-v0.1.1...toolbox-llamaindex-v0.2.0) (2025-05-20)
 
 

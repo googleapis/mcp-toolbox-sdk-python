@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.2.1](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-langchain-v0.2.0...toolbox-langchain-v0.2.1) (2025-06-05)
+
+
+### Features
+
+* **toolbox-langchain:** Add client headers to Toolbox ([#264](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/264)) ([887b719](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/887b7193268bc8bd2239a6cf8ac26f3dc0a2dff1))
+
+
+### Bug Fixes
+
+* **deps:** update dependency pytest-asyncio to v1 ([#261](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/261)) ([9400621](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/94006211658fa5852e2a7e17497ec30e157cdc3e))
+* **deps:** update python-nonmajor ([#257](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/257)) ([79005ad](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/79005ada9960dc593eb116289a93175032a9ee1a))
+* **deps:** update python-nonmajor ([#266](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/266)) ([fecbf3d](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/fecbf3d58647aec670b2cf7bad929d4605ad2cc8))
+* **toolbox-core:** Prevent `ToolboxClient` from closing externally managed client sessions ([#260](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/260)) ([7520adf](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/7520adf8f75b2d8d9d254cfa43774ba876fcd222))
+
+
+### Miscellaneous Chores
+
+* **deps:** update dependency aiohttp to v3.12.9 ([#272](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/272)) ([813d60e](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/813d60e40f036faa2bf7d1c72457ceb39c1c37d1))
+* Update Gemini model to a stable version ([#263](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/263)) ([3661055](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/36610558b205b72de7e40c469cdaabb5a715c4a3))
+
+
+### Documentation
+
+* **toolbox-langchain:** fix readme ([#267](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/267)) ([23379fb](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/23379fb37d55abc7e8e62e145d1e66c1f502668e))
+
 ## [0.2.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-langchain-v0.1.0...toolbox-langchain-v0.2.0) (2025-05-20)
 
 
