@@ -153,6 +153,23 @@ class ToolboxSyncClient:
             for async_tool in async_tools
         ]
 
+    def add_headers(
+        self,
+        headers: Mapping[
+            str, Union[Callable[[], str], Callable[[], Awaitable[str]], str]
+        ],
+    ) -> None:
+        """
+        Add headers to be included in each request sent through this client.
+
+        Args:
+            headers: Headers to include in each request sent through this client.
+
+        Raises:
+            ValueError: If any of the headers are already registered in the client.
+        """
+        self.__async_client.add_headers(headers)
+
     def __enter__(self):
         """Enter the runtime context related to this client instance."""
         return self
