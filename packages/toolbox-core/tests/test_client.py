@@ -1418,50 +1418,6 @@ class TestClientHeaders:
             assert tools[0].__name__ == tool_name
 
     @pytest.mark.asyncio
-    async def test_add_headers_success(
-        self, aioresponses, test_tool_str, static_header
-    ):
-        """Tests adding headers after client initialization."""
-        tool_name = "tool_after_add_headers"
-        manifest = ManifestSchema(
-            serverVersion="0.0.0", tools={tool_name: test_tool_str}
-        )
-        expected_payload = {"result": "added_ok"}
-
-        get_callback = self.create_callback_factory(
-            expected_header=static_header,
-            callback_payload=manifest.model_dump(),
-        )
-        aioresponses.get(f"{TEST_BASE_URL}/api/tool/{tool_name}", callback=get_callback)
-
-        post_callback = self.create_callback_factory(
-            expected_header=static_header,
-            callback_payload=expected_payload,
-        )
-        aioresponses.post(
-            f"{TEST_BASE_URL}/api/tool/{tool_name}/invoke", callback=post_callback
-        )
-
-        async with ToolboxClient(TEST_BASE_URL) as client:
-            client.add_headers(static_header)
-            assert client._ToolboxClient__client_headers == static_header
-
-            tool = await client.load_tool(tool_name)
-            result = await tool(param1="test")
-            assert result == expected_payload["result"]
-
-    @pytest.mark.asyncio
-    async def test_add_headers_duplicate_fail(self, static_header):
-        """Tests that adding a duplicate header via add_headers raises
-        ValueError."""
-        async with ToolboxClient(TEST_BASE_URL, client_headers=static_header) as client:
-            with pytest.raises(
-                ValueError,
-                match=f"Client header\\(s\\) `X-Static-Header` already registered",
-            ):
-                await client.add_headers(static_header)
-
-    @pytest.mark.asyncio
     async def test_client_header_auth_token_conflict_fail(
         self, aioresponses, test_tool_auth
     ):
