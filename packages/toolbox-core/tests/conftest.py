@@ -142,7 +142,7 @@ def toolbox_server(toolbox_version: str, tools_file_path: str) -> Generator[None
         os.chmod("toolbox", 0o700)
         # Run toolbox binary
         toolbox_server = subprocess.Popen(
-            ["./toolbox", "--tools_file", tools_file_path]
+            ["./toolbox", "--tools-file", tools_file_path]
         )
 
         # Wait for server to start
