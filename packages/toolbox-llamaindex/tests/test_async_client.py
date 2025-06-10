@@ -350,3 +350,11 @@ class TestAsyncToolboxClient:
         mock_core_client_constructor.assert_called_once_with(
             url=URL, session=mock_session, client_headers=headers
         )
+
+    async def test_add_headers(self, mock_client):
+        """Tests that add_headers calls the core client's add_headers."""
+        headers = {"X-Another-Header": lambda: "dynamic_value"}
+        mock_client.add_headers(headers)
+        mock_client._AsyncToolboxClient__core_client.add_headers.assert_called_once_with(
+            headers
+        )

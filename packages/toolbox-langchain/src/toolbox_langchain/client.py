@@ -291,3 +291,18 @@ class ToolboxClient:
         for core_sync_tool in core_sync_tools:
             tools.append(ToolboxTool(core_tool=core_sync_tool))
         return tools
+
+    def add_headers(
+        self,
+        headers: Mapping[str, Union[Callable[[], str], Callable[[], Awaitable[str]]]],
+    ) -> None:
+        """
+        Add headers to be included in each request sent through this client.
+
+        Args:
+            headers: Headers to include in each request sent through this client.
+
+        Raises:
+            ValueError: If any of the headers are already registered in the client.
+        """
+        self.__core_client.add_headers(headers)

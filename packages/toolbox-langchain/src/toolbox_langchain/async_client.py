@@ -190,3 +190,18 @@ class AsyncToolboxClient:
         strict: bool = False,
     ) -> list[AsyncToolboxTool]:
         raise NotImplementedError("Synchronous methods not supported by async client.")
+
+    def add_headers(
+        self,
+        headers: Mapping[str, Union[Callable[[], str], Callable[[], Awaitable[str]]]],
+    ) -> None:
+        """
+        Add headers to be included in each request sent through this client.
+
+        Args:
+            headers: Headers to include in each request sent through this client.
+
+        Raises:
+            ValueError: If any of the headers are already registered in the client.
+        """
+        self.__core_client.add_headers(headers)
