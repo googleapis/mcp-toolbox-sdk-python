@@ -349,6 +349,7 @@ class TestSyncClientLifecycle:
         client.close()  # Clean up manually created client
         # sync_client_environment will handle the final cleanup of original_class_loop/thread.
 
+
 class TestSyncAuth:
     @pytest.fixture
     def expected_header_token(self):
