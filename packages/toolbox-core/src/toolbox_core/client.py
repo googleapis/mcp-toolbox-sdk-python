@@ -193,6 +193,11 @@ class ToolboxClient:
         # request the definition of the tool from the server
         url = f"{self.__base_url}/api/tool/{name}"
         async with self.__session.get(url, headers=resolved_headers) as response:
+            if not response.ok:
+                error_text = await response.text()
+                raise RuntimeError(
+                    f"API request failed with status {response.status} ({response.reason}). Server response: {error_text}"
+                )
             json = await response.json()
         manifest: ManifestSchema = ManifestSchema(**json)
 
