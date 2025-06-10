@@ -271,7 +271,7 @@ class ToolboxClient:
         # Request the definition of the toolset from the server
         url = f"{self.__base_url}/api/toolset/{name or ''}"
         async with self.__session.get(url, headers=resolved_headers) as response:
-            if response.status != 200:
+            if not response.ok:
                 error_text = await response.text()
                 raise RuntimeError(
                     f"API request failed with status {response.status} ({response.reason}). Server response: {error_text}"
