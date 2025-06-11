@@ -383,7 +383,11 @@ class TestSyncClientHeaders:
             f"{TEST_BASE_URL}/api/tool/{tool_name}/invoke", callback=post_callback
         )
 
-        sync_client.add_headers(headers_to_add)
+        with pytest.warns(
+            DeprecationWarning,
+            match="Use the `client_headers` parameter in the ToolboxClient constructor instead.",
+        ):
+            sync_client.add_headers(headers_to_add)
         tool = sync_client.load_tool(tool_name)
         result = tool(param1="test")
         assert result == expected_payload["result"]
@@ -409,11 +413,15 @@ class TestSyncClientHeaders:
             with ToolboxSyncClient(
                 TEST_BASE_URL, client_headers=initial_headers
             ) as client:
-                with pytest.raises(
-                    ValueError,
-                    match="Client header\\(s\\) `X-Initial-Header` already registered",
+                with pytest.warns(
+                    DeprecationWarning,
+                    match="Use the `client_headers` parameter in the ToolboxClient constructor instead.",
                 ):
-                    client.add_headers({"X-Initial-Header": "another_value"})
+                    with pytest.raises(
+                        ValueError,
+                        match="Client header\\(s\\) `X-Initial-Header` already registered",
+                    ):
+                        client.add_headers({"X-Initial-Header": "another_value"})
 
 
 class TestSyncAuth:

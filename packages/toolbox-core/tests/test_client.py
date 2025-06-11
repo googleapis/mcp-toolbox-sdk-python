@@ -1443,7 +1443,11 @@ class TestClientHeaders:
         )
 
         async with ToolboxClient(TEST_BASE_URL) as client:
-            client.add_headers(static_header)
+            with pytest.warns(
+                DeprecationWarning,
+                match="Use the `client_headers` parameter in the ToolboxClient constructor instead.",
+            ):
+                client.add_headers(static_header)
             assert client._ToolboxClient__client_headers == static_header
 
             tool = await client.load_tool(tool_name)
@@ -1451,15 +1455,29 @@ class TestClientHeaders:
             assert result == expected_payload["result"]
 
     @pytest.mark.asyncio
+    async def test_add_headers_deprecation_warning(self):
+        """Tests that add_headers issues a DeprecationWarning."""
+        async with ToolboxClient(TEST_BASE_URL) as client:
+            with pytest.warns(
+                DeprecationWarning,
+                match="Use the `client_headers` parameter in the ToolboxClient constructor instead.",
+            ):
+                client.add_headers({"X-Deprecated-Test": "value"})
+
+    @pytest.mark.asyncio
     async def test_add_headers_duplicate_fail(self, static_header):
         """Tests that adding a duplicate header via add_headers raises
         ValueError."""
         async with ToolboxClient(TEST_BASE_URL, client_headers=static_header) as client:
-            with pytest.raises(
-                ValueError,
-                match=f"Client header\\(s\\) `X-Static-Header` already registered",
+            with pytest.warns(
+                DeprecationWarning,
+                match="Use the `client_headers` parameter in the ToolboxClient constructor instead.",
             ):
-                await client.add_headers(static_header)
+                with pytest.raises(
+                    ValueError,
+                    match=f"Client header\\(s\\) `X-Static-Header` already registered",
+                ):
+                    client.add_headers(static_header)
 
     @pytest.mark.asyncio
     async def test_client_header_auth_token_conflict_fail(
