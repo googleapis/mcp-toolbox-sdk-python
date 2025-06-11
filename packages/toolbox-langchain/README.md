@@ -231,27 +231,16 @@ that fresh credentials or header values can be used.
 
 ### Configuration
 
-You can configure these dynamic headers in two ways:
+You can configure these dynamic headers as follows:
 
-1. **During Client Initialization**
+```python
+from toolbox_langchain import ToolboxClient
 
-    ```python
-    from toolbox_langchain import ToolboxClient
-
-    client = ToolboxClient(
-        "toolbox-url", 
-        client_headers={"header1": header1_getter, "header2": header2_getter, ...}
-    )
-    ```
-
-1. **After Client Initialization**
-
-    ```python
-    from toolbox_langchain import ToolboxClient
-
-    client = ToolboxClient("toolbox-url")
-    client.add_headers({"header1": header1_getter, "header2": header2_getter, ...})
-    ```
+client = ToolboxClient(
+    "toolbox-url", 
+    client_headers={"header1": header1_getter, "header2": header2_getter, ...}
+)
+```
 
 ### Authenticating with Google Cloud Servers
 
