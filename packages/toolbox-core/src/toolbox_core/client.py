@@ -17,6 +17,7 @@ from types import MappingProxyType
 from typing import Any, Awaitable, Callable, Mapping, Optional, Union
 
 from aiohttp import ClientSession
+from deprecated import deprecated
 
 from .protocol import ManifestSchema, ToolSchema
 from .tool import ToolboxTool
@@ -340,16 +341,17 @@ class ToolboxClient:
 
         return tools
 
+    @deprecated(
+        "Use the `client_headers` parameter in the ToolboxClient constructor instead."
+    )
     def add_headers(
         self,
         headers: Mapping[str, Union[Callable[[], str], Callable[[], Awaitable[str]]]],
     ) -> None:
         """
         Add headers to be included in each request sent through this client.
-
         Args:
             headers: Headers to include in each request sent through this client.
-
         Raises:
             ValueError: If any of the headers are already registered in the client.
         """

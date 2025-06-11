@@ -17,6 +17,8 @@ from asyncio import AbstractEventLoop, new_event_loop, run_coroutine_threadsafe
 from threading import Thread
 from typing import Any, Awaitable, Callable, Mapping, Optional, Union
 
+from deprecated import deprecated
+
 from .client import ToolboxClient
 from .sync_tool import ToolboxSyncTool
 
@@ -153,6 +155,9 @@ class ToolboxSyncClient:
             for async_tool in async_tools
         ]
 
+    @deprecated(
+        "Use the `client_headers` parameter in the ToolboxClient constructor instead."
+    )
     def add_headers(
         self,
         headers: Mapping[
