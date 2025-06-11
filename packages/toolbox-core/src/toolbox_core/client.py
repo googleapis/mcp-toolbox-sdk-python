@@ -17,6 +17,7 @@ from types import MappingProxyType
 from typing import Any, Awaitable, Callable, Mapping, Optional, Union
 
 from aiohttp import ClientSession
+from deprecated import deprecated
 
 from .protocol import ManifestSchema, ToolSchema
 from .tool import ToolboxTool
@@ -339,3 +340,26 @@ class ToolboxClient:
             )
 
         return tools
+
+    @deprecated("Please add client level headers during client initialization.")
+    def add_headers(
+        self,
+        headers: Mapping[str, Union[Callable[[], str], Callable[[], Awaitable[str]]]],
+    ) -> None:
+        """
+        Add headers to be included in each request sent through this client.
+        Args:
+            headers: Headers to include in each request sent through this client.
+        Raises:
+            ValueError: If any of the headers are already registered in the client.
+        """
+        existing_headers = self.__client_headers.keys()
+        incoming_headers = headers.keys()
+        duplicates = existing_headers & incoming_headers
+        if duplicates:
+            raise ValueError(
+                f"Client header(s) `{', '.join(duplicates)}` already registered in the client."
+            )
+
+        merged_headers = {**self.__client_headers, **headers}
+        self.__client_headers = merged_headers

@@ -17,6 +17,8 @@ from asyncio import AbstractEventLoop, new_event_loop, run_coroutine_threadsafe
 from threading import Thread
 from typing import Any, Awaitable, Callable, Mapping, Optional, Union
 
+from deprecated import deprecated
+
 from .client import ToolboxClient
 from .sync_tool import ToolboxSyncTool
 
@@ -152,6 +154,24 @@ class ToolboxSyncClient:
             ToolboxSyncTool(async_tool, self.__loop, self.__thread)
             for async_tool in async_tools
         ]
+
+    @deprecated("Please add client level headers during client initialization.")
+    def add_headers(
+        self,
+        headers: Mapping[
+            str, Union[Callable[[], str], Callable[[], Awaitable[str]], str]
+        ],
+    ) -> None:
+        """
+        Add headers to be included in each request sent through this client.
+
+        Args:
+            headers: Headers to include in each request sent through this client.
+
+        Raises:
+            ValueError: If any of the headers are already registered in the client.
+        """
+        self.__async_client.add_headers(headers)
 
     def __enter__(self):
         """Enter the runtime context related to this client instance."""
