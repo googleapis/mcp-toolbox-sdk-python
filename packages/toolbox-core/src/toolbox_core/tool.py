@@ -289,7 +289,7 @@ class ToolboxTool:
             headers=headers,
         ) as resp:
             body = await resp.json()
-            if resp.status < 200 or resp.status >= 300:
+            if not resp.ok:
                 err = body.get("error", f"unexpected status from server: {resp.status}")
                 raise Exception(err)
         return body.get("result", body)
