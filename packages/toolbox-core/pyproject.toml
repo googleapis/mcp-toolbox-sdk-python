@@ -12,6 +12,7 @@ authors = [
 dependencies = [
     "pydantic>=2.7.0,<3.0.0",
     "aiohttp>=3.8.6,<4.0.0",
+    "deprecated>=1.2.15,<2.0.0",
 ]
 
 classifiers = [
