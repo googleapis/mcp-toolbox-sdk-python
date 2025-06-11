@@ -155,7 +155,9 @@ class ToolboxSyncClient:
             for async_tool in async_tools
         ]
 
-    @deprecated("Use the `client_headers` parameter in the ToolboxClient constructor instead.")
+    @deprecated(
+        "Use the `client_headers` parameter in the ToolboxClient constructor instead."
+    )
     def add_headers(
         self,
         headers: Mapping[

@@ -341,7 +341,9 @@ class ToolboxClient:
 
         return tools
 
-    @deprecated("Use the `client_headers` parameter in the ToolboxClient constructor instead.")
+    @deprecated(
+        "Use the `client_headers` parameter in the ToolboxClient constructor instead."
+    )
     def add_headers(
         self,
         headers: Mapping[str, Union[Callable[[], str], Callable[[], Awaitable[str]]]],
