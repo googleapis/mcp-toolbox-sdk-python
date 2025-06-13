@@ -31,7 +31,6 @@
 ### Documentation
 
 * Improve API error handling for `toolbox-core` client ([#275](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/275)) ([65398fd](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/65398fd0c98c95188304670651a84d002e11d030))
-* **toolbox-core:** fix readme ([#268](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/268)) ([5b806f1](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/5b806f1a221db0d50d126c33670b58037fcc78a1))
 * **toolbox-core:** Update README to include guidance on session lifecycle management ([#259](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/259)) ([9997fb6](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/9997fb6b5cc1195b6732ecba3823309951a3e096))
 
 ## [0.2.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v0.1.0...toolbox-core-v0.2.0) (2025-05-20)
