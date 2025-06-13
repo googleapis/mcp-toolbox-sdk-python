@@ -464,7 +464,9 @@ async with ToolboxClient("http://127.0.0.1:5000") as toolbox:
 ```
 
 > [!NOTE]
-> An auth token getter for a specific name (e.g., "GOOGLE_ID") will replace any client header with the same name followed by "_token" (e.g., "GOOGLE_ID_token").
+> An auth token getter for a specific name (e.g., "GOOGLE_ID") will replace any
+> client header with the same name followed by "_token" (e.g.,
+> "GOOGLE_ID_token").
 
 ## Binding Parameter Values
 
