@@ -276,12 +276,14 @@ class ToolboxTool:
 
         # create headers for auth services
         headers = {}
+        for client_header_name, client_header_val in self.__client_headers.items():
+            headers[client_header_name] = await resolve_value(client_header_val)
+
+        # In case of conflict, override the client header by the auth token getter
         for auth_service, token_getter in self.__auth_service_token_getters.items():
             headers[self.__get_auth_header(auth_service)] = await resolve_value(
                 token_getter
             )
-        for client_header_name, client_header_val in self.__client_headers.items():
-            headers[client_header_name] = await resolve_value(client_header_val)
 
         async with self.__session.post(
             self.__url,
