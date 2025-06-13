@@ -49,7 +49,7 @@ test = [
     "mypy==1.16.0",
     "pytest-asyncio==1.0.0",
     "pytest==8.4.0",
-    "pytest-cov==6.1.1",
+    "pytest-cov==6.2.1",
     "Pillow==11.2.1",
     "google-cloud-secret-manager==2.24.0",
     "google-cloud-storage==3.1.0",
