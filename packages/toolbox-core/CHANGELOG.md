@@ -1,5 +1,39 @@
 # Changelog
 
+## [0.2.1](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v0.2.0...toolbox-core-v0.2.1) (2025-06-13)
+
+
+### Features
+
+* Cache google id tokens ([#254](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/254)) ([4e832c8](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/4e832c8aa89f65f183f2cb13d55440292b1dc09d))
+
+
+### Bug Fixes
+
+* allow auth token getter override over client header ([#283](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/283)) ([c2d6cd6](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/c2d6cd66673e81e2b4cc3a43b4a897a3a04723f0))
+* **deps:** update dependency pytest-asyncio to v1 ([#261](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/261)) ([9400621](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/94006211658fa5852e2a7e17497ec30e157cdc3e))
+* **deps:** update python-nonmajor ([#257](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/257)) ([79005ad](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/79005ada9960dc593eb116289a93175032a9ee1a))
+* **deps:** update python-nonmajor ([#266](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/266)) ([fecbf3d](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/fecbf3d58647aec670b2cf7bad929d4605ad2cc8))
+* **deps:** update python-nonmajor ([#274](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/274)) ([35ee427](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/35ee427443311a896f98b9e8f57187f6d502e3d7))
+* **deps:** update python-nonmajor ([#282](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/282)) ([a58cc11](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/a58cc113d59b2e5f08460225a4d894dda0ca3e0c))
+* **toolbox-core:** Prevent `ToolboxClient` from closing externally managed client sessions ([#260](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/260)) ([7520adf](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/7520adf8f75b2d8d9d254cfa43774ba876fcd222))
+
+
+### Miscellaneous Chores
+
+* **deps:** update dependency aiohttp to v3.12.12 ([#276](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/276)) ([c69e029](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/c69e0296b8f3ef792c1d56be0bd66194d0bf5710))
+* **deps:** update dependency aiohttp to v3.12.9 ([#272](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/272)) ([813d60e](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/813d60e40f036faa2bf7d1c72457ceb39c1c37d1))
+* **toolbox-core:** deprecate add_headers feature ([#278](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/278)) ([65c8b10](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/65c8b101f28476935aa677a4223cccc775af9cf1))
+* Update Gemini model to a stable version ([#263](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/263)) ([3661055](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/36610558b205b72de7e40c469cdaabb5a715c4a3))
+* Update tools file option in integration tests ([#277](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/277)) ([cf1d0ab](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/cf1d0ab145b067a8cc817eeacd7aa05ba3a6990f))
+
+
+### Documentation
+
+* Improve API error handling for `toolbox-core` client ([#275](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/275)) ([65398fd](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/65398fd0c98c95188304670651a84d002e11d030))
+* **toolbox-core:** fix readme ([#268](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/268)) ([5b806f1](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/5b806f1a221db0d50d126c33670b58037fcc78a1))
+* **toolbox-core:** Update README to include guidance on session lifecycle management ([#259](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/259)) ([9997fb6](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/9997fb6b5cc1195b6732ecba3823309951a3e096))
+
 ## [0.2.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v0.1.0...toolbox-core-v0.2.0) (2025-05-20)
 
 
