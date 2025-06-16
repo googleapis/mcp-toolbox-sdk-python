@@ -1,6 +1,6 @@
 -e ../toolbox-core
 llama-index==0.12.42
 PyYAML==6.0.2
-pydantic==2.11.5
-aiohttp==3.12.12
+pydantic==2.11.7
+aiohttp==3.12.13
 deprecated==1.2.18
