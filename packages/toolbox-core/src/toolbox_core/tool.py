@@ -155,8 +155,12 @@ class ToolboxTool:
         return MappingProxyType(self.__bound_parameters)
 
     @property
-    def _required_auth_params(self) -> Mapping[str, list[str]]:
+    def _required_authn_params(self) -> Mapping[str, list[str]]:
         return MappingProxyType(self.__required_authn_params)
+
+    @property
+    def _required_authz_tokens(self) -> Sequence[str]:
+        return tuple(self.__required_authz_tokens)
 
     @property
     def _auth_service_token_getters(
