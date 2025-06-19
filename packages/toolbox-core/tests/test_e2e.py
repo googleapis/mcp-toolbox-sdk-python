@@ -292,7 +292,6 @@ class TestOptionalParams:
         assert "row5" not in response
         assert "row6" not in response
 
-
     async def test_run_tool_with_optional_id_provided(self, toolbox: ToolboxClient):
         """Invoke a tool providing both required and optional parameters."""
         tool = await toolbox.load_tool("search-rows")
