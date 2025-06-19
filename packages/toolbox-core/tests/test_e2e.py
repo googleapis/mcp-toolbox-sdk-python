@@ -11,9 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import pytest
 import pytest_asyncio
 from pydantic import ValidationError
+from inspect import signature, Parameter
+from typing import Optional
 
 from toolbox_core.client import ToolboxClient
 from toolbox_core.tool import ToolboxTool
@@ -217,3 +220,56 @@ class TestAuth:
             match="no field named row_data in claims",
         ):
             await tool()
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("optional_param_server")
+class TestOptionalParams:
+    """
+    End-to-end tests for tools with optional parameters.
+    """
+
+    async def test_tool_signature_is_correct(self, optional_toolbox: ToolboxClient):
+        """Verify the client correctly constructs the signature for a tool with optional params."""
+        tool = await optional_toolbox.load_tool("search-rows")
+        sig = signature(tool)
+
+        assert "query" in sig.parameters
+        assert "limit" in sig.parameters
+
+        # The required parameter should have no default
+        assert sig.parameters["query"].default is Parameter.empty
+        assert sig.parameters["query"].annotation is str
+
+        # The optional parameter should have a default of None
+        assert sig.parameters["limit"].default is None
+        assert sig.parameters["limit"].annotation is Optional[int]
+
+    async def test_run_tool_with_optional_param_omitted(
+        self, optional_toolbox: ToolboxClient
+    ):
+        """Invoke a tool providing only the required parameter."""
+        tool = await optional_toolbox.load_tool("search-rows")
+
+        response = await tool(query="test query")
+        assert isinstance(response, str)
+        assert 'query="test query"' in response
+        assert "limit" not in response
+
+    async def test_run_tool_with_optional_param_provided(
+        self, optional_toolbox: ToolboxClient
+    ):
+        """Invoke a tool providing both required and optional parameters."""
+        tool = await optional_toolbox.load_tool("search-rows")
+
+        response = await tool(query="test query", limit=10)
+        assert isinstance(response, str)
+        assert 'query="test query"' in response
+        assert "limit=10" in response
+
+    async def test_run_tool_with_missing_required_param(
+        self, optional_toolbox: ToolboxClient
+    ):
+        """Invoke a tool without its required parameter."""
+        tool = await optional_toolbox.load_tool("search-rows")
+        with pytest.raises(TypeError, match="missing a required argument: 'query'"):
+            await tool(limit=5)
