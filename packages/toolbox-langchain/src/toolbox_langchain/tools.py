@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from asyncio import to_thread
-from typing import Any, Callable, Union, Mapping, Sequence, Awaitable
+from typing import Any, Awaitable, Callable, Mapping, Sequence, Union
 
 from deprecated import deprecated
 from langchain_core.tools import BaseTool
