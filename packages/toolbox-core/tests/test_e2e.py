@@ -246,9 +246,7 @@ class TestOptionalParams:
         assert sig.parameters["limit"].default is None
         assert sig.parameters["limit"].annotation is Optional[int]
 
-    async def test_run_tool_with_optional_param_omitted(
-        self, toolbox: ToolboxClient
-    ):
+    async def test_run_tool_with_optional_param_omitted(self, toolbox: ToolboxClient):
         """Invoke a tool providing only the required parameter."""
         tool = await toolbox.load_tool("search-rows")
 
@@ -257,9 +255,7 @@ class TestOptionalParams:
         assert 'query="test query"' in response
         assert "limit" not in response
 
-    async def test_run_tool_with_optional_param_provided(
-        self, toolbox: ToolboxClient
-    ):
+    async def test_run_tool_with_optional_param_provided(self, toolbox: ToolboxClient):
         """Invoke a tool providing both required and optional parameters."""
         tool = await toolbox.load_tool("search-rows")
 
@@ -268,9 +264,7 @@ class TestOptionalParams:
         assert 'query="test query"' in response
         assert "limit=10" in response
 
-    async def test_run_tool_with_missing_required_param(
-        self, toolbox: ToolboxClient
-    ):
+    async def test_run_tool_with_missing_required_param(self, toolbox: ToolboxClient):
         """Invoke a tool without its required parameter."""
         tool = await toolbox.load_tool("search-rows")
         with pytest.raises(TypeError, match="missing a required argument: 'query'"):
