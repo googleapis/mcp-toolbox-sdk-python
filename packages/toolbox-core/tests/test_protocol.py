@@ -108,6 +108,7 @@ def test_parameter_schema_unsupported_type_error():
     with pytest.raises(ValueError, match=expected_error_msg):
         schema.to_param()
 
+
 def test_parameter_schema_string_optional():
     """Tests an optional ParameterSchema with type 'string'."""
     schema = ParameterSchema(
