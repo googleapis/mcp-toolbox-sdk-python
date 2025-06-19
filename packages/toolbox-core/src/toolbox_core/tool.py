@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import copy
-from inspect import Signature, Parameter
+from inspect import Signature
 from types import MappingProxyType
 from typing import Any, Awaitable, Callable, Mapping, Optional, Sequence, Union
 from warnings import warn
