@@ -25,31 +25,43 @@ class ParameterSchema(BaseModel):
 
     name: str
     type: str
+    required: bool = True
     description: str
     authSources: Optional[list[str]] = None
     items: Optional["ParameterSchema"] = None
 
     def __get_type(self) -> Type:
+        base_type: Type
         if self.type == "string":
-            return str
+            base_type = str
         elif self.type == "integer":
-            return int
+            base_type = int
         elif self.type == "float":
-            return float
+            base_type = float
         elif self.type == "boolean":
-            return bool
+            base_type = bool
         elif self.type == "array":
             if self.items is None:
                 raise Exception("Unexpected value: type is 'list' but items is None")
-            return list[self.items.__get_type()]  # type: ignore
+            base_type = list[self.items.__get_type()]
+        else:
+            raise ValueError(f"Unsupported schema type: {self.type}")
 
-        raise ValueError(f"Unsupported schema type: {self.type}")
+        if not self.required:
+            return Optional[base_type]
+
+        return base_type
 
     def to_param(self) -> Parameter:
+        default = Parameter.empty
+        if not self.required:
+            default = None
+            
         return Parameter(
             self.name,
             Parameter.POSITIONAL_OR_KEYWORD,
             annotation=self.__get_type(),
+            default=default,
         )
 
 
