@@ -575,17 +575,27 @@ def test_toolbox_tool_underscore_bound_params_property(toolbox_tool: ToolboxTool
         bound_params["new_param"] = "new_value"
 
 
-def test_toolbox_tool_underscore_required_auth_params_property(
+def test_toolbox_tool_underscore_required_authn_params_property(
     toolbox_tool: ToolboxTool,
 ):
-    """Tests the _required_auth_params property returns an immutable MappingProxyType."""
-    required_auth_params = toolbox_tool._required_auth_params
-    assert required_auth_params == {"message": ["service_a"]}
-    assert isinstance(required_auth_params, MappingProxyType)
+    """Tests the _required_authn_params property returns an immutable MappingProxyType."""
+    required_authn_params = toolbox_tool._required_authn_params
+    assert required_authn_params == {"message": ["service_a"]}
+    assert isinstance(required_authn_params, MappingProxyType)
     # Verify immutability
     with pytest.raises(TypeError):
-        required_auth_params["new_param"] = ["new_service"]
+        required_authn_params["new_param"] = ["new_service"]
 
+def test_toolbox_tool_underscore_required_authz_tokens_property(
+    toolbox_tool: ToolboxTool,
+):
+    """Tests the _required_authz_tokens property returns an immutable MappingProxyType."""
+    required_authz_tokens = toolbox_tool._required_authz_tokens
+    assert required_authz_tokens == ("service_b",)
+    assert isinstance(required_authz_tokens, tuple)
+    # Verify immutability
+    with pytest.raises(TypeError):
+        required_authz_tokens[0] = "new_service"
 
 def test_toolbox_tool_underscore_auth_service_token_getters_property(
     toolbox_tool: ToolboxTool,
