@@ -586,6 +586,7 @@ def test_toolbox_tool_underscore_required_authn_params_property(
     with pytest.raises(TypeError):
         required_authn_params["new_param"] = ["new_service"]
 
+
 def test_toolbox_tool_underscore_required_authz_tokens_property(
     toolbox_tool: ToolboxTool,
 ):
@@ -596,6 +597,7 @@ def test_toolbox_tool_underscore_required_authz_tokens_property(
     # Verify immutability
     with pytest.raises(TypeError):
         required_authz_tokens[0] = "new_service"
+
 
 def test_toolbox_tool_underscore_auth_service_token_getters_property(
     toolbox_tool: ToolboxTool,
