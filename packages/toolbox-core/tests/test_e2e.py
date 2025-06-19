@@ -12,11 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from inspect import Parameter, signature
+from typing import Optional
+
 import pytest
 import pytest_asyncio
 from pydantic import ValidationError
-from inspect import signature, Parameter
-from typing import Optional
 
 from toolbox_core.client import ToolboxClient
 from toolbox_core.tool import ToolboxTool
@@ -220,6 +221,7 @@ class TestAuth:
             match="no field named row_data in claims",
         ):
             await tool()
+
 
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("optional_param_server")
