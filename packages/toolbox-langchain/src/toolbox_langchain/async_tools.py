@@ -15,6 +15,7 @@
 from typing import Any, Callable, Union
 
 from deprecated import deprecated
+from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import BaseTool
 from toolbox_core.tool import ToolboxTool as ToolboxCoreTool
 from toolbox_core.utils import params_to_pydantic_model
@@ -52,7 +53,11 @@ class AsyncToolboxTool(BaseTool):
     def _run(self, **kwargs: Any) -> str:
         raise NotImplementedError("Synchronous methods not supported by async tools.")
 
-    async def _arun(self, **kwargs: Any) -> str:
+    async def _arun(
+        self,
+        config: RunnableConfig,
+        **kwargs: Any,
+    ) -> str:
         """
         The coroutine that invokes the tool with the given arguments.
 
@@ -63,7 +68,33 @@ class AsyncToolboxTool(BaseTool):
             A dictionary containing the parsed JSON response from the tool
             invocation.
         """
-        return await self.__core_tool(**kwargs)
+        tool_to_run = self.__core_tool
+        if (
+            config
+            and "configurable" in config
+            and "auth_token_getters" in config["configurable"]
+        ):
+            auth_token_getters = config["configurable"]["auth_token_getters"]
+            if auth_token_getters:
+
+                # The `add_auth_token_getters` method requires that all provided
+                # getters are used by the tool. To prevent validation errors,
+                # filter the incoming getters to include only those that this
+                # specific tool requires.
+                required_auth_keys = set(self.__core_tool._required_authz_tokens)
+                for auth_list in self.__core_tool._required_authn_params.values():
+                    required_auth_keys.update(auth_list)
+                filtered_getters = {
+                    k: v
+                    for k, v in auth_token_getters.items()
+                    if k in required_auth_keys
+                }
+                if filtered_getters:
+                    tool_to_run = self.__core_tool.add_auth_token_getters(
+                        filtered_getters
+                    )
+
+        return await tool_to_run(**kwargs)
 
     def add_auth_token_getters(
         self, auth_token_getters: dict[str, Callable[[], str]]
