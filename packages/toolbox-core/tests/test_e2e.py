@@ -239,42 +239,67 @@ class TestOptionalParams:
         assert "limit" in sig.parameters
 
         # The required parameter should have no default
-        assert sig.parameters["query"].default is Parameter.empty
-        assert sig.parameters["query"].annotation is str
+        assert sig.parameters["email"].default is Parameter.empty
+        assert sig.parameters["email"].annotation is str
 
         # The optional parameter should have a default of None
-        assert sig.parameters["limit"].default is None
-        assert sig.parameters["limit"].annotation is Optional[int]
+        assert sig.parameters["data"].default is "row2"
+        assert sig.parameters["limit"].annotation is Optional[str]
+
+        # The optional parameter should have a default of None
+        assert sig.parameters["id"].default is None
+        assert sig.parameters["id"].annotation is Optional[int]
 
     async def test_run_tool_with_optional_param_omitted(self, toolbox: ToolboxClient):
         """Invoke a tool providing only the required parameter."""
         tool = await toolbox.load_tool("search-rows")
 
-        response = await tool(email="107716898620-compute@developer.gserviceaccount.com")
+        response = await tool(
+            email="twishabansal@google.com"
+        )
         assert isinstance(response, str)
-        assert 'query="test query"' in response
-        assert "limit" not in response
+        assert 'email="twishabansal@google.com"' in response
+        assert "row1" not in response
+        assert "row2" in response
+        assert "row3" not in response
+        assert "row4" not in response
+        assert "row5" not in response
+        assert "row6" not in response
 
     async def test_run_tool_with_optional_data_provided(self, toolbox: ToolboxClient):
         """Invoke a tool providing both required and optional parameters."""
         tool = await toolbox.load_tool("search-rows")
 
-        response = await tool(email="107716898620-compute@developer.gserviceaccount.com", data="row2")
+        response = await tool(
+            email="twishabansal@google.com", data="row3"
+        )
         assert isinstance(response, str)
-        assert 'query="test query"' in response
-        assert "limit=10" in response
+        assert 'email="twishabansal@google.com"' in response
+        assert "row1" not in response
+        assert "row2" not in response
+        assert "row3" in response
+        assert "row4" not in response
+        assert "row5" not in response
+        assert "row6" not in response
 
     async def test_run_tool_with_optional_id_provided(self, toolbox: ToolboxClient):
         """Invoke a tool providing both required and optional parameters."""
         tool = await toolbox.load_tool("search-rows")
 
-        response = await tool(email="107716898620-compute@developer.gserviceaccount.com", id=1)
+        response = await tool(
+            email="twishabansal@google.com", id=1
+        )
         assert isinstance(response, str)
-        assert 'query="test query"' in response
-        assert "limit=10" in response
+        assert 'email="twishabansal@google.com"' in response
+        assert "row1" in response
+        assert "row2" not in response
+        assert "row3" not in response
+        assert "row4" not in response
+        assert "row5" not in response
+        assert "row6" not in response
 
     async def test_run_tool_with_missing_required_param(self, toolbox: ToolboxClient):
         """Invoke a tool without its required parameter."""
         tool = await toolbox.load_tool("search-rows")
         with pytest.raises(TypeError, match="missing a required argument: 'email'"):
-            await tool(id=2, data="row2")
+            await tool(id=5, data="row5")
