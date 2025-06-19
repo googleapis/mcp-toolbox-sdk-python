@@ -56,7 +56,7 @@ class ParameterSchema(BaseModel):
         default = Parameter.empty
         if not self.required:
             default = None
-            
+
         return Parameter(
             self.name,
             Parameter.POSITIONAL_OR_KEYWORD,
