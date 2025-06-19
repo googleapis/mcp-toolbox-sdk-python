@@ -286,7 +286,7 @@ class TestToolboxTool:
         expected_result = "sync_run_output"
         mock_core_tool.return_value = expected_result
 
-        result = toolbox_tool._run(**kwargs_to_run)
+        result = toolbox_tool._run(**kwargs_to_run, config={})
 
         assert result == expected_result
         assert mock_core_tool.call_count == 1
@@ -307,7 +307,7 @@ class TestToolboxTool:
 
         mock_to_thread_in_tools.side_effect = to_thread_side_effect
 
-        result = await toolbox_tool._arun(**kwargs_to_run)
+        result = await toolbox_tool._arun(**kwargs_to_run, config={})
 
         assert result == expected_result
         mock_to_thread_in_tools.assert_awaited_once_with(
