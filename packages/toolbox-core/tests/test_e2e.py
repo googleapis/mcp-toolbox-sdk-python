@@ -250,7 +250,7 @@ class TestOptionalParams:
         assert sig.parameters["id"].default is None
         assert sig.parameters["id"].annotation is Optional[int]
 
-    async def test_run_tool_with_optional_param_omitted(self, toolbox: ToolboxClient):
+    async def test_run_tool_with_optional_params_omitted(self, toolbox: ToolboxClient):
         """Invoke a tool providing only the required parameter."""
         tool = await toolbox.load_tool("search-rows")
 
@@ -278,6 +278,21 @@ class TestOptionalParams:
         assert "row5" not in response
         assert "row6" not in response
 
+    async def test_run_tool_with_optional_data_null(self, toolbox: ToolboxClient):
+        """Invoke a tool providing both required and optional parameters."""
+        tool = await toolbox.load_tool("search-rows")
+
+        response = await tool(email="twishabansal@google.com", data=None)
+        assert isinstance(response, str)
+        assert 'email="twishabansal@google.com"' in response
+        assert "row1" not in response
+        assert "row2" in response
+        assert "row3" not in response
+        assert "row4" not in response
+        assert "row5" not in response
+        assert "row6" not in response
+
+
     async def test_run_tool_with_optional_id_provided(self, toolbox: ToolboxClient):
         """Invoke a tool providing both required and optional parameters."""
         tool = await toolbox.load_tool("search-rows")
@@ -292,8 +307,28 @@ class TestOptionalParams:
         assert "row5" not in response
         assert "row6" not in response
 
+    async def test_run_tool_with_optional_id_null(self, toolbox: ToolboxClient):
+        """Invoke a tool providing both required and optional parameters."""
+        tool = await toolbox.load_tool("search-rows")
+
+        response = await tool(email="twishabansal@google.com", id=None)
+        assert isinstance(response, str)
+        assert 'email="twishabansal@google.com"' in response
+        assert "row1" not in response
+        assert "row2" in response
+        assert "row3" not in response
+        assert "row4" not in response
+        assert "row5" not in response
+        assert "row6" not in response
+
     async def test_run_tool_with_missing_required_param(self, toolbox: ToolboxClient):
         """Invoke a tool without its required parameter."""
         tool = await toolbox.load_tool("search-rows")
         with pytest.raises(TypeError, match="missing a required argument: 'email'"):
             await tool(id=5, data="row5")
+
+    async def test_run_tool_with_required_param_null(self, toolbox: ToolboxClient):
+        """Invoke a tool without its required parameter."""
+        tool = await toolbox.load_tool("search-rows")
+        with pytest.raises(TypeError, match="missing a required argument: 'email'"):
+            await tool(email=None, id=5, data="row5")
