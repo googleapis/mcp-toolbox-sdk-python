@@ -57,7 +57,7 @@ class ParameterSchema(BaseModel):
             self.name,
             Parameter.POSITIONAL_OR_KEYWORD,
             annotation=self.__get_type(),
-            default= Parameter.empty if self.required else None,
+            default=Parameter.empty if self.required else None,
         )
 
 
