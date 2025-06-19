@@ -43,25 +43,21 @@ class ParameterSchema(BaseModel):
         elif self.type == "array":
             if self.items is None:
                 raise Exception("Unexpected value: type is 'list' but items is None")
-            base_type = list[self.items.__get_type()]
+            base_type = list[self.items.__get_type()]  # type: ignore
         else:
             raise ValueError(f"Unsupported schema type: {self.type}")
 
         if not self.required:
-            return Optional[base_type]
+            return Optional[base_type]  # type: ignore
 
         return base_type
 
     def to_param(self) -> Parameter:
-        default = Parameter.empty
-        if not self.required:
-            default = None
-
         return Parameter(
             self.name,
             Parameter.POSITIONAL_OR_KEYWORD,
             annotation=self.__get_type(),
-            default=default,
+            default= Parameter.empty if self.required else None,
         )
 
 
