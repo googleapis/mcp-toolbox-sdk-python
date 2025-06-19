@@ -254,9 +254,7 @@ class TestOptionalParams:
         """Invoke a tool providing only the required parameter."""
         tool = await toolbox.load_tool("search-rows")
 
-        response = await tool(
-            email="twishabansal@google.com"
-        )
+        response = await tool(email="twishabansal@google.com")
         assert isinstance(response, str)
         assert 'email="twishabansal@google.com"' in response
         assert "row1" not in response
@@ -270,9 +268,7 @@ class TestOptionalParams:
         """Invoke a tool providing both required and optional parameters."""
         tool = await toolbox.load_tool("search-rows")
 
-        response = await tool(
-            email="twishabansal@google.com", data="row3"
-        )
+        response = await tool(email="twishabansal@google.com", data="row3")
         assert isinstance(response, str)
         assert 'email="twishabansal@google.com"' in response
         assert "row1" not in response
@@ -286,9 +282,7 @@ class TestOptionalParams:
         """Invoke a tool providing both required and optional parameters."""
         tool = await toolbox.load_tool("search-rows")
 
-        response = await tool(
-            email="twishabansal@google.com", id=1
-        )
+        response = await tool(email="twishabansal@google.com", id=1)
         assert isinstance(response, str)
         assert 'email="twishabansal@google.com"' in response
         assert "row1" in response
