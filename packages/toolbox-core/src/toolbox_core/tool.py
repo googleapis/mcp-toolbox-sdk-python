@@ -89,11 +89,13 @@ class ToolboxTool:
         self.__params = params
         self.__pydantic_model = params_to_pydantic_model(name, self.__params)
 
-        # Sort parameters to ensure required ones (required=True) come before
-        # optional ones (required=False). This prevents the "non-default argument
-        # follows default argument" error when creating the signature.
-        sorted_params = sorted(self.__params, key=lambda p: p.required, reverse=True)
-        inspect_type_params = [param.to_param() for param in sorted_params]
+        # Separate parameters into required (no default) and optional (with
+        # default) to prevent the "non-default argument follows default
+        # argument" error when creating the function signature.
+        required_params = [p for p in self.__params if p.required]
+        optional_params = [p for p in self.__params if not p.required]
+        ordered_params = required_params + optional_params
+        inspect_type_params = [param.to_param() for param in ordered_params]
 
         # the following properties are set to help anyone that might inspect it determine usage
         self.__name__ = name
