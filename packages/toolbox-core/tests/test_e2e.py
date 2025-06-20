@@ -11,6 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+from inspect import Parameter, signature
+from typing import Optional
+
 import pytest
 import pytest_asyncio
 from pydantic import ValidationError
@@ -217,3 +221,113 @@ class TestAuth:
             match="no field named row_data in claims",
         ):
             await tool()
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("toolbox_server")
+class TestOptionalParams:
+    """
+    End-to-end tests for tools with optional parameters.
+    """
+
+    async def test_tool_signature_is_correct(self, toolbox: ToolboxClient):
+        """Verify the client correctly constructs the signature for a tool with optional params."""
+        tool = await toolbox.load_tool("search-rows")
+        sig = signature(tool)
+
+        assert "query" in sig.parameters
+        assert "limit" in sig.parameters
+
+        # The required parameter should have no default
+        assert sig.parameters["email"].default is Parameter.empty
+        assert sig.parameters["email"].annotation is str
+
+        # The optional parameter should have a default of None
+        assert sig.parameters["data"].default is "row2"
+        assert sig.parameters["limit"].annotation is Optional[str]
+
+        # The optional parameter should have a default of None
+        assert sig.parameters["id"].default is None
+        assert sig.parameters["id"].annotation is Optional[int]
+
+    async def test_run_tool_with_optional_params_omitted(self, toolbox: ToolboxClient):
+        """Invoke a tool providing only the required parameter."""
+        tool = await toolbox.load_tool("search-rows")
+
+        response = await tool(email="twishabansal@google.com")
+        assert isinstance(response, str)
+        assert 'email="twishabansal@google.com"' in response
+        assert "row1" not in response
+        assert "row2" in response
+        assert "row3" not in response
+        assert "row4" not in response
+        assert "row5" not in response
+        assert "row6" not in response
+
+    async def test_run_tool_with_optional_data_provided(self, toolbox: ToolboxClient):
+        """Invoke a tool providing both required and optional parameters."""
+        tool = await toolbox.load_tool("search-rows")
+
+        response = await tool(email="twishabansal@google.com", data="row3")
+        assert isinstance(response, str)
+        assert 'email="twishabansal@google.com"' in response
+        assert "row1" not in response
+        assert "row2" not in response
+        assert "row3" in response
+        assert "row4" not in response
+        assert "row5" not in response
+        assert "row6" not in response
+
+    async def test_run_tool_with_optional_data_null(self, toolbox: ToolboxClient):
+        """Invoke a tool providing both required and optional parameters."""
+        tool = await toolbox.load_tool("search-rows")
+
+        response = await tool(email="twishabansal@google.com", data=None)
+        assert isinstance(response, str)
+        assert 'email="twishabansal@google.com"' in response
+        assert "row1" not in response
+        assert "row2" in response
+        assert "row3" not in response
+        assert "row4" not in response
+        assert "row5" not in response
+        assert "row6" not in response
+
+    async def test_run_tool_with_optional_id_provided(self, toolbox: ToolboxClient):
+        """Invoke a tool providing both required and optional parameters."""
+        tool = await toolbox.load_tool("search-rows")
+
+        response = await tool(email="twishabansal@google.com", id=1)
+        assert isinstance(response, str)
+        assert 'email="twishabansal@google.com"' in response
+        assert "row1" in response
+        assert "row2" not in response
+        assert "row3" not in response
+        assert "row4" not in response
+        assert "row5" not in response
+        assert "row6" not in response
+
+    async def test_run_tool_with_optional_id_null(self, toolbox: ToolboxClient):
+        """Invoke a tool providing both required and optional parameters."""
+        tool = await toolbox.load_tool("search-rows")
+
+        response = await tool(email="twishabansal@google.com", id=None)
+        assert isinstance(response, str)
+        assert 'email="twishabansal@google.com"' in response
+        assert "row1" not in response
+        assert "row2" in response
+        assert "row3" not in response
+        assert "row4" not in response
+        assert "row5" not in response
+        assert "row6" not in response
+
+    async def test_run_tool_with_missing_required_param(self, toolbox: ToolboxClient):
+        """Invoke a tool without its required parameter."""
+        tool = await toolbox.load_tool("search-rows")
+        with pytest.raises(TypeError, match="missing a required argument: 'email'"):
+            await tool(id=5, data="row5")
+
+    async def test_run_tool_with_required_param_null(self, toolbox: ToolboxClient):
+        """Invoke a tool without its required parameter."""
+        tool = await toolbox.load_tool("search-rows")
+        with pytest.raises(TypeError, match="missing a required argument: 'email'"):
+            await tool(email=None, id=5, data="row5")

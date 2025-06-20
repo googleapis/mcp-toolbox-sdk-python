@@ -14,6 +14,7 @@
 
 
 from inspect import Parameter
+from typing import Optional
 
 import pytest
 
@@ -106,3 +107,66 @@ def test_parameter_schema_unsupported_type_error():
 
     with pytest.raises(ValueError, match=expected_error_msg):
         schema.to_param()
+
+
+def test_parameter_schema_string_optional():
+    """Tests an optional ParameterSchema with type 'string'."""
+    schema = ParameterSchema(
+        name="nickname",
+        type="string",
+        description="An optional nickname",
+        required=False,
+    )
+    expected_type = Optional[str]
+
+    # Test __get_type()
+    assert schema._ParameterSchema__get_type() == expected_type
+
+    # Test to_param()
+    param = schema.to_param()
+    assert isinstance(param, Parameter)
+    assert param.name == "nickname"
+    assert param.annotation == expected_type
+    assert param.kind == Parameter.POSITIONAL_OR_KEYWORD
+    assert param.default is None
+
+
+def test_parameter_schema_required_by_default():
+    """Tests that a parameter is required by default."""
+    # 'required' is not specified, so it should default to True.
+    schema = ParameterSchema(name="id", type="integer", description="A required ID")
+    expected_type = int
+
+    # Test __get_type()
+    assert schema._ParameterSchema__get_type() == expected_type
+
+    # Test to_param()
+    param = schema.to_param()
+    assert isinstance(param, Parameter)
+    assert param.name == "id"
+    assert param.annotation == expected_type
+    assert param.default == Parameter.empty
+
+
+def test_parameter_schema_array_optional():
+    """Tests an optional ParameterSchema with type 'array'."""
+    item_schema = ParameterSchema(name="", type="integer", description="")
+    schema = ParameterSchema(
+        name="optional_scores",
+        type="array",
+        description="An optional list of scores",
+        items=item_schema,
+        required=False,
+    )
+    expected_type = Optional[list[int]]
+
+    # Test __get_type()
+    assert schema._ParameterSchema__get_type() == expected_type
+
+    # Test to_param()
+    param = schema.to_param()
+    assert isinstance(param, Parameter)
+    assert param.name == "optional_scores"
+    assert param.annotation == expected_type
+    assert param.kind == Parameter.POSITIONAL_OR_KEYWORD
+    assert param.default is None
