@@ -108,8 +108,12 @@ class ToolboxSyncTool:
         return self.__async_tool._bound_params
 
     @property
-    def _required_auth_params(self) -> Mapping[str, list[str]]:
-        return self.__async_tool._required_auth_params
+    def _required_authn_params(self) -> Mapping[str, list[str]]:
+        return self.__async_tool._required_authn_params
+
+    @property
+    def _required_authz_tokens(self) -> Sequence[str]:
+        return self.__async_tool._required_authz_tokens
 
     @property
     def _auth_service_token_getters(

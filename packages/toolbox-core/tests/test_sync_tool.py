@@ -155,12 +155,23 @@ def test_toolbox_sync_tool_underscore_bound_params_property(
     assert toolbox_sync_tool._bound_params == mock_async_tool._bound_params
 
 
-def test_toolbox_sync_tool_underscore_required_auth_params_property(
+def test_toolbox_sync_tool_underscore_required_authn_params_property(
     toolbox_sync_tool: ToolboxSyncTool, mock_async_tool: MagicMock
 ):
-    """Tests the _required_auth_params property."""
+    """Tests the _required_authn_params property."""
     assert (
-        toolbox_sync_tool._required_auth_params == mock_async_tool._required_auth_params
+        toolbox_sync_tool._required_authn_params
+        == mock_async_tool._required_authn_params
+    )
+
+
+def test_toolbox_sync_tool_underscore_required_authz_tokens_property(
+    toolbox_sync_tool: ToolboxSyncTool, mock_async_tool: MagicMock
+):
+    """Tests the _required_authz_tokens property."""
+    assert (
+        toolbox_sync_tool._required_authz_tokens
+        == mock_async_tool._required_authz_tokens
     )
 
 
