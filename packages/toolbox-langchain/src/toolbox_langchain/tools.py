@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from asyncio import to_thread
-from typing import Any, Awaitable, Callable, Mapping, Optional, Sequence, Union
+from typing import Any, Awaitable, Callable, Mapping, Sequence, Union
 
 from deprecated import deprecated
 from langchain_core.runnables import RunnableConfig
@@ -74,66 +74,44 @@ class ToolboxTool(BaseTool):
     ) -> Mapping[str, Union[Callable[[], str], Callable[[], Awaitable[str]], str]]:
         return self.__core_tool._client_headers
 
+    def __get_tool_to_run(self, config: RunnableConfig) -> ToolboxCoreSyncTool:
+        tool_to_run = self.__core_tool
+        if (
+            config
+            and "configurable" in config
+            and "auth_token_getters" in config["configurable"]
+        ):
+            auth_token_getters = config["configurable"]["auth_token_getters"]
+            if auth_token_getters:
+
+                # The `add_auth_token_getters` method requires that all provided
+                # getters are used by the tool. To prevent validation errors,
+                # filter the incoming getters to include only those that this
+                # specific tool requires.
+                required_auth_keys = set(self.__core_tool._required_authz_tokens)
+                for auth_list in self.__core_tool._required_authn_params.values():
+                    required_auth_keys.update(auth_list)
+                filtered_getters = {
+                    k: v
+                    for k, v in auth_token_getters.items()
+                    if k in required_auth_keys
+                }
+                if filtered_getters:
+                    tool_to_run = self.__core_tool.add_auth_token_getters(
+                        filtered_getters
+                    )
+        return tool_to_run
+
     def _run(
         self,
         config: RunnableConfig,
         **kwargs: Any,
     ) -> str:
-        tool_to_run = self.__core_tool
-        if (
-            config
-            and "configurable" in config
-            and "auth_token_getters" in config["configurable"]
-        ):
-            auth_token_getters = config["configurable"]["auth_token_getters"]
-            if auth_token_getters:
-
-                # The `add_auth_token_getters` method requires that all provided
-                # getters are used by the tool. To prevent validation errors,
-                # filter the incoming getters to include only those that this
-                # specific tool requires.
-                required_auth_keys = set(self.__core_tool._required_authz_tokens)
-                for auth_list in self.__core_tool._required_authn_params.values():
-                    required_auth_keys.update(auth_list)
-                filtered_getters = {
-                    k: v
-                    for k, v in auth_token_getters.items()
-                    if k in required_auth_keys
-                }
-                if filtered_getters:
-                    tool_to_run = self.__core_tool.add_auth_token_getters(
-                        filtered_getters
-                    )
-
+        tool_to_run = self.__get_tool_to_run(config)
         return tool_to_run(**kwargs)
 
     async def _arun(self, config: RunnableConfig, **kwargs: Any) -> str:
-        tool_to_run = self.__core_tool
-        if (
-            config
-            and "configurable" in config
-            and "auth_token_getters" in config["configurable"]
-        ):
-            auth_token_getters = config["configurable"]["auth_token_getters"]
-            if auth_token_getters:
-
-                # The `add_auth_token_getters` method requires that all provided
-                # getters are used by the tool. To prevent validation errors,
-                # filter the incoming getters to include only those that this
-                # specific tool requires.
-                required_auth_keys = set(self.__core_tool._required_authz_tokens)
-                for auth_list in self.__core_tool._required_authn_params.values():
-                    required_auth_keys.update(auth_list)
-                filtered_getters = {
-                    k: v
-                    for k, v in auth_token_getters.items()
-                    if k in required_auth_keys
-                }
-                if filtered_getters:
-                    tool_to_run = self.__core_tool.add_auth_token_getters(
-                        filtered_getters
-                    )
-
+        tool_to_run = self.__get_tool_to_run(config)
         return await to_thread(tool_to_run, **kwargs)
 
     def add_auth_token_getters(
