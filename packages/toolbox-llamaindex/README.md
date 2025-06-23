@@ -39,6 +39,14 @@ applications, enabling advanced orchestration and interaction with GenAI models.
 
 <!-- /TOC -->
 
+## Installation
+
+```bash
+pip install toolbox-llamaindex
+```
+
+## Quickstart
+
 Here's a minimal example to get you started using
 [LlamaIndex](https://docs.llamaindex.ai/en/stable/#getting-started):
 
