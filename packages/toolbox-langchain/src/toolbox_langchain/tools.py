@@ -88,13 +88,13 @@ class ToolboxTool(BaseTool):
                 # getters are used by the tool. To prevent validation errors,
                 # filter the incoming getters to include only those that this
                 # specific tool requires.
-                required_auth_keys = set(self.__core_tool._required_authz_tokens)
+                req_auth_services = set(self.__core_tool._required_authz_tokens)
                 for auth_list in self.__core_tool._required_authn_params.values():
-                    required_auth_keys.update(auth_list)
+                    req_auth_services.update(auth_list)
                 filtered_getters = {
                     k: v
                     for k, v in auth_token_getters.items()
-                    if k in required_auth_keys
+                    if k in req_auth_services
                 }
                 if filtered_getters:
                     tool_to_run = self.__core_tool.add_auth_token_getters(
