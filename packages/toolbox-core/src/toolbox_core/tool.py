@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import copy
+import itertools
 from inspect import Signature
 from types import MappingProxyType
 from typing import Any, Awaitable, Callable, Mapping, Optional, Sequence, Union
@@ -92,9 +93,9 @@ class ToolboxTool:
         # Separate parameters into required (no default) and optional (with
         # default) to prevent the "non-default argument follows default
         # argument" error when creating the function signature.
-        required_params = [p for p in self.__params if p.required]
-        optional_params = [p for p in self.__params if not p.required]
-        ordered_params = required_params + optional_params
+        required_params = (p for p in self.__params if p.required)
+        optional_params = (p for p in self.__params if not p.required)
+        ordered_params = itertools.chain(required_params, optional_params)
         inspect_type_params = [param.to_param() for param in ordered_params]
 
         # the following properties are set to help anyone that might inspect it determine usage
