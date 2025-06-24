@@ -318,19 +318,19 @@ class TestToolboxTool:
         assert mock_core_tool.call_args == call(**kwargs_to_run)
 
     def test_toolbox_tool_properties(self, toolbox_tool, mock_core_tool):
-            """Tests that the properties correctly proxy to the core tool."""
-            assert toolbox_tool._bound_params == mock_core_tool._bound_params
-            assert (
-                toolbox_tool._required_authn_params == mock_core_tool._required_authn_params
-            )
-            assert (
-                toolbox_tool._required_authz_tokens == mock_core_tool._required_authz_tokens
-            )
-            assert (
-                toolbox_tool._auth_service_token_getters
-                == mock_core_tool._auth_service_token_getters
-            )
-            assert toolbox_tool._client_headers == mock_core_tool._client_headers
+        """Tests that the properties correctly proxy to the core tool."""
+        assert toolbox_tool._bound_params == mock_core_tool._bound_params
+        assert (
+            toolbox_tool._required_authn_params == mock_core_tool._required_authn_params
+        )
+        assert (
+            toolbox_tool._required_authz_tokens == mock_core_tool._required_authz_tokens
+        )
+        assert (
+            toolbox_tool._auth_service_token_getters
+            == mock_core_tool._auth_service_token_getters
+        )
+        assert toolbox_tool._client_headers == mock_core_tool._client_headers
 
     def test_toolbox_tool_add_auth_tokens_deprecated(
         self, auth_toolbox_tool, mock_core_sync_auth_tool
