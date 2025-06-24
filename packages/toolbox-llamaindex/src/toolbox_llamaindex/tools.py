@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from asyncio import to_thread
-from typing import Any, Callable, Union
+from typing import Any, Awaitable, Callable, Mapping, Sequence, Union
 
 from deprecated import deprecated
 from llama_index.core.tools import ToolMetadata
@@ -56,6 +56,32 @@ class ToolboxTool(AsyncBaseTool):
                 self.__core_tool._name, self.__core_tool._params
             ),
         )
+
+    @property
+    def _bound_params(
+        self,
+    ) -> Mapping[str, Union[Callable[[], Any], Callable[[], Awaitable[Any]], Any]]:
+        return self.__core_tool._bound_params
+
+    @property
+    def _required_authn_params(self) -> Mapping[str, list[str]]:
+        return self.__core_tool._required_authn_params
+
+    @property
+    def _required_authz_tokens(self) -> Sequence[str]:
+        return self.__core_tool._required_authz_tokens
+
+    @property
+    def _auth_service_token_getters(
+        self,
+    ) -> Mapping[str, Union[Callable[[], str], Callable[[], Awaitable[str]]]]:
+        return self.__core_tool._auth_service_token_getters
+
+    @property
+    def _client_headers(
+        self,
+    ) -> Mapping[str, Union[Callable[[], str], Callable[[], Awaitable[str]], str]]:
+        return self.__core_tool._client_headers
 
     def call(self, **kwargs: Any) -> ToolOutput:  # type: ignore
         output_content = self.__core_tool(**kwargs)
