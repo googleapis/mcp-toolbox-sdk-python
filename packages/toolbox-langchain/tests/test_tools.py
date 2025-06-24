@@ -131,6 +131,12 @@ class TestToolboxTool:
         )
         sync_mock.bind_params = Mock(return_value=new_mock_instance_for_methods)
 
+        sync_mock._bound_params = {"mock_bound_param": "mock_bound_value"}
+        sync_mock._required_authn_params = {"mock_auth_source": ["mock_param"]}
+        sync_mock._required_authz_tokens = ["mock_authz_token"]
+        sync_mock._auth_service_token_getters = {"mock_service": lambda: "mock_token"}
+        sync_mock._client_headers = {"mock_header": "mock_header_value"}
+
         return sync_mock
 
     @pytest.fixture
@@ -166,6 +172,13 @@ class TestToolboxTool:
             return_value=new_mock_instance_for_methods
         )
         sync_mock.bind_params = Mock(return_value=new_mock_instance_for_methods)
+
+        sync_mock._bound_params = {"mock_bound_param": "mock_bound_value"}
+        sync_mock._required_authn_params = {"mock_auth_source": ["mock_param"]}
+        sync_mock._required_authz_tokens = ["mock_authz_token"]
+        sync_mock._auth_service_token_getters = {"mock_service": lambda: "mock_token"}
+        sync_mock._client_headers = {"mock_header": "mock_header_value"}
+
         return sync_mock
 
     @pytest.fixture
@@ -303,3 +316,48 @@ class TestToolboxTool:
 
         assert mock_core_tool.call_count == 1
         assert mock_core_tool.call_args == call(**kwargs_to_run)
+
+    def test_toolbox_tool_properties(self, toolbox_tool, mock_core_tool):
+            """Tests that the properties correctly proxy to the core tool."""
+            assert toolbox_tool._bound_params == mock_core_tool._bound_params
+            assert (
+                toolbox_tool._required_authn_params == mock_core_tool._required_authn_params
+            )
+            assert (
+                toolbox_tool._required_authz_tokens == mock_core_tool._required_authz_tokens
+            )
+            assert (
+                toolbox_tool._auth_service_token_getters
+                == mock_core_tool._auth_service_token_getters
+            )
+            assert toolbox_tool._client_headers == mock_core_tool._client_headers
+
+    def test_toolbox_tool_add_auth_tokens_deprecated(
+        self, auth_toolbox_tool, mock_core_sync_auth_tool
+    ):
+        """Tests the deprecated add_auth_tokens method."""
+        auth_tokens = {"test-auth-source": lambda: "test-token"}
+        with pytest.warns(DeprecationWarning):
+            new_tool = auth_toolbox_tool.add_auth_tokens(auth_tokens)
+
+        # Check that the call was correctly forwarded to the new method on the core tool
+        mock_core_sync_auth_tool.add_auth_token_getters.assert_called_once_with(
+            auth_tokens
+        )
+        assert isinstance(new_tool, ToolboxTool)
+
+    def test_toolbox_tool_add_auth_token_deprecated(
+        self, auth_toolbox_tool, mock_core_sync_auth_tool
+    ):
+        """Tests the deprecated add_auth_token method."""
+        get_id_token = lambda: "test-token"
+        with pytest.warns(DeprecationWarning):
+            new_tool = auth_toolbox_tool.add_auth_token(
+                "test-auth-source", get_id_token
+            )
+
+        # Check that the call was correctly forwarded to the new method on the core tool
+        mock_core_sync_auth_tool.add_auth_token_getters.assert_called_once_with(
+            {"test-auth-source": get_id_token}
+        )
+        assert isinstance(new_tool, ToolboxTool)
