@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.2.2](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-langchain-v0.2.1...toolbox-langchain-v0.2.2) (2025-06-24)
+
+
+### Bug Fixes
+
+* **deps:** update dependency mypy to v1.16.1 ([#286](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/286)) ([10e59e1](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/10e59e1b12e5a0dc58f9724a55aca8ed057c0ea2))
+* **deps:** update dependency pytest to v8.4.1 ([#288](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/288)) ([4237fff](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/4237fffddf18a274fda6a23f16354a0199da9506))
+* **deps:** update python-nonmajor ([#289](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/289)) ([2725fd2](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/2725fd2bc82150e1f6b4bc3df16dec9e29e4f83a))
+
+
+### Miscellaneous Chores
+
+* **deps:** update python-nonmajor ([#284](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/284)) ([492d35f](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/492d35f61360494e60944f8f5939cc23dabca80f))
+
+
+### Documentation
+
+* Add complete e2e working quickstart link across all quickstart sections ([#296](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/296)) ([b839bc5](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/b839bc5acd10142888739c2abaff215a32eb3e62))
+
 ## [0.2.1](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-langchain-v0.2.0...toolbox-langchain-v0.2.1) (2025-06-13)
 
 
