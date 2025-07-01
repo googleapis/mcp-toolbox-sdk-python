@@ -101,9 +101,11 @@ def project_id() -> str:
 def toolbox_version() -> str:
     return get_env_var("TOOLBOX_VERSION")
 
+
 @pytest_asyncio.fixture(scope="session")
 def toolbox_bucket() -> str:
     return get_env_var("TOOLBOX_BUCKET")
+
 
 @pytest_asyncio.fixture(scope="session")
 def tools_file_path(project_id: str) -> Generator[str]:
@@ -133,7 +135,9 @@ def auth_token2(project_id: str) -> str:
 
 
 @pytest_asyncio.fixture(scope="session")
-def toolbox_server(toolbox_version: str, toolbox_bucket: str, tools_file_path: str) -> Generator[None]:
+def toolbox_server(
+    toolbox_version: str, toolbox_bucket: str, tools_file_path: str
+) -> Generator[None]:
     """Starts the toolbox server as a subprocess."""
     print("Downloading toolbox binary from gcs bucket...")
     source_blob_name = get_toolbox_binary_url(toolbox_version)
