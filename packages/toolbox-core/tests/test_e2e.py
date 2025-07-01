@@ -368,7 +368,7 @@ class TestOptionalParams:
 
         response = await tool(email="anubhavdhawan@google.com", id=3, data="row3")
         assert isinstance(response, str)
-        assert response == 'null'
+        assert response == "null"
 
     async def test_run_tool_with_different_data(self, toolbox: ToolboxClient):
         """Invoke a tool providing all parameters but with a different data."""
@@ -376,7 +376,7 @@ class TestOptionalParams:
 
         response = await tool(email="twishabansal@google.com", id=3, data="row4")
         assert isinstance(response, str)
-        assert response == 'null'
+        assert response == "null"
 
     async def test_run_tool_with_different_id(self, toolbox: ToolboxClient):
         """Invoke a tool providing all parameters but with a different data."""
@@ -384,4 +384,4 @@ class TestOptionalParams:
 
         response = await tool(email="twishabansal@google.com", id=4, data="row3")
         assert isinstance(response, str)
-        assert response == 'null'
+        assert response == "null"
