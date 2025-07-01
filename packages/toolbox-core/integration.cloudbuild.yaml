@@ -33,6 +33,7 @@ steps:
     env:
       - TOOLBOX_URL=$_TOOLBOX_URL
       - TOOLBOX_VERSION=$_TOOLBOX_VERSION
+      - TOOLBOX_BUCKET=$_TOOLBOX_BUCKET
       - GOOGLE_CLOUD_PROJECT=$PROJECT_ID
     args:
       - '-c'
@@ -43,4 +44,5 @@ options:
   logging: CLOUD_LOGGING_ONLY
 substitutions:
   _VERSION: '3.13'
-  _TOOLBOX_VERSION: '0.8.0'
+  _TOOLBOX_VERSION: 'main'
+  _TOOLBOX_BUCKET: 'genai-toolbox-dev'
