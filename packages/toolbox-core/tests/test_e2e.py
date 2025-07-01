@@ -68,7 +68,7 @@ class TestBasicE2E:
     async def test_load_toolset_default(self, toolbox: ToolboxClient):
         """Load the default toolset, i.e. all tools."""
         toolset = await toolbox.load_toolset()
-        assert len(toolset) == 5
+        assert len(toolset) == 6
         tool_names = {tool.__name__ for tool in toolset}
         expected_tools = [
             "get-row-by-content-auth",
@@ -76,6 +76,7 @@ class TestBasicE2E:
             "get-row-by-id-auth",
             "get-row-by-id",
             "get-n-rows",
+            "search-rows",
         ]
         assert tool_names == set(expected_tools)
 
@@ -235,16 +236,17 @@ class TestOptionalParams:
         tool = await toolbox.load_tool("search-rows")
         sig = signature(tool)
 
-        assert "query" in sig.parameters
-        assert "limit" in sig.parameters
+        assert "email" in sig.parameters
+        assert "data" in sig.parameters
+        assert "id" in sig.parameters
 
         # The required parameter should have no default
         assert sig.parameters["email"].default is Parameter.empty
         assert sig.parameters["email"].annotation is str
 
         # The optional parameter should have a default of None
-        assert sig.parameters["data"].default is "row2"
-        assert sig.parameters["limit"].annotation is Optional[str]
+        assert sig.parameters["data"].default is None
+        assert sig.parameters["data"].annotation is Optional[str]
 
         # The optional parameter should have a default of None
         assert sig.parameters["id"].default is None
