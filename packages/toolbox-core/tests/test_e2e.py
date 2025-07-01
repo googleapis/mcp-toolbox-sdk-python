@@ -333,3 +333,55 @@ class TestOptionalParams:
         tool = await toolbox.load_tool("search-rows")
         with pytest.raises(TypeError, match="missing a required argument: 'email'"):
             await tool(email=None, id=5, data="row5")
+
+    async def test_run_tool_with_all_default_params(self, toolbox: ToolboxClient):
+        """Invoke a tool providing all parameters."""
+        tool = await toolbox.load_tool("search-rows")
+
+        response = await tool(email="twishabansal@google.com", id=0, data="row2")
+        assert isinstance(response, str)
+        assert 'email="twishabansal@google.com"' in response
+        assert "row1" not in response
+        assert "row2" in response
+        assert "row3" not in response
+        assert "row4" not in response
+        assert "row5" not in response
+        assert "row6" not in response
+
+    async def test_run_tool_with_all_valid_params(self, toolbox: ToolboxClient):
+        """Invoke a tool providing all parameters."""
+        tool = await toolbox.load_tool("search-rows")
+
+        response = await tool(email="twishabansal@google.com", id=3, data="row3")
+        assert isinstance(response, str)
+        assert 'email="twishabansal@google.com"' in response
+        assert "row1" not in response
+        assert "row2" not in response
+        assert "row3" in response
+        assert "row4" not in response
+        assert "row5" not in response
+        assert "row6" not in response
+
+    async def test_run_tool_with_different_email(self, toolbox: ToolboxClient):
+        """Invoke a tool providing all parameters but with a different email."""
+        tool = await toolbox.load_tool("search-rows")
+
+        response = await tool(email="anubhavdhawan@google.com", id=3, data="row3")
+        assert isinstance(response, str)
+        assert response == 'null'
+
+    async def test_run_tool_with_different_data(self, toolbox: ToolboxClient):
+        """Invoke a tool providing all parameters but with a different data."""
+        tool = await toolbox.load_tool("search-rows")
+
+        response = await tool(email="twishabansal@google.com", id=3, data="row4")
+        assert isinstance(response, str)
+        assert response == 'null'
+
+    async def test_run_tool_with_different_id(self, toolbox: ToolboxClient):
+        """Invoke a tool providing all parameters but with a different data."""
+        tool = await toolbox.load_tool("search-rows")
+
+        response = await tool(email="twishabansal@google.com", id=4, data="row3")
+        assert isinstance(response, str)
+        assert response == 'null'
