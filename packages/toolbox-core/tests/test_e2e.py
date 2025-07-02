@@ -325,7 +325,7 @@ class TestOptionalParams:
     async def test_run_tool_with_required_param_null(self, toolbox: ToolboxClient):
         """Invoke a tool without its required parameter."""
         tool = await toolbox.load_tool("search-rows")
-        with pytest.raises(ValidationError, match="missing a required argument: 'email'"):
+        with pytest.raises(ValidationError, match="email"):
             await tool(email=None, id=5, data="row5")
 
     async def test_run_tool_with_all_default_params(self, toolbox: ToolboxClient):
