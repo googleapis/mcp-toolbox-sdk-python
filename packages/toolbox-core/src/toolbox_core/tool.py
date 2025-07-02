@@ -13,6 +13,8 @@
 # limitations under the License.
 
 import copy
+import itertools
+from collections import OrderedDict
 from inspect import Signature
 from types import MappingProxyType
 from typing import Any, Awaitable, Callable, Mapping, Optional, Sequence, Union
@@ -89,7 +91,13 @@ class ToolboxTool:
         self.__params = params
         self.__pydantic_model = params_to_pydantic_model(name, self.__params)
 
-        inspect_type_params = [param.to_param() for param in self.__params]
+        # Separate parameters into required (no default) and optional (with
+        # default) to prevent the "non-default argument follows default
+        # argument" error when creating the function signature.
+        required_params = (p for p in self.__params if p.required)
+        optional_params = (p for p in self.__params if not p.required)
+        ordered_params = itertools.chain(required_params, optional_params)
+        inspect_type_params = [param.to_param() for param in ordered_params]
 
         # the following properties are set to help anyone that might inspect it determine usage
         self.__name__ = name
@@ -268,7 +276,9 @@ class ToolboxTool:
 
         # validate inputs to this call using the signature
         all_args = self.__signature__.bind(*args, **kwargs)
-        all_args.apply_defaults()  # Include default values if not provided
+
+        # The payload will only contain arguments explicitly provided by the user.
+        # Optional arguments not provided by the user will not be in the payload.
         payload = all_args.arguments
 
         # Perform argument type validations using pydantic
@@ -277,6 +287,11 @@ class ToolboxTool:
         # apply bounded parameters
         for param, value in self.__bound_parameters.items():
             payload[param] = await resolve_value(value)
+
+        # Remove None values to prevent server-side type errors. The Toolbox
+        # server requires specific types for each parameter and will raise an
+        # error if it receives a None value, which it cannot convert.
+        payload = OrderedDict({k: v for k, v in payload.items() if v is not None})
 
         # create headers for auth services
         headers = {}

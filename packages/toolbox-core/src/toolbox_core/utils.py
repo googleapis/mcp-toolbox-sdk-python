@@ -38,9 +38,8 @@ def create_func_docstring(description: str, params: Sequence[ParameterSchema]) -
         return docstring
     docstring += "\n\nArgs:"
     for p in params:
-        docstring += (
-            f"\n    {p.name} ({p.to_param().annotation.__name__}): {p.description}"
-        )
+        annotation = p.to_param().annotation
+        docstring += f"\n    {p.name} ({getattr(annotation, '__name__', str(annotation))}): {p.description}"
     return docstring
 
 
@@ -111,11 +110,20 @@ def params_to_pydantic_model(
     """Converts the given parameters to a Pydantic BaseModel class."""
     field_definitions = {}
     for field in params:
+
+        # Determine the default value based on the 'required' flag.
+        # '...' (Ellipsis) signifies a required field in Pydantic.
+        # 'None' makes the field optional with a default value of None.
+        default_value = ... if field.required else None
+
         field_definitions[field.name] = cast(
             Any,
             (
                 field.to_param().annotation,
-                Field(description=field.description),
+                Field(
+                    description=field.description,
+                    default=default_value,
+                ),
             ),
         )
     return create_model(tool_name, **field_definitions)

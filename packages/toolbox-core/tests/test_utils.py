@@ -34,6 +34,7 @@ def create_param_mock(name: str, description: str, annotation: Type) -> Mock:
     param_mock = Mock(spec=ParameterSchema)
     param_mock.name = name
     param_mock.description = description
+    param_mock.required = True
 
     mock_param_info = Mock()
     mock_param_info.annotation = annotation
