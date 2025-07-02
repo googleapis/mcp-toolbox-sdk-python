@@ -12,14 +12,8 @@
 
 * **deps:** update dependency mypy to v1.16.1 ([#286](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/286)) ([10e59e1](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/10e59e1b12e5a0dc58f9724a55aca8ed057c0ea2))
 * **deps:** update dependency pytest to v8.4.1 ([#288](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/288)) ([4237fff](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/4237fffddf18a274fda6a23f16354a0199da9506))
-* **deps:** update python-nonmajor ([#289](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/289)) ([2725fd2](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/2725fd2bc82150e1f6b4bc3df16dec9e29e4f83a))
+* **deps:** update python-nonmajor ([#289](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/289), [#284](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/284)) ([2725fd2](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/2725fd2bc82150e1f6b4bc3df16dec9e29e4f83a), [492d35f](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/492d35f61360494e60944f8f5939cc23dabca80f))
 * **toolbox-core:** Expose authorization token requirements on `ToolboxTool` ([#294](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/294)) ([d7c3311](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/d7c3311db18eb2785a4c5dc89233a91fc222d84d))
-
-
-### Miscellaneous Chores
-
-* **deps:** update python-nonmajor ([#284](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/284)) ([492d35f](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/492d35f61360494e60944f8f5939cc23dabca80f))
-* release 0.3.0 ([#299](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/299)) ([24a3b29](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/24a3b29d93f15e8d637a08f2adcdaf87b60352b9))
 
 
 ### Documentation
