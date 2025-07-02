@@ -38,9 +38,8 @@ def create_func_docstring(description: str, params: Sequence[ParameterSchema]) -
         return docstring
     docstring += "\n\nArgs:"
     for p in params:
-        docstring += (
-            f"\n    {p.name} ({p.to_param().annotation.__name__}): {p.description}"
-        )
+        annotation = p.to_param().annotation
+        docstring += f"\n    {p.name} ({getattr(annotation, '__name__', str(annotation))}): {p.description}"
     return docstring
 
 
