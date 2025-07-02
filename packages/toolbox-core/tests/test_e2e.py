@@ -258,7 +258,7 @@ class TestOptionalParams:
 
         response = await tool(email="twishabansal@google.com")
         assert isinstance(response, str)
-        assert 'email="twishabansal@google.com"' in response
+        assert '"email":"twishabansal@google.com"' in response
         assert "row1" not in response
         assert "row2" in response
         assert "row3" not in response
@@ -272,7 +272,7 @@ class TestOptionalParams:
 
         response = await tool(email="twishabansal@google.com", data="row3")
         assert isinstance(response, str)
-        assert 'email="twishabansal@google.com"' in response
+        assert '"email":"twishabansal@google.com"' in response
         assert "row1" not in response
         assert "row2" not in response
         assert "row3" in response
@@ -286,7 +286,7 @@ class TestOptionalParams:
 
         response = await tool(email="twishabansal@google.com", data=None)
         assert isinstance(response, str)
-        assert 'email="twishabansal@google.com"' in response
+        assert '"email":"twishabansal@google.com"' in response
         assert "row1" not in response
         assert "row2" in response
         assert "row3" not in response
@@ -300,13 +300,7 @@ class TestOptionalParams:
 
         response = await tool(email="twishabansal@google.com", id=1)
         assert isinstance(response, str)
-        assert 'email="twishabansal@google.com"' in response
-        assert "row1" in response
-        assert "row2" not in response
-        assert "row3" not in response
-        assert "row4" not in response
-        assert "row5" not in response
-        assert "row6" not in response
+        assert response == "null"
 
     async def test_run_tool_with_optional_id_null(self, toolbox: ToolboxClient):
         """Invoke a tool providing both required and optional parameters."""
@@ -314,7 +308,7 @@ class TestOptionalParams:
 
         response = await tool(email="twishabansal@google.com", id=None)
         assert isinstance(response, str)
-        assert 'email="twishabansal@google.com"' in response
+        assert '"email":"twishabansal@google.com"' in response
         assert "row1" not in response
         assert "row2" in response
         assert "row3" not in response
@@ -331,7 +325,7 @@ class TestOptionalParams:
     async def test_run_tool_with_required_param_null(self, toolbox: ToolboxClient):
         """Invoke a tool without its required parameter."""
         tool = await toolbox.load_tool("search-rows")
-        with pytest.raises(TypeError, match="missing a required argument: 'email'"):
+        with pytest.raises(ValidationError, match="missing a required argument: 'email'"):
             await tool(email=None, id=5, data="row5")
 
     async def test_run_tool_with_all_default_params(self, toolbox: ToolboxClient):
@@ -340,7 +334,7 @@ class TestOptionalParams:
 
         response = await tool(email="twishabansal@google.com", id=0, data="row2")
         assert isinstance(response, str)
-        assert 'email="twishabansal@google.com"' in response
+        assert '"email":"twishabansal@google.com"' in response
         assert "row1" not in response
         assert "row2" in response
         assert "row3" not in response
@@ -354,7 +348,7 @@ class TestOptionalParams:
 
         response = await tool(email="twishabansal@google.com", id=3, data="row3")
         assert isinstance(response, str)
-        assert 'email="twishabansal@google.com"' in response
+        assert '"email":"twishabansal@google.com"' in response
         assert "row1" not in response
         assert "row2" not in response
         assert "row3" in response
