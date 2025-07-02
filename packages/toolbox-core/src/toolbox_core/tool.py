@@ -14,6 +14,7 @@
 
 import copy
 import itertools
+from collections import OrderedDict
 from inspect import Signature
 from types import MappingProxyType
 from typing import Any, Awaitable, Callable, Mapping, Optional, Sequence, Union
@@ -290,7 +291,7 @@ class ToolboxTool:
         # Remove None values to prevent server-side type errors. The Toolbox
         # server requires specific types for each parameter and will raise an
         # error if it receives a None value, which it cannot convert.
-        payload = {k: v for k, v in payload.items() if v is not None}
+        payload = OrderedDict({k: v for k, v in payload.items() if v is not None})
 
         # create headers for auth services
         headers = {}
