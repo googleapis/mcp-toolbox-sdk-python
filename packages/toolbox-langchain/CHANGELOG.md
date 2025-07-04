@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-langchain-v0.3.0...toolbox-langchain-v0.3.1) (2025-07-04)
+
+
+### Miscellaneous Chores
+
+* **deps:** update python-nonmajor ([#303](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/303)) ([f881635](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/f881635ec28175ddb6d081c8030e52081dd6d140))
+
 ## [0.3.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-langchain-v0.2.1...toolbox-langchain-v0.3.0) (2025-07-02)
 
 
