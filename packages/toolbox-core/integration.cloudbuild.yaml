@@ -44,5 +44,5 @@ options:
   logging: CLOUD_LOGGING_ONLY
 substitutions:
   _VERSION: '3.13'
-  _TOOLBOX_VERSION: 'main'
+  _TOOLBOX_VERSION: 'latest'
   _TOOLBOX_BUCKET: 'genai-toolbox-dev'
