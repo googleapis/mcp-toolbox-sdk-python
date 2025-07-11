@@ -57,20 +57,20 @@ from toolbox_langchain import ToolboxClient
 from langchain_google_vertexai import ChatVertexAI
 from langgraph.prebuilt import create_react_agent
 
-toolbox = ToolboxClient("http://127.0.0.1:5000")
-tools = toolbox.load_toolset()
+async with ToolboxClient("http://127.0.0.1:5000") as toolbox:
+    tools = toolbox.load_toolset()
 
-model = ChatVertexAI(model="gemini-2.0-flash-001")
-agent = create_react_agent(model, tools)
+    model = ChatVertexAI(model="gemini-2.0-flash-001")
+    agent = create_react_agent(model, tools)
 
-prompt = "How's the weather today?"
+    prompt = "How's the weather today?"
 
-for s in agent.stream({"messages": [("user", prompt)]}, stream_mode="values"):
-    message = s["messages"][-1]
-    if isinstance(message, tuple):
-        print(message)
-    else:
-        message.pretty_print()
+    for s in agent.stream({"messages": [("user", prompt)]}, stream_mode="values"):
+        message = s["messages"][-1]
+        if isinstance(message, tuple):
+            print(message)
+        else:
+            message.pretty_print()
 ```
 
 > [!TIP]
@@ -86,7 +86,7 @@ Import and initialize the toolbox client.
 from toolbox_langchain import ToolboxClient
 
 # Replace with your Toolbox service's URL
-toolbox = ToolboxClient("http://127.0.0.1:5000")
+async with ToolboxClient("http://127.0.0.1:5000") as toolbox:
 ```
 
 ## Loading Tools
@@ -241,10 +241,10 @@ You can configure these dynamic headers as follows:
 ```python
 from toolbox_langchain import ToolboxClient
 
-client = ToolboxClient(
+async with ToolboxClient(
     "toolbox-url", 
     client_headers={"header1": header1_getter, "header2": header2_getter, ...}
-)
+) as client:
 ```
 
 ### Authenticating with Google Cloud Servers
@@ -273,13 +273,13 @@ For Toolbox servers hosted on Google Cloud (e.g., Cloud Run) and requiring
     from toolbox_core import auth_methods
 
     auth_token_provider = auth_methods.aget_google_id_token # can also use sync method
-    client = ToolboxClient(
+    async with ToolboxClient(
         URL,
         client_headers={"Authorization": auth_token_provider},
-    )
-    tools = client.load_toolset()
+    ) as client:
+        tools = client.load_toolset()
 
-    # Now, you can use the client as usual.
+        # Now, you can use the client as usual.
     ```
 
 
@@ -319,16 +319,16 @@ async def get_auth_token():
 #### Add Authentication to a Tool
 
 ```py
-toolbox = ToolboxClient("http://127.0.0.1:5000")
-tools = toolbox.load_toolset()
+async with ToolboxClient("http://127.0.0.1:5000") as toolbox:
+    tools = toolbox.load_toolset()
 
-auth_tool = tools[0].add_auth_token_getter("my_auth", get_auth_token) # Single token
+    auth_tool = tools[0].add_auth_token_getter("my_auth", get_auth_token) # Single token
 
-multi_auth_tool = tools[0].add_auth_token_getters({"auth_1": get_auth_1}, {"auth_2": get_auth_2}) # Multiple tokens
+    multi_auth_tool = tools[0].add_auth_token_getters({"auth_1": get_auth_1}, {"auth_2": get_auth_2}) # Multiple tokens
 
-# OR
+    # OR
 
-auth_tools = [tool.add_auth_token_getter("my_auth", get_auth_token) for tool in tools]
+    auth_tools = [tool.add_auth_token_getter("my_auth", get_auth_token) for tool in tools]
 ```
 
 #### Add Authentication While Loading
@@ -354,12 +354,12 @@ async def get_auth_token():
     # This example just returns a placeholder. Replace with your actual token retrieval.
     return "YOUR_ID_TOKEN" # Placeholder
 
-toolbox = ToolboxClient("http://127.0.0.1:5000")
-tool = toolbox.load_tool("my-tool")
+async with ToolboxClient("http://127.0.0.1:5000") as toolbox:
+    tool = toolbox.load_tool("my-tool")
 
-auth_tool = tool.add_auth_token_getter("my_auth", get_auth_token)
-result = auth_tool.invoke({"input": "some input"})
-print(result)
+    auth_tool = tool.add_auth_token_getter("my_auth", get_auth_token)
+    result = auth_tool.invoke({"input": "some input"})
+    print(result)
 ```
 
 ## Binding Parameter Values
@@ -374,16 +374,16 @@ modified by the LLM. This is useful for:
 ### Binding Parameters to a Tool
 
 ```py
-toolbox = ToolboxClient("http://127.0.0.1:5000")
-tools = toolbox.load_toolset()
+async with ToolboxClient("http://127.0.0.1:5000") as toolbox:
+    tools = toolbox.load_toolset()
 
-bound_tool = tool[0].bind_param("param", "value") # Single param
+    bound_tool = tool[0].bind_param("param", "value") # Single param
 
-multi_bound_tool = tools[0].bind_params({"param1": "value1", "param2": "value2"}) # Multiple params
+    multi_bound_tool = tools[0].bind_params({"param1": "value1", "param2": "value2"}) # Multiple params
 
-# OR
+    # OR
 
-bound_tools = [tool.bind_param("param", "value") for tool in tools]
+    bound_tools = [tool.bind_param("param", "value") for tool in tools]
 ```
 
 ### Binding Parameters While Loading
@@ -429,10 +429,10 @@ import asyncio
 from toolbox_langchain import ToolboxClient
 
 async def main():
-    toolbox = ToolboxClient("http://127.0.0.1:5000")
-    tool = await client.aload_tool("my-tool")
-    tools = await client.aload_toolset()
-    response = await tool.ainvoke()
+    async with ToolboxClient("http://127.0.0.1:5000") as toolbox:
+        tool = await client.aload_tool("my-tool")
+        tools = await client.aload_toolset()
+        response = await tool.ainvoke()
 
 if __name__ == "__main__":
     asyncio.run(main())
