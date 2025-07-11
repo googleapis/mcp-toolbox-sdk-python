@@ -176,9 +176,22 @@ class ToolboxSyncClient:
         self.__async_client.add_headers(headers)
 
     def __enter__(self):
-        """Enter the runtime context related to this client instance."""
+        """
+        Enter the runtime context related to this client instance.
+
+        Allows the client to be used as a context manager
+        (e.g., `with ToolboxSyncClient(...) as client:`).
+
+        Returns:
+            self: The client instance itself.
+        """
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        """Exit the runtime context and close the client session."""
+        """
+        Exit the runtime context and close the internally managed session.
+
+        Allows the client to be used as a context manager
+        (e.g., `with ToolboxSyncClient(...) as client:`).
+        """
         self.close()
