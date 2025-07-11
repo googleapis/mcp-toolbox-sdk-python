@@ -190,3 +190,28 @@ class AsyncToolboxClient:
         strict: bool = False,
     ) -> list[AsyncToolboxTool]:
         raise NotImplementedError("Synchronous methods not supported by async client.")
+
+    async def close(self):
+        """Close the underlying synchronous client."""
+        await self.__core_client.close()
+
+    async def __aenter__(self):
+        """
+        Enter the runtime context related to this client instance.
+
+        Allows the client to be used as an asynchronous context manager
+        (e.g., `async with AsyncToolboxClient(...) as client:`).
+
+        Returns:
+            self: The client instance itself.
+        """
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """
+        Exit the runtime context and close the internally managed session.
+
+        Allows the client to be used as an asynchronous context manager
+        (e.g., `async with AsyncToolboxClient(...) as client:`).
+        """
+        await self.close()
