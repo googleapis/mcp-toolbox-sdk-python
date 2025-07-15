@@ -125,10 +125,12 @@ def get_google_id_token(audience: Optional[str] = None) -> str:
         if new_id_token:
             _update_cache(new_id_token)
             return BEARER_TOKEN_PREFIX + new_id_token
-        
+
     if audience is None:
-        raise Exception('You are not authenticating using User Credentials.'
-                        ' Please set the audience string to the Toolbox service URL to get the Google ID token.')
+        raise Exception(
+            "You are not authenticating using User Credentials."
+            " Please set the audience string to the Toolbox service URL to get the Google ID token."
+        )
 
     # Get credentials for Google Cloud environments or for service account key files
     try:
