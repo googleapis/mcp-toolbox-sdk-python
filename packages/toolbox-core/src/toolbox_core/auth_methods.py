@@ -22,9 +22,10 @@ Example Usage:
 from toolbox_core import auth_methods
 from functools import partial
 
+URL = "https://toolbox-service-url"
 auth_token_provider = functools.partial(
     auth_methods.aget_google_id_token,
-    "https://toolbox-service-url"
+    URL
 )
 async with ToolboxClient(
     URL,
