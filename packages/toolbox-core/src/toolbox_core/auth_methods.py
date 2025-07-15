@@ -26,8 +26,11 @@ auth_token_provider = functools.partial(
     auth_methods.aget_google_id_token,
     "https://toolbox-service-url"
 )
-client = ToolboxClient(URL, client_headers={"Authorization": auth_token_provider})
-await client.make_request()
+async with ToolboxClient(
+    URL,
+    client_headers={"Authorization": auth_token_provider},
+) as toolbox:
+    tools = await toolbox.load_toolset()
 """
 
 from datetime import datetime, timedelta, timezone
