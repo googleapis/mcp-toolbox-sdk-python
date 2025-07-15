@@ -36,7 +36,7 @@ async with ToolboxClient(
 
 import asyncio
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import google.auth
 from google.auth.exceptions import GoogleAuthError
@@ -94,7 +94,7 @@ def _update_cache(new_token: str) -> None:
         raise ValueError(f"Failed to validate and cache the new token: {e}") from e
 
 
-def get_google_id_token(audience: str) -> str:
+def get_google_id_token(audience: Optional[str] = None) -> str:
     """
     Synchronously fetches a Google ID token for a specific audience.
     This function uses Application Default Credentials for local systems
@@ -125,8 +125,12 @@ def get_google_id_token(audience: str) -> str:
         if new_id_token:
             _update_cache(new_id_token)
             return BEARER_TOKEN_PREFIX + new_id_token
+        
+    if audience is None:
+        raise Exception('You are not authenticating using User Credentials.'
+                        ' Please set the audience string to the Toolbox service URL to get the Google ID token.')
 
-    # Get credentials for Google Cloud environments
+    # Get credentials for Google Cloud environments or for service account key files
     try:
         request = Request()
         new_token = id_token.fetch_id_token(request, audience)
@@ -139,7 +143,7 @@ def get_google_id_token(audience: str) -> str:
         ) from e
 
 
-async def aget_google_id_token(audience: str) -> str:
+async def aget_google_id_token(audience: Optional[str] = None) -> str:
     """
     Asynchronously fetches a Google ID token for a specific audience.
     This function uses Application Default Credentials for local systems

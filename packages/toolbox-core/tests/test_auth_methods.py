@@ -69,9 +69,8 @@ class TestAsyncAuthMethods:
         assert auth_methods._token_cache["token"] == MOCK_ID_TOKEN
         assert auth_methods._token_cache["expires_at"] == MOCK_EXPIRY_DATETIME
 
-    @pytest.mark.asyncio
     @patch("toolbox_core.auth_methods.google.auth.default")
-    async def test_aget_google_id_token_success_uses_cache(self, mock_get_token):
+    async def test_aget_google_id_token_success_uses_cache(self, mock_default):
         """Tests that subsequent calls use the cached token if valid."""
         # Prime the cache with a valid token
         auth_methods._token_cache["token"] = MOCK_ID_TOKEN
@@ -81,8 +80,8 @@ class TestAsyncAuthMethods:
 
         token = await auth_methods.aget_google_id_token(MOCK_AUDIENCE)
 
-        # The underlying sync function should not be called if cache is valid
-        mock_get_token.assert_not_called()
+        # The underlying auth function should not be called if cache is valid
+        mock_default.assert_not_called()
         assert token == f"{auth_methods.BEARER_TOKEN_PREFIX}{MOCK_ID_TOKEN}"
 
     @patch("toolbox_core.auth_methods.id_token.verify_oauth2_token")
@@ -111,6 +110,23 @@ class TestAsyncAuthMethods:
         mock_fetch.assert_called_once()
         assert token == f"{auth_methods.BEARER_TOKEN_PREFIX}{MOCK_ID_TOKEN}"
         assert auth_methods._token_cache["token"] == MOCK_ID_TOKEN
+
+    @patch("toolbox_core.auth_methods.id_token.fetch_id_token")
+    @patch(
+        "toolbox_core.auth_methods.google.auth.default",
+        return_value=(MagicMock(id_token=None), MOCK_PROJECT_ID),
+    )
+    async def test_aget_raises_if_no_audience_and_no_local_token(
+        self, mock_default, mock_fetch
+    ):
+        """Tests that the async function propagates the missing audience exception."""
+        error_msg = "You are not authenticating using User Credentials."
+        with pytest.raises(Exception, match=error_msg):
+            # Call without audience to trigger the error path
+            await auth_methods.aget_google_id_token()
+
+        mock_default.assert_called_once()
+        mock_fetch.assert_not_called()
 
 
 class TestSyncAuthMethods:
@@ -196,3 +212,21 @@ class TestSyncAuthMethods:
 
         # Verify cache is cleared on validation failure
         assert auth_methods._token_cache["token"] is None
+
+    @patch("toolbox_core.auth_methods.id_token.fetch_id_token")
+    @patch(
+        "toolbox_core.auth_methods.google.auth.default",
+        # Simulate credentials that DON'T have a pre-existing id_token
+        return_value=(MagicMock(id_token=None), MOCK_PROJECT_ID),
+    )
+    def test_get_raises_if_no_audience_and_no_local_token(
+        self, mock_default, mock_fetch
+    ):
+        """Tests exception is raised if audience is required but not provided."""
+        error_msg = "You are not authenticating using User Credentials."
+        with pytest.raises(Exception, match=error_msg):
+            # Call without an audience to trigger the error path
+            auth_methods.get_google_id_token()
+
+        mock_default.assert_called_once()
+        mock_fetch.assert_not_called()
