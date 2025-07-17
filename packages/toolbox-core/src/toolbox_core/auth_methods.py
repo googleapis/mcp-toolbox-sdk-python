@@ -24,16 +24,15 @@ from toolbox_core import auth_methods
 URL = "https://toolbox-service-url"
 async with ToolboxClient(
     URL,
-    client_headers={"Authorization": auth_methods.aget_google_id_token}) 
+    client_headers={"Authorization": auth_methods.aget_google_id_token})
 as toolbox:
     tools = await toolbox.load_toolset()
 """
 
 import asyncio
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, Optional, Callable, Coroutine
+from typing import Any, Callable, Coroutine, Dict, Optional
 
-import google.auth
 from google.auth.exceptions import GoogleAuthError
 from google.auth.transport.requests import AuthorizedSession, Request
 from google.oauth2 import id_token
@@ -87,7 +86,8 @@ def _update_cache(new_token: str) -> None:
         _token_cache["token"] = None
         _token_cache["expires_at"] = datetime.min.replace(tzinfo=timezone.utc)
         raise ValueError(f"Failed to validate and cache the new token: {e}") from e
-    
+
+
 def get_google_token_from_aud(audience: Optional[str] = None) -> str:
     if _is_token_valid():
         return BEARER_TOKEN_PREFIX + _token_cache["token"]
@@ -140,13 +140,16 @@ def get_google_id_token(audience: Optional[str] = None) -> Callable[[], str]:
         GoogleAuthError: If fetching credentials or the token fails.
         ValueError: If the fetched token is invalid.
     """
+
     def _token_getter() -> str:
         return get_google_token_from_aud(audience)
 
     return _token_getter
 
 
-def aget_google_id_token(audience: Optional[str] = None) -> Callable[[], Coroutine[Any, Any, str]]:
+def aget_google_id_token(
+    audience: Optional[str] = None,
+) -> Callable[[], Coroutine[Any, Any, str]]:
     """
     Returns an ASYNC function that, when called, fetches a Google ID token.
     This function uses Application Default Credentials for local systems
@@ -163,7 +166,8 @@ def aget_google_id_token(audience: Optional[str] = None) -> Callable[[], Corouti
         GoogleAuthError: If fetching credentials or the token fails.
         ValueError: If the fetched token is invalid.
     """
+
     async def _token_getter() -> str:
         return await asyncio.to_thread(get_google_token_from_aud, audience)
-    
+
     return _token_getter
