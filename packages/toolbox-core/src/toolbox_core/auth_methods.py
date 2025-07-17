@@ -125,7 +125,7 @@ def get_google_token_from_aud(audience: Optional[str] = None) -> str:
 
 def get_google_id_token(audience: Optional[str] = None) -> Callable[[], str]:
     """
-    Synchronously fetches a Google ID token for a specific audience.
+    Returns a SYNC function that, when called, fetches a Google ID token.
     This function uses Application Default Credentials for local systems
     and standard google auth libraries for Google Cloud environments.
     It caches the token in memory.
@@ -134,7 +134,7 @@ def get_google_id_token(audience: Optional[str] = None) -> Callable[[], str]:
         audience: The audience for the ID token (e.g., a service URL or client ID).
 
     Returns:
-        A string in the format "Bearer <google_id_token>".
+        A function that when executed returns string in the format "Bearer <google_id_token>".
 
     Raises:
         GoogleAuthError: If fetching credentials or the token fails.
@@ -146,9 +146,9 @@ def get_google_id_token(audience: Optional[str] = None) -> Callable[[], str]:
     return _token_getter
 
 
-async def aget_google_id_token(audience: Optional[str] = None) -> Callable[[], Coroutine[Any, Any, str]]:
+def aget_google_id_token(audience: Optional[str] = None) -> Callable[[], Coroutine[Any, Any, str]]:
     """
-    Asynchronously fetches a Google ID token for a specific audience.
+    Returns an ASYNC function that, when called, fetches a Google ID token.
     This function uses Application Default Credentials for local systems
     and standard google auth libraries for Google Cloud environments.
     It caches the token in memory.
@@ -157,7 +157,7 @@ async def aget_google_id_token(audience: Optional[str] = None) -> Callable[[], C
         audience: The audience for the ID token (e.g., a service URL or client ID).
 
     Returns:
-        A string in the format "Bearer <google_id_token>".
+        An async function that when executed returns string in the format "Bearer <google_id_token>".
 
     Raises:
         GoogleAuthError: If fetching credentials or the token fails.
