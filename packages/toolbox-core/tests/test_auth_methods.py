@@ -48,10 +48,10 @@ def reset_cache():
 class TestAsyncAuthMethods:
     """Tests for asynchronous Google ID token fetching."""
 
-    @patch("google.oauth2.id_token.verify_oauth2_token")
-    @patch("google.oauth2.id_token.fetch_id_token")
+    @patch("toolbox_core.auth_methods.id_token.verify_oauth2_token")
+    @patch("toolbox_core.auth_methods.id_token.fetch_id_token")
     @patch(
-        "google.auth.default",
+        "toolbox_core.auth_methods.google.auth.default",
         return_value=(MagicMock(id_token=None), MOCK_PROJECT_ID),
     )
     async def test_aget_google_id_token_success_first_call(
@@ -70,7 +70,7 @@ class TestAsyncAuthMethods:
         assert auth_methods._token_cache["token"] == MOCK_ID_TOKEN
         assert auth_methods._token_cache["expires_at"] == MOCK_EXPIRY_DATETIME
 
-    @patch("google.auth.default")
+    @patch("toolbox_core.auth_methods.google.auth.default")
     async def test_aget_google_id_token_success_uses_cache(self, mock_default):
         """Tests that subsequent calls use the cached token if valid."""
         auth_methods._token_cache["token"] = MOCK_ID_TOKEN
@@ -84,10 +84,10 @@ class TestAsyncAuthMethods:
         mock_default.assert_not_called()
         assert token == f"{auth_methods.BEARER_TOKEN_PREFIX}{MOCK_ID_TOKEN}"
 
-    @patch("google.oauth2.id_token.verify_oauth2_token")
-    @patch("google.oauth2.id_token.fetch_id_token")
+    @patch("toolbox_core.auth_methods.id_token.verify_oauth2_token")
+    @patch("toolbox_core.auth_methods.id_token.fetch_id_token")
     @patch(
-        "google.auth.default",
+        "toolbox_core.auth_methods.google.auth.default",
         return_value=(MagicMock(id_token=None), MOCK_PROJECT_ID),
     )
     async def test_aget_google_id_token_refreshes_expired_cache(
@@ -110,9 +110,9 @@ class TestAsyncAuthMethods:
         assert token == f"{auth_methods.BEARER_TOKEN_PREFIX}{MOCK_ID_TOKEN}"
         assert auth_methods._token_cache["token"] == MOCK_ID_TOKEN
 
-    @patch("google.oauth2.id_token.fetch_id_token")
+    @patch("toolbox_core.auth_methods.id_token.fetch_id_token")
     @patch(
-        "google.auth.default",
+        "toolbox_core.auth_methods.google.auth.default",
         return_value=(MagicMock(id_token=None), MOCK_PROJECT_ID),
     )
     async def test_aget_raises_if_no_audience_and_no_local_token(
@@ -131,10 +131,10 @@ class TestAsyncAuthMethods:
 class TestSyncAuthMethods:
     """Tests for synchronous Google ID token fetching."""
 
-    @patch("google.oauth2.id_token.verify_oauth2_token")
-    @patch("google.auth.transport.requests.Request")
-    @patch("google.auth.transport.requests.AuthorizedSession")
-    @patch("google.auth.default")
+    @patch("toolbox_core.auth_methods.id_token.verify_oauth2_token")
+    @patch("toolbox_core.auth_methods.Request")
+    @patch("toolbox_core.auth_methods.AuthorizedSession")
+    @patch("toolbox_core.auth_methods.google.auth.default")
     def test_get_google_id_token_success_local_creds(
         self, mock_default, mock_session, mock_request, mock_verify
     ):
@@ -159,7 +159,7 @@ class TestSyncAuthMethods:
         assert auth_methods._token_cache["token"] == MOCK_ID_TOKEN
         assert auth_methods._token_cache["expires_at"] == MOCK_EXPIRY_DATETIME
 
-    @patch("google.auth.default")
+    @patch("toolbox_core.auth_methods.google.auth.default")
     def test_get_google_id_token_success_uses_cache(self, mock_default):
         """Tests that subsequent calls use the cached token if valid."""
         auth_methods._token_cache["token"] = MOCK_ID_TOKEN
@@ -173,10 +173,10 @@ class TestSyncAuthMethods:
         mock_default.assert_not_called()
         assert token == f"{auth_methods.BEARER_TOKEN_PREFIX}{MOCK_ID_TOKEN}"
 
-    @patch("google.oauth2.id_token.verify_oauth2_token")
-    @patch("google.oauth2.id_token.fetch_id_token")
+    @patch("toolbox_core.auth_methods.id_token.verify_oauth2_token")
+    @patch("toolbox_core.auth_methods.id_token.fetch_id_token")
     @patch(
-        "google.auth.default",
+        "toolbox_core.auth_methods.google.auth.default",
         return_value=(MagicMock(id_token=None), MOCK_PROJECT_ID),
     )
     def test_get_google_id_token_fetch_failure(
@@ -193,10 +193,10 @@ class TestSyncAuthMethods:
         mock_fetch.assert_called_once()
         mock_verify.assert_not_called()
 
-    @patch("google.oauth2.id_token.verify_oauth2_token")
-    @patch("google.oauth2.id_token.fetch_id_token")
+    @patch("toolbox_core.auth_methods.id_token.verify_oauth2_token")
+    @patch("toolbox_core.auth_methods.id_token.fetch_id_token")
     @patch(
-        "google.auth.default",
+        "toolbox_core.auth_methods.google.auth.default",
         return_value=(MagicMock(id_token=None), MOCK_PROJECT_ID),
     )
     def test_get_google_id_token_validation_failure(
@@ -213,9 +213,9 @@ class TestSyncAuthMethods:
 
         assert auth_methods._token_cache["token"] is None
 
-    @patch("google.oauth2.id_token.fetch_id_token")
+    @patch("toolbox_core.auth_methods.id_token.fetch_id_token")
     @patch(
-        "google.auth.default",
+        "toolbox_core.auth_methods.google.auth.default",
         return_value=(MagicMock(id_token=None), MOCK_PROJECT_ID),
     )
     def test_get_raises_if_no_audience_and_no_local_token(
