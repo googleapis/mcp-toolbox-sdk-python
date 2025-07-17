@@ -33,6 +33,7 @@ import asyncio
 from datetime import datetime, timedelta, timezone
 from typing import Any, Callable, Coroutine, Dict, Optional
 
+import google.auth
 from google.auth.exceptions import GoogleAuthError
 from google.auth.transport.requests import AuthorizedSession, Request
 from google.oauth2 import id_token
