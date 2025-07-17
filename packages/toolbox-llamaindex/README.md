@@ -251,7 +251,7 @@ For Toolbox servers hosted on Google Cloud (e.g., Cloud Run) and requiring
     from toolbox_llamaindex import ToolboxClient
     from toolbox_core import auth_methods
 
-    auth_token_provider = auth_methods.aget_google_id_token # can also use sync method
+    auth_token_provider = auth_methods.aget_google_id_token(URL)
     async with ToolboxClient(
         URL,
         client_headers={"Authorization": auth_token_provider},
