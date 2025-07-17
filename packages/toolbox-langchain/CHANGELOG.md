@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.4.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-langchain-v0.3.0...toolbox-langchain-v0.4.0) (2025-07-17)
+
+
+### ⚠ BREAKING CHANGES
+
+* fix auth_methods module ([#313](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/313))
+
+### Features
+
+* **toolbox-langchain:** Enable sync and async context management for ToolboxClient ([#308](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/308)) ([2378598](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/23785985ef5b891bed69843d4981a6e417b5c048))
+
+
+### Bug Fixes
+
+* **deps:** update python-nonmajor ([#305](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/305)) ([1b0c666](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/1b0c666f75fa71ff37a2a46df6537ca9a62a4776))
+* **deps:** update python-nonmajor ([#312](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/312)) ([14e4284](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/14e4284a40a4372276acf659b2d5296082bb2487))
+* **deps:** update python-nonmajor ([#314](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/314)) ([81d862b](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/81d862b1ec42227d2702b34cf95ab45f526d3a15))
+* fix auth_methods module ([#313](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/313)) ([6cf6d6b](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/6cf6d6ba3cd67d7c4e18e919a10c37f34971dcf1))
+
+
+### Miscellaneous Chores
+
+* **deps:** update python-nonmajor ([#303](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/303)) ([f881635](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/f881635ec28175ddb6d081c8030e52081dd6d140))
+* **deps:** update python-nonmajor ([#306](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/306)) ([bf4bed3](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/bf4bed37b5d304df9809e610403bbd799da61b0c))
+
 ## [0.3.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-langchain-v0.2.1...toolbox-langchain-v0.3.0) (2025-07-02)
 
 
