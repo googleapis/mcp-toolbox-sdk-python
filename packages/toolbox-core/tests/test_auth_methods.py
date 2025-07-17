@@ -44,9 +44,6 @@ def reset_cache():
     auth_methods._token_cache = original_cache
 
 
-
-
-
 @pytest.mark.asyncio
 class TestAsyncAuthMethods:
     """Tests for asynchronous Google ID token fetching."""
