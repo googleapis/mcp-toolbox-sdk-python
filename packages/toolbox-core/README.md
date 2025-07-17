@@ -337,7 +337,7 @@ For Toolbox servers hosted on Google Cloud (e.g., Cloud Run) and requiring
     ```python
     from toolbox_core import auth_methods
 
-    auth_token_provider = auth_methods.aget_google_id_token # can also use sync method
+    auth_token_provider = auth_methods.aget_google_id_token(URL) # can also use sync method
     async with ToolboxClient(
         URL,
         client_headers={"Authorization": auth_token_provider},
