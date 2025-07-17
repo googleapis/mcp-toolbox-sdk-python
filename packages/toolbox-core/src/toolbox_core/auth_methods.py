@@ -20,7 +20,6 @@ headers. It uses a simple in-memory cache to avoid refetching on every call.
 
 Example Usage:
 from toolbox_core import auth_methods
-from functools import partial
 
 URL = "https://toolbox-service-url"
 async with ToolboxClient(

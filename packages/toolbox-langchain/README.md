@@ -269,11 +269,10 @@ For Toolbox servers hosted on Google Cloud (e.g., Cloud Run) and requiring
 3. **Connect to the Toolbox Server**
 
     ```python
-    from functools import partial
     from toolbox_langchain import ToolboxClient
     from toolbox_core import auth_methods
 
-    auth_token_provider = partial(auth_methods.aget_google_id_token, URL) # can also use sync method
+    auth_token_provider = auth_methods.aget_google_id_token(URL) # can also use sync method
     async with ToolboxClient(
         URL,
         client_headers={"Authorization": auth_token_provider},
