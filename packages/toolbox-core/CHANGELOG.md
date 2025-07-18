@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v0.3.0...toolbox-core-v0.4.0) (2025-07-17)
+
+
+### ⚠ BREAKING CHANGES
+
+*  **toolbox-core:** fix auth_methods module ([#313](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/313))
+
+### Bug Fixes
+
+*  **toolbox-core:** fix auth_methods module ([#313](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/313)) ([6cf6d6b](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/6cf6d6ba3cd67d7c4e18e919a10c37f34971dcf1))
+  
+
 ## [0.3.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v0.2.1...toolbox-core-v0.3.0) (2025-07-02)
 
 

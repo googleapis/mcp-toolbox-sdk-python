@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.4.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-langchain-v0.3.0...toolbox-langchain-v0.4.0) (2025-07-17)
+
+
+### ⚠ BREAKING CHANGES
+
+* fix auth_methods module ([#313](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/313))
+
+### Features
+
+* **toolbox-langchain:** Enable sync and async context management for ToolboxClient ([#308](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/308)) ([2378598](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/23785985ef5b891bed69843d4981a6e417b5c048))
+
+
+### Bug Fixes
+
+* fix auth_methods module ([#313](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/313)) ([6cf6d6b](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/6cf6d6ba3cd67d7c4e18e919a10c37f34971dcf1))
+  
+
 ## [0.3.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-langchain-v0.2.1...toolbox-langchain-v0.3.0) (2025-07-02)
 
 
