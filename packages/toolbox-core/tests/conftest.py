@@ -75,7 +75,7 @@ def get_toolbox_binary_url(toolbox_version: str) -> str:
     arch = (
         "arm64" if os_system == "darwin" and platform.machine() == "arm64" else "amd64"
     )
-    return f"v{toolbox_version}/{os_system}/{arch}/toolbox"
+    return f"{toolbox_version}/{os_system}/{arch}/toolbox"
 
 
 def get_auth_token(client_id: str) -> str:
@@ -100,6 +100,11 @@ def project_id() -> str:
 @pytest_asyncio.fixture(scope="session")
 def toolbox_version() -> str:
     return get_env_var("TOOLBOX_VERSION")
+
+
+@pytest_asyncio.fixture(scope="session")
+def toolbox_bucket() -> str:
+    return get_env_var("TOOLBOX_BUCKET")
 
 
 @pytest_asyncio.fixture(scope="session")
@@ -130,11 +135,13 @@ def auth_token2(project_id: str) -> str:
 
 
 @pytest_asyncio.fixture(scope="session")
-def toolbox_server(toolbox_version: str, tools_file_path: str) -> Generator[None]:
+def toolbox_server(
+    toolbox_version: str, toolbox_bucket: str, tools_file_path: str
+) -> Generator[None]:
     """Starts the toolbox server as a subprocess."""
     print("Downloading toolbox binary from gcs bucket...")
     source_blob_name = get_toolbox_binary_url(toolbox_version)
-    download_blob("genai-toolbox", source_blob_name, "toolbox")
+    download_blob(toolbox_bucket, source_blob_name, "toolbox")
     print("Toolbox binary downloaded successfully.")
     try:
         print("Opening toolbox server process...")
