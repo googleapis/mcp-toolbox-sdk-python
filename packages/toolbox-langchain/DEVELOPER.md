@@ -89,7 +89,7 @@ The repository enforces code style and type adherence using `black`, `isort`,
 and `mypy`. To run these checks locally:
 
 1. Install test dependencies as described in "Local Tests" section
-   [above](#loca).
+   [above](#local-tests).
 1. Run the linters and type checker from the `packages/toolbox-langchain`
    directory:
     ```bash
