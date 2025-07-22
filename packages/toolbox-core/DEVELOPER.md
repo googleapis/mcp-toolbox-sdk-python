@@ -97,8 +97,8 @@ and `mypy`. To run these checks locally:
 
 ### CI and GitHub Actions
 
-This repository uses GitHub Actions for CI. Linting, type-checking, and
-integration tests are run automatically on pull requests.
+This repository uses GitHub Actions for CI. Linting, type-checking, Cloud Build
+triggers, and integration tests are run automatically on pull requests.
 
 * **Linting and Type Checking:** Configured in `lint-toolbox-core.yaml`.
 * **Integration Tests:** Executed via Cloud Build, defined in
