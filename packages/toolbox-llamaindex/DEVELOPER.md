@@ -148,10 +148,9 @@ This project uses `release-please` for automated releases.
   tags.
 * **Published Packages:** The release pipeline produces Python packages,
   including:
-    * `toolbox-core`
-    * `toolbox-langchain`
-    * `toolbox-llamaindex` These packages are published to
-    [PyPI](https://pypi.org/).
+    * [`toolbox-core`](https://pypi.org/project/toolbox-core/)
+    * [`toolbox-langchain`](https://pypi.org/project/toolbox-langchain/)
+    * [`toolbox-llamaindex`](https://pypi.org/project/toolbox-llamaindex/)
 * **Release Trigger:** Releases are typically triggered automatically based on
   merges to the `main` branch, as configured in `release-trigger.yml`.
 
