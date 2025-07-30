@@ -1,4 +1,4 @@
-aiohttp==3.12.14
+aiohttp==3.12.15
 pydantic==2.11.7
 deprecated==1.2.18
 requests==2.32.4
