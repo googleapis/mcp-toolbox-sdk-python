@@ -2,5 +2,5 @@
 llama-index==0.12.52
 PyYAML==6.0.2
 pydantic==2.11.7
-aiohttp==3.12.14
+aiohttp==3.12.15
 deprecated==1.2.18
