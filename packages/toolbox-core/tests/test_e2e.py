@@ -432,7 +432,7 @@ class TestMapParams:
         assert isinstance(response, str)
         assert '"execution_context":{"env":"dev"}' in response
         assert '"user_scores":{"user3":300}' in response
-        assert '"feature_flags":null"' in response
+        assert '"feature_flags":null' in response
 
     async def test_run_tool_with_wrong_map_value_type(self, toolbox: ToolboxClient):
         """Invoke a tool with a map parameter having the wrong value type."""
