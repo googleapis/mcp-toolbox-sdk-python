@@ -45,7 +45,7 @@ class ParameterSchema(BaseModel):
             if self.items is None:
                 raise ValueError("Unexpected value: type is 'array' but items is None")
             base_type = list[self.items.__get_type()]  # type: ignore
-        elif self.type == "map":
+        elif self.type == "object":
             if self.valueType:
                 if self.valueType == "string":
                     base_type = dict[str, str]
