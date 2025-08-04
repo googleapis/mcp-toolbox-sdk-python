@@ -48,7 +48,7 @@ class ParameterSchema(BaseModel):
         elif self.type == "object":
             if isinstance(self.AdditionalProperties, ParameterSchema):
                 value_type = self.AdditionalProperties.__get_type()
-                base_type = dict[str, value_type]
+                base_type = dict[str, value_type]  # type: ignore
             else:
                 base_type = dict[str, Any]
         else:
