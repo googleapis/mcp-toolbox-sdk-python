@@ -86,11 +86,11 @@ def test_parameter_schema_array_no_items_error():
         name="bad_list", type="array", description="List without item type"
     )
 
-    expected_error_msg = "Unexpected value: type is 'list' but items is None"
-    with pytest.raises(Exception, match=expected_error_msg):
+    expected_error_msg = "Unexpected value: type is 'array' but items is None"
+    with pytest.raises(ValueError, match=expected_error_msg):
         schema._ParameterSchema__get_type()
 
-    with pytest.raises(Exception, match=expected_error_msg):
+    with pytest.raises(ValueError, match=expected_error_msg):
         schema.to_param()
 
 
