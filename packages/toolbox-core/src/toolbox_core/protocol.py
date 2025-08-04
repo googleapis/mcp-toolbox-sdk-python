@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from inspect import Parameter
-from typing import Any, Optional, Type
+from typing import Any, Optional, Type, Union
 
 from pydantic import BaseModel
 
@@ -29,7 +29,7 @@ class ParameterSchema(BaseModel):
     description: str
     authSources: Optional[list[str]] = None
     items: Optional["ParameterSchema"] = None
-    valueType: Optional[str] = None
+    AdditionalProperties: Optional[Union[bool, "ParameterSchema"]] = None
 
     def __get_type(self) -> Type:
         base_type: Type
@@ -46,17 +46,9 @@ class ParameterSchema(BaseModel):
                 raise ValueError("Unexpected value: type is 'array' but items is None")
             base_type = list[self.items.__get_type()]  # type: ignore
         elif self.type == "object":
-            if self.valueType:
-                if self.valueType == "string":
-                    base_type = dict[str, str]
-                elif self.valueType == "integer":
-                    base_type = dict[str, int]
-                elif self.valueType == "float":
-                    base_type = dict[str, float]
-                elif self.valueType == "boolean":
-                    base_type = dict[str, bool]
-                else:
-                    raise ValueError(f"Unsupported map value type: {self.valueType}")
+            if isinstance(self.AdditionalProperties, ParameterSchema):
+                value_type = self.AdditionalProperties.__get_type()
+                base_type = dict[str, value_type]
             else:
                 base_type = dict[str, Any]
         else:
