@@ -72,7 +72,7 @@ def _update_cache(new_token: str) -> None:
         # signature and claims against Google's public keys.
         # It's a synchronous, CPU-bound operation, safe for async contexts.
         claims = id_token.verify_oauth2_token(
-            new_token, Request(), clock_skew_in_seconds=60
+            new_token, Request(), clock_skew_in_seconds=10
         )
 
         expiry_timestamp = claims.get("exp")
