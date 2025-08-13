@@ -41,6 +41,7 @@ from google.oauth2 import id_token
 # --- Constants ---
 BEARER_TOKEN_PREFIX = "Bearer "
 CACHE_REFRESH_MARGIN = timedelta(seconds=60)
+DEFAULT_CLOCK_SKEW = 10
 
 _token_cache: Dict[str, Any] = {
     "token": None,
@@ -57,7 +58,7 @@ def _is_token_valid() -> bool:
     )
 
 
-def _update_cache(new_token: str) -> None:
+def _update_cache(new_token: str, clock_skew_in_seconds: int) -> None:
     """
     Validates a new token, extracts its expiry, and updates the cache.
 
@@ -72,7 +73,7 @@ def _update_cache(new_token: str) -> None:
         # signature and claims against Google's public keys.
         # It's a synchronous, CPU-bound operation, safe for async contexts.
         claims = id_token.verify_oauth2_token(
-            new_token, Request(), clock_skew_in_seconds=10
+            new_token, Request(), clock_skew_in_seconds
         )
 
         expiry_timestamp = claims.get("exp")
@@ -91,7 +92,9 @@ def _update_cache(new_token: str) -> None:
         raise ValueError(f"Failed to validate and cache the new token: {e}") from e
 
 
-def get_google_token_from_aud(audience: Optional[str] = None) -> str:
+def get_google_token_from_aud(
+    clock_skew_in_seconds: int, audience: Optional[str] = None
+) -> str:
     if _is_token_valid():
         return BEARER_TOKEN_PREFIX + _token_cache["token"]
 
@@ -104,7 +107,7 @@ def get_google_token_from_aud(audience: Optional[str] = None) -> str:
     if hasattr(credentials, "id_token"):
         new_id_token = getattr(credentials, "id_token", None)
         if new_id_token:
-            _update_cache(new_id_token)
+            _update_cache(new_id_token, clock_skew_in_seconds)
             return BEARER_TOKEN_PREFIX + new_id_token
 
     if audience is None:
@@ -117,7 +120,7 @@ def get_google_token_from_aud(audience: Optional[str] = None) -> str:
     try:
         request = Request()
         new_token = id_token.fetch_id_token(request, audience)
-        _update_cache(new_token)
+        _update_cache(new_token, clock_skew_in_seconds)
         return BEARER_TOKEN_PREFIX + _token_cache["token"]
 
     except GoogleAuthError as e:
@@ -126,7 +129,9 @@ def get_google_token_from_aud(audience: Optional[str] = None) -> str:
         ) from e
 
 
-def get_google_id_token(audience: Optional[str] = None) -> Callable[[], str]:
+def get_google_id_token(
+    audience: Optional[str] = None, clock_skew_in_seconds: int = DEFAULT_CLOCK_SKEW
+) -> Callable[[], str]:
     """
     Returns a SYNC function that, when called, fetches a Google ID token.
     This function uses Application Default Credentials for local systems
@@ -145,13 +150,13 @@ def get_google_id_token(audience: Optional[str] = None) -> Callable[[], str]:
     """
 
     def _token_getter() -> str:
-        return get_google_token_from_aud(audience)
+        return get_google_token_from_aud(clock_skew_in_seconds, audience)
 
     return _token_getter
 
 
 def aget_google_id_token(
-    audience: Optional[str] = None,
+    audience: Optional[str] = None, clock_skew_in_seconds: int = DEFAULT_CLOCK_SKEW
 ) -> Callable[[], Coroutine[Any, Any, str]]:
     """
     Returns an ASYNC function that, when called, fetches a Google ID token.
@@ -171,6 +176,8 @@ def aget_google_id_token(
     """
 
     async def _token_getter() -> str:
-        return await asyncio.to_thread(get_google_token_from_aud, audience)
+        return await asyncio.to_thread(
+            get_google_token_from_aud, clock_skew_in_seconds, audience
+        )
 
     return _token_getter
