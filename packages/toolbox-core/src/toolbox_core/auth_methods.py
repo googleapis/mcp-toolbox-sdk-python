@@ -58,7 +58,7 @@ def _is_token_valid() -> bool:
     )
 
 
-def _update_cache(new_token: str, clock_skew_seconds: int) -> None:
+def _update_cache(new_token: str, clock_skew_in_seconds: int) -> None:
     """
     Validates a new token, extracts its expiry, and updates the cache.
 
@@ -73,7 +73,7 @@ def _update_cache(new_token: str, clock_skew_seconds: int) -> None:
         # signature and claims against Google's public keys.
         # It's a synchronous, CPU-bound operation, safe for async contexts.
         claims = id_token.verify_oauth2_token(
-            new_token, Request(), clock_skew_in_seconds=clock_skew_seconds
+            new_token, Request(), clock_skew_in_seconds=clock_skew_in_seconds
         )
 
         expiry_timestamp = claims.get("exp")
@@ -93,11 +93,11 @@ def _update_cache(new_token: str, clock_skew_seconds: int) -> None:
 
 
 def get_google_token_from_aud(
-    clock_skew_seconds: int, audience: Optional[str] = None
+    clock_skew_in_seconds: int, audience: Optional[str] = None
 ) -> str:
-    if clock_skew_seconds < 0 or clock_skew_seconds > 60:
+    if clock_skew_in_seconds < 0 or clock_skew_in_seconds > 60:
         raise ValueError(
-            f"Illegal clock_skew_seconds value: {clock_skew_seconds}. Must be between 0 and 60"
+            f"Illegal clock_skew_in_seconds value: {clock_skew_in_seconds}. Must be between 0 and 60"
             ", inclusive."
         )
 
@@ -113,7 +113,7 @@ def get_google_token_from_aud(
     if hasattr(credentials, "id_token"):
         new_id_token = getattr(credentials, "id_token", None)
         if new_id_token:
-            _update_cache(new_id_token, clock_skew_seconds)
+            _update_cache(new_id_token, clock_skew_in_seconds)
             return BEARER_TOKEN_PREFIX + new_id_token
 
     if audience is None:
@@ -126,7 +126,7 @@ def get_google_token_from_aud(
     try:
         request = Request()
         new_token = id_token.fetch_id_token(request, audience)
-        _update_cache(new_token, clock_skew_seconds)
+        _update_cache(new_token, clock_skew_in_seconds)
         return BEARER_TOKEN_PREFIX + _token_cache["token"]
 
     except GoogleAuthError as e:
@@ -136,7 +136,7 @@ def get_google_token_from_aud(
 
 
 def get_google_id_token(
-    audience: Optional[str] = None, clock_skew_seconds: int = DEFAULT_CLOCK_SKEW
+    audience: Optional[str] = None, clock_skew_in_seconds: int = DEFAULT_CLOCK_SKEW
 ) -> Callable[[], str]:
     """
     Returns a SYNC function that, when called, fetches a Google ID token.
@@ -147,7 +147,7 @@ def get_google_id_token(
     Args:
         audience: The audience for the ID token (e.g., a service URL or client
         ID).
-        clock_skew_seconds: The number of seconds to tolerate when checking the token.
+        clock_skew_in_seconds: The number of seconds to tolerate when checking the token.
             Must be between 0-60. Defaults to 0.
 
     Returns:
@@ -159,13 +159,13 @@ def get_google_id_token(
     """
 
     def _token_getter() -> str:
-        return get_google_token_from_aud(clock_skew_seconds, audience)
+        return get_google_token_from_aud(clock_skew_in_seconds, audience)
 
     return _token_getter
 
 
 def aget_google_id_token(
-    audience: Optional[str] = None, clock_skew_seconds: int = DEFAULT_CLOCK_SKEW
+    audience: Optional[str] = None, clock_skew_in_seconds: int = DEFAULT_CLOCK_SKEW
 ) -> Callable[[], Coroutine[Any, Any, str]]:
     """
     Returns an ASYNC function that, when called, fetches a Google ID token.
@@ -176,7 +176,7 @@ def aget_google_id_token(
     Args:
         audience: The audience for the ID token (e.g., a service URL or client
         ID).
-        clock_skew_seconds: The number of seconds to tolerate when checking the token.
+        clock_skew_in_seconds: The number of seconds to tolerate when checking the token.
             Must be between 0-60. Defaults to 0.
 
     Returns:
@@ -189,7 +189,7 @@ def aget_google_id_token(
 
     async def _token_getter() -> str:
         return await asyncio.to_thread(
-            get_google_token_from_aud, clock_skew_seconds, audience
+            get_google_token_from_aud, clock_skew_in_seconds, audience
         )
 
     return _token_getter
