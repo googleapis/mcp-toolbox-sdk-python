@@ -154,9 +154,7 @@ class TestSyncAuthMethods:
         mock_default.assert_called_once_with()
         mock_session.assert_called_once_with(mock_creds)
         mock_creds.refresh.assert_called_once_with(mock_request_instance)
-        mock_verify.assert_called_once_with(
-            MOCK_ID_TOKEN, ANY, clock_skew_in_seconds=10
-        )
+        mock_verify.assert_called_once_with(MOCK_ID_TOKEN, ANY, clock_skew_seconds=0)
         assert token == f"{auth_methods.BEARER_TOKEN_PREFIX}{MOCK_ID_TOKEN}"
         assert auth_methods._token_cache["token"] == MOCK_ID_TOKEN
         assert auth_methods._token_cache["expires_at"] == MOCK_EXPIRY_DATETIME
