@@ -95,6 +95,12 @@ def _update_cache(new_token: str, clock_skew_in_seconds: int) -> None:
 def get_google_token_from_aud(
     clock_skew_in_seconds: int, audience: Optional[str] = None
 ) -> str:
+    if clock_skew_in_seconds < 0 or clock_skew_in_seconds > 60:
+        raise ValueError(
+            f"Illegal clock_skew_seconds value: {clock_skew_in_seconds}. Must be between 0 and 60"
+            ", inclusive."
+        )
+
     if _is_token_valid():
         return BEARER_TOKEN_PREFIX + _token_cache["token"]
 
