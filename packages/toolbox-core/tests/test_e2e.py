@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from inspect import Parameter, signature
-from typing import Optional
+from typing import Any, Optional
 
 import pytest
 import pytest_asyncio
@@ -68,7 +68,7 @@ class TestBasicE2E:
     async def test_load_toolset_default(self, toolbox: ToolboxClient):
         """Load the default toolset, i.e. all tools."""
         toolset = await toolbox.load_toolset()
-        assert len(toolset) == 6
+        assert len(toolset) == 7
         tool_names = {tool.__name__ for tool in toolset}
         expected_tools = [
             "get-row-by-content-auth",
@@ -77,6 +77,7 @@ class TestBasicE2E:
             "get-row-by-id",
             "get-n-rows",
             "search-rows",
+            "process-data",
         ]
         assert tool_names == set(expected_tools)
 
@@ -379,3 +380,66 @@ class TestOptionalParams:
         response = await tool(email="twishabansal@google.com", id=4, data="row3")
         assert isinstance(response, str)
         assert response == "null"
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("toolbox_server")
+class TestMapParams:
+    """
+    End-to-end tests for tools with map parameters.
+    """
+
+    async def test_tool_signature_with_map_params(self, toolbox: ToolboxClient):
+        """Verify the client correctly constructs the signature for a tool with map params."""
+        tool = await toolbox.load_tool("process-data")
+        sig = signature(tool)
+
+        assert "execution_context" in sig.parameters
+        assert sig.parameters["execution_context"].annotation == dict[str, Any]
+        assert sig.parameters["execution_context"].default is Parameter.empty
+
+        assert "user_scores" in sig.parameters
+        assert sig.parameters["user_scores"].annotation == dict[str, int]
+        assert sig.parameters["user_scores"].default is Parameter.empty
+
+        assert "feature_flags" in sig.parameters
+        assert sig.parameters["feature_flags"].annotation == Optional[dict[str, bool]]
+        assert sig.parameters["feature_flags"].default is None
+
+    async def test_run_tool_with_map_params(self, toolbox: ToolboxClient):
+        """Invoke a tool with valid map parameters."""
+        tool = await toolbox.load_tool("process-data")
+
+        response = await tool(
+            execution_context={"env": "prod", "id": 1234, "user": 1234.5},
+            user_scores={"user1": 100, "user2": 200},
+            feature_flags={"new_feature": True},
+        )
+        assert isinstance(response, str)
+        assert '"execution_context":{"env":"prod","id":1234,"user":1234.5}' in response
+        assert '"user_scores":{"user1":100,"user2":200}' in response
+        assert '"feature_flags":{"new_feature":true}' in response
+
+    async def test_run_tool_with_optional_map_param_omitted(
+        self, toolbox: ToolboxClient
+    ):
+        """Invoke a tool without the optional map parameter."""
+        tool = await toolbox.load_tool("process-data")
+
+        response = await tool(
+            execution_context={"env": "dev"}, user_scores={"user3": 300}
+        )
+        assert isinstance(response, str)
+        assert '"execution_context":{"env":"dev"}' in response
+        assert '"user_scores":{"user3":300}' in response
+        assert '"feature_flags":null' in response
+
+    async def test_run_tool_with_wrong_map_value_type(self, toolbox: ToolboxClient):
+        """Invoke a tool with a map parameter having the wrong value type."""
+        tool = await toolbox.load_tool("process-data")
+
+        with pytest.raises(ValidationError):
+            await tool(
+                execution_context={"env": "staging"},
+                user_scores={"user4": "not-an-integer"},
+            )
