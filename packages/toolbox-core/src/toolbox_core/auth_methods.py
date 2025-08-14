@@ -93,7 +93,7 @@ def _update_cache(new_token: str, clock_skew_in_seconds: int) -> None:
 
 
 def get_google_token_from_aud(
-    clock_skew_in_seconds: int, audience: Optional[str] = None
+    clock_skew_in_seconds: int = 0, audience: Optional[str] = None
 ) -> str:
     if clock_skew_in_seconds < 0 or clock_skew_in_seconds > 60:
         raise ValueError(
