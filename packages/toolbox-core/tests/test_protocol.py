@@ -18,7 +18,7 @@ from typing import Any, Optional
 
 import pytest
 
-from toolbox_core.protocol import ParameterSchema
+from toolbox_core.protocol import AdditionalPropertiesSchema, ParameterSchema
 
 
 def test_parameter_schema_float():
@@ -196,7 +196,7 @@ def test_parameter_schema_map_typed_string():
         name="headers",
         type="object",
         description="HTTP headers",
-        additionalProperties=ParameterSchema(name="", type="string", description=""),
+        additionalProperties=AdditionalPropertiesSchema(type="string"),
     )
     expected_type = dict[str, str]
     assert schema._ParameterSchema__get_type() == expected_type
@@ -211,7 +211,7 @@ def test_parameter_schema_map_typed_integer():
         name="user_scores",
         type="object",
         description="User scores",
-        additionalProperties=ParameterSchema(name="", type="integer", description=""),
+        additionalProperties=AdditionalPropertiesSchema(type="integer"),
     )
     expected_type = dict[str, int]
     assert schema._ParameterSchema__get_type() == expected_type
@@ -225,7 +225,7 @@ def test_parameter_schema_map_typed_float():
         name="item_prices",
         type="object",
         description="Item prices",
-        additionalProperties=ParameterSchema(name="", type="float", description=""),
+        additionalProperties=AdditionalPropertiesSchema(type="float"),
     )
     expected_type = dict[str, float]
     assert schema._ParameterSchema__get_type() == expected_type
@@ -239,7 +239,7 @@ def test_parameter_schema_map_typed_boolean():
         name="feature_flags",
         type="object",
         description="Feature flags",
-        additionalProperties=ParameterSchema(name="", type="boolean", description=""),
+        additionalProperties=AdditionalPropertiesSchema(type="boolean"),
     )
     expected_type = dict[str, bool]
     assert schema._ParameterSchema__get_type() == expected_type
@@ -271,9 +271,7 @@ def test_parameter_schema_map_unsupported_value_type_error():
         type="object",
         description="Custom data map",
         valueType=unsupported_type,
-        additionalProperties=ParameterSchema(
-            name="", type=unsupported_type, description=""
-        ),
+        additionalProperties=AdditionalPropertiesSchema(type=unsupported_type),
     )
     expected_error_msg = f"Unsupported schema type: {unsupported_type}"
     with pytest.raises(ValueError, match=expected_error_msg):

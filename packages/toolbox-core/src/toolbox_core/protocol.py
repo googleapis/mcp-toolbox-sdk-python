@@ -18,6 +18,27 @@ from typing import Any, Optional, Type, Union
 from pydantic import BaseModel
 
 
+class AdditionalPropertiesSchema(BaseModel):
+    """
+    Defines the value type for 'object' parameters.
+    """
+
+    type: str
+
+    def get_value_type(self) -> Type:
+        """Converts the string type to a Python type."""
+        if self.type == "string":
+            return str
+        elif self.type == "integer":
+            return int
+        elif self.type == "float":
+            return float
+        elif self.type == "boolean":
+            return bool
+        else:
+            raise ValueError(f"Unsupported schema type: {self.type}")
+
+
 class ParameterSchema(BaseModel):
     """
     Schema for a tool parameter.
@@ -29,7 +50,7 @@ class ParameterSchema(BaseModel):
     description: str
     authSources: Optional[list[str]] = None
     items: Optional["ParameterSchema"] = None
-    additionalProperties: Optional[Union[bool, "ParameterSchema"]] = None
+    additionalProperties: Optional[Union[bool, AdditionalPropertiesSchema]] = None
 
     def __get_type(self) -> Type:
         base_type: Type
@@ -46,8 +67,8 @@ class ParameterSchema(BaseModel):
                 raise ValueError("Unexpected value: type is 'array' but items is None")
             base_type = list[self.items.__get_type()]  # type: ignore
         elif self.type == "object":
-            if isinstance(self.additionalProperties, ParameterSchema):
-                value_type = self.additionalProperties.__get_type()
+            if isinstance(self.additionalProperties, AdditionalPropertiesSchema):
+                value_type = self.additionalProperties.get_value_type()
                 base_type = dict[str, value_type]  # type: ignore
             else:
                 base_type = dict[str, Any]
