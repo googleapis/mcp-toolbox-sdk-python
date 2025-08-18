@@ -29,7 +29,7 @@ class ParameterSchema(BaseModel):
     description: str
     authSources: Optional[list[str]] = None
     items: Optional["ParameterSchema"] = None
-    AdditionalProperties: Optional[Union[bool, "ParameterSchema"]] = None
+    additionalProperties: Optional[Union[bool, "ParameterSchema"]] = None
 
     def __get_type(self) -> Type:
         base_type: Type
@@ -46,8 +46,8 @@ class ParameterSchema(BaseModel):
                 raise ValueError("Unexpected value: type is 'array' but items is None")
             base_type = list[self.items.__get_type()]  # type: ignore
         elif self.type == "object":
-            if isinstance(self.AdditionalProperties, ParameterSchema):
-                value_type = self.AdditionalProperties.__get_type()
+            if isinstance(self.additionalProperties, ParameterSchema):
+                value_type = self.additionalProperties.__get_type()
                 base_type = dict[str, value_type]  # type: ignore
             else:
                 base_type = dict[str, Any]

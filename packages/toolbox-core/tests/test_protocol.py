@@ -178,7 +178,7 @@ def test_parameter_schema_map_generic():
         name="metadata",
         type="object",
         description="Some metadata",
-        AdditionalProperties=True,
+        additionalProperties=True,
     )
     expected_type = dict[str, Any]
     assert schema._ParameterSchema__get_type() == expected_type
@@ -196,7 +196,7 @@ def test_parameter_schema_map_typed_string():
         name="headers",
         type="object",
         description="HTTP headers",
-        AdditionalProperties=ParameterSchema(name="", type="string", description=""),
+        additionalProperties=ParameterSchema(name="", type="string", description=""),
     )
     expected_type = dict[str, str]
     assert schema._ParameterSchema__get_type() == expected_type
@@ -211,7 +211,7 @@ def test_parameter_schema_map_typed_integer():
         name="user_scores",
         type="object",
         description="User scores",
-        AdditionalProperties=ParameterSchema(name="", type="integer", description=""),
+        additionalProperties=ParameterSchema(name="", type="integer", description=""),
     )
     expected_type = dict[str, int]
     assert schema._ParameterSchema__get_type() == expected_type
@@ -225,7 +225,7 @@ def test_parameter_schema_map_typed_float():
         name="item_prices",
         type="object",
         description="Item prices",
-        AdditionalProperties=ParameterSchema(name="", type="float", description=""),
+        additionalProperties=ParameterSchema(name="", type="float", description=""),
     )
     expected_type = dict[str, float]
     assert schema._ParameterSchema__get_type() == expected_type
@@ -239,7 +239,7 @@ def test_parameter_schema_map_typed_boolean():
         name="feature_flags",
         type="object",
         description="Feature flags",
-        AdditionalProperties=ParameterSchema(name="", type="boolean", description=""),
+        additionalProperties=ParameterSchema(name="", type="boolean", description=""),
     )
     expected_type = dict[str, bool]
     assert schema._ParameterSchema__get_type() == expected_type
@@ -254,7 +254,7 @@ def test_parameter_schema_map_optional():
         type="object",
         description="Optional metadata",
         required=False,
-        AdditionalProperties=True,
+        additionalProperties=True,
     )
     expected_type = Optional[dict[str, Any]]
     assert schema._ParameterSchema__get_type() == expected_type
@@ -271,7 +271,7 @@ def test_parameter_schema_map_unsupported_value_type_error():
         type="object",
         description="Custom data map",
         valueType=unsupported_type,
-        AdditionalProperties=ParameterSchema(
+        additionalProperties=ParameterSchema(
             name="", type=unsupported_type, description=""
         ),
     )
