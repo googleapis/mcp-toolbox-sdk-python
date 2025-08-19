@@ -14,11 +14,11 @@
 
 
 from inspect import Parameter
-from typing import Optional
+from typing import Any, Optional
 
 import pytest
 
-from toolbox_core.protocol import ParameterSchema
+from toolbox_core.protocol import AdditionalPropertiesSchema, ParameterSchema
 
 
 def test_parameter_schema_float():
@@ -170,3 +170,109 @@ def test_parameter_schema_array_optional():
     assert param.annotation == expected_type
     assert param.kind == Parameter.POSITIONAL_OR_KEYWORD
     assert param.default is None
+
+
+def test_parameter_schema_map_generic():
+    """Tests ParameterSchema with a generic 'object' type."""
+    schema = ParameterSchema(
+        name="metadata",
+        type="object",
+        description="Some metadata",
+        additionalProperties=True,
+    )
+    expected_type = dict[str, Any]
+    assert schema._ParameterSchema__get_type() == expected_type
+
+    param = schema.to_param()
+    assert isinstance(param, Parameter)
+    assert param.name == "metadata"
+    assert param.annotation == expected_type
+    assert param.kind == Parameter.POSITIONAL_OR_KEYWORD
+
+
+def test_parameter_schema_map_typed_string():
+    """Tests ParameterSchema with a typed 'object' type (string values)."""
+    schema = ParameterSchema(
+        name="headers",
+        type="object",
+        description="HTTP headers",
+        additionalProperties=AdditionalPropertiesSchema(type="string"),
+    )
+    expected_type = dict[str, str]
+    assert schema._ParameterSchema__get_type() == expected_type
+
+    param = schema.to_param()
+    assert param.annotation == expected_type
+
+
+def test_parameter_schema_map_typed_integer():
+    """Tests ParameterSchema with a typed 'object' type (integer values)."""
+    schema = ParameterSchema(
+        name="user_scores",
+        type="object",
+        description="User scores",
+        additionalProperties=AdditionalPropertiesSchema(type="integer"),
+    )
+    expected_type = dict[str, int]
+    assert schema._ParameterSchema__get_type() == expected_type
+    param = schema.to_param()
+    assert param.annotation == expected_type
+
+
+def test_parameter_schema_map_typed_float():
+    """Tests ParameterSchema with a typed 'object' type (float values)."""
+    schema = ParameterSchema(
+        name="item_prices",
+        type="object",
+        description="Item prices",
+        additionalProperties=AdditionalPropertiesSchema(type="float"),
+    )
+    expected_type = dict[str, float]
+    assert schema._ParameterSchema__get_type() == expected_type
+    param = schema.to_param()
+    assert param.annotation == expected_type
+
+
+def test_parameter_schema_map_typed_boolean():
+    """Tests ParameterSchema with a typed 'object' type (boolean values)."""
+    schema = ParameterSchema(
+        name="feature_flags",
+        type="object",
+        description="Feature flags",
+        additionalProperties=AdditionalPropertiesSchema(type="boolean"),
+    )
+    expected_type = dict[str, bool]
+    assert schema._ParameterSchema__get_type() == expected_type
+    param = schema.to_param()
+    assert param.annotation == expected_type
+
+
+def test_parameter_schema_map_optional():
+    """Tests an optional ParameterSchema with a 'object' type."""
+    schema = ParameterSchema(
+        name="optional_metadata",
+        type="object",
+        description="Optional metadata",
+        required=False,
+        additionalProperties=True,
+    )
+    expected_type = Optional[dict[str, Any]]
+    assert schema._ParameterSchema__get_type() == expected_type
+    param = schema.to_param()
+    assert param.annotation == expected_type
+    assert param.default is None
+
+
+def test_parameter_schema_map_unsupported_value_type_error():
+    """Tests that an unsupported map valueType raises ValueError."""
+    unsupported_type = "custom_object"
+    schema = ParameterSchema(
+        name="custom_data",
+        type="object",
+        description="Custom data map",
+        valueType=unsupported_type,
+        additionalProperties=AdditionalPropertiesSchema(type=unsupported_type),
+    )
+    expected_error_msg = f"Unsupported schema type: {unsupported_type}"
+    with pytest.raises(ValueError, match=expected_error_msg):
+        schema._ParameterSchema__get_type()

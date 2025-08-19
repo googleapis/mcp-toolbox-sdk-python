@@ -75,7 +75,7 @@ class TestE2EClientAsync:
 
     async def test_aload_toolset_all(self, toolbox):
         toolset = await toolbox.aload_toolset()
-        assert len(toolset) == 6
+        assert len(toolset) == 7
         tool_names = [
             "get-n-rows",
             "get-row-by-id",
@@ -83,6 +83,7 @@ class TestE2EClientAsync:
             "get-row-by-email-auth",
             "get-row-by-content-auth",
             "search-rows",
+            "process-data",
         ]
         for tool in toolset:
             name = tool._ToolboxTool__core_tool.__name__
@@ -221,7 +222,7 @@ class TestE2EClientSync:
 
     def test_aload_toolset_all(self, toolbox):
         toolset = toolbox.load_toolset()
-        assert len(toolset) == 6
+        assert len(toolset) == 7
         tool_names = [
             "get-n-rows",
             "get-row-by-id",
@@ -229,6 +230,7 @@ class TestE2EClientSync:
             "get-row-by-email-auth",
             "get-row-by-content-auth",
             "search-rows",
+            "process-data",
         ]
         for tool in toolset:
             name = tool._ToolboxTool__core_tool.__name__
