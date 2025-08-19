@@ -1,5 +1,35 @@
 # Changelog
 
+## [0.5.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v0.4.0...toolbox-core-v0.5.0) (2025-08-19)
+
+
+### ⚠ BREAKING CHANGES
+
+* **core:** Use ValueError for missing 'items' in array parameters ([#325](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/325))
+
+### Features
+
+* **core:** Add support for map parameter type ([#324](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/324)) ([6455ae3](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/6455ae3b88774e7cd79f5c348e9f44bfc5424a18))
+
+
+### Bug Fixes
+
+* add optional clock_skew parameter to token helpers ([#333](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/333)) ([aa0664f](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/aa0664ff6d88d83bba4fc1a8ffe4766e4e8c8aa3))
+* **core:** Use ValueError for missing 'items' in array parameters ([#325](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/325)) ([b43409e](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/b43409ed220bbe89ab2521286239af203c067897))
+* **deps:** update dependency google-cloud-storage to v3.3.0 ([#338](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/338)) ([5db97ae](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/5db97ae10cdc340973cfaa265556701cc09b06c0))
+* **deps:** update dependency mypy to v1.17.1 ([#322](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/322)) ([0c0d94e](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/0c0d94e56dc59c48dd5d2bef14bc3b2bf82af132))
+
+
+### Miscellaneous Chores
+
+* **deps:** update dependency aiohttp to v3.12.15 ([#320](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/320)) ([f4159d8](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/f4159d863fdc436dda3cd17fa74ef18de13fa19e))
+* **deps:** update dependency requests to v2.32.5 ([#340](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/340)) ([ceb57f4](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/ceb57f4591f35426afc563f8c5cc4e034806c497))
+
+
+### Documentation
+
+* Enhance DEVELOPER.md for improved contribution guidelines ([#316](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/316)) ([1d2be43](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/1d2be4396d50d1119381149c7b1c4d1a778a0349))
+
 ## [0.4.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v0.3.0...toolbox-core-v0.4.0) (2025-07-17)
 
 
