@@ -5,23 +5,7 @@
 
 ### Features
 
-* **core:** Add support for map parameter type ([#324](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/324)) ([6455ae3](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/6455ae3b88774e7cd79f5c348e9f44bfc5424a18))
-
-
-### Bug Fixes
-
-* **deps:** update dependency google-cloud-storage to v3.3.0 ([#338](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/338)) ([5db97ae](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/5db97ae10cdc340973cfaa265556701cc09b06c0))
-* **deps:** update dependency mypy to v1.17.1 ([#322](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/322)) ([0c0d94e](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/0c0d94e56dc59c48dd5d2bef14bc3b2bf82af132))
-
-
-### Miscellaneous Chores
-
-* **deps:** update dependency aiohttp to v3.12.15 ([#320](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/320)) ([f4159d8](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/f4159d863fdc436dda3cd17fa74ef18de13fa19e))
-* **deps:** update dependency llama-index to v0.12.50 ([#315](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/315)) ([7073f8d](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/7073f8d5309a6ffb5eb0d4079033af175ca4f773))
-* **deps:** update dependency llama-index to v0.13.1 ([#334](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/334)) ([1cce380](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/1cce38051b59008f2e1d75fd63b3f8ee4e43bdd5))
-* **deps:** update dependency llama-index to v0.13.2 ([#339](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/339)) ([2629fb6](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/2629fb6a6d4762c60b22147987c859ad930634dc))
-* **deps:** update python-nonmajor ([#319](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/319)) ([43c671b](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/43c671bc1508ceb9892c6a03b1cff63828fe6bc1))
-* **deps:** update python-nonmajor ([#323](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/323)) ([d304d86](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/d304d86b9d2fcec3926b9d17a942476c0946111d))
+* Add support for map parameter type ([#324](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/324)) ([6455ae3](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/6455ae3b88774e7cd79f5c348e9f44bfc5424a18))
 
 
 ### Documentation
