@@ -17,6 +17,23 @@ from typing import Any, Optional, Type, Union
 
 from pydantic import BaseModel
 
+__TYPE_MAP = {
+    "string": str,
+    "integer": int,
+    "float": float,
+    "boolean": bool,
+}
+
+
+def _get_python_type(type_name: str) -> Type:
+    """
+    A helper function to convert a schema type string to a Python type.
+    """
+    try:
+        return __TYPE_MAP[type_name]
+    except KeyError:
+        raise ValueError(f"Unsupported schema type: {type_name}")
+
 
 class AdditionalPropertiesSchema(BaseModel):
     """
@@ -27,16 +44,7 @@ class AdditionalPropertiesSchema(BaseModel):
 
     def get_value_type(self) -> Type:
         """Converts the string type to a Python type."""
-        if self.type == "string":
-            return str
-        elif self.type == "integer":
-            return int
-        elif self.type == "float":
-            return float
-        elif self.type == "boolean":
-            return bool
-        else:
-            raise ValueError(f"Unsupported schema type: {self.type}")
+        return _get_python_type(self.type)
 
 
 class ParameterSchema(BaseModel):
@@ -54,15 +62,7 @@ class ParameterSchema(BaseModel):
 
     def __get_type(self) -> Type:
         base_type: Type
-        if self.type == "string":
-            base_type = str
-        elif self.type == "integer":
-            base_type = int
-        elif self.type == "float":
-            base_type = float
-        elif self.type == "boolean":
-            base_type = bool
-        elif self.type == "array":
+        if self.type == "array":
             if self.items is None:
                 raise ValueError("Unexpected value: type is 'array' but items is None")
             base_type = list[self.items.__get_type()]  # type: ignore
@@ -73,7 +73,7 @@ class ParameterSchema(BaseModel):
             else:
                 base_type = dict[str, Any]
         else:
-            raise ValueError(f"Unsupported schema type: {self.type}")
+            base_type = _get_python_type(self.type)
 
         if not self.required:
             return Optional[base_type]  # type: ignore
