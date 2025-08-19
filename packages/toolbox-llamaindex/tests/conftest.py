@@ -106,7 +106,9 @@ def toolbox_version() -> str:
 def tools_file_path(project_id: str) -> Generator[str]:
     """Provides a temporary file path containing the tools manifest."""
     tools_manifest = access_secret_version(
-        project_id=project_id, secret_id="sdk_testing_tools"
+        project_id=project_id,
+        secret_id="sdk_testing_tools",
+        version_id=os.environ.get("TOOLBOX_MANIFEST_VERSION", "latest"),
     )
     tools_file_path = create_tmpfile(tools_manifest)
     yield tools_file_path

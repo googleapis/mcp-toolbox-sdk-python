@@ -15,10 +15,11 @@
 steps:
   - id: Install library requirements
     name: 'python:${_VERSION}'
+    dir: 'packages/toolbox-core'
     args:
       - install
       - '-r'
-      - 'packages/toolbox-core/requirements.txt'
+      - 'requirements.txt'
       - '--user'
     entrypoint: pip
   - id: Install test requirements
@@ -34,6 +35,7 @@ steps:
       - TOOLBOX_URL=$_TOOLBOX_URL
       - TOOLBOX_VERSION=$_TOOLBOX_VERSION
       - GOOGLE_CLOUD_PROJECT=$PROJECT_ID
+      - TOOLBOX_MANIFEST_VERSION=${_TOOLBOX_MANIFEST_VERSION}
     args:
       - '-c'
       - >-
@@ -43,4 +45,5 @@ options:
   logging: CLOUD_LOGGING_ONLY
 substitutions:
   _VERSION: '3.13'
-  _TOOLBOX_VERSION: '0.8.0'
+  _TOOLBOX_VERSION: '0.12.0'
+  _TOOLBOX_MANIFEST_VERSION: '34'
