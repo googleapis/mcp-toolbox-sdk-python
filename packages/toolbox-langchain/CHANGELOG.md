@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.5.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-langchain-v0.4.0...toolbox-langchain-v0.5.0) (2025-08-19)
+
+
+### Features
+
+* Add support for map parameter type ([#324](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/324)) ([6455ae3](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/6455ae3b88774e7cd79f5c348e9f44bfc5424a18))
+
+
+### Documentation
+
+* Enhance DEVELOPER.md for improved contribution guidelines ([#316](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/316)) ([1d2be43](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/1d2be4396d50d1119381149c7b1c4d1a778a0349))
+
 ## [0.4.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-langchain-v0.3.0...toolbox-langchain-v0.4.0) (2025-07-17)
 
 
