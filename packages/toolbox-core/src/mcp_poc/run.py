@@ -1,34 +1,37 @@
 import asyncio
 import json
 from mcp_transport import McpHttpTransport
-from typing import Optional
+from typing import Optional, Dict, List
+import os
 
 class MCPClient:
     """A simple client to interact with an MCP server."""
     def __init__(self, base_url: str):
         self._transport = McpHttpTransport(base_url=base_url)
 
-    async def list_tools(self, toolset_name: Optional[str] = None):
+    async def list_tools(self, toolset_name: Optional[str] = None, headers: Optional[Dict] = None):
         """Lists tools, either all or from a specific toolset."""
         if toolset_name:
             print(f"--> Attempting to list tools from toolset: '{toolset_name}'...")
         else:
             print("--> Attempting to list all tools...")
-        
-        response = await self._transport.tools_list(toolset_name=toolset_name)
+
+        response = await self._transport.tools_list(toolset_name=toolset_name, headers=headers)
         return response.get("result", {}).get("tools", [])
 
-    async def invoke_tool(self, tool_name: str, args: dict):
+    async def invoke_tool(self, tool_name: str, args: dict, headers: Optional[dict] = None, auth_services: Optional[List[str]] = None):
         """Invokes a tool using the global endpoint."""
         print(f"\n--> Attempting to invoke tool: '{tool_name}'...")
-        response = await self._transport.tool_invoke(tool_name, args)
+        response = await self._transport.tool_invoke(tool_name, args, headers=headers, auth_services=auth_services)
 
-        
         return response.get("result", {})
 
     async def close(self):
         await self._transport.close()
 
+
+# Generate token using https://cloud.google.com/docs/authentication/get-id-token#impersonation
+google_id_token = os.environ.get('GOOGLE_ID_TOKEN')
 
 async def main():
     server_url = "http://127.0.0.1:5000"
@@ -50,9 +53,40 @@ async def main():
         tool_to_invoke = "get-n-rows"
         arguments = {"num_rows": "2"}
         invocation_result = await client.invoke_tool(tool_to_invoke, arguments)
-        
         print("\n✅ Tool invoked successfully:")
         print(json.dumps(invocation_result, indent=2))
+
+        # 4. Invoke a tool which requires auth
+        tool_to_invoke_auth = "get-row-by-id-auth"
+        auth_arguments = {"id": "2"}
+        auth_service = "my-test-auth"
+        headers = {f"{auth_service}_token": google_id_token}
+        auth_invocation_result = await client.invoke_tool(tool_to_invoke_auth, auth_arguments, headers=headers, auth_services=[auth_service])
+
+        print("\n✅ Authenticated tool invoked successfully:")
+        print(json.dumps(auth_invocation_result, indent=2))
+
+        # 5. Invoke a tool which requires auth incorrectly
+        tool_to_invoke_auth = "get-row-by-id-auth"
+        auth_arguments = {"id": "2"}
+        auth_service = "my-test-auth"
+        headers = {f"{auth_service}_token": "wrong_token"}
+
+        auth_invocation_result = await client.invoke_tool(tool_to_invoke_auth, auth_arguments, headers=headers, auth_services=[auth_service])
+
+        print("\n✅ Wrong auth failure check")
+        print(json.dumps(auth_invocation_result, indent=2))
+
+        # 6. Invoke a tool which requires authenticated params
+        tool_to_invoke_auth = "get-row-by-email-auth"
+        auth_arguments = {}
+        auth_service = "my-test-auth"
+        headers = {f"{auth_service}_token": google_id_token}
+
+        auth_invocation_result = await client.invoke_tool(tool_to_invoke_auth, auth_arguments, headers=headers, auth_services=[auth_service])
+
+        print("\n✅ Wrong auth failure check")
+        print(json.dumps(auth_invocation_result, indent=2))
 
     except Exception as e:
         print(f"\n❌ An error occurred: {e}")

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional, Dict
+from typing import Optional, Dict, List
 import httpx
 
 class ITransport(ABC):
@@ -8,7 +8,7 @@ class ITransport(ABC):
         pass
 
     @abstractmethod
-    async def tool_invoke(self, tool_name: str, arguments: Dict) -> Dict:
+    async def tool_invoke(self, tool_name: str, arguments: Dict, headers: Optional[Dict] = None, auth_services: Optional[List[str]] = None) -> Dict:
         pass
 
     @abstractmethod
@@ -31,20 +31,22 @@ class McpHttpTransport(ITransport):
             return f"{self._base_url}/mcp/{toolset_name}"
         return f"{self._base_url}/mcp"
 
-    async def tools_list(self, toolset_name: Optional[str] = None) -> Dict:
+    async def tools_list(self, toolset_name: Optional[str] = None, headers: Optional[Dict] = None) -> Dict:
         """Lists tools from the default endpoint or a specific toolset."""
         endpoint = self._get_list_endpoint(toolset_name)
         payload = self._build_json_rpc_payload("tools/list", {})
-        response = await self._client.post(endpoint, json=payload)
+        response = await self._client.post(endpoint, json=payload, headers=headers)
         response.raise_for_status()
         return response.json()
 
-    async def tool_invoke(self, tool_name: str, arguments: Dict) -> Dict:
+    async def tool_invoke(self, tool_name: str, arguments: Dict, headers: Optional[Dict] = None, auth_services: Optional[List[str]] = None) -> Dict:
         """Invokes a tool using the global /mcp endpoint."""
         endpoint = f"{self._base_url}/mcp"
         params = {"name": tool_name, "arguments": arguments}
+        if auth_services:
+            params["authServices"] = auth_services
         payload = self._build_json_rpc_payload("tools/call", params)
-        response = await self._client.post(endpoint, json=payload)
+        response = await self._client.post(endpoint, json=payload, headers=headers)
         response.raise_for_status()
         return response.json()
 
