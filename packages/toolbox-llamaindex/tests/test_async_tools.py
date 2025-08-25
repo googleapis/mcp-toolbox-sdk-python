@@ -255,7 +255,7 @@ class TestAsyncToolboxTool:
         )
 
         core_tool = toolbox_tool._AsyncToolboxTool__core_tool
-        session = core_tool._ToolboxTool__transport._ToolboxHttpTransport__session
+        session = core_tool._ToolboxTool__transport._ToolboxTransport__session
         session.post.assert_called_once_with(
             "http://test_url/api/tool/test_tool/invoke",
             json={"param1": "test-value", "param2": 123},
@@ -281,7 +281,7 @@ class TestAsyncToolboxTool:
             raw_output="test-result",
         )
         core_tool = tool._AsyncToolboxTool__core_tool
-        session = core_tool._ToolboxTool__transport._ToolboxHttpTransport__session
+        session = core_tool._ToolboxTool__transport._ToolboxTransport__session
         session.post.assert_called_once_with(
             "http://test_url/api/tool/test_tool/invoke",
             json={"param1": expected_value, "param2": 123},
@@ -301,7 +301,7 @@ class TestAsyncToolboxTool:
         )
 
         core_tool = tool._AsyncToolboxTool__core_tool
-        session = core_tool._ToolboxTool__transport._ToolboxHttpTransport__session
+        session = core_tool._ToolboxTool__transport._ToolboxTransport__session
         session.post.assert_called_once_with(
             "https://test-url/api/tool/test_tool/invoke",
             json={"param2": 123},
@@ -342,7 +342,7 @@ class TestAsyncToolboxTool:
 
         modified_core_tool = tool_with_getter._AsyncToolboxTool__core_tool
         transport = modified_core_tool._ToolboxTool__transport
-        session = transport._ToolboxHttpTransport__session
+        session = transport._ToolboxTransport__session
 
         assert transport.base_url == "http://test-url"
 
