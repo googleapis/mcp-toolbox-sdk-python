@@ -23,6 +23,19 @@ class ITransport(ABC):
     protocol formatting and network communication.
     """
 
+    @property
+    @abstractmethod
+    def base_url(self) -> str:
+        """The base URL for the transport."""
+        pass
+
+    @abstractmethod
+    async def tool_get(
+        self, tool_name: str, headers: Optional[Mapping[str, str]] = None
+    ) -> ManifestSchema:
+        """Gets a single tool from the server."""
+        pass
+
     @abstractmethod
     async def tools_list(
         self,

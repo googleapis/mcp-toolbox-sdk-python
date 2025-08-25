@@ -28,6 +28,11 @@ class ToolboxHttpTransport(ITransport):
         self.__session = session
         self.__manage_session = manage_session
 
+    @property
+    def base_url(self) -> str:
+        """The base URL for the transport."""
+        return self.__base_url
+
     async def tool_get(
         self, tool_name: str, headers: Optional[Mapping[str, str]] = None
     ) -> ManifestSchema:

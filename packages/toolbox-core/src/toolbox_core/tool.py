@@ -132,7 +132,9 @@ class ToolboxTool:
         # these over HTTP exposes the data to interception and unauthorized
         # access. Always use HTTPS to ensure secure communication and protect
         # user privacy.
-        if required_authn_params or required_authz_tokens or client_headers:
+        if self.__transport.base_url.startswith("http://") and (
+            required_authn_params or required_authz_tokens or client_headers
+        ):
             warn(
                 "Sending ID token over HTTP. User data may be exposed. Use HTTPS for secure communication."
             )

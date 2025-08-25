@@ -26,7 +26,9 @@ from aioresponses import aioresponses
 from pydantic import ValidationError
 
 from toolbox_core.protocol import ParameterSchema
-from toolbox_core.tool import ToolboxTool, create_func_docstring, resolve_value
+from toolbox_core.tool import ToolboxTool
+from toolbox_core.toolbox_transport import ToolboxHttpTransport
+from toolbox_core.utils import create_func_docstring, resolve_value
 
 TEST_BASE_URL = "http://toolbox.example.com"
 HTTPS_BASE_URL = "https://toolbox.example.com"
@@ -110,9 +112,9 @@ def toolbox_tool(
     sample_tool_description: str,
 ) -> ToolboxTool:
     """Fixture for a ToolboxTool instance with common test setup."""
+    transport = ToolboxHttpTransport(TEST_BASE_URL, http_session, False)
     return ToolboxTool(
-        session=http_session,
-        base_url=TEST_BASE_URL,
+        transport=transport,
         name=TEST_TOOL_NAME,
         description=sample_tool_description,
         params=sample_tool_params,
@@ -229,10 +231,10 @@ async def test_tool_creation_callable_and_run(
 
     with aioresponses() as m:
         m.post(invoke_url, status=200, payload=mock_server_response_body)
+        transport = ToolboxHttpTransport(base_url, http_session, False)
 
         tool_instance = ToolboxTool(
-            session=http_session,
-            base_url=base_url,
+            transport=transport,
             name=tool_name,
             description=sample_tool_description,
             params=sample_tool_params,
@@ -275,10 +277,10 @@ async def test_tool_run_with_pydantic_validation_error(
 
     with aioresponses() as m:
         m.post(invoke_url, status=200, payload={"result": "Should not be called"})
+        transport = ToolboxHttpTransport(base_url, http_session, False)
 
         tool_instance = ToolboxTool(
-            session=http_session,
-            base_url=base_url,
+            transport=transport,
             name=tool_name,
             description=sample_tool_description,
             params=sample_tool_params,
@@ -366,10 +368,10 @@ def test_tool_init_basic(http_session, sample_tool_params, sample_tool_descripti
     """Tests basic tool initialization without headers or auth."""
     with catch_warnings(record=True) as record:
         simplefilter("always")
+        transport = ToolboxHttpTransport(HTTPS_BASE_URL, http_session, False)
 
         tool_instance = ToolboxTool(
-            session=http_session,
-            base_url=HTTPS_BASE_URL,
+            transport=transport,
             name=TEST_TOOL_NAME,
             description=sample_tool_description,
             params=sample_tool_params,
@@ -396,9 +398,9 @@ def test_tool_init_with_client_headers(
     http_session, sample_tool_params, sample_tool_description, static_client_header
 ):
     """Tests tool initialization *with* client headers."""
+    transport = ToolboxHttpTransport(HTTPS_BASE_URL, http_session, False)
     tool_instance = ToolboxTool(
-        session=http_session,
-        base_url=HTTPS_BASE_URL,
+        transport=transport,
         name=TEST_TOOL_NAME,
         description=sample_tool_description,
         params=sample_tool_params,
@@ -420,13 +422,13 @@ def test_tool_init_header_auth_conflict(
 ):
     """Tests ValueError on init if client header conflicts with auth token."""
     conflicting_client_header = {auth_header_key: "some-client-value"}
+    transport = ToolboxHttpTransport(HTTPS_BASE_URL, http_session, False)
 
     with pytest.raises(
         ValueError, match=f"Client header\\(s\\) `{auth_header_key}` already registered"
     ):
         ToolboxTool(
-            session=http_session,
-            base_url=HTTPS_BASE_URL,
+            transport=transport,
             name="auth_conflict_tool",
             description=sample_tool_description,
             params=sample_tool_auth_params,
@@ -447,9 +449,9 @@ def test_tool_add_auth_token_getters_conflict_with_existing_client_header(
     Tests ValueError when add_auth_token_getters introduces an auth service
     whose token name conflicts with an existing client header.
     """
+    transport = ToolboxHttpTransport(HTTPS_BASE_URL, http_session, False)
     tool_instance = ToolboxTool(
-        session=http_session,
-        base_url=HTTPS_BASE_URL,
+        transport=transport,
         name="tool_with_client_header",
         description=sample_tool_description,
         params=sample_tool_params,
@@ -483,9 +485,9 @@ def test_add_auth_token_getters_unused_token(
     Tests ValueError when add_auth_token_getters is called with a getter for
     an unused authentication service.
     """
+    transport = ToolboxHttpTransport(HTTPS_BASE_URL, http_session, False)
     tool_instance = ToolboxTool(
-        session=http_session,
-        base_url=HTTPS_BASE_URL,
+        transport=transport,
         name=TEST_TOOL_NAME,
         description=sample_tool_description,
         params=sample_tool_params,
@@ -512,9 +514,9 @@ def test_add_auth_token_getter_unused_token(
     Tests ValueError when add_auth_token_getters is called with a getter for
     an unused authentication service.
     """
+    transport = ToolboxHttpTransport(HTTPS_BASE_URL, http_session, False)
     tool_instance = ToolboxTool(
-        session=http_session,
-        base_url=HTTPS_BASE_URL,
+        transport=transport,
         name=TEST_TOOL_NAME,
         description=sample_tool_description,
         params=sample_tool_params,
@@ -667,14 +669,13 @@ def test_tool_init_http_warning_when_sensitive_info_over_http(
     Tests that a UserWarning is issued if client headers, auth params, or
     auth tokens are present and the base_url is HTTP.
     """
-    expected_warning_message = (
+    expected_warning_message: str = (
         "Sending ID token over HTTP. User data may be exposed. "
         "Use HTTPS for secure communication."
     )
-
+    transport = ToolboxHttpTransport(TEST_BASE_URL, http_session, False)
     init_kwargs = {
-        "session": http_session,
-        "base_url": TEST_BASE_URL,
+        "transport": transport,
         "name": "http_warning_tool",
         "description": sample_tool_description,
         "params": sample_tool_params,
@@ -703,10 +704,10 @@ def test_tool_init_no_http_warning_if_https(
     """
     with catch_warnings(record=True) as record:
         simplefilter("always")
+        transport = ToolboxHttpTransport(HTTPS_BASE_URL, http_session, False)
 
         ToolboxTool(
-            session=http_session,
-            base_url=HTTPS_BASE_URL,
+            transport=transport,
             name="https_tool",
             description=sample_tool_description,
             params=sample_tool_params,
@@ -732,10 +733,10 @@ def test_tool_init_no_http_warning_if_no_sensitive_info_on_http(
     """
     with catch_warnings(record=True) as record:
         simplefilter("always")
+        transport = ToolboxHttpTransport(TEST_BASE_URL, http_session, False)
 
         ToolboxTool(
-            session=http_session,
-            base_url=TEST_BASE_URL,
+            transport=transport,
             name="http_tool_no_sensitive",
             description=sample_tool_description,
             params=sample_tool_params,
