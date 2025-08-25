@@ -187,7 +187,7 @@ class ToolboxClient:
             for name, val in self.__client_headers.items()
         }
 
-        manifest = await self.__transport.tools_list(name, resolved_headers)
+        manifest = await self.__transport.tool_get(name, resolved_headers)
 
         # parse the provided definition to a tool
         if name not in manifest.tools:
