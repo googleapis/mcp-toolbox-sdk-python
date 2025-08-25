@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v0.5.0...toolbox-core-v0.5.1) (2025-08-25)
+
+
+### Miscellaneous Chores
+
+* **toolbox-core:** Synchronize toolbox-python-sdks versions
+
 ## [0.5.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v0.4.0...toolbox-core-v0.5.0) (2025-08-19)
 
 
