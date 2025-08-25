@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Union
 from unittest.mock import AsyncMock
 
 import pytest
@@ -106,7 +106,7 @@ async def test_tool_get_failure(http_session: ClientSession):
 async def test_tools_list_success(
     http_session: ClientSession,
     mock_manifest_dict: dict,
-    toolset_name: str | None,
+    toolset_name: Union[str, None],
     expected_path: str,
 ):
     """Tests successful tools_list calls with and without a toolset name."""
