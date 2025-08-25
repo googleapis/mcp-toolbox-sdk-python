@@ -22,7 +22,7 @@ from deprecated import deprecated
 from .itransport import ITransport
 from .protocol import ToolSchema
 from .tool import ToolboxTool
-from .toolbox_transport import ToolboxHttpTransport
+from .toolbox_transport import ToolboxTransport
 from .utils import identify_auth_requirements, resolve_value
 
 
@@ -62,7 +62,7 @@ class ToolboxClient:
         if session is None:
             manage_session = True
             session = ClientSession()
-        self.__transport = ToolboxHttpTransport(url, session, manage_session)
+        self.__transport = ToolboxTransport(url, session, manage_session)
         self.__client_headers = client_headers if client_headers is not None else {}
 
     def __parse_tool(

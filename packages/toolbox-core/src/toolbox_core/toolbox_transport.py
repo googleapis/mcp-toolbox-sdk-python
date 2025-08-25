@@ -20,7 +20,7 @@ from .itransport import ITransport
 from .protocol import ManifestSchema
 
 
-class ToolboxHttpTransport(ITransport):
+class ToolboxTransport(ITransport):
     """Transport for the native Toolbox protocol."""
 
     def __init__(self, base_url: str, session: ClientSession, manage_session: bool):

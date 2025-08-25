@@ -21,7 +21,7 @@ from aiohttp import ClientSession
 from aioresponses import aioresponses
 
 from toolbox_core.protocol import ManifestSchema
-from toolbox_core.toolbox_transport import ToolboxHttpTransport
+from toolbox_core.toolbox_transport import ToolboxTransport
 
 TEST_BASE_URL = "http://fake-toolbox-server.com"
 TEST_TOOL_NAME = "test_tool"
@@ -58,7 +58,7 @@ def mock_manifest_dict() -> dict:
 @pytest.mark.asyncio
 async def test_base_url_property(http_session: ClientSession):
     """Tests that the base_url property returns the correct URL."""
-    transport = ToolboxHttpTransport(TEST_BASE_URL, http_session, False)
+    transport = ToolboxTransport(TEST_BASE_URL, http_session, False)
     assert transport.base_url == TEST_BASE_URL
 
 
@@ -67,7 +67,7 @@ async def test_tool_get_success(http_session: ClientSession, mock_manifest_dict:
     """Tests a successful tool_get call."""
     url = f"{TEST_BASE_URL}/api/tool/{TEST_TOOL_NAME}"
     headers = {"X-Test-Header": "value"}
-    transport = ToolboxHttpTransport(TEST_BASE_URL, http_session, False)
+    transport = ToolboxTransport(TEST_BASE_URL, http_session, False)
 
     with aioresponses() as m:
         m.get(url, status=200, payload=mock_manifest_dict)
@@ -84,7 +84,7 @@ async def test_tool_get_success(http_session: ClientSession, mock_manifest_dict:
 async def test_tool_get_failure(http_session: ClientSession):
     """Tests a failing tool_get call and ensures it raises RuntimeError."""
     url = f"{TEST_BASE_URL}/api/tool/{TEST_TOOL_NAME}"
-    transport = ToolboxHttpTransport(TEST_BASE_URL, http_session, False)
+    transport = ToolboxTransport(TEST_BASE_URL, http_session, False)
 
     with aioresponses() as m:
         m.get(url, status=500, body="Internal Server Error")
@@ -111,7 +111,7 @@ async def test_tools_list_success(
 ):
     """Tests successful tools_list calls with and without a toolset name."""
     url = f"{TEST_BASE_URL}{expected_path}"
-    transport = ToolboxHttpTransport(TEST_BASE_URL, http_session, False)
+    transport = ToolboxTransport(TEST_BASE_URL, http_session, False)
 
     with aioresponses() as m:
         m.get(url, status=200, payload=mock_manifest_dict)
@@ -129,7 +129,7 @@ async def test_tool_invoke_success(http_session: ClientSession):
     args = {"param1": "value1"}
     headers = {"Authorization": "Bearer token"}
     response_payload = {"result": "success"}
-    transport = ToolboxHttpTransport(TEST_BASE_URL, http_session, False)
+    transport = ToolboxTransport(TEST_BASE_URL, http_session, False)
 
     with aioresponses() as m:
         m.post(url, status=200, payload=response_payload)
@@ -144,7 +144,7 @@ async def test_tool_invoke_failure(http_session: ClientSession):
     """Tests a failing tool_invoke call where the server returns an error payload."""
     url = f"{TEST_BASE_URL}/api/tool/{TEST_TOOL_NAME}/invoke"
     response_payload = {"error": "Invalid arguments"}
-    transport = ToolboxHttpTransport(TEST_BASE_URL, http_session, False)
+    transport = ToolboxTransport(TEST_BASE_URL, http_session, False)
 
     with aioresponses() as m:
         m.post(url, status=400, payload=response_payload)
@@ -169,7 +169,7 @@ async def test_close_behavior(
     """Tests the close method under different conditions."""
     mock_session = AsyncMock(spec=ClientSession)
     mock_session.closed = is_closed
-    transport = ToolboxHttpTransport(TEST_BASE_URL, mock_session, manage_session)
+    transport = ToolboxTransport(TEST_BASE_URL, mock_session, manage_session)
 
     await transport.close()
 
