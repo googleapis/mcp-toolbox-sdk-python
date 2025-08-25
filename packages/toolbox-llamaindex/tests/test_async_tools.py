@@ -343,9 +343,9 @@ class TestAsyncToolboxTool:
         modified_core_tool = tool_with_getter._AsyncToolboxTool__core_tool
         transport = modified_core_tool._ToolboxTool__transport
         session = transport._ToolboxHttpTransport__session
-        
+
         assert transport.base_url == "http://test-url"
-        
+
         session.post.assert_called_once_with(
             "http://test-url/api/tool/test_tool/invoke",
             json={"param2": 123},
