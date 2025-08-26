@@ -36,7 +36,7 @@ class McpHttpTransport(ITransport):
         self.__base_url = base_url
         self.__session = session
         self.__manage_session = manage_session
-        self.__protocol_version = protocol.name.split("_v")[-1]
+        self.__protocol_version = protocol.value
         self.__server_info: Optional[Mapping[str, str]] = None
 
 
@@ -93,9 +93,6 @@ class McpHttpTransport(ITransport):
         return result
 
     async def close(self):
-        await self._send_request(
-            url=f"{self.__base_url}/mcp/", method="shutdown", params={}
-        )
         if self.__manage_session and not self.__session.closed:
             await self.__session.close()
 
@@ -119,15 +116,21 @@ class McpHttpTransport(ITransport):
         if self.__server_info:
             server_protocol_version = self.__server_info.get("protocolVersion")
             if server_protocol_version not in client_supported_versions:
+                if self.__manage_session:
+                    await self.close()
                 raise RuntimeError(
                     f"MCP version mismatch: client does not support server version {server_protocol_version}"
                 )
             self.__protocol_version = server_protocol_version
         else:
+            if self.__manage_session:
+                await self.close()
             raise RuntimeError("Server info not found in initialize response")
 
         self.__server_capabilities = initialize_result.get("capabilities")
         if not self.__server_capabilities or "tools" not in self.__server_capabilities:
+            if self.__manage_session:
+                await self.close()
             raise RuntimeError("Server does not support the 'tools' capability.")
         await self._send_request(url=url, method="notifications/initialized", params={})
 
@@ -154,7 +157,11 @@ class McpHttpTransport(ITransport):
                 )
             json_response = await response.json()
             if "error" in json_response:
-                raise RuntimeError(
-                    f"MCP request failed: {json_response['error']['message']}"
-                )
+                error = json_response["error"]
+                if error["code"] == -32000:
+                    raise RuntimeError(f"MCP version mismatch: {error['message']}")
+                else:
+                    raise RuntimeError(
+                        f"MCP request failed with code {error['code']}: {error['message']}"
+                    )
             return json_response.get("result")
