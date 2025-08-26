@@ -14,11 +14,10 @@
 import os
 import uuid
 from typing import Any, Mapping, Optional
-from . import version
-
 
 from aiohttp import ClientSession
 
+from . import version
 from .itransport import ITransport
 from .protocol import ManifestSchema, Protocol
 
@@ -38,7 +37,6 @@ class McpHttpTransport(ITransport):
         self.__manage_session = manage_session
         self.__protocol_version = protocol.value
         self.__server_info: Optional[Mapping[str, str]] = None
-
 
     async def __ainit__(self):
         """Asynchronously initializes the MCP transport."""
@@ -105,7 +103,10 @@ class McpHttpTransport(ITransport):
         proposed_version = self.__protocol_version
         params = {
             "processId": os.getpid(),
-            "clientInfo": {"name": "toolbox-python-sdk", "version": version.__version__},
+            "clientInfo": {
+                "name": "toolbox-python-sdk",
+                "version": version.__version__,
+            },
             "capabilities": {},
             "protocolVersion": proposed_version,
         }
