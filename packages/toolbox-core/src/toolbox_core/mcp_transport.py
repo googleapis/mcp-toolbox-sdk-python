@@ -11,9 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import os
 import uuid
 from typing import Any, Mapping, Optional
+from . import version
+
 
 from aiohttp import ClientSession
 
@@ -35,6 +37,16 @@ class McpHttpTransport(ITransport):
         self.__session = session
         self.__manage_session = manage_session
         self.__protocol_version = protocol.name.split("_v")[-1]
+        self.__server_info: Optional[Mapping[str, str]] = None
+
+
+    async def __ainit__(self):
+        """Asynchronously initializes the MCP transport."""
+        await self._initialize_session()
+        return self
+
+    def __await__(self):
+        return self.__ainit__().__await__()
 
     @property
     def base_url(self) -> str:
@@ -81,8 +93,43 @@ class McpHttpTransport(ITransport):
         return result
 
     async def close(self):
+        await self._send_request(
+            url=f"{self.__base_url}/mcp/", method="shutdown", params={}
+        )
         if self.__manage_session and not self.__session.closed:
             await self.__session.close()
+
+    async def _initialize_session(self):
+        """Initializes the MCP session."""
+        url = f"{self.__base_url}/mcp/"
+        client_supported_versions = Protocol.get_supported_mcp_versions()
+
+        # The client should propose the latest version it supports.
+        proposed_version = self.__protocol_version
+        params = {
+            "processId": os.getpid(),
+            "clientInfo": {"name": "toolbox-python-sdk", "version": version.__version__},
+            "capabilities": {},
+            "protocolVersion": proposed_version,
+        }
+        initialize_result = await self._send_request(
+            url=url, method="initialize", params=params
+        )
+        self.__server_info = initialize_result.get("serverInfo")
+        if self.__server_info:
+            server_protocol_version = self.__server_info.get("protocolVersion")
+            if server_protocol_version not in client_supported_versions:
+                raise RuntimeError(
+                    f"MCP version mismatch: client does not support server version {server_protocol_version}"
+                )
+            self.__protocol_version = server_protocol_version
+        else:
+            raise RuntimeError("Server info not found in initialize response")
+
+        self.__server_capabilities = initialize_result.get("capabilities")
+        if not self.__server_capabilities or "tools" not in self.__server_capabilities:
+            raise RuntimeError("Server does not support the 'tools' capability.")
+        await self._send_request(url=url, method="notifications/initialized", params={})
 
     async def _send_request(
         self,
@@ -110,4 +157,4 @@ class McpHttpTransport(ITransport):
                 raise RuntimeError(
                     f"MCP request failed: {json_response['error']['message']}"
                 )
-            return json_response["result"]
+            return json_response.get("result")
