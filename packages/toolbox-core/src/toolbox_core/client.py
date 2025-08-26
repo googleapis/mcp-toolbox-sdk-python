@@ -20,7 +20,8 @@ from aiohttp import ClientSession
 from deprecated import deprecated
 
 from .itransport import ITransport
-from .protocol import ToolSchema
+from .mcp_transport import McpHttpTransport
+from .protocol import ToolSchema, Protocol
 from .tool import ToolboxTool
 from .toolbox_transport import ToolboxTransport
 from .utils import identify_auth_requirements, resolve_value
@@ -44,6 +45,7 @@ class ToolboxClient:
         client_headers: Optional[
             Mapping[str, Union[Callable[[], str], Callable[[], Awaitable[str]], str]]
         ] = None,
+        protocol: Protocol = Protocol.MCP,
     ):
         """
         Initializes the ToolboxClient.
@@ -54,10 +56,15 @@ class ToolboxClient:
                 If None (default), a new session is created internally. Note that
                 if a session is provided, its lifecycle (including closing)
                 should typically be managed externally.
-            client_headers: Headers to include in each request sent through this client.
+            client_headers: Headers to include in each request sent through this
+            client.
+            protocol: The communication protocol to use.
         """
+        if protocol == Protocol.TOOLBOX:
+            self.__transport = ToolboxTransport(url, session)
+        else:
+            self.__transport = McpHttpTransport(url, session, protocol)
 
-        self.__transport = ToolboxTransport(url, session)
         self.__client_headers = client_headers if client_headers is not None else {}
 
     def __parse_tool(

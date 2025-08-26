@@ -11,11 +11,21 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from enum import Enum, auto
 
 from inspect import Parameter
 from typing import Any, Optional, Type, Union
 
 from pydantic import BaseModel
+
+class Protocol(Enum):
+    """Defines how the client should choose between communication protocols."""
+    TOOLBOX = auto()
+    MCP_v20250618 = auto()
+    MCP_v20250326 = auto()
+    MCP_v20241105 = auto()
+    MCP_LATEST = MCP_v20250618
+    MCP = MCP_LATEST
 
 __TYPE_MAP = {
     "string": str,
