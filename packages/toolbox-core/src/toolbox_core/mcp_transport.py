@@ -72,7 +72,7 @@ class McpHttpTransport(ITransport):
         if toolset_name:
             url = f"{self.__base_url}/mcp/{toolset_name}"
         else:
-            url = f"{self.__base_url}/mcp/tools/list"
+            url = f"{self.__base_url}/mcp"
 
         result = await self._send_request(
             url=url, method="tools/list", params={}, headers=headers
