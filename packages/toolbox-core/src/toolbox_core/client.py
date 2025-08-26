@@ -21,7 +21,7 @@ from deprecated import deprecated
 
 from .itransport import ITransport
 from .mcp_transport import McpHttpTransport
-from .protocol import ToolSchema, Protocol
+from .protocol import Protocol, ToolSchema
 from .tool import ToolboxTool
 from .toolbox_transport import ToolboxTransport
 from .utils import identify_auth_requirements, resolve_value
