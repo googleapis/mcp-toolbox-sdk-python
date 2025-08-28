@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from typing import Mapping, Optional
+from warnings import warn
 
 from aiohttp import ClientSession
 
@@ -23,20 +24,26 @@ from .protocol import ManifestSchema
 class ToolboxTransport(ITransport):
     """Transport for the native Toolbox protocol."""
 
-    def __init__(self, base_url: str, session: ClientSession, manage_session: bool):
+    def __init__(self, base_url: str, session: Optional[ClientSession]):
         self.__base_url = base_url
-        self.__session = session
-        self.__manage_session = manage_session
+
+        # If no aiohttp.ClientSession is provided, make our own
+        self.__manage_session = False
+        if session is not None:
+            self.__session = session
+        else:
+            self.__manage_session = True
+            self.__session = ClientSession()
 
     @property
     def base_url(self) -> str:
         """The base URL for the transport."""
         return self.__base_url
 
-    async def tool_get(
-        self, tool_name: str, headers: Optional[Mapping[str, str]] = None
+    async def _get_manifest(
+        self, url: str, headers: Optional[Mapping[str, str]]
     ) -> ManifestSchema:
-        url = f"{self.__base_url}/api/tool/{tool_name}"
+        """Helper method to perform GET requests and parse the ManifestSchema."""
         async with self.__session.get(url, headers=headers) as response:
             if not response.ok:
                 error_text = await response.text()
@@ -45,6 +52,12 @@ class ToolboxTransport(ITransport):
                 )
             json = await response.json()
         return ManifestSchema(**json)
+
+    async def tool_get(
+        self, tool_name: str, headers: Optional[Mapping[str, str]] = None
+    ) -> ManifestSchema:
+        url = f"{self.__base_url}/api/tool/{tool_name}"
+        return await self._get_manifest(url, headers)
 
     async def tools_list(
         self,
@@ -52,18 +65,19 @@ class ToolboxTransport(ITransport):
         headers: Optional[Mapping[str, str]] = None,
     ) -> ManifestSchema:
         url = f"{self.__base_url}/api/toolset/{toolset_name or ''}"
-        async with self.__session.get(url, headers=headers) as response:
-            if not response.ok:
-                error_text = await response.text()
-                raise RuntimeError(
-                    f"API request failed with status {response.status} ({response.reason}). Server response: {error_text}"
-                )
-            json = await response.json()
-        return ManifestSchema(**json)
+        return await self._get_manifest(url, headers)
 
     async def tool_invoke(
         self, tool_name: str, arguments: dict, headers: Mapping[str, str]
     ) -> dict:
+        # ID tokens contain sensitive user information (claims). Transmitting
+        # these over HTTP exposes the data to interception and unauthorized
+        # access. Always use HTTPS to ensure secure communication and protect
+        # user privacy.
+        if self.base_url.startswith("http://") and headers:
+            warn(
+                "Sending data token over HTTP. User data may be exposed. Use HTTPS for secure communication."
+            )
         url = f"{self.__base_url}/api/tool/{tool_name}/invoke"
         async with self.__session.post(
             url,

@@ -60,16 +60,8 @@ class ToolboxClient:
             client.
             protocol: The communication protocol to use.
         """
-        # If no aiohttp.ClientSession is provided, make our own
-        manage_session = False
-        if session is None:
-            manage_session = True
-            session = ClientSession()
-        if protocol == Protocol.TOOLBOX:
-            self.__transport = ToolboxTransport(url, session, manage_session)
-        else:
-            self.__transport = McpHttpTransport(url, session, manage_session, protocol)
 
+        self.__transport = ToolboxTransport(url, session)
         self.__client_headers = client_headers if client_headers is not None else {}
 
     def __parse_tool(
