@@ -39,12 +39,13 @@ class McpHttpTransport(ITransport):
         self.__manage_session = manage_session
         self.__protocol_version = protocol.value
         self.__server_info: Optional[Mapping[str, str]] = None
-        # TODO: Run the initialise method here
+        
+        self.__loop: AbstractEventLoop = new_event_loop()
+        self.__thread = Thread(target=self.__loop.run_forever, daemon=True)
+        self.__thread.start()
 
-    async def __ainit__(self):
-        """Asynchronously initializes the MCP transport."""
-        await self._initialize_session()
-        return self
+        future = run_coroutine_threadsafe(self._initialize_session(), self.__loop)
+        future.result()
 
     @property
     def base_url(self) -> str:
