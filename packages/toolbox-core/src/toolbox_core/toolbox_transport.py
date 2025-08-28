@@ -40,10 +40,10 @@ class ToolboxTransport(ITransport):
         """The base URL for the transport."""
         return self.__base_url
 
-    async def tool_get(
-        self, tool_name: str, headers: Optional[Mapping[str, str]] = None
+    async def _get_manifest(
+        self, url: str, headers: Optional[Mapping[str, str]]
     ) -> ManifestSchema:
-        url = f"{self.__base_url}/api/tool/{tool_name}"
+        """Helper method to perform GET requests and parse the ManifestSchema."""
         async with self.__session.get(url, headers=headers) as response:
             if not response.ok:
                 error_text = await response.text()
@@ -53,20 +53,19 @@ class ToolboxTransport(ITransport):
             json = await response.json()
         return ManifestSchema(**json)
 
+    async def tool_get(
+        self, tool_name: str, headers: Optional[Mapping[str, str]] = None
+    ) -> ManifestSchema:
+        url = f"{self.__base_url}/api/tool/{tool_name}"
+        return await self._get_manifest(url, headers)
+
     async def tools_list(
         self,
         toolset_name: Optional[str] = None,
         headers: Optional[Mapping[str, str]] = None,
     ) -> ManifestSchema:
         url = f"{self.__base_url}/api/toolset/{toolset_name or ''}"
-        async with self.__session.get(url, headers=headers) as response:
-            if not response.ok:
-                error_text = await response.text()
-                raise RuntimeError(
-                    f"API request failed with status {response.status} ({response.reason}). Server response: {error_text}"
-                )
-            json = await response.json()
-        return ManifestSchema(**json)
+        return await self._get_manifest(url, headers)
 
     async def tool_invoke(
         self, tool_name: str, arguments: dict, headers: Mapping[str, str]
