@@ -70,7 +70,7 @@ class TestAsyncToolboxTool:
                 tool_constructor_params.append(p_schema)
 
         transport = ToolboxTransport(
-            base_url=url, session=session, manage_session=False
+            base_url=url, session=session
         )
         return ToolboxCoreTool(
             transport=transport,
