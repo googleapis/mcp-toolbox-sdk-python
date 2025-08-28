@@ -14,12 +14,14 @@
 import os
 import uuid
 from typing import Any, Mapping, Optional
+from asyncio import AbstractEventLoop, new_event_loop, run_coroutine_threadsafe
+from threading import Thread
 
 from aiohttp import ClientSession
 
 from . import version
 from .itransport import ITransport
-from .protocol import ManifestSchema, Protocol
+from .protocol import ManifestSchema, Protocol, ToolSchema
 
 
 class McpHttpTransport(ITransport):
@@ -37,14 +39,12 @@ class McpHttpTransport(ITransport):
         self.__manage_session = manage_session
         self.__protocol_version = protocol.value
         self.__server_info: Optional[Mapping[str, str]] = None
+        # TODO: Run the initialise method here
 
     async def __ainit__(self):
         """Asynchronously initializes the MCP transport."""
         await self._initialize_session()
         return self
-
-    def __await__(self):
-        return self.__ainit__().__await__()
 
     @property
     def base_url(self) -> str:
@@ -77,7 +77,13 @@ class McpHttpTransport(ITransport):
         result = await self._send_request(
             url=url, method="tools/list", params={}, headers=headers
         )
-        return ManifestSchema(**result)
+        if self.__server_info is None:
+            raise RuntimeError("Server info not available.")
+
+        return ManifestSchema(
+            serverVersion=self.__server_info["version"],
+            tools={tool["name"]: ToolSchema(**tool) for tool in result["tools"]},
+        )
 
     async def tool_invoke(
         self, tool_name: str, arguments: dict, headers: Mapping[str, str]
@@ -115,6 +121,7 @@ class McpHttpTransport(ITransport):
         )
         self.__server_info = initialize_result.get("serverInfo")
         if self.__server_info:
+            # TODO: This does not work with the oldest version
             server_protocol_version = self.__server_info.get("protocolVersion")
             if server_protocol_version not in client_supported_versions:
                 if self.__manage_session:
