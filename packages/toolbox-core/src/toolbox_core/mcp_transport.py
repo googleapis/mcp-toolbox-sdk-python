@@ -13,9 +13,9 @@
 # limitations under the License.
 import os
 import uuid
-from typing import Any, Mapping, Optional
 from asyncio import AbstractEventLoop, new_event_loop, run_coroutine_threadsafe
 from threading import Thread
+from typing import Any, Mapping, Optional
 
 from aiohttp import ClientSession
 
