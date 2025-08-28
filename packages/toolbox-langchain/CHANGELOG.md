@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-langchain-v0.5.0...toolbox-langchain-v0.5.1) (2025-08-28)
+
+
+### Miscellaneous Chores
+
+* **deps:** update dependency langchain-core to v0.3.75 ([#346](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/346)) ([06d41d4](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/06d41d48caa01e63bade8a583514dd15b6dfa493))
+
 ## [0.5.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-langchain-v0.4.0...toolbox-langchain-v0.5.0) (2025-08-19)
 
 
