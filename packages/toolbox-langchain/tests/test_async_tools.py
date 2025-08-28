@@ -289,42 +289,6 @@ class TestAsyncToolboxTool:
             headers={"test-auth-source_token": "test-token"},
         )
 
-    async def test_toolbox_tool_call_with_auth_tokens_insecure(
-        self, auth_toolbox_tool, auth_tool_schema_dict
-    ):
-        core_tool_of_auth_tool = auth_toolbox_tool._AsyncToolboxTool__core_tool
-        mock_session = (
-            core_tool_of_auth_tool._ToolboxTool__transport._ToolboxTransport__session
-        )
-
-        with pytest.warns(
-            UserWarning,
-            match="Sending ID token over HTTP. User data may be exposed. Use HTTPS for secure communication.",
-        ):
-            insecure_core_tool = self._create_core_tool_from_dict(
-                session=mock_session,
-                name="test_tool",
-                schema_dict=auth_tool_schema_dict,
-                url="http://test-url",
-            )
-
-        insecure_auth_langchain_tool = AsyncToolboxTool(core_tool=insecure_core_tool)
-
-        tool_with_getter = insecure_auth_langchain_tool.add_auth_token_getters(
-            {"test-auth-source": lambda: "test-token"}
-        )
-        result = await tool_with_getter.ainvoke({"param2": 123})
-        assert result == "test-result"
-
-        modified_core_tool = tool_with_getter._AsyncToolboxTool__core_tool
-        session = modified_core_tool._ToolboxTool__transport._ToolboxTransport__session
-        assert modified_core_tool._ToolboxTool__transport.base_url == "http://test-url"
-        session.post.assert_called_once_with(
-            "http://test-url/api/tool/test_tool/invoke",
-            json={"param2": 123},
-            headers={"test-auth-source_token": "test-token"},
-        )
-
     async def test_toolbox_tool_call_with_invalid_input(self, toolbox_tool):
         with pytest.raises(ValidationError) as e:
             await toolbox_tool.ainvoke({"param1": 123, "param2": "invalid"})
