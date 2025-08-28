@@ -39,7 +39,7 @@ class McpHttpTransport(ITransport):
         self.__manage_session = manage_session
         self.__protocol_version = protocol.value
         self.__server_info: Optional[Mapping[str, str]] = None
-        
+
         self.__loop: AbstractEventLoop = new_event_loop()
         self.__thread = Thread(target=self.__loop.run_forever, daemon=True)
         self.__thread.start()
