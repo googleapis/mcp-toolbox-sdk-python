@@ -57,12 +57,7 @@ class ToolboxClient:
             client_headers: Headers to include in each request sent through this client.
         """
 
-        # If no aiohttp.ClientSession is provided, make our own
-        manage_session = False
-        if session is None:
-            manage_session = True
-            session = ClientSession()
-        self.__transport = ToolboxTransport(url, session, manage_session)
+        self.__transport = ToolboxTransport(url, session)
         self.__client_headers = client_headers if client_headers is not None else {}
 
     def __parse_tool(

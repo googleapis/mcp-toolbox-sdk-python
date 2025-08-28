@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import AsyncGenerator, Union
+from typing import AsyncGenerator, Optional, Union
 from unittest.mock import AsyncMock
 
 import pytest
@@ -58,7 +58,7 @@ def mock_manifest_dict() -> dict:
 @pytest.mark.asyncio
 async def test_base_url_property(http_session: ClientSession):
     """Tests that the base_url property returns the correct URL."""
-    transport = ToolboxTransport(TEST_BASE_URL, http_session, False)
+    transport = ToolboxTransport(TEST_BASE_URL, http_session)
     assert transport.base_url == TEST_BASE_URL
 
 
@@ -67,7 +67,7 @@ async def test_tool_get_success(http_session: ClientSession, mock_manifest_dict:
     """Tests a successful tool_get call."""
     url = f"{TEST_BASE_URL}/api/tool/{TEST_TOOL_NAME}"
     headers = {"X-Test-Header": "value"}
-    transport = ToolboxTransport(TEST_BASE_URL, http_session, False)
+    transport = ToolboxTransport(TEST_BASE_URL, http_session)
 
     with aioresponses() as m:
         m.get(url, status=200, payload=mock_manifest_dict)
@@ -84,7 +84,7 @@ async def test_tool_get_success(http_session: ClientSession, mock_manifest_dict:
 async def test_tool_get_failure(http_session: ClientSession):
     """Tests a failing tool_get call and ensures it raises RuntimeError."""
     url = f"{TEST_BASE_URL}/api/tool/{TEST_TOOL_NAME}"
-    transport = ToolboxTransport(TEST_BASE_URL, http_session, False)
+    transport = ToolboxTransport(TEST_BASE_URL, http_session)
 
     with aioresponses() as m:
         m.get(url, status=500, body="Internal Server Error")
@@ -111,7 +111,7 @@ async def test_tools_list_success(
 ):
     """Tests successful tools_list calls with and without a toolset name."""
     url = f"{TEST_BASE_URL}{expected_path}"
-    transport = ToolboxTransport(TEST_BASE_URL, http_session, False)
+    transport = ToolboxTransport(TEST_BASE_URL, http_session)
 
     with aioresponses() as m:
         m.get(url, status=200, payload=mock_manifest_dict)
@@ -129,7 +129,7 @@ async def test_tool_invoke_success(http_session: ClientSession):
     args = {"param1": "value1"}
     headers = {"Authorization": "Bearer token"}
     response_payload = {"result": "success"}
-    transport = ToolboxTransport(TEST_BASE_URL, http_session, False)
+    transport = ToolboxTransport(TEST_BASE_URL, http_session)
 
     with aioresponses() as m:
         m.post(url, status=200, payload=response_payload)
@@ -144,7 +144,7 @@ async def test_tool_invoke_failure(http_session: ClientSession):
     """Tests a failing tool_invoke call where the server returns an error payload."""
     url = f"{TEST_BASE_URL}/api/tool/{TEST_TOOL_NAME}/invoke"
     response_payload = {"error": "Invalid arguments"}
-    transport = ToolboxTransport(TEST_BASE_URL, http_session, False)
+    transport = ToolboxTransport(TEST_BASE_URL, http_session)
 
     with aioresponses() as m:
         m.post(url, status=400, payload=response_payload)
@@ -155,25 +155,27 @@ async def test_tool_invoke_failure(http_session: ClientSession):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "manage_session, is_closed, should_call_close",
-    [
-        (True, False, True),
-        (False, False, False),
-        (True, True, False),
-    ],
-)
-async def test_close_behavior(
-    manage_session: bool, is_closed: bool, should_call_close: bool
-):
-    """Tests the close method under different conditions."""
+async def test_close_does_not_close_unmanaged_session():
+    """
+    Tests that close() does NOT affect a session that was provided externally
+    (i.e., an unmanaged session).
+    """
     mock_session = AsyncMock(spec=ClientSession)
-    mock_session.closed = is_closed
-    transport = ToolboxTransport(TEST_BASE_URL, mock_session, manage_session)
+    mock_session.closed = False
+
+    transport = ToolboxTransport(TEST_BASE_URL, mock_session)
+    await transport.close()
+    mock_session.close.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_close_closes_managed_session():
+    """
+    Tests that close() successfully closes a session that was created and
+    managed internally by the transport.
+    """
+    transport = ToolboxTransport(TEST_BASE_URL, session=None)
 
     await transport.close()
-
-    if should_call_close:
-        mock_session.close.assert_awaited_once()
-    else:
-        mock_session.close.assert_not_awaited()
+    internal_session = transport._ToolboxTransport__session
+    assert internal_session.closed is True

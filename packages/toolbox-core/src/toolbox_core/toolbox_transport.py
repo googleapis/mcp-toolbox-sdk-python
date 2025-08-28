@@ -23,10 +23,16 @@ from .protocol import ManifestSchema
 class ToolboxTransport(ITransport):
     """Transport for the native Toolbox protocol."""
 
-    def __init__(self, base_url: str, session: ClientSession, manage_session: bool):
+    def __init__(self, base_url: str, session: Optional[ClientSession]):
         self.__base_url = base_url
-        self.__session = session
-        self.__manage_session = manage_session
+
+        # If no aiohttp.ClientSession is provided, make our own
+        self.__manage_session = False
+        if session is not None:
+            self.__session = session
+        else:
+            self.__manage_session = True
+            self.__session = ClientSession()
 
     @property
     def base_url(self) -> str:
