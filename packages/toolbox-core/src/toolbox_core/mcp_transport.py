@@ -13,8 +13,7 @@
 # limitations under the License.
 import os
 import uuid
-from asyncio import AbstractEventLoop, new_event_loop, run_coroutine_threadsafe
-from threading import Thread
+import asyncio
 from typing import Any, Mapping, Optional
 
 from aiohttp import ClientSession
@@ -30,23 +29,23 @@ class McpHttpTransport(ITransport):
     def __init__(
         self,
         base_url: str,
-        session: ClientSession,
-        manage_session: bool,
-        protocol: Protocol,
+        session: Optional[ClientSession] = None,
+        protocol: Protocol = Protocol.MCP,
     ):
         self.__base_url = base_url
-        self.__session = session
-        self.__manage_session = manage_session
         self.__protocol_version = protocol.value
         self.__server_info: Optional[Mapping[str, str]] = None
         self.__session_id: Optional[str] = None
 
-        self.__loop: AbstractEventLoop = new_event_loop()
-        self.__thread = Thread(target=self.__loop.run_forever, daemon=True)
-        self.__thread.start()
-
-        future = run_coroutine_threadsafe(self._initialize_session(), self.__loop)
-        future.result()
+        self.__manage_session = False
+        if session is not None:
+            self.__session = session
+            loop = asyncio.get_running_loop()
+        else:
+            self.__manage_session = True
+            loop = asyncio.get_running_loop() or asyncio.new_event_loop()
+            self.__session = ClientSession(loop=loop)
+        loop.run_until_complete(self._initialize_session())
 
     @property
     def base_url(self) -> str:
