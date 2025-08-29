@@ -13,9 +13,10 @@
 # limitations under the License.
 
 from typing import AsyncGenerator
+
+import nest_asyncio
 import pytest
 import pytest_asyncio
-import nest_asyncio
 from aiohttp import ClientSession
 from aioresponses import aioresponses
 
