@@ -40,11 +40,16 @@ class McpHttpTransport(ITransport):
         self.__manage_session = False
         if session is not None:
             self.__session = session
-            loop = asyncio.get_running_loop()
         else:
             self.__manage_session = True
-            loop = asyncio.get_running_loop() or asyncio.new_event_loop()
-            self.__session = ClientSession(loop=loop)
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            # Fallback if no loop is currently running
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+        # Runs on the SAME loop where the session was created.
         loop.run_until_complete(self._initialize_session())
 
     @property
