@@ -33,15 +33,15 @@ class McpHttpTransport(ITransport):
         protocol: Protocol = Protocol.MCP,
     ):
         self.__base_url = base_url
-        self.__protocol_version = protocol.value
+        # Store the version the client proposes initially
+        self.__proposed_protocol_version = protocol.value
+        self.__protocol_version = protocol.value  # Will be updated after negotiation
         self.__server_info: Optional[Mapping[str, str]] = None
         self.__session_id: Optional[str] = None
 
-        self.__manage_session = False
-        if session is not None:
-            self.__session = session
-        else:
-            self.__manage_session = True
+        self.__manage_session = session is None
+        self.__session: Optional[ClientSession] = session
+
         try:
             loop = asyncio.get_running_loop()
         except RuntimeError:
@@ -50,7 +50,16 @@ class McpHttpTransport(ITransport):
             asyncio.set_event_loop(loop)
 
         # Runs on the SAME loop where the session was created.
-        loop.run_until_complete(self._initialize_session())
+        try:
+            loop.run_until_complete(self._initialize_session())
+        except RuntimeError as e:
+            # Provide a helpful error message if nest_asyncio is likely missing
+            if "This event loop is already running" in str(e):
+                raise RuntimeError(
+                    "Detected nested event loop execution. You must apply 'nest_asyncio.apply()' when running "
+                    "in an already active async context (like pytest-asyncio)."
+                ) from e
+            raise
 
     @property
     def base_url(self) -> str:
@@ -103,17 +112,24 @@ class McpHttpTransport(ITransport):
         return result
 
     async def close(self):
-        if self.__manage_session and not self.__session.closed:
+        if self.__manage_session and self.__session and not self.__session.closed:
             await self.__session.close()
 
     async def _initialize_session(self):
         """Initializes the MCP session."""
+
+        if self.__session is None:
+            if self.__manage_session:
+                self.__session = ClientSession()
+            else:
+                # Should be unreachable due to __init__ logic, but safe guard.
+                raise RuntimeError("ClientSession not available for initialization.")
+
         url = f"{self.__base_url}/mcp/"
 
         # Perform version negotitation
         client_supported_versions = Protocol.get_supported_mcp_versions()
-        # The client should propose the latest version it supports.
-        proposed_version = self.__protocol_version
+
         params = {
             "processId": os.getpid(),
             "clientInfo": {
@@ -121,22 +137,24 @@ class McpHttpTransport(ITransport):
                 "version": version.__version__,
             },
             "capabilities": {},
-            "protocolVersion": proposed_version,
+            "protocolVersion": self.__proposed_protocol_version,
         }
         # Send initialise notification
         initialize_result = await self._send_request(
             url=url, method="initialize", params=params
         )
 
-        # Get the session id for v26-02-2025
-        if self.__protocol_version == "2025-03-26":
+        # Get the session id if the proposed version required it
+        if self.__proposed_protocol_version == "2025-03-26":
             self.__session_id = initialize_result.get("Mcp-Session-Id")
             if not self.__session_id:
+                if self.__manage_session:
+                    await self.close()
                 raise RuntimeError(
                     "Server did not return a Mcp-Session-Id during initialization."
                 )
 
-        # Perform version negotiation
+        # Perform version negotiation based on server response
         self.__server_info = initialize_result.get("serverInfo")
         if self.__server_info:
             server_protocol_version = self.__server_info.get("protocolVersion")
@@ -146,6 +164,7 @@ class McpHttpTransport(ITransport):
                 raise RuntimeError(
                     f"MCP version mismatch: client does not support server version {server_protocol_version}"
                 )
+            # Update the protocol version to the one agreed upon by the server.
             self.__protocol_version = server_protocol_version
         else:
             if self.__manage_session:
@@ -167,15 +186,19 @@ class McpHttpTransport(ITransport):
         headers: Optional[Mapping[str, str]] = None,
     ) -> Any:
         """Sends a JSON-RPC request to the MCP server."""
+
+        request_params = params.copy()
+        req_headers = dict(headers or {})
+
         # TODO: Check if we should add "Session IDs" for subsequent versions
+        # Check based on the NEGOTIATED version (self.__protocol_version)
         if (
             self.__protocol_version == "2025-03-26"
             and method != "initialize"
             and self.__session_id
         ):
-            params["Mcp-Session-Id"] = self.__session_id
+            request_params["Mcp-Session-Id"] = self.__session_id
 
-        req_headers = dict(headers or {})
         if self.__protocol_version == "2025-06-18":
             req_headers["MCP-Protocol-Version"] = self.__protocol_version
 
@@ -183,7 +206,7 @@ class McpHttpTransport(ITransport):
         payload = {
             "jsonrpc": "2.0",
             "method": method,
-            "params": params,
+            "params": request_params,
             "id": request_id,
         }
         async with self.__session.post(
