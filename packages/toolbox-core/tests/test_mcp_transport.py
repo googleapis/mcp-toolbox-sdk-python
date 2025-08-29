@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import copy
 from typing import AsyncGenerator
 
 import nest_asyncio
@@ -38,25 +39,26 @@ async def http_session() -> AsyncGenerator[ClientSession, None]:
 @pytest.fixture
 def mock_initialize_response() -> dict:
     """Provides a valid sample dictionary for an initialize response."""
-    # Return a copy to ensure tests can modify the dictionary without affecting others
-    return {
+    data = {
         "jsonrpc": "2.0",
         "id": "1",
         "result": {
             "serverInfo": {
                 "name": "Fake MCP Server",
                 "version": "1.0.0",
-                "protocolVersion": "2025-06-18",
+                # Use a safe default, tests will modify their copy if needed
+                "protocolVersion": Protocol.MCP_LATEST.value,
             },
             "capabilities": {"tools": {}},
         },
     }
+    return copy.deepcopy(data)
 
 
 @pytest.fixture
 def mock_tools_list_response() -> dict:
     """Provides a valid sample dictionary for a tools/list response."""
-    return {
+    data = {
         "jsonrpc": "2.0",
         "id": "2",
         "result": {
@@ -76,6 +78,7 @@ def mock_tools_list_response() -> dict:
             ]
         },
     }
+    return copy.deepcopy(data)
 
 
 @pytest.mark.asyncio
@@ -243,81 +246,87 @@ async def test_json_rpc_error(
             await transport.tools_list()
 
 
-# @pytest.mark.asyncio
-# async def test_v2025_06_18_adds_protocol_header(
-#     http_session: ClientSession,
-#     mock_tools_list_response: dict,
-#     mock_initialize_response: dict,
-# ):
-#     """Tests that MCP v2025-06-18 adds the MCP-Protocol-Version header."""
-#     init_url = f"{TEST_BASE_URL}/mcp/"
-#     list_url = f"{TEST_BASE_URL}/mcp"
-#     protocol_version = "2025-06-18"
+@pytest.mark.asyncio
+async def test_v2025_06_18_adds_protocol_header(
+    http_session: ClientSession,
+    mock_tools_list_response: dict,
+    mock_initialize_response: dict,
+):
+    """Tests that MCP v2025-06-18 adds the MCP-Protocol-Version header."""
+    init_url = f"{TEST_BASE_URL}/mcp/"
+    list_url = f"{TEST_BASE_URL}/mcp"
+    protocol_version = "2025-06-18"
 
-#     # Ensure the mock server responds with the desired protocol version
-#     mock_initialize_response["result"]["serverInfo"]["protocolVersion"] = protocol_version
+    # Ensure the mock server responds with the desired protocol version
+    mock_initialize_response["result"]["serverInfo"][
+        "protocolVersion"
+    ] = protocol_version
 
-#     with aioresponses() as m:
-#         # Mock the initialization sequence
-#         m.post(init_url, status=200, payload=mock_initialize_response)
-#         m.post(init_url, status=200, payload={})  # Initialized notification
+    with aioresponses() as m:
+        # Mock the initialization sequence
+        m.post(init_url, status=200, payload=mock_initialize_response)
+        m.post(init_url, status=200, payload={})  # Initialized notification
 
-#         # __init__ runs the real initialization, negotiating the version based on the mock response.
-#         transport = McpHttpTransport(
-#             base_url=TEST_BASE_URL,
-#             session=http_session,
-#             protocol=Protocol.MCP_v20250618,
-#         )
+        # __init__ runs the real initialization, negotiating the version based on the mock response.
+        transport = McpHttpTransport(
+            base_url=TEST_BASE_URL,
+            session=http_session,
+            protocol=Protocol.MCP_v20250618,
+        )
 
-#         # Mock the subsequent tools/list request
-#         m.post(list_url, status=200, payload=mock_tools_list_response)
-#         await transport.tools_list()
+        # Mock the subsequent tools/list request
+        m.post(list_url, status=200, payload=mock_tools_list_response)
+        await transport.tools_list()
 
-#         calls = m.requests.get(("POST", list_url))
-#         assert calls is not None
-#         assert len(calls) == 1
-#         request = calls[0]
-#         assert "MCP-Protocol-Version" in request.kwargs["headers"]
-#         assert request.kwargs["headers"]["MCP-Protocol-Version"] == protocol_version
+        calls = m.requests.get(("POST", list_url))
+        assert calls is not None
+        assert len(calls) == 1
+        request = calls[0]
+        assert "MCP-Protocol-Version" in request.kwargs["headers"]
+        assert request.kwargs["headers"]["MCP-Protocol-Version"] == protocol_version
 
-# @pytest.mark.asyncio
-# async def test_v2025_03_26_session_id_handling(
-#     http_session: ClientSession,
-#     mock_tools_list_response: dict,
-#     mock_initialize_response: dict,
-# ):
-#     """Tests that MCP v2025-03-26 correctly handles the session ID."""
-#     session_id = "test-session-123"
-#     init_url = f"{TEST_BASE_URL}/mcp/"
-#     list_url = f"{TEST_BASE_URL}/mcp"
-#     protocol_version = "2025-03-26"
 
-#     # Configure the initialize response for v2025-03-26 and include the session ID
-#     mock_initialize_response["result"]["serverInfo"]["protocolVersion"] = protocol_version
-#     mock_initialize_response["result"]["Mcp-Session-Id"] = session_id
+@pytest.mark.asyncio
+async def test_v2025_03_26_session_id_handling(
+    http_session: ClientSession,
+    mock_tools_list_response: dict,
+    mock_initialize_response: dict,
+):
+    """Tests that MCP v2025-03-26 correctly handles the session ID."""
+    session_id = "test-session-123"
+    init_url = f"{TEST_BASE_URL}/mcp/"
+    list_url = f"{TEST_BASE_URL}/mcp"
+    protocol_version = "2025-03-26"
 
-#     with aioresponses() as m:
-#         # Mock the initialization sequence
-#         m.post(init_url, status=200, payload=mock_initialize_response)
-#         m.post(init_url, status=200, payload={})  # Initialized notification
+    # Configure the initialize response for v2025-03-26 and include the session ID
+    # This modification is now safe because the fixture provides a deep copy.
+    mock_initialize_response["result"]["serverInfo"][
+        "protocolVersion"
+    ] = protocol_version
+    mock_initialize_response["result"]["Mcp-Session-Id"] = session_id
 
-#         # __init__ runs the real initialization and captures the session ID.
-#         transport = McpHttpTransport(
-#             base_url=TEST_BASE_URL,
-#             session=http_session,
-#             protocol=Protocol.MCP_v20250326,
-#         )
+    with aioresponses() as m:
+        # Mock the initialization sequence
+        m.post(init_url, status=200, payload=mock_initialize_response)
+        m.post(init_url, status=200, payload={})  # Initialized notification
 
-#         # Mock the subsequent tools/list request
-#         m.post(list_url, status=200, payload=mock_tools_list_response)
-#         await transport.tools_list()
+        # __init__ runs the real initialization and captures the session ID.
+        transport = McpHttpTransport(
+            base_url=TEST_BASE_URL,
+            session=http_session,
+            protocol=Protocol.MCP_v20250326,
+        )
 
-#         calls = m.requests.get(("POST", list_url))
-#         assert calls is not None
-#         assert len(calls) == 1
-#         sent_payload = calls[0].kwargs["json"]
-#         assert "Mcp-Session-Id" in sent_payload["params"]
-#         assert sent_payload["params"]["Mcp-Session-Id"] == session_id
+        # Mock the subsequent tools/list request
+        m.post(list_url, status=200, payload=mock_tools_list_response)
+        await transport.tools_list()
+
+        calls = m.requests.get(("POST", list_url))
+        assert calls is not None
+        assert len(calls) == 1
+        sent_payload = calls[0].kwargs["json"]
+        assert "Mcp-Session-Id" in sent_payload["params"]
+        assert sent_payload["params"]["Mcp-Session-Id"] == session_id
 
 
 @pytest.mark.asyncio
