@@ -15,7 +15,7 @@ import os
 import uuid
 from asyncio import AbstractEventLoop, new_event_loop, run_coroutine_threadsafe
 from threading import Thread
-from typing import Any, Mapping, MutableMapping, Optional
+from typing import Any, Mapping, Optional
 
 from aiohttp import ClientSession
 
@@ -88,7 +88,7 @@ class McpHttpTransport(ITransport):
         )
 
     async def tool_invoke(
-        self, tool_name: str, arguments: dict, headers: Mapping[str, str]
+        self, tool_name: str, arguments: dict, headers: Optional[Mapping[str, str]]
     ) -> dict:
         """Invokes a specific tool on the server using the MCP protocol."""
         url = f"{self.__base_url}/mcp/"
@@ -160,7 +160,7 @@ class McpHttpTransport(ITransport):
         url: str,
         method: str,
         params: dict,
-        headers: Optional[MutableMapping[str, str]] = None,
+        headers: Optional[Mapping[str, str]] = None,
     ) -> Any:
         """Sends a JSON-RPC request to the MCP server."""
         # TODO: Check if we should add "Session IDs" for subsequent versions
@@ -171,9 +171,11 @@ class McpHttpTransport(ITransport):
         ):
             params["Mcp-Session-Id"] = self.__session_id
 
-        headers = headers or {}
+        updated_headers: dict[str, str] = {}
+        if headers:
+            updated_headers.update(headers)
         if self.__protocol_version == "2025-06-18":
-            headers["MCP-Protocol-Version"] = self.__protocol_version
+            updated_headers["MCP-Protocol-Version"] = self.__protocol_version
 
         request_id = str(uuid.uuid4())
         payload = {
@@ -182,7 +184,9 @@ class McpHttpTransport(ITransport):
             "params": params,
             "id": request_id,
         }
-        async with self.__session.post(url, json=payload, headers=headers) as response:
+        async with self.__session.post(
+            url, json=payload, headers=updated_headers
+        ) as response:
             if not response.ok:
                 error_text = await response.text()
                 raise RuntimeError(
