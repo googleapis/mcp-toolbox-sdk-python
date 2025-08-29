@@ -23,6 +23,7 @@ from . import version
 from .itransport import ITransport
 from .protocol import ManifestSchema, Protocol, ToolSchema
 
+
 class McpHttpTransport(ITransport):
     """Transport for the MCP protocol."""
 
@@ -127,8 +128,10 @@ class McpHttpTransport(ITransport):
         if self.__protocol_version == "2025-03-26":
             self.__session_id = initialize_result.get("Mcp-Session-Id")
             if not self.__session_id:
-                raise RuntimeError("Server did not return a Mcp-Session-Id during initialization.")
-        
+                raise RuntimeError(
+                    "Server did not return a Mcp-Session-Id during initialization."
+                )
+
         # Perform version negotiation
         self.__server_info = initialize_result.get("serverInfo")
         if self.__server_info:
@@ -160,7 +163,11 @@ class McpHttpTransport(ITransport):
         headers: Optional[Mapping[str, str]] = None,
     ) -> Any:
         """Sends a JSON-RPC request to the MCP server."""
-        if self.__protocol_version == "2025-03-26" and method != "initialize" and self.__session_id:
+        if (
+            self.__protocol_version == "2025-03-26"
+            and method != "initialize"
+            and self.__session_id
+        ):
             params["Mcp-Session-Id"] = self.__session_id
 
         request_id = str(uuid.uuid4())
