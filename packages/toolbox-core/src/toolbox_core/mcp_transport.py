@@ -171,11 +171,9 @@ class McpHttpTransport(ITransport):
         ):
             params["Mcp-Session-Id"] = self.__session_id
 
-        updated_headers: dict[str, str] = {}
-        if headers:
-            updated_headers.update(headers)
+        req_headers = dict(headers or {})
         if self.__protocol_version == "2025-06-18":
-            updated_headers["MCP-Protocol-Version"] = self.__protocol_version
+            req_headers["MCP-Protocol-Version"] = self.__protocol_version
 
         request_id = str(uuid.uuid4())
         payload = {
@@ -185,7 +183,7 @@ class McpHttpTransport(ITransport):
             "id": request_id,
         }
         async with self.__session.post(
-            url, json=payload, headers=updated_headers
+            url, json=payload, headers=req_headers
         ) as response:
             if not response.ok:
                 error_text = await response.text()
