@@ -15,7 +15,7 @@ import os
 import uuid
 from asyncio import AbstractEventLoop, new_event_loop, run_coroutine_threadsafe
 from threading import Thread
-from typing import Any, Mapping, Optional
+from typing import Any, Mapping, MutableMapping, Optional
 
 from aiohttp import ClientSession
 
@@ -160,7 +160,7 @@ class McpHttpTransport(ITransport):
         url: str,
         method: str,
         params: dict,
-        headers: Optional[Mapping[str, str]] = None,
+        headers: Optional[MutableMapping[str, str]] = None,
     ) -> Any:
         """Sends a JSON-RPC request to the MCP server."""
         # TODO: Check if we should add "Session IDs" for subsequent versions
@@ -171,7 +171,7 @@ class McpHttpTransport(ITransport):
         ):
             params["Mcp-Session-Id"] = self.__session_id
 
-        headers = dict(headers or {})
+        headers = headers or {}
         if self.__protocol_version == "2025-06-18":
             headers["MCP-Protocol-Version"] = self.__protocol_version
 
