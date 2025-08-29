@@ -171,6 +171,10 @@ class McpHttpTransport(ITransport):
         ):
             params["Mcp-Session-Id"] = self.__session_id
 
+        headers = dict(headers or {})
+        if self.__protocol_version == "2025-06-18":
+            headers["MCP-Protocol-Version"] = self.__protocol_version
+
         request_id = str(uuid.uuid4())
         payload = {
             "jsonrpc": "2.0",
