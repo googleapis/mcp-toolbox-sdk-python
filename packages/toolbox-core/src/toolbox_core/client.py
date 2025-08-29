@@ -45,7 +45,7 @@ class ToolboxClient:
         client_headers: Optional[
             Mapping[str, Union[Callable[[], str], Callable[[], Awaitable[str]], str]]
         ] = None,
-        protocol: Protocol = Protocol.MCP,
+        protocol: Optional[Protocol] = Protocol.MCP,
     ):
         """
         Initializes the ToolboxClient.
@@ -60,8 +60,10 @@ class ToolboxClient:
             client.
             protocol: The communication protocol to use.
         """
-
-        self.__transport = ToolboxTransport(url, session)
+        if protocol == Protocol.TOOLBOX:
+            self.__transport = ToolboxTransport(url, session)
+        else:
+            self.__transport = McpHttpTransport(url, session, protocol)
         self.__client_headers = client_headers if client_headers is not None else {}
 
     def __parse_tool(
