@@ -23,7 +23,6 @@ from . import version
 from .itransport import ITransport
 from .protocol import ManifestSchema, Protocol, ToolSchema
 
-
 class McpHttpTransport(ITransport):
     """Transport for the MCP protocol."""
 
@@ -39,6 +38,7 @@ class McpHttpTransport(ITransport):
         self.__manage_session = manage_session
         self.__protocol_version = protocol.value
         self.__server_info: Optional[Mapping[str, str]] = None
+        self.__session_id: Optional[str] = None
 
         self.__loop: AbstractEventLoop = new_event_loop()
         self.__thread = Thread(target=self.__loop.run_forever, daemon=True)
@@ -104,8 +104,9 @@ class McpHttpTransport(ITransport):
     async def _initialize_session(self):
         """Initializes the MCP session."""
         url = f"{self.__base_url}/mcp/"
-        client_supported_versions = Protocol.get_supported_mcp_versions()
 
+        # Perform version negotitation
+        client_supported_versions = Protocol.get_supported_mcp_versions()
         # The client should propose the latest version it supports.
         proposed_version = self.__protocol_version
         params = {
@@ -117,12 +118,20 @@ class McpHttpTransport(ITransport):
             "capabilities": {},
             "protocolVersion": proposed_version,
         }
+        # Send initialise notification
         initialize_result = await self._send_request(
             url=url, method="initialize", params=params
         )
+
+        # Get the session id for v26-02-2025
+        if self.__protocol_version == "2025-03-26":
+            self.__session_id = initialize_result.get("Mcp-Session-Id")
+            if not self.__session_id:
+                raise RuntimeError("Server did not return a Mcp-Session-Id during initialization.")
+        
+        # Perform version negotiation
         self.__server_info = initialize_result.get("serverInfo")
         if self.__server_info:
-            # TODO: This does not work with the oldest version
             server_protocol_version = self.__server_info.get("protocolVersion")
             if server_protocol_version not in client_supported_versions:
                 if self.__manage_session:
@@ -151,6 +160,9 @@ class McpHttpTransport(ITransport):
         headers: Optional[Mapping[str, str]] = None,
     ) -> Any:
         """Sends a JSON-RPC request to the MCP server."""
+        if self.__protocol_version == "2025-03-26" and method != "initialize" and self.__session_id:
+            params["Mcp-Session-Id"] = self.__session_id
+
         request_id = str(uuid.uuid4())
         payload = {
             "jsonrpc": "2.0",
