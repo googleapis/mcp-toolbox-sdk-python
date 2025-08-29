@@ -163,6 +163,7 @@ class McpHttpTransport(ITransport):
         headers: Optional[Mapping[str, str]] = None,
     ) -> Any:
         """Sends a JSON-RPC request to the MCP server."""
+        # TODO: Check if we should add "Session IDs" for subsequent versions
         if (
             self.__protocol_version == "2025-03-26"
             and method != "initialize"
