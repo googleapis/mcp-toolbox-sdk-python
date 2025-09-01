@@ -38,9 +38,8 @@ class McpHttpTransport(ITransport):
         protocol: Protocol = Protocol.MCP,
     ):
         self.__base_url = base_url
-        # Store the version the client proposes initially
-        self.__proposed_protocol_version = protocol.value
-        self.__protocol_version = protocol.value  # Will be updated after negotiation
+        # Will be updated after negotiation
+        self.__protocol_version = protocol.value 
         self.__server_version: Optional[str] = None
         self.__session_id: Optional[str] = None
 
@@ -170,7 +169,7 @@ class McpHttpTransport(ITransport):
 
         # Perform version negotitation
         client_supported_versions = Protocol.get_supported_mcp_versions()
-
+        proposed_protocol_version = self.__protocol_version
         params = {
             "processId": os.getpid(),
             "clientInfo": {
@@ -178,7 +177,7 @@ class McpHttpTransport(ITransport):
                 "version": version.__version__,
             },
             "capabilities": {},
-            "protocolVersion": self.__proposed_protocol_version,
+            "protocolVersion": proposed_protocol_version,
         }
         # Send initialize notification
         initialize_result = await self._send_request(
@@ -186,7 +185,7 @@ class McpHttpTransport(ITransport):
         )
 
         # Get the session id if the proposed version requires it
-        if self.__proposed_protocol_version == "2025-03-26":
+        if proposed_protocol_version == "2025-03-26":
             self.__session_id = initialize_result.get("Mcp-Session-Id")
             if not self.__session_id:
                 if self.__manage_session:
@@ -264,6 +263,7 @@ class McpHttpTransport(ITransport):
         async with self.__session.post(
             url, json=payload, headers=req_headers
         ) as response:
+            print("DEBUG:", response)
             if not response.ok:
                 error_text = await response.text()
                 raise RuntimeError(
