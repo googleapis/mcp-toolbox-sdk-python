@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import asyncio
 import os
 import uuid
 from typing import Any, Mapping, Optional
@@ -36,30 +35,12 @@ class McpHttpTransport(ITransport):
         # Store the version the client proposes initially
         self.__proposed_protocol_version = protocol.value
         self.__protocol_version = protocol.value  # Will be updated after negotiation
-        self.__server_info: Optional[Mapping[str, str]] = None
+        self.__server_version: Optional[str] = None
         self.__session_id: Optional[str] = None
 
         self.__manage_session = session is None
-        self.__session: Optional[ClientSession] = session
-
-        try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:
-            # Fallback if no loop is currently running
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-
-        # Runs on the SAME loop where the session was created.
-        try:
-            loop.run_until_complete(self._initialize_session())
-        except RuntimeError as e:
-            # Provide a helpful error message if nest_asyncio is likely missing
-            if "This event loop is already running" in str(e):
-                raise RuntimeError(
-                    "Detected nested event loop execution. You must apply 'nest_asyncio.apply()' when running "
-                    "in an already active async context (like pytest-asyncio)."
-                ) from e
-            raise
+        self.__session = session or ClientSession()
+        self.__mcp_initialized: bool = False
 
     @property
     def base_url(self) -> str:
@@ -69,6 +50,8 @@ class McpHttpTransport(ITransport):
         self, tool_name: str, headers: Optional[Mapping[str, str]] = None
     ) -> ManifestSchema:
         """Gets a single tool from the server by listing all and filtering."""
+        if not self.__mcp_initialized:
+            await self._initialize_session()
         manifest = await self.tools_list(headers=headers)
         if tool_name in manifest.tools:
             return ManifestSchema(
@@ -84,6 +67,8 @@ class McpHttpTransport(ITransport):
         headers: Optional[Mapping[str, str]] = None,
     ) -> ManifestSchema:
         """Lists available tools from the server using the MCP protocol."""
+        if not self.__mcp_initialized:
+            await self._initialize_session()
         if toolset_name:
             url = f"{self.__base_url}/mcp/{toolset_name}"
         else:
@@ -92,11 +77,11 @@ class McpHttpTransport(ITransport):
         result = await self._send_request(
             url=url, method="tools/list", params={}, headers=headers
         )
-        if self.__server_info is None:
-            raise RuntimeError("Server info not available.")
+        if self.__server_version is None:
+            raise RuntimeError("Server version not available.")
 
         return ManifestSchema(
-            serverVersion=self.__server_info["version"],
+            serverVersion=self.__server_version,
             tools={tool["name"]: ToolSchema(**tool) for tool in result["tools"]},
         )
 
@@ -104,6 +89,8 @@ class McpHttpTransport(ITransport):
         self, tool_name: str, arguments: dict, headers: Optional[Mapping[str, str]]
     ) -> dict:
         """Invokes a specific tool on the server using the MCP protocol."""
+        if not self.__mcp_initialized:
+            await self._initialize_session()
         url = f"{self.__base_url}/mcp/"
         params = {"name": tool_name, "arguments": arguments}
         result = await self._send_request(
@@ -139,7 +126,7 @@ class McpHttpTransport(ITransport):
             "capabilities": {},
             "protocolVersion": self.__proposed_protocol_version,
         }
-        # Send initialise notification
+        # Send initialize notification
         initialize_result = await self._send_request(
             url=url, method="initialize", params=params
         )
@@ -155,21 +142,20 @@ class McpHttpTransport(ITransport):
                 )
 
         # Perform version negotiation based on server response
-        self.__server_info = initialize_result.get("serverInfo")
-        if self.__server_info:
-            server_protocol_version = self.__server_info.get("protocolVersion")
-            if server_protocol_version not in client_supported_versions:
+        server_protcol_version = initialize_result.get("protocolVersion")
+        if server_protcol_version:
+            if server_protcol_version not in client_supported_versions:
                 if self.__manage_session:
                     await self.close()
                 raise RuntimeError(
-                    f"MCP version mismatch: client does not support server version {server_protocol_version}"
+                    f"MCP version mismatch: client does not support server version {server_protcol_version}"
                 )
             # Update the protocol version to the one agreed upon by the server.
-            self.__protocol_version = server_protocol_version
+            self.__protocol_version = server_protcol_version
         else:
             if self.__manage_session:
                 await self.close()
-            raise RuntimeError("Server info not found in initialize response")
+            raise RuntimeError("Server version not found in initialize response")
 
         self.__server_capabilities = initialize_result.get("capabilities")
         if not self.__server_capabilities or "tools" not in self.__server_capabilities:
@@ -177,6 +163,8 @@ class McpHttpTransport(ITransport):
                 await self.close()
             raise RuntimeError("Server does not support the 'tools' capability.")
         await self._send_request(url=url, method="notifications/initialized", params={})
+
+        self.__mcp_initialized = True
 
     async def _send_request(
         self,
@@ -190,7 +178,6 @@ class McpHttpTransport(ITransport):
         request_params = params.copy()
         req_headers = dict(headers or {})
 
-        # TODO: Check if we should add "Session IDs" for subsequent versions
         # Check based on the NEGOTIATED version (self.__protocol_version)
         if (
             self.__protocol_version == "2025-03-26"
