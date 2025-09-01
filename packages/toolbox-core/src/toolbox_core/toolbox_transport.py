@@ -69,7 +69,7 @@ class ToolboxTransport(ITransport):
 
     async def tool_invoke(
         self, tool_name: str, arguments: dict, headers: Mapping[str, str]
-    ) -> dict:
+    ) -> str:
         # ID tokens contain sensitive user information (claims). Transmitting
         # these over HTTP exposes the data to interception and unauthorized
         # access. Always use HTTPS to ensure secure communication and protect
