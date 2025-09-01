@@ -161,7 +161,6 @@ class McpHttpTransport(ITransport):
 
     async def _initialize_session(self):
         """Initializes the MCP session."""
-
         if self.__session is None and self.__manage_session:
             self.__session = ClientSession()
 
@@ -222,9 +221,7 @@ class McpHttpTransport(ITransport):
             if self.__manage_session:
                 await self.close()
             raise RuntimeError("Server does not support the 'tools' capability.")
-
-        # TODO: Check if server responds to this request properly
-        # await self._send_request(url=url, method="notifications/initialized", params={})
+        await self._send_request(url=url, method="notifications/initialized", params={})
 
         self.__mcp_initialized = True
 
@@ -263,12 +260,16 @@ class McpHttpTransport(ITransport):
         async with self.__session.post(
             url, json=payload, headers=req_headers
         ) as response:
-            print("DEBUG:", response)
             if not response.ok:
                 error_text = await response.text()
                 raise RuntimeError(
                     f"API request failed with status {response.status} ({response.reason}). Server response: {error_text}"
                 )
+            
+            # Handle potential empty body (e.g. 204 No Content for notifications)
+            if response.status == 204 or response.content.at_eof():
+                return None
+            
             json_response = await response.json()
             if "error" in json_response:
                 error = json_response["error"]
