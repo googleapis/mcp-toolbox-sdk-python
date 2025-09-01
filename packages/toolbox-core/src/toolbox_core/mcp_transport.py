@@ -205,6 +205,11 @@ class McpHttpTransport(ITransport):
             "params": request_params,
             "id": request_id,
         }
+        
+        # Notifications should not contain id
+        if method.startswith("notification"):
+            del payload["id"]
+        
         async with self.__session.post(
             url, json=payload, headers=req_headers
         ) as response:
