@@ -46,25 +46,12 @@ class McpHttpTransport(ITransport):
     def base_url(self) -> str:
         return self.__base_url
 
-    async def tool_get(
-        self, tool_name: str, headers: Optional[Mapping[str, str]] = None
-    ) -> ManifestSchema:
-        """Gets a single tool from the server by listing all and filtering."""
-        manifest = await self.tools_list(headers=headers)
-        if tool_name in manifest.tools:
-            return ManifestSchema(
-                serverVersion=manifest.serverVersion,
-                tools={tool_name: manifest.tools[tool_name]},
-            )
-        else:
-            raise ValueError(f"Tool '{tool_name}' not found.")
-
-    async def tools_list(
+    async def _list_tools(
         self,
         toolset_name: Optional[str] = None,
         headers: Optional[Mapping[str, str]] = None,
-    ) -> ManifestSchema:
-        """Lists available tools from the server using the MCP protocol."""
+    ) -> Any:
+        """Private helper to fetch the raw tool list from the server."""
         # TODO: Do not use lazy initialisation
         if not self.__mcp_initialized:
             await self._initialize_session()
@@ -72,10 +59,42 @@ class McpHttpTransport(ITransport):
             url = f"{self.__base_url}/mcp/{toolset_name}"
         else:
             url = f"{self.__base_url}/mcp"
-
-        result = await self._send_request(
+        return await self._send_request(
             url=url, method="tools/list", params={}, headers=headers
         )
+
+    async def tool_get(
+        self, tool_name: str, headers: Optional[Mapping[str, str]] = None
+    ) -> ManifestSchema:
+        """Gets a single tool from the server by listing all and filtering."""
+        result = await self._list_tools(headers=headers)
+
+        if self.__server_version is None:
+            raise RuntimeError("Server version not available.")
+
+        tool_def = None
+        for tool in result.get("tools", []):
+            if tool.get("name") == tool_name:
+                tool_def = tool
+                break
+
+        if tool_def is None:
+            raise ValueError(f"Tool '{tool_name}' not found.")
+
+        validated_tool = ToolSchema(**tool_def)
+        return ManifestSchema(
+            serverVersion=self.__server_version,
+            tools={tool_name: validated_tool},
+        )
+
+    async def tools_list(
+        self,
+        toolset_name: Optional[str] = None,
+        headers: Optional[Mapping[str, str]] = None,
+    ) -> ManifestSchema:
+        """Lists available tools from the server using the MCP protocol."""
+        result = await self._list_tools(toolset_name, headers)
+
         if self.__server_version is None:
             raise RuntimeError("Server version not available.")
 
@@ -169,7 +188,7 @@ class McpHttpTransport(ITransport):
             if self.__manage_session:
                 await self.close()
             raise RuntimeError("Server does not support the 'tools' capability.")
-        
+
         # TODO: Check if server responds to this request properly
         # await self._send_request(url=url, method="notifications/initialized", params={})
 
@@ -205,11 +224,11 @@ class McpHttpTransport(ITransport):
             "params": request_params,
             "id": request_id,
         }
-        
+
         # Notifications should not contain id
         if method.startswith("notification"):
             del payload["id"]
-        
+
         async with self.__session.post(
             url, json=payload, headers=req_headers
         ) as response:
