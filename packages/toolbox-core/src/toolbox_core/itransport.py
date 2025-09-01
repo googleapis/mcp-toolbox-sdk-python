@@ -48,7 +48,7 @@ class ITransport(ABC):
     @abstractmethod
     async def tool_invoke(
         self, tool_name: str, arguments: dict, headers: Mapping[str, str]
-    ) -> dict:
+    ) -> str:
         """Invokes a specific tool on the server."""
         pass
 

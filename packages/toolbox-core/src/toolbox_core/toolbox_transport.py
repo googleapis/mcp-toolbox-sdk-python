@@ -88,7 +88,7 @@ class ToolboxTransport(ITransport):
             if not resp.ok:
                 err = body.get("error", f"unexpected status from server: {resp.status}")
                 raise Exception(err)
-        return body
+        return body.get("result")
 
     async def close(self):
         if self.__manage_session and not self.__session.closed:

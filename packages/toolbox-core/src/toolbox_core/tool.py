@@ -290,7 +290,7 @@ class ToolboxTool:
             payload,
             headers,
         )
-        return body.get("result", body)
+        return body
 
     def add_auth_token_getters(
         self,

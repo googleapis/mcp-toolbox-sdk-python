@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import AsyncGenerator, Mapping, Optional, Union
+from typing import AsyncGenerator, Mapping, Union, Optional
 from unittest.mock import AsyncMock
 
 import pytest
@@ -135,7 +135,7 @@ async def test_tool_invoke_success(http_session: ClientSession):
         m.post(url, status=200, payload=response_payload)
         result = await transport.tool_invoke(TEST_TOOL_NAME, args, headers)
 
-        assert result == response_payload
+        assert result == "success"
         m.assert_called_once_with(url, method="POST", json=args, headers=headers)
 
 
