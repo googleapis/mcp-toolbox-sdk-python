@@ -46,6 +46,13 @@ class McpHttpTransport(ITransport):
     def base_url(self) -> str:
         return self.__base_url
 
+    def _preprocess_tool_defs(self, tools_list: list[dict]) -> list[dict]:
+        """Ensures that every tool definition has a 'parameters' key."""
+        for tool in tools_list:
+            if "parameters" not in tool:
+                tool["parameters"] = []
+        return tools_list
+
     async def _list_tools(
         self,
         toolset_name: Optional[str] = None,
@@ -72,8 +79,10 @@ class McpHttpTransport(ITransport):
         if self.__server_version is None:
             raise RuntimeError("Server version not available.")
 
+        processed_tools = self._preprocess_tool_defs(result.get("tools", []))
+
         tool_def = None
-        for tool in result.get("tools", []):
+        for tool in processed_tools:
             if tool.get("name") == tool_name:
                 tool_def = tool
                 break
@@ -98,9 +107,11 @@ class McpHttpTransport(ITransport):
         if self.__server_version is None:
             raise RuntimeError("Server version not available.")
 
+        processed_tools = self._preprocess_tool_defs(result.get("tools", []))
+
         return ManifestSchema(
             serverVersion=self.__server_version,
-            tools={tool["name"]: ToolSchema(**tool) for tool in result["tools"]},
+            tools={tool["name"]: ToolSchema(**tool) for tool in processed_tools},
         )
 
     async def tool_invoke(
