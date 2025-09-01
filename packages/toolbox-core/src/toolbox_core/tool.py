@@ -285,12 +285,11 @@ class ToolboxTool:
                 token_getter
             )
 
-        body = await self.__transport.tool_invoke(
+        return await self.__transport.tool_invoke(
             self.__name__,
             payload,
             headers,
         )
-        return body
 
     def add_auth_token_getters(
         self,
