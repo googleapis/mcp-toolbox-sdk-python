@@ -13,13 +13,19 @@
 # limitations under the License.
 import os
 import uuid
-from typing import Any, Mapping, Optional
+from typing import Any, Mapping, Optional, Union
 
 from aiohttp import ClientSession
 
 from . import version
 from .itransport import ITransport
-from .protocol import ManifestSchema, Protocol, ToolSchema, ParameterSchema
+from .protocol import (
+    AdditionalPropertiesSchema,
+    ManifestSchema,
+    ParameterSchema,
+    Protocol,
+    ToolSchema,
+)
 
 
 class McpHttpTransport(ITransport):
@@ -45,7 +51,7 @@ class McpHttpTransport(ITransport):
     @property
     def base_url(self) -> str:
         return self.__base_url
-    
+
     def _convert_tool_schema(self, tool_data: dict) -> ToolSchema:
         parameters = []
         input_schema = tool_data.get("inputSchema", {})
@@ -53,19 +59,24 @@ class McpHttpTransport(ITransport):
         required = input_schema.get("required", [])
 
         for name, schema in properties.items():
+            additional_props_value = schema.get("additionalProperties")
+            final_additional_properties: Union[bool, AdditionalPropertiesSchema] = True
+
+            if isinstance(additional_props_value, dict):
+                final_additional_properties = AdditionalPropertiesSchema(
+                    type=additional_props_value["type"]
+                )
             parameters.append(
                 ParameterSchema(
                     name=name,
                     type=schema["type"],
                     description=schema.get("description", ""),
-                    required=name in required
+                    required=name in required,
+                    additionalProperties=final_additional_properties,
                 )
             )
-        
-        return ToolSchema(
-            description=tool_data["description"],
-            parameters=parameters
-        )
+
+        return ToolSchema(description=tool_data["description"], parameters=parameters)
 
     async def _list_tools(
         self,
@@ -107,7 +118,7 @@ class McpHttpTransport(ITransport):
             tools={tool_name: tool_def},
         )
         return tool_details
-    
+
     async def tools_list(
         self,
         toolset_name: Optional[str] = None,
@@ -127,7 +138,7 @@ class McpHttpTransport(ITransport):
 
     async def tool_invoke(
         self, tool_name: str, arguments: dict, headers: Optional[Mapping[str, str]]
-    ) -> dict:
+    ) -> str:
         """Invokes a specific tool on the server using the MCP protocol."""
         # TODO: Do not use lazy initialisation
         if not self.__mcp_initialized:
@@ -137,7 +148,13 @@ class McpHttpTransport(ITransport):
         result = await self._send_request(
             url=url, method="tools/call", params=params, headers=headers
         )
-        return result
+        all_content = result.get("content", result)
+        content_str = "".join(
+            content.get("text", "")
+            for content in all_content
+            if isinstance(content, dict)
+        )
+        return content_str or "null"
 
     async def close(self):
         if self.__manage_session and self.__session and not self.__session.closed:
@@ -240,7 +257,7 @@ class McpHttpTransport(ITransport):
             "method": method,
             "params": request_params,
         }
-        
+
         if not method.startswith("notifications/"):
             payload["id"] = str(uuid.uuid4())
 
