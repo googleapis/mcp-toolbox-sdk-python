@@ -18,7 +18,20 @@ from typing import Any, Optional
 
 import pytest
 
-from toolbox_core.protocol import AdditionalPropertiesSchema, ParameterSchema
+from toolbox_core.protocol import AdditionalPropertiesSchema, ParameterSchema, Protocol
+
+
+def test_get_supported_mcp_versions():
+    """
+    Tests that get_supported_mcp_versions returns the correct list of versions,
+    sorted from newest to oldest.
+    """
+    expected_versions = ["2025-06-18", "2025-03-26", "2024-11-05"]
+    supported_versions = Protocol.get_supported_mcp_versions()
+
+    assert supported_versions == expected_versions
+    # Also verify that the non-MCP members are not included
+    assert "toolbox" not in supported_versions
 
 
 def test_parameter_schema_float():
