@@ -197,9 +197,7 @@ async def test_load_tool_success(mock_transport, test_tool_str):
     Tests successfully loading a tool when the transport returns a valid manifest.
     """
     TOOL_NAME = "test_tool_1"
-    manifest = ManifestSchema(
-        serverVersion="0.0.0", tools={TOOL_NAME: test_tool_str}
-    )
+    manifest = ManifestSchema(serverVersion="0.0.0", tools={TOOL_NAME: test_tool_str})
     mock_transport.tool_get_mock.return_value = manifest
     mock_transport.tool_invoke_mock.return_value = "ok"
 
@@ -232,9 +230,7 @@ async def test_load_tool_success(mock_transport, test_tool_str):
 
 
 @pytest.mark.asyncio
-async def test_load_toolset_success(
-    mock_transport, test_tool_str, test_tool_int_bool
-):
+async def test_load_toolset_success(mock_transport, test_tool_str, test_tool_int_bool):
     """Tests successfully loading a toolset with multiple tools."""
     TOOLSET_NAME = "my_toolset"
     TOOL1 = "tool1"
@@ -264,9 +260,7 @@ async def test_invoke_tool_server_error(mock_transport, test_tool_str):
     """Tests that invoking a tool raises an Exception when the transport raises an error."""
     TOOL_NAME = "server_error_tool"
     ERROR_MESSAGE = "Simulated Server Error"
-    manifest = ManifestSchema(
-        serverVersion="0.0.0", tools={TOOL_NAME: test_tool_str}
-    )
+    manifest = ManifestSchema(serverVersion="0.0.0", tools={TOOL_NAME: test_tool_str})
     mock_transport.tool_get_mock.return_value = manifest
     mock_transport.tool_invoke_mock.side_effect = Exception(ERROR_MESSAGE)
 
@@ -394,7 +388,9 @@ class TestAuth:
             mock_transport_auth.tool_invoke_mock.assert_awaited_once()
 
     @pytest.mark.asyncio
-    async def test_auth_with_load_tool_fail_no_token(self, tool_name, mock_transport_auth):
+    async def test_auth_with_load_tool_fail_no_token(
+        self, tool_name, mock_transport_auth
+    ):
         """Tests 'load_tool' without required auth token fails."""
         async with ToolboxClient(TEST_BASE_URL) as client:
             client._ToolboxClient__transport = mock_transport_auth
