@@ -50,8 +50,6 @@ class McpHttpTransport(ITransport):
         self, tool_name: str, headers: Optional[Mapping[str, str]] = None
     ) -> ManifestSchema:
         """Gets a single tool from the server by listing all and filtering."""
-        if not self.__mcp_initialized:
-            await self._initialize_session()
         manifest = await self.tools_list(headers=headers)
         if tool_name in manifest.tools:
             return ManifestSchema(
@@ -67,6 +65,7 @@ class McpHttpTransport(ITransport):
         headers: Optional[Mapping[str, str]] = None,
     ) -> ManifestSchema:
         """Lists available tools from the server using the MCP protocol."""
+        # TODO: Do not use lazy initialisation
         if not self.__mcp_initialized:
             await self._initialize_session()
         if toolset_name:
@@ -89,6 +88,7 @@ class McpHttpTransport(ITransport):
         self, tool_name: str, arguments: dict, headers: Optional[Mapping[str, str]]
     ) -> dict:
         """Invokes a specific tool on the server using the MCP protocol."""
+        # TODO: Do not use lazy initialisation
         if not self.__mcp_initialized:
             await self._initialize_session()
         url = f"{self.__base_url}/mcp/"
