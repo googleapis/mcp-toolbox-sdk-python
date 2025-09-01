@@ -15,7 +15,6 @@
 import copy
 from typing import AsyncGenerator
 
-import nest_asyncio
 import pytest
 import pytest_asyncio
 from aiohttp import ClientSession
@@ -24,7 +23,6 @@ from aioresponses import aioresponses
 from toolbox_core.mcp_transport import McpHttpTransport
 from toolbox_core.protocol import ManifestSchema, Protocol
 
-nest_asyncio.apply()
 TEST_BASE_URL = "http://fake-mcp-server.com"
 TEST_TOOL_NAME = "test_tool"
 
