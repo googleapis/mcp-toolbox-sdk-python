@@ -131,7 +131,7 @@ class McpHttpTransport(ITransport):
             url=url, method="initialize", params=params
         )
 
-        # Get the session id if the proposed version required it
+        # Get the session id if the proposed version requires it
         if self.__proposed_protocol_version == "2025-03-26":
             self.__session_id = initialize_result.get("Mcp-Session-Id")
             if not self.__session_id:
@@ -140,6 +140,13 @@ class McpHttpTransport(ITransport):
                 raise RuntimeError(
                     "Server did not return a Mcp-Session-Id during initialization."
                 )
+        server_info = initialize_result.get("serverInfo")
+        if not server_info:
+            raise RuntimeError("Server info not found in initialize response")
+
+        self.__server_version = server_info.get("version")
+        if not self.__server_version:
+            raise RuntimeError("Server version not found in initialize response")
 
         # Perform version negotiation based on server response
         server_protcol_version = initialize_result.get("protocolVersion")
@@ -162,7 +169,7 @@ class McpHttpTransport(ITransport):
             if self.__manage_session:
                 await self.close()
             raise RuntimeError("Server does not support the 'tools' capability.")
-        await self._send_request(url=url, method="notifications/initialized", params={})
+        # await self._send_request(url=url, method="notifications/initialized", params={})
 
         self.__mcp_initialized = True
 
