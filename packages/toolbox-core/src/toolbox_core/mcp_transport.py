@@ -216,7 +216,7 @@ class McpHttpTransport(ITransport):
         else:
             if self.__manage_session:
                 await self.close()
-            raise RuntimeError("Server version not found in initialize response")
+            raise RuntimeError("MCP Protocol version not found in initialize response")
 
         server_capabilities = initialize_result.get("capabilities")
         if not server_capabilities or "tools" not in server_capabilities:
