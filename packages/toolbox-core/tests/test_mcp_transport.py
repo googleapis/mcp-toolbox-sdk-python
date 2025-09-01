@@ -14,11 +14,12 @@
 
 import copy
 from typing import AsyncGenerator
-from yarl import URL
+
 import pytest
 import pytest_asyncio
 from aiohttp import ClientSession
 from aioresponses import aioresponses
+from yarl import URL
 
 from toolbox_core.mcp_transport import McpHttpTransport
 from toolbox_core.protocol import ManifestSchema, Protocol
@@ -91,7 +92,7 @@ async def test_successful_initialization(
     url = f"{TEST_BASE_URL}/mcp/"
     with aioresponses() as m:
         m.post(url, status=200, payload=mock_initialize_response)
-        m.post(url, status=204) # initialized notification
+        m.post(url, status=204)  # initialized notification
         m.post(url, status=200, payload=mock_tools_list_response)
 
         transport = McpHttpTransport(
@@ -183,7 +184,11 @@ async def test_tool_invoke_success(
 ):
     """Tests a successful tool_invoke call."""
     url = f"{TEST_BASE_URL}/mcp/"
-    invoke_response = {"jsonrpc": "2.0", "id": "4", "result": {"content": [{"text": "success"}]}}
+    invoke_response = {
+        "jsonrpc": "2.0",
+        "id": "4",
+        "result": {"content": [{"text": "success"}]},
+    }
     with aioresponses() as m:
         m.post(url, status=200, payload=mock_initialize_response)
         m.post(url, status=204)
@@ -274,14 +279,16 @@ async def test_v2025_06_18_adds_protocol_header(
 
         calls = m.requests.get(("POST", URL(url)))
         assert calls is not None
-        
+
         # There will be 3 calls: initialize, initialized, and tools/list
-        assert len(calls) == 3 
-        
+        assert len(calls) == 3
+
         # Check the last call (tools/list) for the header
         list_request = calls[2]
         assert "MCP-Protocol-Version" in list_request.kwargs["headers"]
-        assert list_request.kwargs["headers"]["MCP-Protocol-Version"] == protocol_version
+        assert (
+            list_request.kwargs["headers"]["MCP-Protocol-Version"] == protocol_version
+        )
 
 
 @pytest.mark.asyncio
@@ -315,7 +322,7 @@ async def test_v2025_03_26_session_id_handling(
         calls = m.requests.get(("POST", URL(url)))
         assert calls is not None
         assert len(calls) == 3
-        
+
         list_request = calls[2]
         sent_payload = list_request.kwargs["json"]
         assert "Mcp-Session-Id" in sent_payload["params"]

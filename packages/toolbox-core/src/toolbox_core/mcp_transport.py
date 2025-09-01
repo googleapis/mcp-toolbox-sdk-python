@@ -39,7 +39,7 @@ class McpHttpTransport(ITransport):
     ):
         self.__base_url = base_url
         # Will be updated after negotiation
-        self.__protocol_version = protocol.value 
+        self.__protocol_version = protocol.value
         self.__server_version: Optional[str] = None
         self.__session_id: Optional[str] = None
 
@@ -265,11 +265,11 @@ class McpHttpTransport(ITransport):
                 raise RuntimeError(
                     f"API request failed with status {response.status} ({response.reason}). Server response: {error_text}"
                 )
-            
+
             # Handle potential empty body (e.g. 204 No Content for notifications)
             if response.status == 204 or response.content.at_eof():
                 return None
-            
+
             json_response = await response.json()
             if "error" in json_response:
                 error = json_response["error"]
