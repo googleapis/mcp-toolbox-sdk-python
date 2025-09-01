@@ -224,6 +224,7 @@ class TestAuth:
         ):
             await tool()
 
+
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("toolbox_server")
 class TestOptionalParams:
