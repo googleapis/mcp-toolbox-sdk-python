@@ -19,7 +19,7 @@ from aiohttp import ClientSession
 
 from . import version
 from .itransport import ITransport
-from .protocol import ManifestSchema, Protocol, ToolSchema
+from .protocol import ManifestSchema, Protocol, ToolSchema, ParameterSchema
 
 
 class McpHttpTransport(ITransport):
@@ -45,13 +45,27 @@ class McpHttpTransport(ITransport):
     @property
     def base_url(self) -> str:
         return self.__base_url
+    
+    def _convert_tool_schema(self, tool_data: dict) -> ToolSchema:
+        parameters = []
+        input_schema = tool_data.get("inputSchema", {})
+        properties = input_schema.get("properties", {})
+        required = input_schema.get("required", [])
 
-    def _preprocess_tool_defs(self, tools_list: list[dict]) -> list[dict]:
-        """Ensures that every tool definition has a 'parameters' key."""
-        for tool in tools_list:
-            if "parameters" not in tool:
-                tool["parameters"] = []
-        return tools_list
+        for name, schema in properties.items():
+            parameters.append(
+                ParameterSchema(
+                    name=name,
+                    type=schema["type"],
+                    description=schema.get("description", ""),
+                    required=name in required
+                )
+            )
+        
+        return ToolSchema(
+            description=tool_data["description"],
+            parameters=parameters
+        )
 
     async def _list_tools(
         self,
@@ -65,7 +79,7 @@ class McpHttpTransport(ITransport):
         if toolset_name:
             url = f"{self.__base_url}/mcp/{toolset_name}"
         else:
-            url = f"{self.__base_url}/mcp"
+            url = f"{self.__base_url}/mcp/"
         return await self._send_request(
             url=url, method="tools/list", params={}, headers=headers
         )
@@ -79,23 +93,21 @@ class McpHttpTransport(ITransport):
         if self.__server_version is None:
             raise RuntimeError("Server version not available.")
 
-        processed_tools = self._preprocess_tool_defs(result.get("tools", []))
-
         tool_def = None
-        for tool in processed_tools:
+        for tool in result.get("tools", []):
             if tool.get("name") == tool_name:
-                tool_def = tool
+                tool_def = self._convert_tool_schema(tool)
                 break
 
         if tool_def is None:
             raise ValueError(f"Tool '{tool_name}' not found.")
 
-        validated_tool = ToolSchema(**tool_def)
-        return ManifestSchema(
+        tool_details = ManifestSchema(
             serverVersion=self.__server_version,
-            tools={tool_name: validated_tool},
+            tools={tool_name: tool_def},
         )
-
+        return tool_details
+    
     async def tools_list(
         self,
         toolset_name: Optional[str] = None,
@@ -103,15 +115,14 @@ class McpHttpTransport(ITransport):
     ) -> ManifestSchema:
         """Lists available tools from the server using the MCP protocol."""
         result = await self._list_tools(toolset_name, headers)
+        tools = result.get("tools")
 
         if self.__server_version is None:
             raise RuntimeError("Server version not available.")
 
-        processed_tools = self._preprocess_tool_defs(result.get("tools", []))
-
         return ManifestSchema(
             serverVersion=self.__server_version,
-            tools={tool["name"]: ToolSchema(**tool) for tool in processed_tools},
+            tools={tool["name"]: self._convert_tool_schema(tool) for tool in tools},
         )
 
     async def tool_invoke(
@@ -135,12 +146,8 @@ class McpHttpTransport(ITransport):
     async def _initialize_session(self):
         """Initializes the MCP session."""
 
-        if self.__session is None:
-            if self.__manage_session:
-                self.__session = ClientSession()
-            else:
-                # Should be unreachable due to __init__ logic, but safe guard.
-                raise RuntimeError("ClientSession not available for initialization.")
+        if self.__session is None and self.__manage_session:
+            self.__session = ClientSession()
 
         url = f"{self.__base_url}/mcp/"
 
@@ -194,8 +201,8 @@ class McpHttpTransport(ITransport):
                 await self.close()
             raise RuntimeError("Server version not found in initialize response")
 
-        self.__server_capabilities = initialize_result.get("capabilities")
-        if not self.__server_capabilities or "tools" not in self.__server_capabilities:
+        server_capabilities = initialize_result.get("capabilities")
+        if not server_capabilities or "tools" not in server_capabilities:
             if self.__manage_session:
                 await self.close()
             raise RuntimeError("Server does not support the 'tools' capability.")
@@ -228,17 +235,14 @@ class McpHttpTransport(ITransport):
         if self.__protocol_version == "2025-06-18":
             req_headers["MCP-Protocol-Version"] = self.__protocol_version
 
-        request_id = str(uuid.uuid4())
         payload = {
             "jsonrpc": "2.0",
             "method": method,
             "params": request_params,
-            "id": request_id,
         }
-
-        # Notifications should not contain id
-        if method.startswith("notification"):
-            del payload["id"]
+        
+        if not method.startswith("notifications/"):
+            payload["id"] = str(uuid.uuid4())
 
         async with self.__session.post(
             url, json=payload, headers=req_headers
