@@ -66,48 +66,6 @@ def mock_transport() -> MockTransport:
     """Provides a mock transport instance."""
     return MockTransport(TEST_BASE_URL)
 
-
-class MockTransport(ITransport):
-    """A mock transport for testing the ToolboxClient."""
-
-    def __init__(self, base_url: str):
-        self._base_url = base_url
-        self.tool_get_mock = AsyncMock()
-        self.tools_list_mock = AsyncMock()
-        self.tool_invoke_mock = AsyncMock()
-        self.close_mock = AsyncMock()
-
-    @property
-    def base_url(self) -> str:
-        return self._base_url
-
-    async def tool_get(
-        self, tool_name: str, headers: Optional[Mapping[str, str]] = None
-    ) -> ManifestSchema:
-        return await self.tool_get_mock(tool_name, headers)
-
-    async def tools_list(
-        self,
-        toolset_name: Optional[str] = None,
-        headers: Optional[Mapping[str, str]] = None,
-    ) -> ManifestSchema:
-        return await self.tools_list_mock(toolset_name, headers)
-
-    async def tool_invoke(
-        self, tool_name: str, arguments: dict, headers: Mapping[str, str]
-    ) -> str:
-        return await self.tool_invoke_mock(tool_name, arguments, headers)
-
-    async def close(self):
-        await self.close_mock()
-
-
-@pytest.fixture
-def mock_transport() -> MockTransport:
-    """Provides a mock transport instance."""
-    return MockTransport(TEST_BASE_URL)
-
-
 @pytest.fixture()
 def test_tool_str():
     return ToolSchema(
