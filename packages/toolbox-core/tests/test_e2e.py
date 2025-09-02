@@ -28,7 +28,7 @@ from toolbox_core.tool import ToolboxTool
 @pytest_asyncio.fixture(scope="function")
 async def toolbox():
     """Creates a ToolboxClient instance shared by all tests in this module."""
-    toolbox = ToolboxClient("http://localhost:5000", protocol=Protocol.TOOLBOX)
+    toolbox = ToolboxClient("http://localhost:5000")
     try:
         yield toolbox
     finally:
