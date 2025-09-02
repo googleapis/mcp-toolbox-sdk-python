@@ -140,9 +140,8 @@ class McpHttpTransport(ITransport):
         self, tool_name: str, arguments: dict, headers: Optional[Mapping[str, str]]
     ) -> str:
         """Invokes a specific tool on the server using the MCP protocol."""
-        # TODO: Do not use lazy initialisation
-        if not self.__mcp_initialized:
-            await self._initialize_session()
+        await self.__init_task
+
         url = f"{self.__base_url}/mcp/"
         params = {"name": tool_name, "arguments": arguments}
         result = await self._send_request(
@@ -229,8 +228,6 @@ class McpHttpTransport(ITransport):
                 await self.close()
             raise RuntimeError("Server does not support the 'tools' capability.")
         await self._send_request(url=url, method="notifications/initialized", params={})
-
-        self.__mcp_initialized = True
 
     async def _send_request(
         self,
