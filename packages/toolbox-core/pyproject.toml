@@ -53,7 +53,7 @@ test = [
     "pytest-cov==6.2.1",
     "pytest-mock==3.14.1",
     "google-cloud-secret-manager==2.24.0",
-    "google-cloud-storage==3.3.0",
+    "google-cloud-storage==3.3.1",
     "aioresponses==0.7.8"
 ]
 [build-system]
