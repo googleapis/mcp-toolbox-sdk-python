@@ -474,7 +474,7 @@ def test_tool_add_auth_token_getters_conflict_with_existing_client_header(
 
 
 @pytest.mark.asyncio
-async def test_auth_token_getter_overrides_client_header_in_runtime_conflict_concise(
+async def test_auth_token_getter_overrides_client_header(
     http_session: ClientSession,
     sample_tool_description: str,
     sample_tool_auth_params: list[ParameterSchema],
