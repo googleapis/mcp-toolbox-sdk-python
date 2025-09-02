@@ -66,6 +66,7 @@ def mock_transport() -> MockTransport:
     """Provides a mock transport instance."""
     return MockTransport(TEST_BASE_URL)
 
+
 @pytest.fixture()
 def test_tool_str():
     return ToolSchema(
