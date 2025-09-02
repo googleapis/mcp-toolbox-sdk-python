@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import asyncio
 import os
 import uuid
 from typing import Any, Mapping, Optional, Union
@@ -45,7 +46,7 @@ class McpHttpTransport(ITransport):
 
         self.__manage_session = session is None
         self.__session = session or ClientSession()
-        self.__mcp_initialized: bool = False
+        self.__init_task = asyncio.create_task(self._initialize_session())
 
     @property
     def base_url(self) -> str:
@@ -83,9 +84,6 @@ class McpHttpTransport(ITransport):
         headers: Optional[Mapping[str, str]] = None,
     ) -> Any:
         """Private helper to fetch the raw tool list from the server."""
-        # TODO: Do not use lazy initialisation
-        if not self.__mcp_initialized:
-            await self._initialize_session()
         if toolset_name:
             url = f"{self.__base_url}/mcp/{toolset_name}"
         else:
@@ -98,11 +96,12 @@ class McpHttpTransport(ITransport):
         self, tool_name: str, headers: Optional[Mapping[str, str]] = None
     ) -> ManifestSchema:
         """Gets a single tool from the server by listing all and filtering."""
-        result = await self._list_tools(headers=headers)
+        await self.__init_task
 
         if self.__server_version is None:
             raise RuntimeError("Server version not available.")
 
+        result = await self._list_tools(headers=headers)
         tool_def = None
         for tool in result.get("tools", []):
             if tool.get("name") == tool_name:
@@ -124,11 +123,13 @@ class McpHttpTransport(ITransport):
         headers: Optional[Mapping[str, str]] = None,
     ) -> ManifestSchema:
         """Lists available tools from the server using the MCP protocol."""
-        result = await self._list_tools(toolset_name, headers)
-        tools = result.get("tools")
+        await self.__init_task
 
         if self.__server_version is None:
             raise RuntimeError("Server version not available.")
+
+        result = await self._list_tools(toolset_name, headers)
+        tools = result.get("tools")
 
         return ManifestSchema(
             serverVersion=self.__server_version,
@@ -156,8 +157,14 @@ class McpHttpTransport(ITransport):
         return content_str or "null"
 
     async def close(self):
-        if self.__manage_session and self.__session and not self.__session.closed:
-            await self.__session.close()
+        try:
+            await self.__init_task
+        except Exception:
+            # If initialization failed, we can still try to close the session.
+            pass
+        finally:
+            if self.__manage_session and self.__session and not self.__session.closed:
+                await self.__session.close()
 
     async def _initialize_session(self):
         """Initializes the MCP session."""
