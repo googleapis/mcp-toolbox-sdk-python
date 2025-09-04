@@ -40,7 +40,7 @@ class ToolboxTransport(ITransport):
         """The base URL for the transport."""
         return self.__base_url
 
-    async def _get_manifest(
+    async def __get_manifest(
         self, url: str, headers: Optional[Mapping[str, str]]
     ) -> ManifestSchema:
         """Helper method to perform GET requests and parse the ManifestSchema."""
@@ -57,7 +57,7 @@ class ToolboxTransport(ITransport):
         self, tool_name: str, headers: Optional[Mapping[str, str]] = None
     ) -> ManifestSchema:
         url = f"{self.__base_url}/api/tool/{tool_name}"
-        return await self._get_manifest(url, headers)
+        return await self.__get_manifest(url, headers)
 
     async def tools_list(
         self,
@@ -65,7 +65,7 @@ class ToolboxTransport(ITransport):
         headers: Optional[Mapping[str, str]] = None,
     ) -> ManifestSchema:
         url = f"{self.__base_url}/api/toolset/{toolset_name or ''}"
-        return await self._get_manifest(url, headers)
+        return await self.__get_manifest(url, headers)
 
     async def tool_invoke(
         self, tool_name: str, arguments: dict, headers: Mapping[str, str]
