@@ -18,6 +18,7 @@ from typing import Mapping, Optional
 from unittest.mock import AsyncMock
 
 import pytest
+from pytest import FixtureRequest
 
 from toolbox_core.client import ToolboxClient
 from toolbox_core.itransport import ITransport
@@ -357,3 +358,184 @@ class TestAuth:
                 await client.load_tool(
                     tool_name, auth_token_getters={AUTH_SERVICE: lambda: "token"}
                 )
+
+
+class TestValidation:
+    """Tests related to the bound_params and auth token validation functionality."""
+
+    @pytest.mark.asyncio
+    async def test_load_tool_with_bound_param_success(
+        self, mock_transport, tool_schema_with_param_P
+    ):
+        """Tests loading a tool with a successfully bound parameter."""
+        TOOL_NAME = "tool_with_p"
+        BOUND_VALUE = "this_is_bound"
+        manifest = ManifestSchema(
+            serverVersion="0.0.0", tools={TOOL_NAME: tool_schema_with_param_P}
+        )
+        mock_transport.tool_get_mock.return_value = manifest
+
+        async with ToolboxClient(TEST_BASE_URL) as client:
+            client._ToolboxClient__transport = mock_transport
+            tool = await client.load_tool(
+                TOOL_NAME, bound_params={"param_P": BOUND_VALUE}
+            )
+
+            # The bound parameter should no longer be in the signature
+            assert "param_P" not in inspect.signature(tool).parameters
+            # Invoking the tool should not require the bound parameter
+            await tool()
+            mock_transport.tool_invoke_mock.assert_awaited_once_with(
+                TOOL_NAME, {"param_P": BOUND_VALUE}, {}
+            )
+
+    @pytest.mark.asyncio
+    async def test_load_tool_with_unused_bound_param_fail(
+        self, mock_transport, tool_schema_minimal
+    ):
+        """Tests that load_tool fails if a bound_param is unused."""
+        TOOL_NAME = "minimal_tool"
+        manifest = ManifestSchema(
+            serverVersion="0.0.0", tools={TOOL_NAME: tool_schema_minimal}
+        )
+        mock_transport.tool_get_mock.return_value = manifest
+
+        async with ToolboxClient(TEST_BASE_URL) as client:
+            client._ToolboxClient__transport = mock_transport
+            with pytest.raises(
+                ValueError,
+                match=f"Validation failed for tool '{TOOL_NAME}': unused bound parameters: unused_param.",
+            ):
+                await client.load_tool(
+                    TOOL_NAME, bound_params={"unused_param": "some_value"}
+                )
+
+    @pytest.mark.asyncio
+    async def test_load_toolset_strict_with_partially_used_bound_param_fail(
+        self, mock_transport, tool_schema_with_param_P, tool_schema_minimal
+    ):
+        """Tests that load_toolset fails in strict mode if a bound_param is only used by some tools."""
+        TOOL_P = "tool_with_p"
+        TOOL_MIN = "minimal_tool"
+        manifest = ManifestSchema(
+            serverVersion="0.0.0",
+            tools={TOOL_P: tool_schema_with_param_P, TOOL_MIN: tool_schema_minimal},
+        )
+        mock_transport.tools_list_mock.return_value = manifest
+
+        async with ToolboxClient(TEST_BASE_URL) as client:
+            client._ToolboxClient__transport = mock_transport
+            with pytest.raises(
+                ValueError,
+                match=f"Validation failed for tool '{TOOL_MIN}': unused bound parameters: param_P.",
+            ):
+                await client.load_toolset(
+                    bound_params={"param_P": "some_value"}, strict=True
+                )
+
+    @pytest.mark.asyncio
+    async def test_load_toolset_non_strict_with_unused_bound_param_fail(
+        self, mock_transport, tool_schema_minimal
+    ):
+        """Tests that load_toolset fails in non-strict mode if a bound_param is used by no tools."""
+        manifest = ManifestSchema(
+            serverVersion="0.0.0", tools={"tool1": tool_schema_minimal}
+        )
+        mock_transport.tools_list_mock.return_value = manifest
+        TOOLSET_NAME = "my_set"
+
+        async with ToolboxClient(TEST_BASE_URL) as client:
+            client._ToolboxClient__transport = mock_transport
+            with pytest.raises(
+                ValueError,
+                match=f"Validation failed for toolset '{TOOLSET_NAME}': unused bound parameters could not be applied to any tool: param_Z.",
+            ):
+                await client.load_toolset(
+                    TOOLSET_NAME, bound_params={"param_Z": "some_value"}
+                )
+
+    @pytest.mark.asyncio
+    async def test_load_toolset_strict_with_partially_used_auth_fail(
+        self, mock_transport, tool_schema_requires_auth_X, tool_schema_minimal
+    ):
+        """Tests that load_toolset fails in strict mode if an auth token is only used by some tools."""
+        TOOL_AUTH = "tool_with_auth"
+        TOOL_MIN = "minimal_tool"
+        manifest = ManifestSchema(
+            serverVersion="0.0.0",
+            tools={
+                TOOL_AUTH: tool_schema_requires_auth_X,
+                TOOL_MIN: tool_schema_minimal,
+            },
+        )
+        mock_transport.tools_list_mock.return_value = manifest
+
+        async with ToolboxClient(TEST_BASE_URL) as client:
+            client._ToolboxClient__transport = mock_transport
+            with pytest.raises(
+                ValueError,
+                match=f"Validation failed for tool '{TOOL_MIN}': unused auth tokens: auth_service_X.",
+            ):
+                await client.load_toolset(
+                    auth_token_getters={"auth_service_X": lambda: "token"}, strict=True
+                )
+
+    @pytest.mark.asyncio
+    async def test_load_toolset_non_strict_with_unused_auth_fail(
+        self, mock_transport, tool_schema_minimal
+    ):
+        """Tests that load_toolset fails in non-strict mode if an auth token is used by no tools."""
+        manifest = ManifestSchema(
+            serverVersion="0.0.0", tools={"tool1": tool_schema_minimal}
+        )
+        mock_transport.tools_list_mock.return_value = manifest
+        TOOLSET_NAME = "my_set"
+
+        async with ToolboxClient(TEST_BASE_URL) as client:
+            client._ToolboxClient__transport = mock_transport
+            with pytest.raises(
+                ValueError,
+                match=f"Validation failed for toolset '{TOOLSET_NAME}': unused auth tokens could not be applied to any tool: auth_service_Z.",
+            ):
+                await client.load_toolset(
+                    TOOLSET_NAME,
+                    auth_token_getters={"auth_service_Z": lambda: "token"},
+                )
+
+
+class TestClientHeaders:
+    """Tests related to client headers."""
+
+    @pytest.mark.asyncio
+    async def test_add_headers_success(self, mock_transport, tool_schema_minimal):
+        """Tests that headers added via the deprecated add_headers are sent."""
+        TOOL_NAME = "some_tool"
+        manifest = ManifestSchema(
+            serverVersion="0.0.0", tools={TOOL_NAME: tool_schema_minimal}
+        )
+        mock_transport.tool_get_mock.return_value = manifest
+
+        with pytest.warns(DeprecationWarning):
+            client = ToolboxClient(TEST_BASE_URL)
+            client._ToolboxClient__transport = mock_transport
+            client.add_headers({"X-Test-Header": "TestValue"})
+
+        await client.load_tool(TOOL_NAME)
+        mock_transport.tool_get_mock.assert_awaited_once_with(
+            TOOL_NAME, {"X-Test-Header": "TestValue"}
+        )
+        await client.close()
+
+    @pytest.mark.asyncio
+    async def test_add_headers_duplicate_fail(self):
+        """Tests that add_headers fails if a header is already registered."""
+        with pytest.warns(DeprecationWarning):
+            client = ToolboxClient(
+                TEST_BASE_URL, client_headers={"X-Duplicate": "Original"}
+            )
+            with pytest.raises(
+                ValueError,
+                match="Client header\\(s\\) `X-Duplicate` already registered in the client.",
+            ):
+                client.add_headers({"X-Duplicate": "NewValue"})
+        await client.close()
