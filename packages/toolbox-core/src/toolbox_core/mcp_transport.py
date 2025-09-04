@@ -38,7 +38,7 @@ class McpHttpTransport(ITransport):
         session: Optional[ClientSession] = None,
         protocol: Protocol = Protocol.MCP,
     ):
-        self.__base_url = base_url
+        self.__mcp_base_url = base_url + "/mcp/"
         # Will be updated after negotiation
         self.__protocol_version = protocol.value
         self.__server_version: Optional[str] = None
@@ -50,7 +50,7 @@ class McpHttpTransport(ITransport):
 
     @property
     def base_url(self) -> str:
-        return self.__base_url
+        return self.__mcp_base_url
 
     def __convert_tool_schema(self, tool_data: dict) -> ToolSchema:
         parameters = []
@@ -85,9 +85,9 @@ class McpHttpTransport(ITransport):
     ) -> Any:
         """Private helper to fetch the raw tool list from the server."""
         if toolset_name:
-            url = f"{self.__base_url}/mcp/{toolset_name}"
+            url = self.__mcp_base_url + toolset_name
         else:
-            url = f"{self.__base_url}/mcp/"
+            url = self.__mcp_base_url
         return await self.__send_request(
             url=url, method="tools/list", params={}, headers=headers
         )
@@ -142,7 +142,7 @@ class McpHttpTransport(ITransport):
         """Invokes a specific tool on the server using the MCP protocol."""
         await self.__init_task
 
-        url = f"{self.__base_url}/mcp/"
+        url = self.__mcp_base_url
         params = {"name": tool_name, "arguments": arguments}
         result = await self.__send_request(
             url=url, method="tools/call", params=params, headers=headers
@@ -170,7 +170,7 @@ class McpHttpTransport(ITransport):
         if self.__session is None and self.__manage_session:
             self.__session = ClientSession()
 
-        url = f"{self.__base_url}/mcp/"
+        url = self.__mcp_base_url
 
         # Perform version negotitation
         client_supported_versions = Protocol.get_supported_mcp_versions()
