@@ -623,6 +623,7 @@ def test_toolbox_tool_client_headers_property(toolbox_tool: ToolboxTool):
     with pytest.raises(TypeError):
         client_headers["new_header"] = "new_value"
 
+
 def test_bind_param_success(
     http_session: ClientSession,
     sample_tool_params: list[ParameterSchema],
@@ -760,7 +761,8 @@ def test_bind_param_error_rebind(
     bound_tool = tool.bind_param("message", "first_value")
 
     with pytest.raises(
-        ValueError, match="cannot re-bind parameter: parameter 'message' is already bound"
+        ValueError,
+        match="cannot re-bind parameter: parameter 'message' is already bound",
     ):
         bound_tool.bind_param("message", "second_value")
 
