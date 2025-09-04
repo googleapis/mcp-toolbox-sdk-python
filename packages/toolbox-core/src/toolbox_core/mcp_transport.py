@@ -46,13 +46,13 @@ class McpHttpTransport(ITransport):
 
         self.__manage_session = session is None
         self.__session = session or ClientSession()
-        self.__init_task = asyncio.create_task(self._initialize_session())
+        self.__init_task = asyncio.create_task(self.__initialize_session())
 
     @property
     def base_url(self) -> str:
         return self.__base_url
 
-    def _convert_tool_schema(self, tool_data: dict) -> ToolSchema:
+    def __convert_tool_schema(self, tool_data: dict) -> ToolSchema:
         parameters = []
         input_schema = tool_data.get("inputSchema", {})
         properties = input_schema.get("properties", {})
@@ -78,7 +78,7 @@ class McpHttpTransport(ITransport):
 
         return ToolSchema(description=tool_data["description"], parameters=parameters)
 
-    async def _list_tools(
+    async def __list_tools(
         self,
         toolset_name: Optional[str] = None,
         headers: Optional[Mapping[str, str]] = None,
@@ -88,7 +88,7 @@ class McpHttpTransport(ITransport):
             url = f"{self.__base_url}/mcp/{toolset_name}"
         else:
             url = f"{self.__base_url}/mcp/"
-        return await self._send_request(
+        return await self.__send_request(
             url=url, method="tools/list", params={}, headers=headers
         )
 
@@ -101,11 +101,11 @@ class McpHttpTransport(ITransport):
         if self.__server_version is None:
             raise RuntimeError("Server version not available.")
 
-        result = await self._list_tools(headers=headers)
+        result = await self.__list_tools(headers=headers)
         tool_def = None
         for tool in result.get("tools", []):
             if tool.get("name") == tool_name:
-                tool_def = self._convert_tool_schema(tool)
+                tool_def = self.__convert_tool_schema(tool)
                 break
 
         if tool_def is None:
@@ -128,12 +128,12 @@ class McpHttpTransport(ITransport):
         if self.__server_version is None:
             raise RuntimeError("Server version not available.")
 
-        result = await self._list_tools(toolset_name, headers)
+        result = await self.__list_tools(toolset_name, headers)
         tools = result.get("tools")
 
         return ManifestSchema(
             serverVersion=self.__server_version,
-            tools={tool["name"]: self._convert_tool_schema(tool) for tool in tools},
+            tools={tool["name"]: self.__convert_tool_schema(tool) for tool in tools},
         )
 
     async def tool_invoke(
@@ -144,7 +144,7 @@ class McpHttpTransport(ITransport):
 
         url = f"{self.__base_url}/mcp/"
         params = {"name": tool_name, "arguments": arguments}
-        result = await self._send_request(
+        result = await self.__send_request(
             url=url, method="tools/call", params=params, headers=headers
         )
         all_content = result.get("content", result)
@@ -165,7 +165,7 @@ class McpHttpTransport(ITransport):
             if self.__manage_session and self.__session and not self.__session.closed:
                 await self.__session.close()
 
-    async def _initialize_session(self):
+    async def __initialize_session(self):
         """Initializes the MCP session."""
         if self.__session is None and self.__manage_session:
             self.__session = ClientSession()
@@ -185,7 +185,7 @@ class McpHttpTransport(ITransport):
             "protocolVersion": proposed_protocol_version,
         }
         # Send initialize notification
-        initialize_result = await self._send_request(
+        initialize_result = await self.__send_request(
             url=url, method="initialize", params=params
         )
 
@@ -227,9 +227,9 @@ class McpHttpTransport(ITransport):
             if self.__manage_session:
                 await self.close()
             raise RuntimeError("Server does not support the 'tools' capability.")
-        await self._send_request(url=url, method="notifications/initialized", params={})
+        await self.__send_request(url=url, method="notifications/initialized", params={})
 
-    async def _send_request(
+    async def __send_request(
         self,
         url: str,
         method: str,

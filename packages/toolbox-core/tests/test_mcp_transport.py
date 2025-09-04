@@ -101,7 +101,7 @@ async def test_successful_initialization(
             protocol=Protocol.MCP_LATEST,
         )
         # Trigger the lazy initialization by calling a method
-        await transport._list_tools()
+        await transport._McpHttpTransport__list_tools()
 
 
 @pytest.mark.asyncio
