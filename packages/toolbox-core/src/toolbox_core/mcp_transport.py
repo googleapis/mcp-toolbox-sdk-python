@@ -59,13 +59,13 @@ class McpHttpTransport(ITransport):
         required = input_schema.get("required", [])
 
         for name, schema in properties.items():
-            additional_props_value = schema.get("additionalProperties")
-            additional_props: Union[bool, AdditionalPropertiesSchema] = True
-
-            if isinstance(additional_props_value, dict):
+            additional_props = schema.get("additionalProperties")
+            if isinstance(additional_props, dict):
                 additional_props = AdditionalPropertiesSchema(
-                    type=additional_props_value["type"]
+                    type=additional_props["type"]
                 )
+            else:
+                additional_props = True
             parameters.append(
                 ParameterSchema(
                     name=name,
