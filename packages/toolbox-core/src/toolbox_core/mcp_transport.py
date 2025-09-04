@@ -227,7 +227,9 @@ class McpHttpTransport(ITransport):
             if self.__manage_session:
                 await self.close()
             raise RuntimeError("Server does not support the 'tools' capability.")
-        await self.__send_request(url=url, method="notifications/initialized", params={})
+        await self.__send_request(
+            url=url, method="notifications/initialized", params={}
+        )
 
     async def __send_request(
         self,
