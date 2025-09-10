@@ -13,10 +13,10 @@
 # limitations under the License.
 
 assign_issues:
-  - kurtisvg
   - anubhav756
+  - dishaprakash
   - twishabansal
 assign_prs:
-  - kurtisvg
   - anubhav756
+  - dishaprakash
   - twishabansal

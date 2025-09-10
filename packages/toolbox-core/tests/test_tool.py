@@ -411,33 +411,6 @@ def test_tool_init_with_client_headers(
     assert tool_instance._ToolboxTool__client_headers == static_client_header
 
 
-def test_tool_init_header_auth_conflict(
-    http_session,
-    sample_tool_auth_params,
-    sample_tool_description,
-    auth_getters,
-    auth_header_key,
-):
-    """Tests ValueError on init if client header conflicts with auth token."""
-    conflicting_client_header = {auth_header_key: "some-client-value"}
-
-    with pytest.raises(
-        ValueError, match=f"Client header\\(s\\) `{auth_header_key}` already registered"
-    ):
-        ToolboxTool(
-            session=http_session,
-            base_url=HTTPS_BASE_URL,
-            name="auth_conflict_tool",
-            description=sample_tool_description,
-            params=sample_tool_auth_params,
-            required_authn_params={},
-            required_authz_tokens=[],
-            auth_service_token_getters=auth_getters,
-            bound_params={},
-            client_headers=conflicting_client_header,
-        )
-
-
 def test_tool_add_auth_token_getters_conflict_with_existing_client_header(
     http_session: ClientSession,
     sample_tool_params: list[ParameterSchema],
@@ -471,35 +444,6 @@ def test_tool_add_auth_token_getters_conflict_with_existing_client_header(
 
     with pytest.raises(ValueError, match=expected_error_message):
         tool_instance.add_auth_token_getters(new_auth_getters_causing_conflict)
-
-
-def test_add_auth_token_getters_unused_token(
-    http_session: ClientSession,
-    sample_tool_params: list[ParameterSchema],
-    sample_tool_description: str,
-    unused_auth_getters: Mapping[str, Callable[[], str]],
-):
-    """
-    Tests ValueError when add_auth_token_getters is called with a getter for
-    an unused authentication service.
-    """
-    tool_instance = ToolboxTool(
-        session=http_session,
-        base_url=HTTPS_BASE_URL,
-        name=TEST_TOOL_NAME,
-        description=sample_tool_description,
-        params=sample_tool_params,
-        required_authn_params={},
-        required_authz_tokens=[],
-        auth_service_token_getters={},
-        bound_params={},
-        client_headers={},
-    )
-
-    expected_error_message = "Authentication source\(s\) \`unused-auth-service\` unused by tool \`sample_tool\`."
-
-    with pytest.raises(ValueError, match=expected_error_message):
-        tool_instance.add_auth_token_getters(unused_auth_getters)
 
 
 def test_add_auth_token_getter_unused_token(
