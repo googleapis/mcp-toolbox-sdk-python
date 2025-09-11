@@ -132,6 +132,7 @@ class TestBindParams:
         assert "row3" in response
         assert "row4" not in response
 
+
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("toolbox_server")
 class TestAuth:
