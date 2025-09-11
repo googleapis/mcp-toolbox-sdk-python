@@ -40,6 +40,7 @@ from pydantic import ValidationError
 
 from toolbox_llamaindex.client import ToolboxClient
 
+
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("toolbox_server")
 class TestE2EClientAsync:

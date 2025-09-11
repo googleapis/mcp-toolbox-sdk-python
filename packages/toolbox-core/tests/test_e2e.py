@@ -20,8 +20,8 @@ import pytest_asyncio
 from pydantic import ValidationError
 
 from toolbox_core.client import ToolboxClient
-from toolbox_core.tool import ToolboxTool
 from toolbox_core.protocol import Protocol
+from toolbox_core.tool import ToolboxTool
 
 
 # --- Shared Fixtures Defined at Module Level ---
