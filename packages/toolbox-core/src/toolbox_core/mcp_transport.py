@@ -14,7 +14,7 @@
 import asyncio
 import os
 import uuid
-from typing import Any, Mapping, Optional, Union
+from typing import Any, Mapping, Optional
 
 from aiohttp import ClientSession
 
