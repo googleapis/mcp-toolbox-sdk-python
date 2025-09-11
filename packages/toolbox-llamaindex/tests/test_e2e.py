@@ -40,7 +40,6 @@ from pydantic import ValidationError
 
 from toolbox_llamaindex.client import ToolboxClient
 
-
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("toolbox_server")
 class TestE2EClientAsync:
@@ -143,7 +142,7 @@ class TestE2EClientAsync:
         auth_tool = tool.add_auth_token_getter("my-test-auth", lambda: auth_token2)
         with pytest.raises(
             Exception,
-            match="tool invocation not authorized. Please make sure your specify correct auth headers",
+            match="Unauthorized",
         ):
             await auth_tool.acall(id="2")
 

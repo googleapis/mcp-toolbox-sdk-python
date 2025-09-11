@@ -45,7 +45,7 @@ class ToolboxClient:
         client_headers: Optional[
             Mapping[str, Union[Callable[[], str], Callable[[], Awaitable[str]], str]]
         ] = None,
-        protocol: Protocol = Protocol.TOOLBOX,
+        protocol: Protocol = Protocol.MCP,
     ):
         """
         Initializes the ToolboxClient.
