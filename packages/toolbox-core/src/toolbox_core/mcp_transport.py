@@ -53,6 +53,10 @@ class McpHttpTransport(ITransport):
         return self.__mcp_base_url
 
     def __convert_tool_schema(self, tool_data: dict) -> ToolSchema:
+        meta = tool_data.get("_meta", {})
+        param_auth = meta.get("toolbox/authParam", {})
+        invoke_auth = meta.get("toolbox/authInvoke", [])
+
         parameters = []
         input_schema = tool_data.get("inputSchema", {})
         properties = input_schema.get("properties", {})
@@ -66,17 +70,25 @@ class McpHttpTransport(ITransport):
                 )
             else:
                 additional_props = True
+
+            auth_sources = param_auth.get(name)
+
             parameters.append(
                 ParameterSchema(
                     name=name,
                     type=schema["type"],
                     description=schema.get("description", ""),
                     required=name in required,
+                    authSources=auth_sources,
                     additionalProperties=additional_props,
                 )
             )
 
-        return ToolSchema(description=tool_data["description"], parameters=parameters)
+        return ToolSchema(
+            description=tool_data["description"],
+            parameters=parameters,
+            authRequired=invoke_auth,
+        )
 
     async def __list_tools(
         self,
