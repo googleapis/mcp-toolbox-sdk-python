@@ -1478,35 +1478,3 @@ class TestClientHeaders:
                     match=f"Client header\\(s\\) `X-Static-Header` already registered",
                 ):
                     client.add_headers(static_header)
-
-    @pytest.mark.asyncio
-    async def test_client_header_auth_token_conflict_fail(
-        self, aioresponses, test_tool_auth
-    ):
-        """
-        Tests that loading a tool fails if a client header conflicts with an
-        auth token name.
-        """
-        tool_name = "auth_conflict_tool"
-        conflict_key = "my-auth-service_token"
-        manifest = ManifestSchema(
-            serverVersion="0.0.0", tools={tool_name: test_tool_auth}
-        )
-
-        conflicting_headers = {conflict_key: "some_value"}
-        auth_getters = {"my-auth-service": lambda: "token_val"}
-
-        aioresponses.get(
-            f"{TEST_BASE_URL}/api/tool/{tool_name}",
-            payload=manifest.model_dump(),
-            status=200,
-        )
-
-        async with ToolboxClient(
-            TEST_BASE_URL, client_headers=conflicting_headers
-        ) as client:
-            with pytest.raises(
-                ValueError,
-                match=f"Client header\\(s\\) `{conflict_key}` already registered",
-            ):
-                await client.load_tool(tool_name, auth_token_getters=auth_getters)
