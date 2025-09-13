@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.5.1](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-llamaindex-v0.5.0...toolbox-llamaindex-v0.5.1) (2025-09-13)
+
+
+### Miscellaneous Chores
+
+* **deps:** update dependency llama-index to v0.13.3 ([#342](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/342)) ([2b3f4c5](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/2b3f4c5b2e759974e905ea549e8a6209c47f3ba4))
+* **deps:** update dependency llama-index to v0.14.0 ([#360](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/360)) ([e861536](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/e861536622eb431e4785aa5373e8d6e19a1ae611))
+* **deps:** update python-nonmajor ([#351](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/351)) ([db16cc7](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/db16cc766654c312e0065e6581d3611d2959bb1a))
+* **deps:** update python-nonmajor ([#354](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/354)) ([df8d695](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/df8d695622d5ad0b6c609c78d830680ebc5fcf10))
+* **deps:** update python-nonmajor ([#367](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/367)) ([d9f9c02](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/d9f9c0245c70951435bf2e0d364c8d1e439bc6fb))
+
 ## [0.5.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-llamaindex-v0.4.0...toolbox-llamaindex-v0.5.0) (2025-08-19)
 
 

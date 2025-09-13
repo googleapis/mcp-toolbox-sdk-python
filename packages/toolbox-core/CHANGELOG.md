@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.5.1](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v0.5.0...toolbox-core-v0.5.1) (2025-09-13)
+
+
+### Bug Fixes
+
+* Removed redundant test for test_add_auth_token_getter_unused_token ([#347](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/347)) ([dccaf1b](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/dccaf1bd70e4e788fd80a9ef952aede4549b2fc7))
+
+
+### Miscellaneous Chores
+
+* **deps:** update python-nonmajor ([#351](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/351)) ([db16cc7](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/db16cc766654c312e0065e6581d3611d2959bb1a))
+* **deps:** update python-nonmajor ([#354](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/354)) ([df8d695](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/df8d695622d5ad0b6c609c78d830680ebc5fcf10))
+* **deps:** update python-nonmajor ([#367](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/367)) ([d9f9c02](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/d9f9c0245c70951435bf2e0d364c8d1e439bc6fb))
+* remove duplicate header check during initialization ([#357](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/357)) ([888170b](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/888170b3c34744089fb3b6f2b6f613c4cd718a89))
+
+
+### Documentation
+
+* Update langgraph sample in toolbox-core ([#366](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/366)) ([fe35082](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/fe35082104d8039986eccbdab937f5f3e8b2042b))
+
 ## [0.5.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v0.4.0...toolbox-core-v0.5.0) (2025-08-19)
 
 
