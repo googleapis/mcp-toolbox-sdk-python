@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.5.1](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-langchain-v0.5.0...toolbox-langchain-v0.5.1) (2025-09-13)
+
+
+### Miscellaneous Chores
+
+* **deps:** update dependency langchain-core to v0.3.75 ([#346](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/346)) ([06d41d4](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/06d41d48caa01e63bade8a583514dd15b6dfa493))
+* **deps:** update dependency langchain-core to v0.3.76 ([#362](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/362)) ([580f321](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/580f3217428ee07713430ab3af2b2067c1debed5))
+* **deps:** update python-nonmajor ([#351](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/351)) ([db16cc7](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/db16cc766654c312e0065e6581d3611d2959bb1a))
+* **deps:** update python-nonmajor ([#354](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/354)) ([df8d695](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/df8d695622d5ad0b6c609c78d830680ebc5fcf10))
+* **deps:** update python-nonmajor ([#367](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/367)) ([d9f9c02](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/d9f9c0245c70951435bf2e0d364c8d1e439bc6fb))
+
 ## [0.5.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-langchain-v0.4.0...toolbox-langchain-v0.5.0) (2025-08-19)
 
 
