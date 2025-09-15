@@ -22,7 +22,6 @@ from pydantic import BaseModel, ValidationError
 
 from toolbox_core.protocol import ParameterSchema
 from toolbox_core.utils import (
-    create_func_docstring,
     identify_auth_requirements,
     params_to_pydantic_model,
     resolve_value,
@@ -41,46 +40,6 @@ def create_param_mock(name: str, description: str, annotation: Type) -> Mock:
 
     param_mock.to_param.return_value = mock_param_info
     return param_mock
-
-
-def test_create_func_docstring_no_params():
-    """Test create_func_docstring with no parameters."""
-    description = "This is a tool description."
-    params = []
-    expected_docstring = "This is a tool description."
-    assert create_func_docstring(description, params) == expected_docstring
-
-
-def test_create_func_docstring_with_params():
-    """Test create_func_docstring with multiple parameters using mocks."""
-    description = "Tool description."
-    params = [
-        create_param_mock(
-            name="param1", description="First parameter.", annotation=str
-        ),
-        create_param_mock(name="count", description="A number.", annotation=int),
-    ]
-    expected_docstring = """Tool description.
-
-Args:
-    param1 (str): First parameter.
-    count (int): A number."""
-    assert create_func_docstring(description, params) == expected_docstring
-
-
-def test_create_func_docstring_empty_description():
-    """Test create_func_docstring with an empty description using mocks."""
-    description = ""
-    params = [
-        create_param_mock(
-            name="param1", description="First parameter.", annotation=str
-        ),
-    ]
-    expected_docstring = """
-
-Args:
-    param1 (str): First parameter."""
-    assert create_func_docstring(description, params) == expected_docstring
 
 
 def test_identify_auth_requirements_none_required():

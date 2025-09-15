@@ -31,18 +31,6 @@ from pydantic import BaseModel, Field, create_model
 from toolbox_core.protocol import ParameterSchema
 
 
-def create_func_docstring(description: str, params: Sequence[ParameterSchema]) -> str:
-    """Convert tool description and params into its function docstring"""
-    docstring = description
-    if not params:
-        return docstring
-    docstring += "\n\nArgs:"
-    for p in params:
-        annotation = p.to_param().annotation
-        docstring += f"\n    {p.name} ({getattr(annotation, '__name__', str(annotation))}): {p.description}"
-    return docstring
-
-
 def identify_auth_requirements(
     req_authn_params: Mapping[str, list[str]],
     req_authz_tokens: Sequence[str],

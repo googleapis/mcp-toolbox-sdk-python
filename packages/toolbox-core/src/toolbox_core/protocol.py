@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from inspect import Parameter
-from typing import Any, Optional, Type, Union
+from typing import Annotated, Any, Optional, Type, Union
 
 from pydantic import BaseModel
 
@@ -76,9 +76,9 @@ class ParameterSchema(BaseModel):
             base_type = _get_python_type(self.type)
 
         if not self.required:
-            return Optional[base_type]  # type: ignore
+            base_type = Optional[base_type]
 
-        return base_type
+        return Annotated[base_type, self.description]
 
     def to_param(self) -> Parameter:
         return Parameter(
