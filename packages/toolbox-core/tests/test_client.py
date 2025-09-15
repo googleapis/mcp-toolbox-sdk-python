@@ -15,8 +15,7 @@
 
 import inspect
 import json
-from typing import Any, Callable, Mapping, Optional, Annotated, get_args, get_origin
-
+from typing import Annotated, Any, Callable, Mapping, Optional, get_args, get_origin
 from unittest.mock import AsyncMock, Mock
 
 import pytest

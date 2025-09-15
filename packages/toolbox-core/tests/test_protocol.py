@@ -14,7 +14,7 @@
 
 
 from inspect import Parameter
-from typing import Any, Optional, Annotated, get_args, get_origin
+from typing import Annotated, Any, Optional, get_args, get_origin
 
 import pytest
 
@@ -38,6 +38,7 @@ def test_parameter_schema_float():
     assert args[0] == expected_type
     assert args[1] == schema.description
 
+
 def test_parameter_schema_boolean():
     """Tests ParameterSchema with type 'boolean'."""
     schema = ParameterSchema(
@@ -55,6 +56,7 @@ def test_parameter_schema_boolean():
     args = get_args(annotation)
     assert args[0] == expected_type
     assert args[1] == schema.description
+
 
 def test_parameter_schema_array_string():
     """Tests ParameterSchema with type 'array' containing strings."""
@@ -83,14 +85,14 @@ def test_parameter_schema_array_integer():
     schema = ParameterSchema(
         name="scores", type="array", description="List of scores", items=item_schema
     )
-    
+
     expected_base_type = list[Annotated[int, item_schema.description]]
 
     param = schema.to_param()
     assert isinstance(param, Parameter)
     assert param.name == "scores"
     assert param.kind == Parameter.POSITIONAL_OR_KEYWORD
-    
+
     annotation = param.annotation
     assert get_origin(annotation) is Annotated
     args = get_args(annotation)
@@ -142,7 +144,7 @@ def test_parameter_schema_string_optional():
     assert param.name == "nickname"
     assert param.kind == Parameter.POSITIONAL_OR_KEYWORD
     assert param.default is None
-    
+
     annotation = param.annotation
     assert get_origin(annotation) is Annotated
     args = get_args(annotation)
@@ -227,7 +229,7 @@ def test_parameter_schema_map_typed_string():
     expected_type = dict[str, str]
 
     param = schema.to_param()
-    
+
     annotation = param.annotation
     assert get_origin(annotation) is Annotated
     args = get_args(annotation)
@@ -244,7 +246,7 @@ def test_parameter_schema_map_typed_integer():
         additionalProperties=AdditionalPropertiesSchema(type="integer"),
     )
     expected_type = dict[str, int]
-    
+
     param = schema.to_param()
 
     annotation = param.annotation
@@ -302,7 +304,7 @@ def test_parameter_schema_map_optional():
         additionalProperties=True,
     )
     expected_type = Optional[dict[str, Any]]
-    
+
     param = schema.to_param()
     assert param.default is None
 
