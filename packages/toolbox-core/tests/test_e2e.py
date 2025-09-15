@@ -250,7 +250,10 @@ class TestOptionalParams:
 
         # The optional parameter should have a default of None
         assert sig.parameters["data"].default is None
-        assert sig.parameters["data"].annotation is Optional[str]
+        assert (
+            sig.parameters["data"].annotation
+            is Annotated[Optional[str], "The row to narrow down the search."]
+        )
 
         # The optional parameter should have a default of None
         assert sig.parameters["id"].default is None
@@ -408,7 +411,10 @@ class TestMapParams:
         assert sig.parameters["execution_context"].default is Parameter.empty
 
         assert "user_scores" in sig.parameters
-        assert sig.parameters["user_scores"].annotation == dict[str, int]
+        assert (
+            sig.parameters["user_scores"].annotation
+            == Annotated[dict[str, int], "A map of user IDs to their scores."]
+        )
         assert sig.parameters["user_scores"].default is Parameter.empty
 
         assert "feature_flags" in sig.parameters
