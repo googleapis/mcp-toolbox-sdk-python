@@ -257,7 +257,10 @@ class TestOptionalParams:
 
         # The optional parameter should have a default of None
         assert sig.parameters["id"].default is None
-        assert sig.parameters["id"].annotation is Optional[int]
+        assert (
+            sig.parameters["id"].annotation
+            is Annotated[Optional[int], "The id to narrow down the search."]
+        )
 
     async def test_run_tool_with_optional_params_omitted(self, toolbox: ToolboxClient):
         """Invoke a tool providing only the required parameter."""
@@ -418,7 +421,10 @@ class TestMapParams:
         assert sig.parameters["user_scores"].default is Parameter.empty
 
         assert "feature_flags" in sig.parameters
-        assert sig.parameters["feature_flags"].annotation == Optional[dict[str, bool]]
+        assert (
+            sig.parameters["feature_flags"].annotation
+            == Annotated[Optional[dict[str, bool]], "Optional feature flags."]
+        )
         assert sig.parameters["feature_flags"].default is None
 
     async def test_run_tool_with_map_params(self, toolbox: ToolboxClient):
