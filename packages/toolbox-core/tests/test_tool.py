@@ -15,7 +15,7 @@
 
 import inspect
 from types import MappingProxyType
-from typing import AsyncGenerator, Callable, Mapping
+from typing import Annotated, AsyncGenerator, Callable, Mapping
 from unittest.mock import AsyncMock, Mock
 from warnings import catch_warnings, simplefilter
 
@@ -162,8 +162,14 @@ async def test_tool_creation_callable_and_run(
 
         assert "message" in tool_instance.__signature__.parameters
         assert "count" in tool_instance.__signature__.parameters
-        assert tool_instance.__signature__.parameters["message"].annotation == str
-        assert tool_instance.__signature__.parameters["count"].annotation == int
+        assert (
+            tool_instance.__signature__.parameters["message"].annotation
+            == Annotated[str, "A message to process"]
+        )
+        assert (
+            tool_instance.__signature__.parameters["count"].annotation
+            == Annotated[int, "A number"]
+        )
 
         actual_result = await tool_instance("hello world", 5)
 
