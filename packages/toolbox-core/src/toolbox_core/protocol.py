@@ -60,8 +60,8 @@ class ParameterSchema(BaseModel):
     items: Optional["ParameterSchema"] = None
     additionalProperties: Optional[Union[bool, AdditionalPropertiesSchema]] = None
 
-    def __get_type(self) -> Type:
-        base_type: Type
+    def __get_type(self) -> Any:
+        base_type: Any
         if self.type == "array":
             if self.items is None:
                 raise ValueError("Unexpected value: type is 'array' but items is None")
