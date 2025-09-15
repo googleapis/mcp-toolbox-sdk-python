@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from inspect import Parameter, signature
-from typing import Any, Optional
+from typing import Any, Optional, Annotated
 
 import pytest
 import pytest_asyncio
@@ -243,7 +243,7 @@ class TestOptionalParams:
 
         # The required parameter should have no default
         assert sig.parameters["email"].default is Parameter.empty
-        assert sig.parameters["email"].annotation is str
+        assert sig.parameters["email"].annotation is Annotated[str, 'The email to search for.']
 
         # The optional parameter should have a default of None
         assert sig.parameters["data"].default is None
@@ -395,7 +395,7 @@ class TestMapParams:
         sig = signature(tool)
 
         assert "execution_context" in sig.parameters
-        assert sig.parameters["execution_context"].annotation == dict[str, Any]
+        assert sig.parameters["execution_context"].annotation == Annotated[dict[str, Any], 'A flexible set of key-value pairs for the execution environment.']
         assert sig.parameters["execution_context"].default is Parameter.empty
 
         assert "user_scores" in sig.parameters
