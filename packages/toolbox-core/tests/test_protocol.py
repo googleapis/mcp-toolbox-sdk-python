@@ -108,7 +108,7 @@ def test_parameter_schema_array_no_items_error():
 
     expected_error_msg = "Unexpected value: type is 'array' but items is None"
     with pytest.raises(ValueError, match=expected_error_msg):
-        schema._ParameterSchema__get_type()
+        schema._ParameterSchema__get_annotation()
 
     with pytest.raises(ValueError, match=expected_error_msg):
         schema.to_param()
@@ -123,7 +123,7 @@ def test_parameter_schema_unsupported_type_error():
 
     expected_error_msg = f"Unsupported schema type: {unsupported_type}"
     with pytest.raises(ValueError, match=expected_error_msg):
-        schema._ParameterSchema__get_type()
+        schema._ParameterSchema__get_annotation()
 
     with pytest.raises(ValueError, match=expected_error_msg):
         schema.to_param()
@@ -326,4 +326,4 @@ def test_parameter_schema_map_unsupported_value_type_error():
     )
     expected_error_msg = f"Unsupported schema type: {unsupported_type}"
     with pytest.raises(ValueError, match=expected_error_msg):
-        schema._ParameterSchema__get_type()
+        schema._ParameterSchema__get_annotation()
