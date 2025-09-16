@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from inspect import Parameter
-from typing import Any, Optional, Type, Union
+from typing import Annotated, Any, Optional, Type, Union
 
 from pydantic import BaseModel
 
@@ -60,12 +60,12 @@ class ParameterSchema(BaseModel):
     items: Optional["ParameterSchema"] = None
     additionalProperties: Optional[Union[bool, AdditionalPropertiesSchema]] = None
 
-    def __get_type(self) -> Type:
-        base_type: Type
+    def __get_annotation(self) -> Any:
+        base_type: Any
         if self.type == "array":
             if self.items is None:
                 raise ValueError("Unexpected value: type is 'array' but items is None")
-            base_type = list[self.items.__get_type()]  # type: ignore
+            base_type = list[self.items.__get_annotation()]  # type: ignore
         elif self.type == "object":
             if isinstance(self.additionalProperties, AdditionalPropertiesSchema):
                 value_type = self.additionalProperties.get_value_type()
@@ -76,15 +76,15 @@ class ParameterSchema(BaseModel):
             base_type = _get_python_type(self.type)
 
         if not self.required:
-            return Optional[base_type]  # type: ignore
+            base_type = Optional[base_type]
 
-        return base_type
+        return Annotated[base_type, self.description]
 
     def to_param(self) -> Parameter:
         return Parameter(
             self.name,
             Parameter.POSITIONAL_OR_KEYWORD,
-            annotation=self.__get_type(),
+            annotation=self.__get_annotation(),
             default=Parameter.empty if self.required else None,
         )
 
