@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.5.1](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v0.5.0...toolbox-core-v0.5.1) (2025-09-17)
+
+
+### Bug Fixes
+
+* Removed redundant test for test_add_auth_token_getter_unused_token ([#347](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/347)) ([dccaf1b](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/dccaf1bd70e4e788fd80a9ef952aede4549b2fc7))
+* **toolbox-core:** Use typing.Annotated for reliable parameter descriptions instead of docstrings ([#371](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/371)) ([eb76680](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/eb76680d24c344241f3c15293cd12904bbf91b0d))
+
+
+### Miscellaneous Chores
+
+* **deps:** update dependency pytest-cov to v7 ([#361](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/361)) ([b473a2b](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/b473a2bb4538c27e80110a53f9bd62137767d331))
+* **deps:** update python-nonmajor ([#351](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/351)) ([db16cc7](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/db16cc766654c312e0065e6581d3611d2959bb1a))
+* **deps:** update python-nonmajor ([#354](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/354)) ([df8d695](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/df8d695622d5ad0b6c609c78d830680ebc5fcf10))
+* **deps:** update python-nonmajor ([#367](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/367)) ([d9f9c02](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/d9f9c0245c70951435bf2e0d364c8d1e439bc6fb))
+* **deps:** update python-nonmajor ([#368](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/368)) ([c3e8ff6](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/c3e8ff6fa305a2b0564c3a22c6844da13e50cd06))
+* remove duplicate header check during initialization ([#357](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/357)) ([888170b](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/888170b3c34744089fb3b6f2b6f613c4cd718a89))
+
+
+### Documentation
+
+* Update langgraph sample in toolbox-core ([#366](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/366)) ([fe35082](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/fe35082104d8039986eccbdab937f5f3e8b2042b))
+
 ## [0.5.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v0.4.0...toolbox-core-v0.5.0) (2025-08-19)
 
 
