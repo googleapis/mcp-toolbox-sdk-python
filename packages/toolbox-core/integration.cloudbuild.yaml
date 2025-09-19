@@ -29,7 +29,7 @@ steps:
       - 'packages/toolbox-core[test]'
       - '--user'
     entrypoint: pip
-  - id: Run integration tests
+  - id: Run integration tests without coverage
     name: 'python:${_VERSION}'
     env:
       - TOOLBOX_URL=$_TOOLBOX_URL
@@ -40,6 +40,18 @@ steps:
       - '-c'
       - >-
         python -m pytest packages/toolbox-core/tests/
+    entrypoint: /bin/bash
+  - id: Run integration tests with coverage
+    name: 'python:${_VERSION}'
+    env:
+      - TOOLBOX_URL=$_TOOLBOX_URL
+      - TOOLBOX_VERSION=$_TOOLBOX_VERSION
+      - GOOGLE_CLOUD_PROJECT=$PROJECT_ID
+      - TOOLBOX_MANIFEST_VERSION=${_TOOLBOX_MANIFEST_VERSION}
+    args:
+      - '-c'
+      - >-
+        pytest --cov=src/toolbox_core --cov-report=term --cov-fail-under=90 packages/toolbox-core/tests/
     entrypoint: /bin/bash
 options:
   logging: CLOUD_LOGGING_ONLY
