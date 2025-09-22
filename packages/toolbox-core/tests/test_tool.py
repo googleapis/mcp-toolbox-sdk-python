@@ -15,7 +15,7 @@
 
 import inspect
 from types import MappingProxyType
-from typing import Annotated, AsyncGenerator, Callable, Mapping
+from typing import AsyncGenerator, Callable, Mapping
 from unittest.mock import AsyncMock, Mock
 from warnings import catch_warnings, simplefilter
 
@@ -26,7 +26,7 @@ from aioresponses import aioresponses
 from pydantic import ValidationError
 
 from toolbox_core.protocol import ParameterSchema
-from toolbox_core.tool import ToolboxTool, resolve_value
+from toolbox_core.tool import ToolboxTool, create_func_docstring, resolve_value
 
 TEST_BASE_URL = "http://toolbox.example.com"
 HTTPS_BASE_URL = "https://toolbox.example.com"
@@ -124,6 +124,91 @@ def toolbox_tool(
     )
 
 
+def test_create_func_docstring_one_param_real_schema():
+    """
+    Tests create_func_docstring with one real ParameterSchema instance.
+    """
+    description = "This tool does one thing."
+    params = [
+        ParameterSchema(
+            name="input_file", type="string", description="Path to the input file."
+        )
+    ]
+
+    result_docstring = create_func_docstring(description, params)
+
+    expected_docstring = (
+        "This tool does one thing.\n\n"
+        "Args:\n"
+        "    input_file (str): Path to the input file."
+    )
+
+    assert result_docstring == expected_docstring
+
+
+def test_create_func_docstring_multiple_params_real_schema():
+    """
+    Tests create_func_docstring with multiple real ParameterSchema instances.
+    """
+    description = "This tool does multiple things."
+    params = [
+        ParameterSchema(name="query", type="string", description="The search query."),
+        ParameterSchema(
+            name="max_results", type="integer", description="Maximum results to return."
+        ),
+        ParameterSchema(
+            name="verbose", type="boolean", description="Enable verbose output."
+        ),
+    ]
+
+    result_docstring = create_func_docstring(description, params)
+
+    expected_docstring = (
+        "This tool does multiple things.\n\n"
+        "Args:\n"
+        "    query (str): The search query.\n"
+        "    max_results (int): Maximum results to return.\n"
+        "    verbose (bool): Enable verbose output."
+    )
+
+    assert result_docstring == expected_docstring
+
+
+def test_create_func_docstring_no_description_real_schema():
+    """
+    Tests create_func_docstring with empty description and one real ParameterSchema.
+    """
+    description = ""
+    params = [
+        ParameterSchema(
+            name="config_id", type="string", description="The ID of the configuration."
+        )
+    ]
+
+    result_docstring = create_func_docstring(description, params)
+
+    expected_docstring = (
+        "\n\nArgs:\n" "    config_id (str): The ID of the configuration."
+    )
+
+    assert result_docstring == expected_docstring
+    assert result_docstring.startswith("\n\nArgs:")
+    assert "config_id (str): The ID of the configuration." in result_docstring
+
+
+def test_create_func_docstring_no_params():
+    """
+    Tests create_func_docstring when the params list is empty.
+    """
+    description = "This is a tool description."
+    params = []
+
+    result_docstring = create_func_docstring(description, params)
+
+    assert result_docstring == description
+    assert "\n\nArgs:" not in result_docstring
+
+
 @pytest.mark.asyncio
 async def test_tool_creation_callable_and_run(
     http_session: ClientSession,
@@ -162,14 +247,8 @@ async def test_tool_creation_callable_and_run(
 
         assert "message" in tool_instance.__signature__.parameters
         assert "count" in tool_instance.__signature__.parameters
-        assert (
-            tool_instance.__signature__.parameters["message"].annotation
-            == Annotated[str, "A message to process"]
-        )
-        assert (
-            tool_instance.__signature__.parameters["count"].annotation
-            == Annotated[int, "A number"]
-        )
+        assert tool_instance.__signature__.parameters["message"].annotation == str
+        assert tool_instance.__signature__.parameters["count"].annotation == int
 
         actual_result = await tool_instance("hello world", 5)
 

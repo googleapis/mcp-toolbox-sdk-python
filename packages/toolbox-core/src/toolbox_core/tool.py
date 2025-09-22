@@ -24,6 +24,7 @@ from aiohttp import ClientSession
 
 from .protocol import ParameterSchema
 from .utils import (
+    create_func_docstring,
     identify_auth_requirements,
     params_to_pydantic_model,
     resolve_value,
@@ -100,7 +101,7 @@ class ToolboxTool:
 
         # the following properties are set to help anyone that might inspect it determine usage
         self.__name__ = name
-        self.__doc__ = self.__description
+        self.__doc__ = create_func_docstring(self.__description, self.__params)
         self.__signature__ = Signature(
             parameters=inspect_type_params, return_annotation=str
         )
