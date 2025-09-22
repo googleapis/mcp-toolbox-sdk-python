@@ -51,7 +51,7 @@ steps:
     args:
       - '-c'
       - >-
-        pytest --cov=src/toolbox_core --cov-report=term --cov-fail-under=90 packages/toolbox-core/tests/
+        python -m pytest --cov=packages/toolbox-core/src --cov-report=term --cov-fail-under=90 packages/toolbox-core/tests/
     entrypoint: /bin/bash
 options:
   logging: CLOUD_LOGGING_ONLY
