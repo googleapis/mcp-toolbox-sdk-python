@@ -43,6 +43,7 @@ steps:
     entrypoint: /bin/bash
   - id: Run integration tests with coverage
     name: 'python:${_VERSION}'
+    dir: 'packages/toolbox-core'
     env:
       - TOOLBOX_URL=$_TOOLBOX_URL
       - TOOLBOX_VERSION=$_TOOLBOX_VERSION
@@ -51,7 +52,7 @@ steps:
     args:
       - '-c'
       - >-
-        python -m pytest --cov=packages/toolbox-core/src/toolbox_core --cov-report=term --cov-fail-under=90 packages/toolbox-core/tests/
+        python -m pytest --cov=src/toolbox_core --cov-report=term --cov-fail-under=90 tests/
     entrypoint: /bin/bash
 options:
   logging: CLOUD_LOGGING_ONLY
