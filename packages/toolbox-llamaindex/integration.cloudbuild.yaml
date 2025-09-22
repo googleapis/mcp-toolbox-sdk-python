@@ -32,7 +32,7 @@ steps:
     entrypoint: pip
   - id: Run integration tests
     name: 'python:${_VERSION}'
-    dir: 'packages/toolbox-core'
+    dir: 'packages/toolbox-llamaindex'
     env:
       - TOOLBOX_URL=$_TOOLBOX_URL
       - TOOLBOX_VERSION=$_TOOLBOX_VERSION
