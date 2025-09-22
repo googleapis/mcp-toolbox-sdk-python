@@ -31,6 +31,7 @@ steps:
     entrypoint: pip
   - id: Run integration tests
     name: 'python:${_VERSION}'
+    dir: 'packages/toolbox-core'
     env:
       - TOOLBOX_URL=$_TOOLBOX_URL
       - TOOLBOX_VERSION=$_TOOLBOX_VERSION
@@ -39,7 +40,7 @@ steps:
     args:
       - '-c'
       - >-
-        python -m pytest packages/toolbox-langchain/tests/
+        python -m pytest --cov=src/toolbox_llamaindex --cov-report=term --cov-fail-under=90 tests/
     entrypoint: /bin/bash
 options:
   logging: CLOUD_LOGGING_ONLY
