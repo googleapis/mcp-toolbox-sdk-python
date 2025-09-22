@@ -26,6 +26,7 @@ steps:
     name: 'python:${_VERSION}'
     args:
       - install
+      - '-e'
       - 'packages/toolbox-langchain[test]'
       - '--user'
     entrypoint: pip
