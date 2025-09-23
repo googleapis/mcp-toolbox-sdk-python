@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from inspect import Parameter, signature
-from typing import Annotated, Any, Optional
+from typing import Any, Optional
 
 import pytest
 import pytest_asyncio
@@ -243,24 +243,15 @@ class TestOptionalParams:
 
         # The required parameter should have no default
         assert sig.parameters["email"].default is Parameter.empty
-        assert (
-            sig.parameters["email"].annotation
-            is Annotated[str, "The email to search for."]
-        )
+        assert sig.parameters["email"].annotation is str
 
         # The optional parameter should have a default of None
         assert sig.parameters["data"].default is None
-        assert (
-            sig.parameters["data"].annotation
-            is Annotated[Optional[str], "The row to narrow down the search."]
-        )
+        assert sig.parameters["data"].annotation is Optional[str]
 
         # The optional parameter should have a default of None
         assert sig.parameters["id"].default is None
-        assert (
-            sig.parameters["id"].annotation
-            is Annotated[Optional[int], "The id to narrow down the search."]
-        )
+        assert sig.parameters["id"].annotation is Optional[int]
 
     async def test_run_tool_with_optional_params_omitted(self, toolbox: ToolboxClient):
         """Invoke a tool providing only the required parameter."""
@@ -404,27 +395,15 @@ class TestMapParams:
         sig = signature(tool)
 
         assert "execution_context" in sig.parameters
-        assert (
-            sig.parameters["execution_context"].annotation
-            == Annotated[
-                dict[str, Any],
-                "A flexible set of key-value pairs for the execution environment.",
-            ]
-        )
+        assert sig.parameters["execution_context"].annotation == dict[str, Any]
         assert sig.parameters["execution_context"].default is Parameter.empty
 
         assert "user_scores" in sig.parameters
-        assert (
-            sig.parameters["user_scores"].annotation
-            == Annotated[dict[str, int], "A map of user IDs to their scores."]
-        )
+        assert sig.parameters["user_scores"].annotation == dict[str, int]
         assert sig.parameters["user_scores"].default is Parameter.empty
 
         assert "feature_flags" in sig.parameters
-        assert (
-            sig.parameters["feature_flags"].annotation
-            == Annotated[Optional[dict[str, bool]], "Optional feature flags."]
-        )
+        assert sig.parameters["feature_flags"].annotation == Optional[dict[str, bool]]
         assert sig.parameters["feature_flags"].default is None
 
     async def test_run_tool_with_map_params(self, toolbox: ToolboxClient):

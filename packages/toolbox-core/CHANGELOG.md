@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.2](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v0.5.1...toolbox-core-v0.5.2) (2025-09-22)
+
+
+### Miscellaneous Chores
+
+* **deps:** update python-nonmajor ([#372](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/372)) ([d915624](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/d9156246fd35b7813c49ff4b4bc01cf26b3de9f9))
+
 ## [0.5.1](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v0.5.0...toolbox-core-v0.5.1) (2025-09-17)
 
 
