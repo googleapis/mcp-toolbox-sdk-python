@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.3](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-llamaindex-v0.5.2...toolbox-llamaindex-v0.5.3) (2025-09-26)
+
+
+### Miscellaneous Chores
+
+* **deps:** update python-nonmajor ([#378](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/378)) ([bd377c4](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/bd377c42307e439d0f6fc02834c629987669282b))
+
 ## [0.5.2](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-llamaindex-v0.5.1...toolbox-llamaindex-v0.5.2) (2025-09-22)
 
 
