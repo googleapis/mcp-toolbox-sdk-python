@@ -1,4 +1,4 @@
-# Copyright 2024 Google LLC
+# Copyright 2025 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -421,6 +421,69 @@ class TestToolboxClient:
             strict=True,
         )
 
+    @pytest.mark.asyncio
+    @patch("toolbox_core.sync_client.ToolboxSyncClient.load_toolset")
+    async def test_aload_toolset_with_deprecated_args(
+        self, mock_sync_core_load_toolset, toolbox_client
+    ):
+        mock_core_tool_instance = create_mock_core_sync_tool(
+            model_name="MyAsyncSetModel"
+        )
+        mock_sync_core_load_toolset.return_value = [mock_core_tool_instance]
+
+        auth_tokens_deprecated = {"token_deprecated": lambda: "value_dep"}
+        auth_headers_deprecated = {"header_deprecated": lambda: "value_head_dep"}
+        bound_params = {"param1": "value4"}
+        toolset_name = "my_async_toolset"
+
+        # Scenario 2: auth_tokens and auth_headers provided, auth_token_getters is default (empty initially)
+        with pytest.warns(DeprecationWarning) as record:
+            await toolbox_client.aload_toolset(
+                toolset_name,
+                auth_tokens=auth_tokens_deprecated,  # This will be used for auth_token_getters
+                auth_headers=auth_headers_deprecated,  # This will warn as auth_token_getters is now populated
+                bound_params=bound_params,
+            )
+        assert len(record) == 2
+        messages = sorted([str(r.message) for r in record])
+
+        assert (
+            messages[0]
+            == "Argument `auth_tokens` is deprecated. Use `auth_token_getters` instead."
+        )
+        assert (
+            messages[1]
+            == "Both `auth_token_getters` and `auth_headers` are provided. `auth_headers` is deprecated, and `auth_token_getters` will be used."
+        )
+
+        expected_getters_for_call = auth_tokens_deprecated
+
+        mock_sync_core_load_toolset.assert_called_with(
+            name=toolset_name,
+            auth_token_getters=expected_getters_for_call,
+            bound_params=bound_params,
+            strict=False,
+        )
+        mock_sync_core_load_toolset.reset_mock()
+
+        with pytest.warns(
+            DeprecationWarning,
+            match="Argument `auth_headers` is deprecated. Use `auth_token_getters` instead.",
+        ) as record:
+            await toolbox_client.aload_toolset(
+                toolset_name,
+                auth_headers=auth_headers_deprecated,
+                bound_params=bound_params,
+            )
+        assert len(record) == 1
+
+        mock_sync_core_load_toolset.assert_called_with(
+            name=toolset_name,
+            auth_token_getters=auth_headers_deprecated,
+            bound_params=bound_params,
+            strict=False,
+        )
+
     @patch("toolbox_langchain.client.ToolboxCoreSyncClient")
     def test_init_with_client_headers(self, mock_core_client_constructor):
         """Tests that client_headers are passed to the core client during initialization."""
@@ -429,3 +492,27 @@ class TestToolboxClient:
         mock_core_client_constructor.assert_called_once_with(
             url=URL, client_headers=headers
         )
+
+    @patch("toolbox_langchain.client.ToolboxCoreSyncClient")
+    def test_context_manager(self, mock_core_client_constructor):
+        """Tests that the client can be used as a context manager."""
+        with ToolboxClient(URL) as client:
+            assert isinstance(client, ToolboxClient)
+            mock_core_client_constructor.return_value.close.assert_not_called()
+        mock_core_client_constructor.return_value.close.assert_called_once()
+
+    @pytest.mark.asyncio
+    @patch("toolbox_langchain.client.ToolboxCoreSyncClient")
+    async def test_async_context_manager(self, mock_core_client_constructor):
+        """Tests that the client can be used as an async context manager."""
+        async with ToolboxClient(URL) as client:
+            assert isinstance(client, ToolboxClient)
+            mock_core_client_constructor.return_value.close.assert_not_called()
+        mock_core_client_constructor.return_value.close.assert_called_once()
+
+    @patch("toolbox_langchain.client.ToolboxCoreSyncClient")
+    def test_close(self, mock_core_client_constructor):
+        """Tests the close method."""
+        client = ToolboxClient(URL)
+        client.close()
+        mock_core_client_constructor.return_value.close.assert_called_once()
