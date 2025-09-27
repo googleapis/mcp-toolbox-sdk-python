@@ -1,6 +1,6 @@
 -e ../toolbox-core
-llama-index==0.14.2
-PyYAML==6.0.2
+llama-index==0.14.3
+PyYAML==6.0.3
 pydantic==2.11.9
 aiohttp==3.12.15
 deprecated==1.2.18
