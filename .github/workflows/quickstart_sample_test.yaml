@@ -27,7 +27,7 @@ jobs:
 
     runs-on: ubuntu-latest
     steps:
-      # Step 1: Authenticate to Google Cloud.
+      # Step 1: Authenticate and set up the gcloud CLI.
       - id: 'auth'
         name: 'Authenticate to Google Cloud'
         uses: 'google-github-actions/auth@v2'
@@ -36,8 +36,6 @@ jobs:
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
-      # Step 2: Run the specific Cloud Build Trigger by its name.
+      # Step 2: Run the gcloud command directly.
       - name: 'Run Cloud Build Trigger'
-        uses: 'google-github-actions/gcloud@v2'
-        with:
-          args: 'builds triggers run quickstart-sample-test-py --branch=${{ github.ref_name }}'
+        run: 'gcloud builds triggers run quickstart-sample-test-py --branch=${{ github.ref_name }}'
