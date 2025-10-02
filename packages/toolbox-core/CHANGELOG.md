@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.3](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v0.5.2...toolbox-core-v0.5.3) (2025-10-02)
+
+
+### Miscellaneous Chores
+
+* **deps:** update dependency google-auth to v2.41.1 ([#383](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/383)) ([4d3fb88](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/4d3fb8845858b5eb42adbfaac6e87f1494f5c3bc))
+* **deps:** update python-nonmajor ([#386](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/386)) ([6625d04](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/6625d04296d25545fa49cb8f72628f38e3b8aa88))
+
 ## [0.5.2](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v0.5.1...toolbox-core-v0.5.2) (2025-09-22)
 
 
