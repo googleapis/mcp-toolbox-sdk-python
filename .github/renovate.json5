@@ -31,7 +31,7 @@
         'regex',
       ],
       branchName: 'auto-update/toolbox-server-v{{newValue}}',
-      commitMessageTopic: 'chore(deps): update genai-toolbox server to {{newValue}}',
+      commitMessageTopic: 'chore(deps): update MCP Toolbox server for integration tests to {{newValue}}',
       groupName: false,
       matchUpdateTypes: [
         'minor',
