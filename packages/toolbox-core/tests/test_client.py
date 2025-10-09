@@ -15,10 +15,10 @@
 
 import inspect
 from typing import Mapping, Optional
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, Mock
 
+from aiohttp import web
 import pytest
-from pytest import FixtureRequest
 
 from toolbox_core.client import ToolboxClient
 from toolbox_core.itransport import ITransport
@@ -502,9 +502,41 @@ class TestValidation:
                     auth_token_getters={"auth_service_Z": lambda: "token"},
                 )
 
+@pytest.fixture
+def static_header() -> dict[str, str]:
+    return {"X-Static-Header": "static-value"}
+
+
+@pytest.fixture
+def sync_callable_header_value() -> str:
+    return "sync-callable-value"
+
+
+@pytest.fixture
+def sync_callable_header(sync_callable_header_value) -> dict[str, Mock]:
+    return {"X-Sync-Callable-Header": Mock(return_value=sync_callable_header_value)}
+
+
+@pytest.fixture
+def async_callable_header_value() -> str:
+    return "async-callable-value"
+
+
+@pytest.fixture
+def async_callable_header(async_callable_header_value) -> dict[str, AsyncMock]:
+    return {
+        "X-Async-Callable-Header": AsyncMock(return_value=async_callable_header_value)
+    }
 
 class TestClientHeaders:
     """Tests related to client headers."""
+    def create_callback_factory(self, expected_header, callback_payload):
+        async def callback(request, *args, **kwargs):
+            for key, value in expected_header.items():
+                assert request.headers[key] == value
+            return web.json_response(callback_payload)
+
+        return callback
 
     @pytest.mark.asyncio
     async def test_add_headers_success(self, mock_transport, tool_schema_minimal):
@@ -529,7 +561,7 @@ class TestClientHeaders:
     @pytest.mark.asyncio
     async def test_load_tool_with_sync_callable_headers(
         self,
-        aioresponses,
+        mock_transport,
         test_tool_str,
         sync_callable_header,
         sync_callable_header_value,
@@ -545,23 +577,13 @@ class TestClientHeaders:
         header_mock = sync_callable_header[header_key]
         resolved_header = {header_key: sync_callable_header_value}
 
-        get_callback = self.create_callback_factory(
-            expected_header=resolved_header,
-            callback_payload=manifest.model_dump(),
-        )
-        aioresponses.get(f"{TEST_BASE_URL}/api/tool/{tool_name}", callback=get_callback)
-
-        post_callback = self.create_callback_factory(
-            expected_header=resolved_header,
-            callback_payload=expected_payload,
-        )
-        aioresponses.post(
-            f"{TEST_BASE_URL}/api/tool/{tool_name}/invoke", callback=post_callback
-        )
+        mock_transport.tool_get_mock.return_value = manifest
+        mock_transport.tool_invoke_mock.return_value = expected_payload["result"]
 
         async with ToolboxClient(
             TEST_BASE_URL, client_headers=sync_callable_header
         ) as client:
+            client._ToolboxClient__transport = mock_transport
             tool = await client.load_tool(tool_name)
             header_mock.assert_called_once()  # GET
 
@@ -570,11 +592,17 @@ class TestClientHeaders:
             result = await tool(param1="test")
             assert result == expected_payload["result"]
             header_mock.assert_called_once()  # POST/invoke
+            mock_transport.tool_get_mock.assert_awaited_once_with(
+                tool_name, resolved_header
+            )
+            mock_transport.tool_invoke_mock.assert_awaited_once_with(
+                tool_name, {"param1": "test"}, resolved_header
+            )
 
     @pytest.mark.asyncio
     async def test_load_tool_with_async_callable_headers(
         self,
-        aioresponses,
+        mock_transport,
         test_tool_str,
         async_callable_header,
         async_callable_header_value,
@@ -593,23 +621,13 @@ class TestClientHeaders:
         # Calculate expected result using the VALUE fixture
         resolved_header = {header_key: async_callable_header_value}
 
-        get_callback = self.create_callback_factory(
-            expected_header=resolved_header,
-            callback_payload=manifest.model_dump(),
-        )
-        aioresponses.get(f"{TEST_BASE_URL}/api/tool/{tool_name}", callback=get_callback)
-
-        post_callback = self.create_callback_factory(
-            expected_header=resolved_header,
-            callback_payload=expected_payload,
-        )
-        aioresponses.post(
-            f"{TEST_BASE_URL}/api/tool/{tool_name}/invoke", callback=post_callback
-        )
+        mock_transport.tool_get_mock.return_value = manifest
+        mock_transport.tool_invoke_mock.return_value = expected_payload["result"]
 
         async with ToolboxClient(
             TEST_BASE_URL, client_headers=async_callable_header
         ) as client:
+            client._ToolboxClient__transport = mock_transport
             tool = await client.load_tool(tool_name)
             header_mock.assert_awaited_once()  # GET
 
@@ -618,10 +636,16 @@ class TestClientHeaders:
             result = await tool(param1="test")
             assert result == expected_payload["result"]
             header_mock.assert_awaited_once()  # POST/invoke
+            mock_transport.tool_get_mock.assert_awaited_once_with(
+                tool_name, resolved_header
+            )
+            mock_transport.tool_invoke_mock.assert_awaited_once_with(
+                tool_name, {"param1": "test"}, resolved_header
+            )
 
     @pytest.mark.asyncio
     async def test_load_toolset_with_headers(
-        self, aioresponses, test_tool_str, static_header
+        self, mock_transport, test_tool_str, static_header
     ):
         """Tests loading a toolset with client headers."""
         toolset_name = "toolset_with_headers"
@@ -629,55 +653,16 @@ class TestClientHeaders:
         manifest = ManifestSchema(
             serverVersion="0.0.0", tools={tool_name: test_tool_str}
         )
+        mock_transport.tools_list_mock.return_value = manifest
 
-        get_callback = self.create_callback_factory(
-            expected_header=static_header,
-            callback_payload=manifest.model_dump(),
-        )
-        aioresponses.get(
-            f"{TEST_BASE_URL}/api/toolset/{toolset_name}", callback=get_callback
-        )
         async with ToolboxClient(TEST_BASE_URL, client_headers=static_header) as client:
+            client._ToolboxClient__transport = mock_transport
             tools = await client.load_toolset(toolset_name)
             assert len(tools) == 1
             assert tools[0].__name__ == tool_name
-
-    @pytest.mark.asyncio
-    async def test_add_headers_success(
-        self, aioresponses, test_tool_str, static_header
-    ):
-        """Tests adding headers after client initialization."""
-        tool_name = "tool_after_add_headers"
-        manifest = ManifestSchema(
-            serverVersion="0.0.0", tools={tool_name: test_tool_str}
-        )
-        expected_payload = {"result": "added_ok"}
-
-        get_callback = self.create_callback_factory(
-            expected_header=static_header,
-            callback_payload=manifest.model_dump(),
-        )
-        aioresponses.get(f"{TEST_BASE_URL}/api/tool/{tool_name}", callback=get_callback)
-
-        post_callback = self.create_callback_factory(
-            expected_header=static_header,
-            callback_payload=expected_payload,
-        )
-        aioresponses.post(
-            f"{TEST_BASE_URL}/api/tool/{tool_name}/invoke", callback=post_callback
-        )
-
-        async with ToolboxClient(TEST_BASE_URL) as client:
-            with pytest.warns(
-                DeprecationWarning,
-                match="Use the `client_headers` parameter in the ToolboxClient constructor instead.",
-            ):
-                client.add_headers(static_header)
-            assert client._ToolboxClient__client_headers == static_header
-
-            tool = await client.load_tool(tool_name)
-            result = await tool(param1="test")
-            assert result == expected_payload["result"]
+            mock_transport.tools_list_mock.assert_awaited_once_with(
+                toolset_name, static_header
+            )
 
     @pytest.mark.asyncio
     async def test_add_headers_deprecation_warning(self):
