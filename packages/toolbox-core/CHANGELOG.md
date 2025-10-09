@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.5.2](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v0.5.1...toolbox-core-v0.5.2) (2025-09-22)
+
+
+### Miscellaneous Chores
+
+* **deps:** update python-nonmajor ([#372](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/372)) ([d915624](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/d9156246fd35b7813c49ff4b4bc01cf26b3de9f9))
+
+## [0.5.1](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v0.5.0...toolbox-core-v0.5.1) (2025-09-17)
+
+
+### Bug Fixes
+
+* **toolbox-core:** Use typing.Annotated for reliable parameter descriptions instead of docstrings ([#371](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/371)) ([eb76680](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/eb76680d24c344241f3c15293cd12904bbf91b0d))
+
+
+### Documentation
+
+* Update langgraph sample in toolbox-core ([#366](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/366)) ([fe35082](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/fe35082104d8039986eccbdab937f5f3e8b2042b))
+
+
+### Miscellaneous Chores
+
+* Remove redundant test for test_add_auth_token_getter_unused_token ([#347](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/347)) ([dccaf1b](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/dccaf1bd70e4e788fd80a9ef952aede4549b2fc7))
+* Remove duplicate header check during initialization ([#357](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/357)) ([888170b](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/888170b3c34744089fb3b6f2b6f613c4cd718a89))
+
+
 ## [0.5.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v0.4.0...toolbox-core-v0.5.0) (2025-08-19)
 
 

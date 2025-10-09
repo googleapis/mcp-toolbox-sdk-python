@@ -527,15 +527,179 @@ class TestClientHeaders:
         await client.close()
 
     @pytest.mark.asyncio
-    async def test_add_headers_duplicate_fail(self):
-        """Tests that add_headers fails if a header is already registered."""
-        with pytest.warns(DeprecationWarning):
-            client = ToolboxClient(
-                TEST_BASE_URL, client_headers={"X-Duplicate": "Original"}
-            )
-            with pytest.raises(
-                ValueError,
-                match="Client header\\(s\\) `X-Duplicate` already registered in the client.",
+    async def test_load_tool_with_sync_callable_headers(
+        self,
+        aioresponses,
+        test_tool_str,
+        sync_callable_header,
+        sync_callable_header_value,
+    ):
+        """Tests loading and invoking a tool with sync callable client
+        headers."""
+        tool_name = "tool_with_sync_callable_headers"
+        manifest = ManifestSchema(
+            serverVersion="0.0.0", tools={tool_name: test_tool_str}
+        )
+        expected_payload = {"result": "ok_sync"}
+        header_key = list(sync_callable_header.keys())[0]
+        header_mock = sync_callable_header[header_key]
+        resolved_header = {header_key: sync_callable_header_value}
+
+        get_callback = self.create_callback_factory(
+            expected_header=resolved_header,
+            callback_payload=manifest.model_dump(),
+        )
+        aioresponses.get(f"{TEST_BASE_URL}/api/tool/{tool_name}", callback=get_callback)
+
+        post_callback = self.create_callback_factory(
+            expected_header=resolved_header,
+            callback_payload=expected_payload,
+        )
+        aioresponses.post(
+            f"{TEST_BASE_URL}/api/tool/{tool_name}/invoke", callback=post_callback
+        )
+
+        async with ToolboxClient(
+            TEST_BASE_URL, client_headers=sync_callable_header
+        ) as client:
+            tool = await client.load_tool(tool_name)
+            header_mock.assert_called_once()  # GET
+
+            header_mock.reset_mock()  # Reset before invoke
+
+            result = await tool(param1="test")
+            assert result == expected_payload["result"]
+            header_mock.assert_called_once()  # POST/invoke
+
+    @pytest.mark.asyncio
+    async def test_load_tool_with_async_callable_headers(
+        self,
+        aioresponses,
+        test_tool_str,
+        async_callable_header,
+        async_callable_header_value,
+    ):
+        """Tests loading and invoking a tool with async callable client
+        headers."""
+        tool_name = "tool_with_async_callable_headers"
+        manifest = ManifestSchema(
+            serverVersion="0.0.0", tools={tool_name: test_tool_str}
+        )
+        expected_payload = {"result": "ok_async"}
+
+        header_key = list(async_callable_header.keys())[0]
+        header_mock: AsyncMock = async_callable_header[header_key]  # Get the AsyncMock
+
+        # Calculate expected result using the VALUE fixture
+        resolved_header = {header_key: async_callable_header_value}
+
+        get_callback = self.create_callback_factory(
+            expected_header=resolved_header,
+            callback_payload=manifest.model_dump(),
+        )
+        aioresponses.get(f"{TEST_BASE_URL}/api/tool/{tool_name}", callback=get_callback)
+
+        post_callback = self.create_callback_factory(
+            expected_header=resolved_header,
+            callback_payload=expected_payload,
+        )
+        aioresponses.post(
+            f"{TEST_BASE_URL}/api/tool/{tool_name}/invoke", callback=post_callback
+        )
+
+        async with ToolboxClient(
+            TEST_BASE_URL, client_headers=async_callable_header
+        ) as client:
+            tool = await client.load_tool(tool_name)
+            header_mock.assert_awaited_once()  # GET
+
+            header_mock.reset_mock()
+
+            result = await tool(param1="test")
+            assert result == expected_payload["result"]
+            header_mock.assert_awaited_once()  # POST/invoke
+
+    @pytest.mark.asyncio
+    async def test_load_toolset_with_headers(
+        self, aioresponses, test_tool_str, static_header
+    ):
+        """Tests loading a toolset with client headers."""
+        toolset_name = "toolset_with_headers"
+        tool_name = "tool_in_set"
+        manifest = ManifestSchema(
+            serverVersion="0.0.0", tools={tool_name: test_tool_str}
+        )
+
+        get_callback = self.create_callback_factory(
+            expected_header=static_header,
+            callback_payload=manifest.model_dump(),
+        )
+        aioresponses.get(
+            f"{TEST_BASE_URL}/api/toolset/{toolset_name}", callback=get_callback
+        )
+        async with ToolboxClient(TEST_BASE_URL, client_headers=static_header) as client:
+            tools = await client.load_toolset(toolset_name)
+            assert len(tools) == 1
+            assert tools[0].__name__ == tool_name
+
+    @pytest.mark.asyncio
+    async def test_add_headers_success(
+        self, aioresponses, test_tool_str, static_header
+    ):
+        """Tests adding headers after client initialization."""
+        tool_name = "tool_after_add_headers"
+        manifest = ManifestSchema(
+            serverVersion="0.0.0", tools={tool_name: test_tool_str}
+        )
+        expected_payload = {"result": "added_ok"}
+
+        get_callback = self.create_callback_factory(
+            expected_header=static_header,
+            callback_payload=manifest.model_dump(),
+        )
+        aioresponses.get(f"{TEST_BASE_URL}/api/tool/{tool_name}", callback=get_callback)
+
+        post_callback = self.create_callback_factory(
+            expected_header=static_header,
+            callback_payload=expected_payload,
+        )
+        aioresponses.post(
+            f"{TEST_BASE_URL}/api/tool/{tool_name}/invoke", callback=post_callback
+        )
+
+        async with ToolboxClient(TEST_BASE_URL) as client:
+            with pytest.warns(
+                DeprecationWarning,
+                match="Use the `client_headers` parameter in the ToolboxClient constructor instead.",
             ):
-                client.add_headers({"X-Duplicate": "NewValue"})
-        await client.close()
+                client.add_headers(static_header)
+            assert client._ToolboxClient__client_headers == static_header
+
+            tool = await client.load_tool(tool_name)
+            result = await tool(param1="test")
+            assert result == expected_payload["result"]
+
+    @pytest.mark.asyncio
+    async def test_add_headers_deprecation_warning(self):
+        """Tests that add_headers issues a DeprecationWarning."""
+        async with ToolboxClient(TEST_BASE_URL) as client:
+            with pytest.warns(
+                DeprecationWarning,
+                match="Use the `client_headers` parameter in the ToolboxClient constructor instead.",
+            ):
+                client.add_headers({"X-Deprecated-Test": "value"})
+
+    @pytest.mark.asyncio
+    async def test_add_headers_duplicate_fail(self, static_header):
+        """Tests that adding a duplicate header via add_headers raises
+        ValueError."""
+        async with ToolboxClient(TEST_BASE_URL, client_headers=static_header) as client:
+            with pytest.warns(
+                DeprecationWarning,
+                match="Use the `client_headers` parameter in the ToolboxClient constructor instead.",
+            ):
+                with pytest.raises(
+                    ValueError,
+                    match=f"Client header\\(s\\) `X-Static-Header` already registered",
+                ):
+                    client.add_headers(static_header)

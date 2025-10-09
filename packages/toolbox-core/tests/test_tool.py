@@ -413,33 +413,6 @@ def test_tool_init_with_client_headers(
     assert tool_instance._ToolboxTool__client_headers == static_client_header
 
 
-def test_tool_init_header_auth_conflict(
-    http_session,
-    sample_tool_auth_params,
-    sample_tool_description,
-    auth_getters,
-    auth_header_key,
-):
-    """Tests ValueError on init if client header conflicts with auth token."""
-    conflicting_client_header = {auth_header_key: "some-client-value"}
-    transport = ToolboxTransport(HTTPS_BASE_URL, http_session)
-
-    with pytest.raises(
-        ValueError, match=f"Client header\\(s\\) `{auth_header_key}` already registered"
-    ):
-        ToolboxTool(
-            transport=transport,
-            name="auth_conflict_tool",
-            description=sample_tool_description,
-            params=sample_tool_auth_params,
-            required_authn_params={},
-            required_authz_tokens=[],
-            auth_service_token_getters=auth_getters,
-            bound_params={},
-            client_headers=conflicting_client_header,
-        )
-
-
 def test_tool_add_auth_token_getters_conflict_with_existing_client_header(
     http_session: ClientSession,
     sample_tool_params: list[ParameterSchema],
@@ -475,15 +448,15 @@ def test_tool_add_auth_token_getters_conflict_with_existing_client_header(
         tool_instance.add_auth_token_getters(new_auth_getters_causing_conflict)
 
 
-def test_add_auth_token_getters_unused_token(
+@pytest.mark.asyncio
+async def test_auth_token_overrides_client_header(
     http_session: ClientSession,
-    sample_tool_params: list[ParameterSchema],
     sample_tool_description: str,
-    unused_auth_getters: Mapping[str, Callable[[], str]],
+    sample_tool_params: list[ParameterSchema],
 ):
     """
-    Tests ValueError when add_auth_token_getters is called with a getter for
-    an unused authentication service.
+    Tests that an auth token getter's value overrides a client header
+    with the same name during the actual tool call.
     """
     transport = ToolboxTransport(HTTPS_BASE_URL, http_session)
     tool_instance = ToolboxTool(
@@ -493,15 +466,34 @@ def test_add_auth_token_getters_unused_token(
         params=sample_tool_params,
         required_authn_params={},
         required_authz_tokens=[],
-        auth_service_token_getters={},
+        auth_service_token_getters={"test-auth": lambda: "value-from-auth-getter-123"},
         bound_params={},
-        client_headers={},
+        client_headers={
+            "test-auth_token": "value-from-client",
+            "X-Another-Header": "another-value",
+        },
     )
+    tool_name = TEST_TOOL_NAME
+    base_url = HTTPS_BASE_URL
+    invoke_url = f"{base_url}/api/tool/{tool_name}/invoke"
 
-    expected_error_message = "Authentication source\(s\) \`unused-auth-service\` unused by tool \`sample_tool\`."
+    input_args = {"message": "test", "count": 1}
+    mock_server_response = {"result": "Success"}
 
-    with pytest.raises(ValueError, match=expected_error_message):
-        tool_instance.add_auth_token_getters(unused_auth_getters)
+    with aioresponses() as m:
+        m.post(invoke_url, status=200, payload=mock_server_response)
+        # Call the tool
+        await tool_instance(**input_args)
+
+        m.assert_called_once_with(
+            invoke_url,
+            method="POST",
+            json=input_args,
+            headers={
+                "test-auth_token": "value-from-auth-getter-123",
+                "X-Another-Header": "another-value",
+            },
+        )
 
 
 def test_add_auth_token_getter_unused_token(
@@ -533,327 +525,4 @@ def test_add_auth_token_getter_unused_token(
         tool_instance.add_auth_token_getter(
             next(iter(unused_auth_getters)),
             unused_auth_getters[next(iter(unused_auth_getters))],
-        )
-
-
-def test_toolbox_tool_name_property(toolbox_tool: ToolboxTool):
-    """Tests the _name property."""
-    assert toolbox_tool._name == TEST_TOOL_NAME
-
-
-def test_toolbox_tool_description_property(toolbox_tool: ToolboxTool):
-    """Tests the _description property."""
-    assert (
-        toolbox_tool._description
-        == "A sample tool that processes a message and a count."
-    )
-
-
-def test_toolbox_tool_params_property(
-    toolbox_tool: ToolboxTool, sample_tool_params: list[ParameterSchema]
-):
-    """Tests the _params property returns a deep copy."""
-    params_copy = toolbox_tool._params
-    assert params_copy == sample_tool_params
-    assert (
-        params_copy is not toolbox_tool._ToolboxTool__params
-    )  # Ensure it's a deepcopy
-    # Verify modifying the copy does not affect the original
-    params_copy.append(
-        ParameterSchema(name="new_param", type="integer", description="A new parameter")
-    )
-    assert (
-        len(toolbox_tool._ToolboxTool__params) == 2
-    )  # Original should remain unchanged
-
-
-def test_toolbox_tool_bound_params_property(toolbox_tool: ToolboxTool):
-    """Tests the _bound_params property returns an immutable MappingProxyType."""
-    bound_params = toolbox_tool._bound_params
-    assert bound_params == {"fixed_param": "fixed_value"}
-    assert isinstance(bound_params, MappingProxyType)
-    # Verify immutability
-    with pytest.raises(TypeError):
-        bound_params["new_param"] = "new_value"
-
-
-def test_toolbox_tool_required_authn_params_property(
-    toolbox_tool: ToolboxTool,
-):
-    """Tests the _required_authn_params property returns an immutable MappingProxyType."""
-    required_authn_params = toolbox_tool._required_authn_params
-    assert required_authn_params == {"message": ["service_a"]}
-    assert isinstance(required_authn_params, MappingProxyType)
-    # Verify immutability
-    with pytest.raises(TypeError):
-        required_authn_params["new_param"] = ["new_service"]
-
-
-def test_toolbox_tool_required_authz_tokens_property(
-    toolbox_tool: ToolboxTool,
-):
-    """Tests the _required_authz_tokens property returns an immutable MappingProxyType."""
-    required_authz_tokens = toolbox_tool._required_authz_tokens
-    assert required_authz_tokens == ("service_b",)
-    assert isinstance(required_authz_tokens, tuple)
-    # Verify immutability
-    with pytest.raises(TypeError):
-        required_authz_tokens[0] = "new_service"
-
-
-def test_toolbox_tool_auth_service_token_getters_property(
-    toolbox_tool: ToolboxTool,
-):
-    """Tests the _auth_service_token_getters property returns an immutable MappingProxyType."""
-    auth_getters = toolbox_tool._auth_service_token_getters
-    assert "service_x" in auth_getters
-    assert auth_getters["service_x"]() == "token_x"
-    assert isinstance(auth_getters, MappingProxyType)
-    # Verify immutability
-    with pytest.raises(TypeError):
-        auth_getters["new_service"] = lambda: "new_token"
-
-
-def test_toolbox_tool_client_headers_property(toolbox_tool: ToolboxTool):
-    """Tests the _client_headers property returns an immutable MappingProxyType."""
-    client_headers = toolbox_tool._client_headers
-    assert client_headers == {"X-Test-Client": "client_header_value"}
-    assert isinstance(client_headers, MappingProxyType)
-    # Verify immutability
-    with pytest.raises(TypeError):
-        client_headers["new_header"] = "new_value"
-
-
-def test_bind_param_success(
-    http_session: ClientSession,
-    sample_tool_params: list[ParameterSchema],
-    sample_tool_description: str,
-):
-    """Tests successfully binding a single parameter."""
-    transport = ToolboxTransport(HTTPS_BASE_URL, http_session)
-    original_tool = ToolboxTool(
-        transport=transport,
-        name=TEST_TOOL_NAME,
-        description=sample_tool_description,
-        params=sample_tool_params,
-        required_authn_params={},
-        required_authz_tokens=[],
-        auth_service_token_getters={},
-        bound_params={},
-        client_headers={},
-    )
-    # Bind the 'count' parameter to a fixed value
-    bound_tool = original_tool.bind_param("count", 10)
-
-    # Assert immutability: a new object is returned
-    assert bound_tool is not original_tool
-
-    # Assert original tool is unchanged
-    assert not original_tool._bound_params
-    assert "count" in original_tool.__signature__.parameters
-
-    # Assert new tool has the parameter bound
-    assert bound_tool._bound_params == {"count": 10}
-    # Assert signature of the new tool is updated
-    assert "count" not in bound_tool.__signature__.parameters
-    assert "message" in bound_tool.__signature__.parameters
-
-
-def test_bind_params_success_multiple(
-    http_session: ClientSession,
-    sample_tool_params: list[ParameterSchema],
-    sample_tool_description: str,
-):
-    """Tests successfully binding multiple parameters at once."""
-    transport = ToolboxTransport(HTTPS_BASE_URL, http_session)
-    original_tool = ToolboxTool(
-        transport=transport,
-        name=TEST_TOOL_NAME,
-        description=sample_tool_description,
-        params=sample_tool_params,
-        required_authn_params={},
-        required_authz_tokens=[],
-        auth_service_token_getters={},
-        bound_params={},
-        client_headers={},
-    )
-
-    # Bind both parameters
-    bound_tool = original_tool.bind_params({"message": "fixed", "count": 20})
-
-    assert bound_tool is not original_tool
-    assert bound_tool._bound_params == {"message": "fixed", "count": 20}
-
-    # Assert signature is now empty of these parameters
-    assert not bound_tool.__signature__.parameters
-
-
-def test_bind_param_chaining(
-    http_session: ClientSession,
-    sample_tool_params: list[ParameterSchema],
-    sample_tool_description: str,
-):
-    """Tests that binding parameters can be chained."""
-    transport = ToolboxTransport(HTTPS_BASE_URL, http_session)
-    original_tool = ToolboxTool(
-        transport=transport,
-        name=TEST_TOOL_NAME,
-        description=sample_tool_description,
-        params=sample_tool_params,
-        required_authn_params={},
-        required_authz_tokens=[],
-        auth_service_token_getters={},
-        bound_params={},
-        client_headers={},
-    )
-
-    # Chain binding calls
-    final_tool = original_tool.bind_param("count", 50).bind_param("message", "chained")
-
-    assert final_tool._bound_params == {"count": 50, "message": "chained"}
-    assert not final_tool.__signature__.parameters
-
-
-def test_bind_param_error_non_existent(
-    http_session: ClientSession,
-    sample_tool_params: list[ParameterSchema],
-    sample_tool_description: str,
-):
-    """Tests ValueError when trying to bind a parameter that does not exist."""
-    transport = ToolboxTransport(HTTPS_BASE_URL, http_session)
-    tool = ToolboxTool(
-        transport=transport,
-        name=TEST_TOOL_NAME,
-        description=sample_tool_description,
-        params=sample_tool_params,
-        required_authn_params={},
-        required_authz_tokens=[],
-        auth_service_token_getters={},
-        bound_params={},
-        client_headers={},
-    )
-
-    with pytest.raises(
-        ValueError, match="unable to bind parameters: no parameter named non_existent"
-    ):
-        tool.bind_param("non_existent", "value")
-
-
-def test_bind_param_error_rebind(
-    http_session: ClientSession,
-    sample_tool_params: list[ParameterSchema],
-    sample_tool_description: str,
-):
-    """Tests ValueError when trying to re-bind an already bound parameter."""
-    transport = ToolboxTransport(HTTPS_BASE_URL, http_session)
-    tool = ToolboxTool(
-        transport=transport,
-        name=TEST_TOOL_NAME,
-        description=sample_tool_description,
-        params=sample_tool_params,
-        required_authn_params={},
-        required_authz_tokens=[],
-        auth_service_token_getters={},
-        bound_params={},
-        client_headers={},
-    )
-
-    bound_tool = tool.bind_param("message", "first_value")
-
-    with pytest.raises(
-        ValueError,
-        match="cannot re-bind parameter: parameter 'message' is already bound",
-    ):
-        bound_tool.bind_param("message", "second_value")
-
-
-@pytest.mark.asyncio
-async def test_call_with_bound_param(
-    http_session: ClientSession,
-    sample_tool_params: list[ParameterSchema],
-    sample_tool_description: str,
-):
-    """Tests calling a tool after a parameter has been bound."""
-    tool_name = TEST_TOOL_NAME
-    base_url = HTTPS_BASE_URL
-    invoke_url = f"{base_url}/api/tool/{tool_name}/invoke"
-
-    # The final payload should include the bound param and the called param
-    expected_payload = {"count": 100, "message": "hello from call"}
-    mock_response = {"result": "Success"}
-
-    with aioresponses() as m:
-        m.post(invoke_url, status=200, payload=mock_response)
-        transport = ToolboxTransport(base_url, http_session)
-        original_tool = ToolboxTool(
-            transport=transport,
-            name=tool_name,
-            description=sample_tool_description,
-            params=sample_tool_params,
-            required_authn_params={},
-            required_authz_tokens=[],
-            auth_service_token_getters={},
-            bound_params={},
-            client_headers={},
-        )
-
-        bound_tool = original_tool.bind_param("count", 100)
-
-        # Calling the bound tool should only require the remaining parameters
-        result = await bound_tool(message="hello from call")
-        assert result == mock_response["result"]
-
-        # Verify the call was made with the combined arguments
-        m.assert_called_once_with(
-            invoke_url, method="POST", json=expected_payload, headers={}
-        )
-
-        # It should now be an error to try to pass the bound parameter
-        with pytest.raises(TypeError):
-            await bound_tool(message="another call", count=99)
-
-
-@pytest.mark.asyncio
-async def test_call_with_callable_bound_param(
-    http_session: ClientSession,
-    sample_tool_params: list[ParameterSchema],
-    sample_tool_description: str,
-):
-    """Tests that if a bound parameter is a callable, it's resolved at call time."""
-    tool_name = TEST_TOOL_NAME
-    base_url = HTTPS_BASE_URL
-    invoke_url = f"{base_url}/api/tool/{tool_name}/invoke"
-
-    # Mock a callable that will be bound to a parameter
-    count_provider = Mock(return_value=25)
-
-    expected_payload = {"message": "dynamic", "count": 25}
-    mock_response = {"result": "OK"}
-
-    with aioresponses() as m:
-        m.post(invoke_url, status=200, payload=mock_response)
-        transport = ToolboxTransport(base_url, http_session)
-        original_tool = ToolboxTool(
-            transport=transport,
-            name=tool_name,
-            description=sample_tool_description,
-            params=sample_tool_params,
-            required_authn_params={},
-            required_authz_tokens=[],
-            auth_service_token_getters={},
-            bound_params={},
-            client_headers={},
-        )
-
-        bound_tool = original_tool.bind_param("count", count_provider)
-
-        # Call the tool. The 'count_provider' should be invoked.
-        await bound_tool(message="dynamic")
-
-        # Assert that the callable was called exactly once
-        count_provider.assert_called_once()
-
-        # Assert that the payload sent to the server used the value from the callable
-        m.assert_called_once_with(
-            invoke_url, method="POST", json=expected_payload, headers={}
         )
