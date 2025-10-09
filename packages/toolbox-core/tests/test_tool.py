@@ -475,15 +475,15 @@ def test_tool_add_auth_token_getters_conflict_with_existing_client_header(
         tool_instance.add_auth_token_getters(new_auth_getters_causing_conflict)
 
 
-def test_add_auth_token_getters_unused_token(
+@pytest.mark.asyncio
+async def test_auth_token_overrides_client_header(
     http_session: ClientSession,
-    sample_tool_params: list[ParameterSchema],
     sample_tool_description: str,
-    unused_auth_getters: Mapping[str, Callable[[], str]],
+    sample_tool_params: list[ParameterSchema],
 ):
     """
-    Tests ValueError when add_auth_token_getters is called with a getter for
-    an unused authentication service.
+    Tests that an auth token getter's value overrides a client header
+    with the same name during the actual tool call.
     """
     transport = ToolboxTransport(HTTPS_BASE_URL, http_session)
     tool_instance = ToolboxTool(
@@ -498,10 +498,51 @@ def test_add_auth_token_getters_unused_token(
         client_headers={},
     )
 
-    expected_error_message = "Authentication source\(s\) \`unused-auth-service\` unused by tool \`sample_tool\`."
+    auth_service_name = "test-auth"
+    auth_header_key = f"{auth_service_name}_token"
+    auth_token_value = "value-from-auth-getter-123"
+    auth_getters = {auth_service_name: lambda: auth_token_value}
 
-    with pytest.raises(ValueError, match=expected_error_message):
-        tool_instance.add_auth_token_getters(unused_auth_getters)
+    tool_name = TEST_TOOL_NAME
+    base_url = HTTPS_BASE_URL
+    invoke_url = f"{base_url}/api/tool/{tool_name}/invoke"
+
+    client_headers = {
+        auth_header_key: "value-from-client",
+        "X-Another-Header": "another-value",
+    }
+
+    input_args = {"message": "test", "count": 1}
+    mock_server_response = {"result": "Success"}
+
+    with aioresponses() as m:
+        m.post(invoke_url, status=200, payload=mock_server_response)
+
+        tool_instance = ToolboxTool(
+            session=http_session,
+            base_url=base_url,
+            name=tool_name,
+            description=sample_tool_description,
+            params=sample_tool_params,
+            auth_service_token_getters=auth_getters,
+            client_headers=client_headers,
+            required_authn_params={},
+            required_authz_tokens=[],
+            bound_params={},
+        )
+
+        # Call the tool
+        await tool_instance(**input_args)
+
+        m.assert_called_once_with(
+            invoke_url,
+            method="POST",
+            json=input_args,
+            headers={
+                auth_header_key: auth_token_value,
+                "X-Another-Header": "another-value",
+            },
+        )
 
 
 def test_add_auth_token_getter_unused_token(
