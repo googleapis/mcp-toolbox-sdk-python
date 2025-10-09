@@ -17,6 +17,7 @@ import inspect
 from typing import Mapping, Optional
 from unittest.mock import AsyncMock, Mock
 
+from aiohttp import web
 import pytest
 from aiohttp import web
 
@@ -502,6 +503,31 @@ class TestValidation:
                     auth_token_getters={"auth_service_Z": lambda: "token"},
                 )
 
+@pytest.fixture
+def static_header() -> dict[str, str]:
+    return {"X-Static-Header": "static-value"}
+
+
+@pytest.fixture
+def sync_callable_header_value() -> str:
+    return "sync-callable-value"
+
+
+@pytest.fixture
+def sync_callable_header(sync_callable_header_value) -> dict[str, Mock]:
+    return {"X-Sync-Callable-Header": Mock(return_value=sync_callable_header_value)}
+
+
+@pytest.fixture
+def async_callable_header_value() -> str:
+    return "async-callable-value"
+
+
+@pytest.fixture
+def async_callable_header(async_callable_header_value) -> dict[str, AsyncMock]:
+    return {
+        "X-Async-Callable-Header": AsyncMock(return_value=async_callable_header_value)
+    }
 
 @pytest.fixture
 def static_header() -> dict[str, str]:
@@ -532,6 +558,13 @@ def async_callable_header(async_callable_header_value) -> dict[str, AsyncMock]:
 
 class TestClientHeaders:
     """Tests related to client headers."""
+    def create_callback_factory(self, expected_header, callback_payload):
+        async def callback(request, *args, **kwargs):
+            for key, value in expected_header.items():
+                assert request.headers[key] == value
+            return web.json_response(callback_payload)
+
+        return callback
 
     def create_callback_factory(self, expected_header, callback_payload):
         async def callback(request, *args, **kwargs):
