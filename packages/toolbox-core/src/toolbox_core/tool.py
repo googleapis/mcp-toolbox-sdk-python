@@ -20,8 +20,7 @@ from types import MappingProxyType
 from typing import Any, Awaitable, Callable, Mapping, Optional, Sequence, Union
 from warnings import warn
 
-from aiohttp import ClientSession
-
+from .itransport import ITransport
 from .protocol import ParameterSchema
 from .utils import (
     create_func_docstring,
@@ -46,8 +45,7 @@ class ToolboxTool:
 
     def __init__(
         self,
-        session: ClientSession,
-        base_url: str,
+        transport: ITransport,
         name: str,
         description: str,
         params: Sequence[ParameterSchema],
@@ -68,8 +66,7 @@ class ToolboxTool:
         Toolbox server.
 
         Args:
-            session: The `aiohttp.ClientSession` used for making API requests.
-            base_url: The base URL of the Toolbox server API.
+            transport: The transport used for making API requests.
             name: The name of the remote tool.
             description: The description of the remote tool.
             params: The args of the tool.
@@ -84,9 +81,7 @@ class ToolboxTool:
             client_headers: Client specific headers bound to the tool.
         """
         # used to invoke the toolbox API
-        self.__session: ClientSession = session
-        self.__base_url: str = base_url
-        self.__url = f"{base_url}/api/tool/{name}/invoke"
+        self.__transport = transport
         self.__description = description
         self.__params = params
         self.__pydantic_model = params_to_pydantic_model(name, self.__params)
@@ -119,17 +114,6 @@ class ToolboxTool:
         self.__bound_parameters = bound_params
         # map of client headers to their value/callable/coroutine
         self.__client_headers = client_headers
-
-        # ID tokens contain sensitive user information (claims). Transmitting
-        # these over HTTP exposes the data to interception and unauthorized
-        # access. Always use HTTPS to ensure secure communication and protect
-        # user privacy.
-        if (
-            required_authn_params or required_authz_tokens or client_headers
-        ) and not self.__url.startswith("https://"):
-            warn(
-                "Sending ID token over HTTP. User data may be exposed. Use HTTPS for secure communication."
-            )
 
     @property
     def _name(self) -> str:
@@ -171,8 +155,7 @@ class ToolboxTool:
 
     def __copy(
         self,
-        session: Optional[ClientSession] = None,
-        base_url: Optional[str] = None,
+        transport: Optional[ITransport] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
         params: Optional[Sequence[ParameterSchema]] = None,
@@ -192,8 +175,7 @@ class ToolboxTool:
         Creates a copy of the ToolboxTool, overriding specific fields.
 
         Args:
-            session: The `aiohttp.ClientSession` used for making API requests.
-            base_url: The base URL of the Toolbox server API.
+            transport: The transport used for making API requests.
             name: The name of the remote tool.
             description: The description of the remote tool.
             params: The args of the tool.
@@ -209,8 +191,7 @@ class ToolboxTool:
         """
         check = lambda val, default: val if val is not None else default
         return ToolboxTool(
-            session=check(session, self.__session),
-            base_url=check(base_url, self.__base_url),
+            transport=check(transport, self.__transport),
             name=check(name, self.__name__),
             description=check(description, self.__description),
             params=check(params, self.__params),
@@ -291,16 +272,11 @@ class ToolboxTool:
                 token_getter
             )
 
-        async with self.__session.post(
-            self.__url,
-            json=payload,
-            headers=headers,
-        ) as resp:
-            body = await resp.json()
-            if not resp.ok:
-                err = body.get("error", f"unexpected status from server: {resp.status}")
-                raise Exception(err)
-        return body.get("result", body)
+        return await self.__transport.tool_invoke(
+            self.__name__,
+            payload,
+            headers,
+        )
 
     def add_auth_token_getters(
         self,
