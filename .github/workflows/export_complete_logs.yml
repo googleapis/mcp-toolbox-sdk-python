@@ -1,0 +1,182 @@
+
+name: Export Complete Build Logs 
+# detects PR test failures and exports complete logs
+on:
+  check_run:
+    types: [completed]
+
+jobs:
+  export-logs:
+    # Only run for failed Cloud Build PR tests
+    if: github.event.check_run.conclusion == 'failure' && contains(github.event.check_run.name, '-pr-')
+    
+    permissions:
+      contents: 'read'
+      pull-requests: 'write'  # Need this to comment on PRs
+    
+    runs-on: ubuntu-latest
+    
+    steps:
+      # Step 1: Detect and validate the failure
+      - name: Process PR test failure
+        id: detect
+        uses: 'actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd' # v8
+        with:
+          script: |
+            // Script for Cloud Build PR test failures
+            const checkRun = context.payload.check_run;
+            const checkName = checkRun.name || '';
+            
+            console.log(`Processing check: ${checkName}`);
+            
+            // Only process Cloud Build PR tests (these have truncated logs)
+            const cloudBuildPRTests = [
+              'core-python-sdk-pr',
+              'langchain-python-sdk-pr', 
+              'llamaindex-python-sdk-pr'
+            ];
+            
+            const isCloudBuildPRTest = cloudBuildPRTests.some(testName => 
+              checkName.includes(testName)
+            );
+            
+            if (!isCloudBuildPRTest) {
+              console.log(`Skipping non-Cloud Build test: ${checkName}`);
+              core.setOutput('should_export', 'false');
+              return;
+            }
+            
+            console.log(`Processing failed Cloud Build PR test: ${checkName}`);
+            
+            // Extract build ID from Cloud Build URL
+            let buildId = null;
+            if (checkRun.details_url) {
+              console.log(`Checking URL: ${checkRun.details_url}`);
+              
+              const buildIdPatterns = [
+                /\/builds\/([a-f0-9-]+)/,           // Standard Cloud Build pattern
+                /buildId=([a-f0-9-]+)/              // Query parameter pattern
+              ];
+              
+              for (const pattern of buildIdPatterns) {
+                const match = checkRun.details_url.match(pattern);
+                if (match && match[1]) {
+                  buildId = match[1];
+                  console.log(`Extracted build ID: ${buildId}`);
+                  break;
+                }
+              }
+            }
+            
+            if (!buildId) {
+              console.log(`Could not extract build ID from: ${checkRun.details_url}`);
+              core.setOutput('should_export', 'false');
+              return;
+            }
+            
+            // Set outputs for next steps
+            const sanitizedName = checkName.replace(/[^a-zA-Z0-9_-]/g, '-');
+            core.setOutput('should_export', 'true');
+            core.setOutput('build_id', buildId);
+            core.setOutput('test_name', sanitizedName);
+            core.setOutput('original_name', checkName);
+            
+            // Get PR number for comment
+            let prNumber = null;
+            if (checkRun.pull_requests && checkRun.pull_requests.length > 0) {
+              prNumber = checkRun.pull_requests[0].number;
+              core.setOutput('pr_number', prNumber);
+            }
+            
+            console.log(`Ready to export logs for ${checkName}`);
+            console.log(`Artifact will be: complete-logs-${sanitizedName}`);
+
+      # Step 2: Fetch complete logs from Cloud Build
+      - name: Authenticate to Google Cloud
+        if: steps.detect.outputs.should_export == 'true'
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.CLOUD_BUILD_LOG_VIEWER_SA_KEY }}
+
+      - name: Setup gcloud
+        if: steps.detect.outputs.should_export == 'true'
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Fetch complete logs
+        if: steps.detect.outputs.should_export == 'true'
+        run: |
+          echo " Fetching complete logs for build: ${{ steps.detect.outputs.build_id }}"
+          echo " Test: ${{ steps.detect.outputs.original_name }}"
+          echo " Project: toolbox-testing-438616"
+          
+          # Fetch complete logs from Cloud Build (untruncated)
+          if gcloud builds log "${{ steps.detect.outputs.build_id }}" \
+              --project="toolbox-testing-438616" > complete-logs.txt 2>&1; then
+            
+            LOG_SIZE=$(wc -c < complete-logs.txt)
+            echo "Successfully fetched complete logs (${LOG_SIZE} bytes)"
+            
+            if [ $LOG_SIZE -eq 0 ]; then
+              echo "Warning: Log file is empty" > complete-logs.txt
+              echo "This might indicate the build is still running or the build ID is incorrect." >> complete-logs.txt
+            fi
+            
+          else
+            echo "Failed to fetch build logs" > complete-logs.txt
+            echo "" >> complete-logs.txt
+            echo "Build ID: ${{ steps.detect.outputs.build_id }}" >> complete-logs.txt
+            echo "Project: toolbox-testing-438616" >> complete-logs.txt
+            echo "" >> complete-logs.txt
+            echo "This might be due to:" >> complete-logs.txt
+            echo "1. Build ID does not exist" >> complete-logs.txt
+            echo "2. Build is still in progress" >> complete-logs.txt
+            echo "3. Insufficient permissions" >> complete-logs.txt
+          fi
+
+      # Step 3: Upload artifact 
+      - name: Upload complete logs artifact
+        if: steps.detect.outputs.should_export == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: complete-logs-${{ steps.detect.outputs.test_name }}
+          path: complete-logs.txt
+          retention-days: 30
+
+      # Step 4: Notify via PR comment
+      - name: Add PR comment about complete logs
+        if: steps.detect.outputs.should_export == 'true' && steps.detect.outputs.pr_number != ''
+        uses: 'actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd' # v8
+        with:
+          script: |
+            const prNumber = '${{ steps.detect.outputs.pr_number }}';
+            const testName = '${{ steps.detect.outputs.original_name }}';
+            const artifactName = 'complete-logs-${{ steps.detect.outputs.test_name }}';
+            const buildId = '${{ steps.detect.outputs.build_id }}';
+            
+            const comment = `## Complete Build Logs Available
+
+            The test \`${testName}\` failed with truncated logs in the GitHub UI. 
+
+            Complete, untruncated logs are available as a downloadable artifact.
+
+            ### How to access complete logs:
+            1. Go to the [Actions tab](../../actions)
+            2. Look for the "Export Complete Error Logs" workflow run
+            3. Download the \`${artifactName}\` artifact
+            4. Extract and open \`complete-logs.txt\` for full error details
+
+            The artifact contains the complete build output that was truncated in the GitHub checks above.
+
+            **Build ID:** \`${buildId}\``;
+
+            try {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: parseInt(prNumber),
+                body: comment
+              });
+              console.log(`Added PR comment about complete logs for PR #${prNumber}`);
+            } catch (commentError) {
+              console.log(`Failed to add PR comment: ${commentError.message}`);
+            }
