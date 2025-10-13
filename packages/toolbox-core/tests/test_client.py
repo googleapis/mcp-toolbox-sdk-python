@@ -17,8 +17,8 @@ import inspect
 from typing import Mapping, Optional
 from unittest.mock import AsyncMock, Mock
 
-from aiohttp import web
 import pytest
+from aiohttp import web
 
 from toolbox_core.client import ToolboxClient
 from toolbox_core.itransport import ITransport
@@ -502,6 +502,7 @@ class TestValidation:
                     auth_token_getters={"auth_service_Z": lambda: "token"},
                 )
 
+
 @pytest.fixture
 def static_header() -> dict[str, str]:
     return {"X-Static-Header": "static-value"}
@@ -528,8 +529,10 @@ def async_callable_header(async_callable_header_value) -> dict[str, AsyncMock]:
         "X-Async-Callable-Header": AsyncMock(return_value=async_callable_header_value)
     }
 
+
 class TestClientHeaders:
     """Tests related to client headers."""
+
     def create_callback_factory(self, expected_header, callback_payload):
         async def callback(request, *args, **kwargs):
             for key, value in expected_header.items():
