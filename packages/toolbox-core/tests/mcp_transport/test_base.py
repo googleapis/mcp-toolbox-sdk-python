@@ -14,14 +14,14 @@
 
 import asyncio
 from typing import Any
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 import pytest_asyncio
 from aiohttp import ClientSession
 
 from toolbox_core.mcp_transport.base import _McpHttpTransportBase
-from toolbox_core.protocol import ManifestSchema
+from toolbox_core.protocol import ManifestSchema, ToolSchema
 
 
 class ConcreteTransport(_McpHttpTransportBase):
@@ -160,6 +160,19 @@ class TestMcpHttpTransportBase:
         location_param = next(p for p in tool_schema.parameters if p.name == "location")
         assert location_param.required is True
         assert location_param.description == "The city."
+
+    def test_convert_tool_schema_with_auth(self, transport):
+        """Test schema conversion with authentication metadata."""
+        tool_data = {
+            "name": "drive_tool",
+            "description": "A tool that requires auth.",
+            "inputSchema": {"type": "object", "properties": {}},
+            "_meta": {
+                "toolbox/authInvoke": ["google"],
+            },
+        }
+        tool_schema = transport._convert_tool_schema(tool_data)
+        assert tool_schema.authRequired == ["google"]
 
     @pytest.mark.asyncio
     async def test_tools_list_success(self, transport):
