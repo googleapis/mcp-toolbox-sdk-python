@@ -26,7 +26,7 @@ jobs:
     
     permissions:
       contents: 'read'
-      pull-requests: 'write'  # Need this to comment on PRs
+      checks: 'write'  # Need this to update check runs
     
     runs-on: ubuntu-latest
     
@@ -95,13 +95,6 @@ jobs:
             core.setOutput('test_name', sanitizedName);
             core.setOutput('original_name', checkName);
             
-            // Get PR number for comment
-            let prNumber = null;
-            if (checkRun.pull_requests && checkRun.pull_requests.length > 0) {
-              prNumber = checkRun.pull_requests[0].number;
-              core.setOutput('pr_number', prNumber);
-            }
-            
             console.log(`Ready to export logs for ${checkName}`);
             console.log(`Artifact will be: complete-logs-${sanitizedName}`);
 
@@ -147,7 +140,7 @@ jobs:
             echo "3. Insufficient permissions" >> complete-logs.txt
           fi
 
-      # Step 3: Upload artifact 
+      # Step 3: Upload logs and create accessible download link
       - name: Upload complete logs artifact
         if: steps.detect.outputs.should_export == 'true'
         uses: actions/upload-artifact@v4
@@ -156,41 +149,62 @@ jobs:
           path: complete-logs.txt
           retention-days: 30
 
-      # Step 4: Notify via PR comment
-      - name: Add PR comment about complete logs
-        if: steps.detect.outputs.should_export == 'true' && steps.detect.outputs.pr_number != ''
+      - name: Create direct download link via GitHub release
+        if: steps.detect.outputs.should_export == 'true'
+        run: |
+          # Create a unique filename for the logs
+          LOG_FILE="complete-logs-${{ steps.detect.outputs.test_name }}-$(date +%Y%m%d-%H%M%S).txt"
+          cp complete-logs.txt "$LOG_FILE"
+          
+          # Create or update a release for log storage
+          RELEASE_TAG="build-logs-$(date +%Y%m%d)"
+          
+          # Check if release exists, create if not
+          if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release create "$RELEASE_TAG" \
+              --title "Build Logs $(date +%Y-%m-%d)" \
+              --notes "Automated release for storing complete build logs" \
+              --prerelease
+          fi
+          
+          # Upload log file to release
+          gh release upload "$RELEASE_TAG" "$LOG_FILE" --clobber
+          
+          # Get download URL
+          DOWNLOAD_URL="https://github.com/${{ github.repository }}/releases/download/$RELEASE_TAG/$LOG_FILE"
+          echo "DOWNLOAD_URL=$DOWNLOAD_URL" >> $GITHUB_ENV
+          echo "LOG_FILENAME=$LOG_FILE" >> $GITHUB_ENV
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Step 4: Add download link to existing failed check run
+      - name: Add complete logs check run
+        if: steps.detect.outputs.should_export == 'true'
         uses: 'actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd' # v8
         with:
           script: |
-            const prNumber = '${{ steps.detect.outputs.pr_number }}';
             const testName = '${{ steps.detect.outputs.original_name }}';
-            const artifactName = 'complete-logs-${{ steps.detect.outputs.test_name }}';
+            const downloadUrl = process.env.DOWNLOAD_URL;
             const buildId = '${{ steps.detect.outputs.build_id }}';
             
-            const comment = `## Complete Build Logs Available
-
-            The test \`${testName}\` failed with truncated logs in the GitHub UI. 
-
-            Complete, untruncated logs are available as a downloadable artifact.
-
-            ### How to access complete logs:
-            1. Go to the [Actions tab](../../actions)
-            2. Look for the "Export Complete Error Logs" workflow run
-            3. Download the \`${artifactName}\` artifact
-            4. Extract and open \`complete-logs.txt\` for full error details
-
-            The artifact contains the complete build output that was truncated in the GitHub checks above.
-
-            **Build ID:** \`${buildId}\``;
-
-            try {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: parseInt(prNumber),
-                body: comment
-              });
-              console.log(`Added PR comment about complete logs for PR #${prNumber}`);
-            } catch (commentError) {
-              console.log(`Failed to add PR comment: ${commentError.message}`);
-            }
+            // Modify original Cloud Build check run only 
+            const checkRunId = context.payload.check_run.id;
+            const originalOutput = context.payload.check_run.output || {};
+            
+            // append download URL to existing content 
+            const originalText = originalOutput.text || '';
+            const appendOnlyText = originalText + `\n Download complete logs: ${downloadUrl}`;
+            
+            // Only update the text field - leave title and summary completely untouched
+            await github.rest.checks.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              check_run_id: checkRunId,
+              output: {
+                text: appendOnlyText            // modify text field by appending download URL
+              }
+            });
+            
+            console.log(`Successfully appended download link to check run ${checkRunId}`);
+            
+            console.log(`Download link available: ${downloadUrl}`);
