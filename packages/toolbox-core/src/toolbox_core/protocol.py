@@ -37,13 +37,14 @@ class Protocol(str, Enum):
         ]
 
 
-    @classmethod
-    def get_supported_mcp_versions(cls):
-        """Returns a list of supported MCP versions, sorted from newest to oldest."""
-        versions = [member for member in cls if member.name.startswith("MCP_v")]
-        # Sort by the version date in descending order
-        versions.sort(key=lambda x: x.value, reverse=True)
-        return [v.value for v in versions]
+    @staticmethod
+    def get_supported_mcp_versions() -> list[str]:
+        """Returns a list of supported MCP protocol versions."""
+        return [
+            Protocol.MCP_v20250618.value,
+            Protocol.MCP_v20250326.value,
+            Protocol.MCP_v20241105.value,
+        ]
 
 
 __TYPE_MAP = {
