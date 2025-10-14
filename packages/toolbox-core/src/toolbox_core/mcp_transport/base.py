@@ -66,7 +66,6 @@ class _McpHttpTransportBase(ITransport, ABC):
         input_schema = tool_data.get("inputSchema", {})
         properties = input_schema.get("properties", {})
         required = input_schema.get("required", [])
-        
 
         for name, schema in properties.items():
             additional_props = schema.get("additionalProperties")
