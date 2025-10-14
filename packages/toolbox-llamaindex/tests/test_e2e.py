@@ -290,7 +290,7 @@ class TestE2EClientSync:
         auth_tool = tool.add_auth_token_getter("my-test-auth", lambda: auth_token2)
         with pytest.raises(
             Exception,
-            match="tool invocation not authorized. Please make sure your specify correct auth headers",
+            match="Unauthorized",
         ):
             auth_tool.call(id="2")
 
