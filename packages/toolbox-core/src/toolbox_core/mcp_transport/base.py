@@ -58,9 +58,23 @@ class _McpHttpTransportBase(ITransport, ABC):
         return self._mcp_base_url
 
     def _convert_tool_schema(self, tool_data: dict) -> ToolSchema:
-        meta = tool_data.get("_meta", {})
-        param_auth = meta.get("toolbox/authParam", {})
-        invoke_auth = meta.get("toolbox/authInvoke", [])
+        """
+        Safely converts the raw tool dictionary from the server into a ToolSchema object,
+        robustly handling optional authentication metadata.
+        """
+        param_auth = {}
+        invoke_auth = []
+
+        if "_meta" in tool_data and isinstance(tool_data["_meta"], dict):
+            meta = tool_data["_meta"]
+            if "toolbox/authParam" in meta and isinstance(
+                meta["toolbox/authParam"], dict
+            ):
+                param_auth = meta["toolbox/authParam"]
+            if "toolbox/authInvoke" in meta and isinstance(
+                meta["toolbox/authInvoke"], list
+            ):
+                invoke_auth = meta["toolbox/authInvoke"]
 
         parameters = []
         input_schema = tool_data.get("inputSchema", {})
