@@ -84,6 +84,7 @@ class _McpHttpTransportBase(ITransport, ABC):
                     description=schema.get("description", ""),
                     required=name in required,
                     additionalProperties=additional_props,
+                    authSources=auth_sources,
                 )
             )
 
