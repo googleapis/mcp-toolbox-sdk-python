@@ -59,7 +59,7 @@ class _McpHttpTransportBase(ITransport, ABC):
 
     def _convert_tool_schema(self, tool_data: dict) -> ToolSchema:
         meta = tool_data.get("_meta", {})
-        param_auth = meta.get("toolbox/authParams", {})
+        param_auth = meta.get("toolbox/authParam", {})
         invoke_auth = meta.get("toolbox/authInvoke", [])
 
         parameters = []
