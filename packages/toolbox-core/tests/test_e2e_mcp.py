@@ -159,6 +159,7 @@ class TestAuth:
     async def test_run_tool_no_auth(self, toolbox: ToolboxClient):
         """Tests running a tool requiring auth without providing auth."""
         tool = await toolbox.load_tool("get-row-by-id-auth")
+        print("DEBUG: got tool", tool._required_authn_params, tool._required_authz_tokens)
         with pytest.raises(
             PermissionError,
             match="One or more of the following authn services are required to invoke this tool: my-test-auth",
