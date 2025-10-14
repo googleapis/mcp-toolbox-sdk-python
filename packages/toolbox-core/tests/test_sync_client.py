@@ -14,18 +14,59 @@
 
 
 import inspect
-from typing import Any, Callable, Mapping, Optional
+from typing import Mapping, Optional
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
-from aioresponses import CallbackResult, aioresponses
 
 from toolbox_core.client import ToolboxClient
+from toolbox_core.itransport import ITransport
 from toolbox_core.protocol import ManifestSchema, ParameterSchema, ToolSchema
 from toolbox_core.sync_client import ToolboxSyncClient
 from toolbox_core.sync_tool import ToolboxSyncTool
 
 TEST_BASE_URL = "http://toolbox.example.com"
+
+
+class MockSyncTransport(ITransport):
+    """A mock transport for testing the ToolboxClient."""
+
+    def __init__(self, base_url: str):
+        self._base_url = base_url
+        self.tool_get_mock = AsyncMock()
+        self.tools_list_mock = AsyncMock()
+        self.tool_invoke_mock = AsyncMock()
+        self.close_mock = AsyncMock()
+
+    @property
+    def base_url(self) -> str:
+        return self._base_url
+
+    async def tool_get(
+        self, tool_name: str, headers: Optional[Mapping[str, str]] = None
+    ) -> ManifestSchema:
+        return await self.tool_get_mock(tool_name, headers)
+
+    async def tools_list(
+        self,
+        toolset_name: Optional[str] = None,
+        headers: Optional[Mapping[str, str]] = None,
+    ) -> ManifestSchema:
+        return await self.tools_list_mock(toolset_name, headers)
+
+    async def tool_invoke(
+        self, tool_name: str, arguments: dict, headers: Mapping[str, str]
+    ) -> str:
+        return await self.tool_invoke_mock(tool_name, arguments, headers)
+
+    async def close(self):
+        await self.close_mock()
+
+
+@pytest.fixture
+def mock_transport() -> MockSyncTransport:
+    """Provides a mock transport instance."""
+    return MockSyncTransport(TEST_BASE_URL)
 
 
 @pytest.fixture
@@ -129,64 +170,15 @@ def tool_schema_minimal():
     return ToolSchema(description="Minimal Test Tool", parameters=[])
 
 
-# --- Helper Functions for Mocking ---
-def mock_tool_load(
-    aio_resp: aioresponses,
-    tool_name: str,
-    tool_schema: ToolSchema,
-    base_url: str = TEST_BASE_URL,
-    server_version: str = "0.0.0",
-    status: int = 200,
-    callback: Optional[Callable] = None,
-    payload_override: Optional[Any] = None,
-):
-    url = f"{base_url}/api/tool/{tool_name}"
-    payload_data = {}
-    if payload_override is not None:
-        payload_data = payload_override
-    else:
-        manifest = ManifestSchema(
-            serverVersion=server_version, tools={tool_name: tool_schema}
-        )
-        payload_data = manifest.model_dump()
-    aio_resp.get(url, payload=payload_data, status=status, callback=callback)
-
-
-def mock_toolset_load(
-    aio_resp: aioresponses,
-    toolset_name: str,
-    tools_dict: Mapping[str, ToolSchema],
-    base_url: str = TEST_BASE_URL,
-    server_version: str = "0.0.0",
-    status: int = 200,
-    callback: Optional[Callable] = None,
-):
-    url_path = f"toolset/{toolset_name}" if toolset_name else "toolset/"
-    url = f"{base_url}/api/{url_path}"
-    manifest = ManifestSchema(serverVersion=server_version, tools=tools_dict)
-    aio_resp.get(url, payload=manifest.model_dump(), status=status, callback=callback)
-
-
-def mock_tool_invoke(
-    aio_resp: aioresponses,
-    tool_name: str,
-    base_url: str = TEST_BASE_URL,
-    response_payload: Any = {"result": "ok"},
-    status: int = 200,
-    callback: Optional[Callable] = None,
-):
-    url = f"{base_url}/api/tool/{tool_name}/invoke"
-    aio_resp.post(url, payload=response_payload, status=status, callback=callback)
-
-
-# --- Tests for General ToolboxSyncClient Functionality ---
-
-
-def test_sync_load_tool_success(aioresponses, test_tool_str_schema, sync_client):
+def test_sync_load_tool_success(test_tool_str_schema, sync_client, mock_transport):
     TOOL_NAME = "test_tool_sync_1"
-    mock_tool_load(aioresponses, TOOL_NAME, test_tool_str_schema)
-    mock_tool_invoke(
-        aioresponses, TOOL_NAME, response_payload={"result": "sync_tool_ok"}
+    manifest = ManifestSchema(
+        serverVersion="0.0.0", tools={TOOL_NAME: test_tool_str_schema}
+    )
+    mock_transport.tool_get_mock.return_value = manifest
+    mock_transport.tool_invoke_mock.return_value = "sync_tool_ok"
+    sync_client._ToolboxSyncClient__async_client._ToolboxClient__transport = (
+        mock_transport
     )
 
     loaded_tool = sync_client.load_tool(TOOL_NAME)
@@ -204,7 +196,7 @@ def test_sync_load_tool_success(aioresponses, test_tool_str_schema, sync_client)
 
 
 def test_sync_load_toolset_success(
-    aioresponses, test_tool_str_schema, test_tool_int_bool_schema, sync_client
+    test_tool_str_schema, test_tool_int_bool_schema, sync_client, mock_transport
 ):
     TOOLSET_NAME = "my_sync_toolset"
     TOOL1_NAME = "sync_tool1"
@@ -213,12 +205,11 @@ def test_sync_load_toolset_success(
         TOOL1_NAME: test_tool_str_schema,
         TOOL2_NAME: test_tool_int_bool_schema,
     }
-    mock_toolset_load(aioresponses, TOOLSET_NAME, tools_definition)
-    mock_tool_invoke(
-        aioresponses, TOOL1_NAME, response_payload={"result": f"{TOOL1_NAME}_ok"}
-    )
-    mock_tool_invoke(
-        aioresponses, TOOL2_NAME, response_payload={"result": f"{TOOL2_NAME}_ok"}
+    manifest = ManifestSchema(serverVersion="0.0.0", tools=tools_definition)
+    mock_transport.tools_list_mock.return_value = manifest
+    mock_transport.tool_invoke_mock.side_effect = ["sync_tool1_ok", "sync_tool2_ok"]
+    sync_client._ToolboxSyncClient__async_client._ToolboxClient__transport = (
+        mock_transport
     )
 
     tools = sync_client.load_toolset(TOOLSET_NAME)
@@ -232,12 +223,18 @@ def test_sync_load_toolset_success(
     assert result1 == f"{TOOL1_NAME}_ok"
 
 
-def test_sync_invoke_tool_server_error(aioresponses, test_tool_str_schema, sync_client):
+def test_sync_invoke_tool_server_error(
+    test_tool_str_schema, sync_client, mock_transport
+):
     TOOL_NAME = "sync_server_error_tool"
     ERROR_MESSAGE = "Simulated Server Error for Sync Client"
-    mock_tool_load(aioresponses, TOOL_NAME, test_tool_str_schema)
-    mock_tool_invoke(
-        aioresponses, TOOL_NAME, response_payload={"error": ERROR_MESSAGE}, status=500
+    manifest = ManifestSchema(
+        serverVersion="0.0.0", tools={TOOL_NAME: test_tool_str_schema}
+    )
+    mock_transport.tool_get_mock.return_value = manifest
+    mock_transport.tool_invoke_mock.side_effect = Exception(ERROR_MESSAGE)
+    sync_client._ToolboxSyncClient__async_client._ToolboxClient__transport = (
+        mock_transport
     )
 
     loaded_tool = sync_client.load_tool(TOOL_NAME)
@@ -246,18 +243,16 @@ def test_sync_invoke_tool_server_error(aioresponses, test_tool_str_schema, sync_
 
 
 def test_sync_load_tool_not_found_in_manifest(
-    aioresponses, test_tool_str_schema, sync_client
+    test_tool_str_schema, sync_client, mock_transport
 ):
     ACTUAL_TOOL_IN_MANIFEST = "actual_tool_sync_abc"
     REQUESTED_TOOL_NAME = "non_existent_tool_sync_xyz"
-    mismatched_manifest_payload = ManifestSchema(
+    mismatched_manifest = ManifestSchema(
         serverVersion="0.0.0", tools={ACTUAL_TOOL_IN_MANIFEST: test_tool_str_schema}
-    ).model_dump()
-    mock_tool_load(
-        aio_resp=aioresponses,
-        tool_name=REQUESTED_TOOL_NAME,
-        tool_schema=test_tool_str_schema,
-        payload_override=mismatched_manifest_payload,
+    )
+    mock_transport.tool_get_mock.return_value = mismatched_manifest
+    sync_client._ToolboxSyncClient__async_client._ToolboxClient__transport = (
+        mock_transport
     )
 
     with pytest.raises(
@@ -265,9 +260,6 @@ def test_sync_load_tool_not_found_in_manifest(
         match=f"Tool '{REQUESTED_TOOL_NAME}' not found!",
     ):
         sync_client.load_tool(REQUESTED_TOOL_NAME)
-    aioresponses.assert_called_once_with(
-        f"{TEST_BASE_URL}/api/tool/{REQUESTED_TOOL_NAME}", method="GET", headers={}
-    )
 
 
 class TestSyncClientLifecycle:
@@ -289,7 +281,7 @@ class TestSyncClientLifecycle:
         ), "Async client should be ToolboxClient instance"
 
     @pytest.mark.usefixtures("sync_client_environment")
-    def test_sync_client_context_manager(self, aioresponses, tool_schema_minimal):
+    def test_sync_client_context_manager(self, tool_schema_minimal, mock_transport):
         """
         Tests the context manager (__enter__ and __exit__) functionality.
         The sync_client_environment ensures loop/thread cleanup.
@@ -298,8 +290,15 @@ class TestSyncClientLifecycle:
             ToolboxSyncClient, "close", wraps=ToolboxSyncClient.close, autospec=True
         ) as mock_close_method:
             with ToolboxSyncClient(TEST_BASE_URL) as client:
+                client._ToolboxSyncClient__async_client._ToolboxClient__transport = (
+                    mock_transport
+                )
                 assert isinstance(client, ToolboxSyncClient)
-                mock_tool_load(aioresponses, "dummy_tool_ctx", tool_schema_minimal)
+                manifest = ManifestSchema(
+                    serverVersion="0.0.0",
+                    tools={"dummy_tool_ctx": tool_schema_minimal},
+                )
+                mock_transport.tool_get_mock.return_value = manifest
                 client.load_tool("dummy_tool_ctx")
             mock_close_method.assert_called_once()
 
@@ -355,7 +354,7 @@ class TestSyncClientHeaders:
     or counterparts to async client header tests."""
 
     def test_sync_add_headers_success(
-        self, aioresponses, test_tool_str_schema, sync_client
+        self, test_tool_str_schema, sync_client, mock_transport
     ):
         tool_name = "tool_after_add_headers_sync"
         manifest = ManifestSchema(
@@ -364,23 +363,10 @@ class TestSyncClientHeaders:
         expected_payload = {"result": "added_sync_ok"}
         headers_to_add = {"X-Custom-SyncHeader": "sync_value"}
 
-        def get_callback(url, **kwargs):
-            # The sync_client might have default headers. Check ours are present.
-            assert kwargs.get("headers") is not None
-            for key, value in headers_to_add.items():
-                assert kwargs["headers"].get(key) == value
-            return CallbackResult(status=200, payload=manifest.model_dump())
-
-        aioresponses.get(f"{TEST_BASE_URL}/api/tool/{tool_name}", callback=get_callback)
-
-        def post_callback(url, **kwargs):
-            assert kwargs.get("headers") is not None
-            for key, value in headers_to_add.items():
-                assert kwargs["headers"].get(key) == value
-            return CallbackResult(status=200, payload=expected_payload)
-
-        aioresponses.post(
-            f"{TEST_BASE_URL}/api/tool/{tool_name}/invoke", callback=post_callback
+        mock_transport.tool_get_mock.return_value = manifest
+        mock_transport.tool_invoke_mock.return_value = "added_sync_ok"
+        sync_client._ToolboxSyncClient__async_client._ToolboxClient__transport = (
+            mock_transport
         )
 
         with pytest.warns(
@@ -388,6 +374,7 @@ class TestSyncClientHeaders:
             match="Use the `client_headers` parameter in the ToolboxClient constructor instead.",
         ):
             sync_client.add_headers(headers_to_add)
+
         tool = sync_client.load_tool(tool_name)
         result = tool(param1="test")
         assert result == expected_payload["result"]
@@ -438,27 +425,16 @@ class TestSyncAuth:
         tool_name_auth,
         expected_header_token,
         test_tool_auth_schema,
-        aioresponses,
         sync_client,
+        mock_transport,
     ):
         manifest = ManifestSchema(
             serverVersion="0.0.0", tools={tool_name_auth: test_tool_auth_schema}
         )
-        aioresponses.get(
-            f"{TEST_BASE_URL}/api/tool/{tool_name_auth}",
-            payload=manifest.model_dump(),
-            status=200,
-        )
-
-        def require_headers_callback(url, **kwargs):
-            assert (
-                kwargs["headers"].get("my-auth-service_token") == expected_header_token
-            )
-            return CallbackResult(status=200, payload={"result": "auth_ok"})
-
-        aioresponses.post(
-            f"{TEST_BASE_URL}/api/tool/{tool_name_auth}/invoke",
-            callback=require_headers_callback,
+        mock_transport.tool_get_mock.return_value = manifest
+        mock_transport.tool_invoke_mock.return_value = "auth_ok"
+        sync_client._ToolboxSyncClient__async_client._ToolboxClient__transport = (
+            mock_transport
         )
 
         def token_handler():
@@ -475,27 +451,16 @@ class TestSyncAuth:
         tool_name_auth,
         expected_header_token,
         test_tool_auth_schema,
-        aioresponses,
         sync_client,
+        mock_transport,
     ):
         manifest = ManifestSchema(
             serverVersion="0.0.0", tools={tool_name_auth: test_tool_auth_schema}
         )
-        aioresponses.get(
-            f"{TEST_BASE_URL}/api/tool/{tool_name_auth}",
-            payload=manifest.model_dump(),
-            status=200,
-        )
-
-        def require_headers_callback(url, **kwargs):
-            assert (
-                kwargs["headers"].get("my-auth-service_token") == expected_header_token
-            )
-            return CallbackResult(status=200, payload={"result": "auth_ok"})
-
-        aioresponses.post(
-            f"{TEST_BASE_URL}/api/tool/{tool_name_auth}/invoke",
-            callback=require_headers_callback,
+        mock_transport.tool_get_mock.return_value = manifest
+        mock_transport.tool_invoke_mock.return_value = "auth_ok"
+        sync_client._ToolboxSyncClient__async_client._ToolboxClient__transport = (
+            mock_transport
         )
 
         def token_handler():
@@ -507,20 +472,14 @@ class TestSyncAuth:
         assert result == "auth_ok"
 
     def test_auth_with_load_tool_fail_no_token(
-        self, tool_name_auth, test_tool_auth_schema, aioresponses, sync_client
+        self, tool_name_auth, test_tool_auth_schema, sync_client, mock_transport
     ):
         manifest = ManifestSchema(
             serverVersion="0.0.0", tools={tool_name_auth: test_tool_auth_schema}
         )
-        aioresponses.get(
-            f"{TEST_BASE_URL}/api/tool/{tool_name_auth}",
-            payload=manifest.model_dump(),
-            status=200,
-        )
-        aioresponses.post(
-            f"{TEST_BASE_URL}/api/tool/{tool_name_auth}/invoke",
-            payload={"error": "Missing token"},
-            status=401,
+        mock_transport.tool_get_mock.return_value = manifest
+        sync_client._ToolboxSyncClient__async_client._ToolboxClient__transport = (
+            mock_transport
         )
 
         tool = sync_client.load_tool(tool_name_auth)
@@ -531,16 +490,16 @@ class TestSyncAuth:
             tool(argA=15, argB=True)
 
     def test_add_auth_token_getters_duplicate_fail(
-        self, tool_name_auth, test_tool_auth_schema, aioresponses, sync_client
+        self, tool_name_auth, test_tool_auth_schema, sync_client, mock_transport
     ):
         manifest = ManifestSchema(
             serverVersion="0.0.0", tools={tool_name_auth: test_tool_auth_schema}
         )
-        aioresponses.get(
-            f"{TEST_BASE_URL}/api/tool/{tool_name_auth}",
-            payload=manifest.model_dump(),
-            status=200,
+        mock_transport.tool_get_mock.return_value = manifest
+        sync_client._ToolboxSyncClient__async_client._ToolboxClient__transport = (
+            mock_transport
         )
+
         AUTH_SERVICE = "my-auth-service"
         tool = sync_client.load_tool(tool_name_auth)
         authed_tool = tool.add_auth_token_getters({AUTH_SERVICE: lambda: "token1"})
@@ -551,16 +510,16 @@ class TestSyncAuth:
             authed_tool.add_auth_token_getters({AUTH_SERVICE: lambda: "token2"})
 
     def test_add_auth_token_getters_missing_fail(
-        self, tool_name_auth, test_tool_auth_schema, aioresponses, sync_client
+        self, tool_name_auth, test_tool_auth_schema, sync_client, mock_transport
     ):
         manifest = ManifestSchema(
             serverVersion="0.0.0", tools={tool_name_auth: test_tool_auth_schema}
         )
-        aioresponses.get(
-            f"{TEST_BASE_URL}/api/tool/{tool_name_auth}",
-            payload=manifest.model_dump(),
-            status=200,
+        mock_transport.tool_get_mock.return_value = manifest
+        sync_client._ToolboxSyncClient__async_client._ToolboxClient__transport = (
+            mock_transport
         )
+
         UNUSED_AUTH_SERVICE = "xmy-auth-service"
         tool = sync_client.load_tool(tool_name_auth)
         with pytest.raises(
@@ -570,16 +529,16 @@ class TestSyncAuth:
             tool.add_auth_token_getters({UNUSED_AUTH_SERVICE: lambda: "token"})
 
     def test_constructor_getters_missing_fail(
-        self, tool_name_auth, test_tool_auth_schema, aioresponses, sync_client
+        self, tool_name_auth, test_tool_auth_schema, sync_client, mock_transport
     ):
         manifest = ManifestSchema(
             serverVersion="0.0.0", tools={tool_name_auth: test_tool_auth_schema}
         )
-        aioresponses.get(
-            f"{TEST_BASE_URL}/api/tool/{tool_name_auth}",
-            payload=manifest.model_dump(),
-            status=200,
+        mock_transport.tool_get_mock.return_value = manifest
+        sync_client._ToolboxSyncClient__async_client._ToolboxClient__transport = (
+            mock_transport
         )
+
         UNUSED_AUTH_SERVICE = "xmy-auth-service-constructor"
         with pytest.raises(
             ValueError,

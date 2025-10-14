@@ -526,3 +526,162 @@ def test_add_auth_token_getter_unused_token(
             next(iter(unused_auth_getters)),
             unused_auth_getters[next(iter(unused_auth_getters))],
         )
+
+
+# --- Tests for Parameter Binding ---
+
+
+@pytest.mark.asyncio
+async def test_bind_param_success(
+    http_session: ClientSession,
+    sample_tool_params: list[ParameterSchema],
+    sample_tool_description: str,
+):
+    """
+    Tests successfully binding a single parameter with a static value using bind_param.
+    """
+    transport = ToolboxTransport(HTTPS_BASE_URL, http_session)
+    original_tool = ToolboxTool(
+        transport=transport,
+        name=TEST_TOOL_NAME,
+        description=sample_tool_description,
+        params=sample_tool_params,
+        required_authn_params={},
+        required_authz_tokens=[],
+        auth_service_token_getters={},
+        bound_params={},
+        client_headers={},
+    )
+
+    # Bind the 'count' parameter
+    bound_tool = original_tool.bind_param("count", 100)
+
+    # Assert immutability and changes
+    assert bound_tool is not original_tool
+    assert "count" not in bound_tool.__signature__.parameters
+    assert "message" in bound_tool.__signature__.parameters
+    assert "count" in original_tool.__signature__.parameters
+    assert bound_tool._bound_params == {"count": 100}
+    assert original_tool._bound_params == {}
+
+    # Test invocation of the new tool
+    invoke_url = f"{HTTPS_BASE_URL}/api/tool/{TEST_TOOL_NAME}/invoke"
+    with aioresponses() as m:
+        m.post(invoke_url, status=200, payload={"result": "Success"})
+        await bound_tool(message="hello")
+
+        # Verify the payload includes both the argument and the bound parameter
+        expected_payload = {"message": "hello", "count": 100}
+        m.assert_called_once_with(
+            invoke_url, method="POST", json=expected_payload, headers={}
+        )
+
+
+@pytest.mark.asyncio
+async def test_bind_params_success_with_callable(
+    http_session: ClientSession,
+    sample_tool_params: list[ParameterSchema],
+    sample_tool_description: str,
+):
+    """
+    Tests successfully binding multiple parameters, including one with a callable.
+    """
+    transport = ToolboxTransport(HTTPS_BASE_URL, http_session)
+    tool = ToolboxTool(
+        transport=transport,
+        name=TEST_TOOL_NAME,
+        description=sample_tool_description,
+        params=sample_tool_params,
+        required_authn_params={},
+        required_authz_tokens=[],
+        auth_service_token_getters={},
+        bound_params={},
+        client_headers={},
+    )
+
+    # Bind both parameters, one with a lambda
+    bound_tool = tool.bind_params({"message": lambda: "from-callable", "count": 99})
+
+    assert "message" not in bound_tool.__signature__.parameters
+    assert "count" not in bound_tool.__signature__.parameters
+    assert len(bound_tool.__signature__.parameters) == 0
+
+    # Test invocation
+    invoke_url = f"{HTTPS_BASE_URL}/api/tool/{TEST_TOOL_NAME}/invoke"
+    with aioresponses() as m:
+        m.post(invoke_url, status=200, payload={"result": "Success"})
+        await bound_tool()  # Call with no arguments
+
+        expected_payload = {"message": "from-callable", "count": 99}
+        m.assert_called_once_with(
+            invoke_url, method="POST", json=expected_payload, headers={}
+        )
+
+
+def test_bind_param_invalid_parameter_name(toolbox_tool: ToolboxTool):
+    """
+    Tests that binding a parameter that does not exist raises a ValueError.
+    """
+    with pytest.raises(
+        ValueError, match="unable to bind parameters: no parameter named invalid_param"
+    ):
+        toolbox_tool.bind_param("invalid_param", "some_value")
+
+
+def test_bind_params_rebinding_parameter_fails(toolbox_tool: ToolboxTool):
+    """
+    Tests that attempting to re-bind an already bound parameter raises a ValueError.
+    """
+    tool_with_one_bound_param = toolbox_tool.bind_param("count", 50)
+
+    with pytest.raises(
+        ValueError, match="cannot re-bind parameter: parameter 'count' is already bound"
+    ):
+        tool_with_one_bound_param.bind_params({"count": 75})
+
+
+@pytest.mark.asyncio
+async def test_bind_param_chaining(
+    http_session: ClientSession,
+    sample_tool_params: list[ParameterSchema],
+    sample_tool_description: str,
+):
+    """
+    Tests that bind_param calls can be chained to bind multiple parameters sequentially.
+    """
+    transport = ToolboxTransport(HTTPS_BASE_URL, http_session)
+    tool = ToolboxTool(
+        transport=transport,
+        name=TEST_TOOL_NAME,
+        description=sample_tool_description,
+        params=sample_tool_params,
+        required_authn_params={},
+        required_authz_tokens=[],
+        auth_service_token_getters={},
+        bound_params={},
+        client_headers={},
+    )
+
+    # Chain the calls
+    fully_bound_tool = tool.bind_param("count", 42).bind_param(
+        "message", "chained-call"
+    )
+
+    assert len(fully_bound_tool.__signature__.parameters) == 0
+    assert fully_bound_tool._bound_params == {
+        "count": 42,
+        "message": "chained-call",
+    }
+
+    # Test invocation
+    invoke_url = f"{HTTPS_BASE_URL}/api/tool/{TEST_TOOL_NAME}/invoke"
+    with aioresponses() as m:
+        m.post(invoke_url, status=200, payload={"result": "Success"})
+        await fully_bound_tool()
+
+        m.assert_called_once_with(
+            invoke_url,
+            method="POST",
+            json={"count": 42, "message": "chained-call"},
+            headers={},
+        )
