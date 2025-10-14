@@ -176,6 +176,7 @@ class _McpHttpTransportBase(ITransport, ABC):
 
         url = self._mcp_base_url
         params = {"name": tool_name, "arguments": arguments}
+        print("DEBUG: Tool invocation request:", params, headers, url)
         result = await self._send_request(
             url=url, method="tools/call", params=params, headers=headers
         )
