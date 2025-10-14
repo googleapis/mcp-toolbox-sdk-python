@@ -51,9 +51,7 @@ class TestMcpHttpTransport_v20250326:
         )
 
         call_args = transport._session.post.call_args
-        assert (
-            call_args.kwargs["json"]["params"]["Mcp-Session-Id"] == "test-session-id"
-        )
+        assert call_args.kwargs["json"]["params"]["Mcp-Session-Id"] == "test-session-id"
 
     @patch("toolbox_core.mcp_transport.v20250326.version")
     async def test_initialize_session_success(self, mock_version, transport, mocker):
@@ -80,7 +78,7 @@ class TestMcpHttpTransport_v20250326:
     async def test_initialize_session_no_session_id(self, transport, mocker):
         """Test that an error is raised if no session ID is returned."""
         transport._manage_session = True
-        
+
         mocker.patch.object(
             transport,
             "_perform_initialization_and_negotiation",

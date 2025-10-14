@@ -44,9 +44,7 @@ class TestMcpHttpTransport_v20250618:
         mock_response.content.at_eof.return_value = False
         mock_response.json = AsyncMock(return_value={"result": "success"})
 
-        await transport._send_request(
-            "http://fake-server.com/mcp/", "test/method", {}
-        )
+        await transport._send_request("http://fake-server.com/mcp/", "test/method", {})
 
         call_args = transport._session.post.call_args
         assert (
