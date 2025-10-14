@@ -62,7 +62,7 @@ class _McpHttpTransportBase(ITransport, ABC):
         Safely converts the raw tool dictionary from the server into a ToolSchema object,
         robustly handling optional authentication metadata.
         """
-        param_auth = {}
+        param_auth = None
         invoke_auth = []
 
         if "_meta" in tool_data and isinstance(tool_data["_meta"], dict):
@@ -89,8 +89,10 @@ class _McpHttpTransportBase(ITransport, ABC):
                 )
             else:
                 additional_props = True
-
-            auth_sources = param_auth.get(name)
+            if param_auth and name in param_auth:
+                auth_sources = param_auth[name]
+            else:
+                auth_sources = None
             parameters.append(
                 ParameterSchema(
                     name=name,
