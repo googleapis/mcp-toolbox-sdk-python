@@ -20,7 +20,11 @@ from aiohttp import ClientSession
 from deprecated import deprecated
 
 from .itransport import ITransport
-from .mcp_transport import McpHttpTransport
+from .mcp_transport import (
+    McpHttpTransport_v20241105,
+    McpHttpTransport_v20250326,
+    McpHttpTransport_v20250618,
+)
 from .protocol import Protocol, ToolSchema
 from .tool import ToolboxTool
 from .toolbox_transport import ToolboxTransport
@@ -62,8 +66,15 @@ class ToolboxClient:
         """
         if protocol == Protocol.TOOLBOX:
             self.__transport = ToolboxTransport(url, session)
+        elif protocol in Protocol.get_supported_mcp_versions():
+            if protocol == Protocol.MCP_v20250618:
+                self.__transport = McpHttpTransport_v20250618(url, session, protocol)
+            elif protocol == Protocol.MCP_v20250326:
+                self.__transport = McpHttpTransport_v20250326(url, session, protocol)
+            elif protocol == Protocol.MCP_v20241105:
+                self.__transport = McpHttpTransport_v20241105(url, session, protocol)
         else:
-            self.__transport = McpHttpTransport(url, session, protocol)
+            raise ValueError(f"Unsupported MCP protocol version: {protocol}")
 
         self.__client_headers = client_headers if client_headers is not None else {}
 

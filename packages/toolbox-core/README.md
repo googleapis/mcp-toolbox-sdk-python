@@ -232,39 +232,67 @@ Here's a conceptual example adapting the [official LangGraph tool calling
 guide](https://langchain-ai.github.io/langgraph/how-tos/tool-calling):
 
 ```py
+import asyncio
+from typing import Annotated
+from typing_extensions import TypedDict
+from langchain_core.messages import HumanMessage, BaseMessage
 from toolbox_core import ToolboxClient
 from langchain_google_vertexai import ChatVertexAI
-from langgraph.graph import StateGraph, MessagesState, START, END
+from langgraph.graph import StateGraph, START, END
 from langgraph.prebuilt import ToolNode
 from langchain.tools import StructuredTool
+from langgraph.graph.message import add_messages
 
-async with ToolboxClient("http://127.0.0.1:5000") as toolbox:
-    tools = await toolbox.load_toolset()
-    wrapped_tools = [StructuredTool.from_function(tool, parse_docstring=True) for tool in tools]
-    model_with_tools = ChatVertexAI(model="gemini-2.0-flash-001").bind_tools(wrapped_tools)
+class State(TypedDict):
+    messages: Annotated[list[BaseMessage], add_messages]
 
-    def call_model(state: MessagesState):
-        messages = state["messages"]
-        response = model_with_tools.invoke(messages)
-        return {"messages": [response]}
+async def main():
+    async with ToolboxClient("http://127.0.0.1:5000") as toolbox:
+        tools = await toolbox.load_toolset()
+        wrapped_tools = [StructuredTool.from_function(tool, parse_docstring=True) for tool in tools]
+        model_with_tools = ChatVertexAI(model="gemini-2.5-flash").bind_tools(wrapped_tools)
+        tool_node = ToolNode(wrapped_tools)
 
-    def should_continue(state: MessagesState):
-        messages = state["messages"]
-        last_message = messages[-1]
-        if last_message.tool_calls:
-            return "tools"
-        return END
+        def call_agent(state: State):
+            response = model_with_tools.invoke(state["messages"])
+            return {"messages": [response]}
 
-    workflow = StateGraph(MessagesState)
+        def should_continue(state: State):
+            last_message = state["messages"][-1]
+            if last_message.tool_calls:
+                return "tools"
+            return END
 
-    workflow.add_node("agent", call_model)
-    workflow.add_node("tools", ToolNode(wrapped_tools))
+        graph_builder = StateGraph(State)
 
-    workflow.add_edge(START, "agent")
-    workflow.add_conditional_edges("agent", should_continue, ["tools", END])
-    workflow.add_edge("tools", "agent")
+        graph_builder.add_node("agent", call_agent)
+        graph_builder.add_node("tools", tool_node)
 
-    app = workflow.compile()
+        graph_builder.add_edge(START, "agent")
+        graph_builder.add_conditional_edges(
+            "agent",
+            should_continue,
+        )
+        graph_builder.add_edge("tools", "agent")
+
+        app = graph_builder.compile()
+
+        prompt = "What is the weather in London?"
+        inputs = {"messages": [HumanMessage(content=prompt)]}
+
+        print(f"User: {prompt}\n")
+        print("--- Streaming Agent Steps ---")
+
+        events = app.stream(
+            inputs,
+            stream_mode="values",
+        )
+
+        for event in events:
+            event["messages"][-1].pretty_print()
+            print("\n---\n")
+
+asyncio.run(main())
 ```
 
 ## Client to Server Authentication
