@@ -30,8 +30,10 @@ on:
 
 jobs:
   export-logs:
-    # Only run for failed Cloud Build PR tests
-    if: github.event.check_run.conclusion == 'failure' && contains(github.event.check_run.name, '-pr-')
+    # Run for manual dispatch (for sandbox testing) OR for failed Cloud Build PR tests
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.check_run.conclusion == 'failure' && contains(github.event.check_run.name, '-pr-'))
     
     permissions:
       contents: 'write'
@@ -49,6 +51,15 @@ jobs:
             // Script for Cloud Build PR test failures
             const core = require('@actions/core');
             const checkRun = context.payload.check_run || {};
+
+            // If this run was triggered manually via workflow_dispatch, allow passing
+            // simulated inputs (name, details_url) so sandbox testing can exercise
+            // the same detection logic. workflow_dispatch inputs are in context.payload.inputs
+            if (!checkRun.name && context.eventName === 'workflow_dispatch') {
+              const inputs = context.payload && context.payload.inputs ? context.payload.inputs : {};
+              checkRun.name = inputs.name || '';
+              checkRun.details_url = inputs.details_url || '';
+            }
             const checkNameRaw = checkRun.name || '';
             // Remove trailing parenthetical suffixes like ' (toolbox-testing-438616)'
             const checkNameStripped = checkNameRaw.replace(/\s*\(.*\)$/, '');
