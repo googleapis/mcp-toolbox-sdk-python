@@ -57,8 +57,11 @@ jobs:
         with:
           script: |
             // Script for Cloud Build PR test failures
-            const core = require('@actions/core');
-            const checkRun = context.payload.check_run || {};
+            // `actions/github-script` injects `core` and `context` into the script scope,
+            // so don't redeclare `core` here or it will throw: "Identifier 'core' has
+            // already been declared". Use the injected `core` directly.
+            try {
+              const checkRun = context.payload.check_run || {};
 
             // If this run was triggered manually via workflow_dispatch, allow passing
             // simulated inputs (name, details_url) so sandbox testing can exercise
@@ -130,6 +133,19 @@ jobs:
 
             console.log(`Ready to export logs for ${checkNameRaw}`);
             console.log(`Artifact will be: complete-logs-${sanitizedName}`);
+            } catch (err) {
+              // On any unexpected error in detection, don't fail the job. Instead,
+              // mark that we should not export and continue. This avoids causing
+              // the job to fail and skipping downstream jobs/steps unexpectedly.
+              console.error('Error during detect step:', err && err.stack ? err.stack : err);
+              try {
+                core.setOutput('should_export', 'false');
+              } catch (innerErr) {
+                // core may not be available in some execution contexts; if it's not,
+                // log and continue. The workflow will skip export steps based on this.
+                console.error('Failed to set output should_export:', innerErr);
+              }
+            }
 
       # Step 2: Fetch complete logs from Cloud Build
       - name: Authenticate to Google Cloud
