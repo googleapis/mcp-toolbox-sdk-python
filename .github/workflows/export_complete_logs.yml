@@ -15,6 +15,16 @@
 name: Export Complete Build Logs 
 # detects PR test failures and exports complete logs
 on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: 'Simulated check run name (optional)'
+        required: false
+      details_url:
+        description: 'Simulated details_url (optional)'
+        required: false
+  pull_request:
+    types: [synchronize, opened, reopened]
   check_run:
     types: [completed]
 
