@@ -125,6 +125,8 @@ jobs:
                   const isWhitelisted = baseWhitelist.includes(nameStripped);
                   const isFailure = r.conclusion === 'failure' || r.conclusion === 'cancelled' || r.conclusion === 'timed_out';
                   const urlOk = r.details_url && /cloudbuild|cloud-build|console.cloud.google.com\/cloud-build|cloudbuild.googleapis.com/.test((r.details_url || '').toLowerCase());
+                  // Debug: print info for each check run so we can see why none matched
+                  console.log(`check-run: id=${r.id} name='${r.name}' conclusion='${r.conclusion}' details_url='${r.details_url}' whitelisted=${isWhitelisted} failure=${isFailure} urlOk=${urlOk}`);
                   if (isWhitelisted && isFailure && urlOk) {
                     console.log(`Selected check run '${r.name}' (id=${r.id}) from PR for export`);
                     checkRun = r;
