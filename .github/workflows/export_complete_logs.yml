@@ -80,12 +80,30 @@ jobs:
 
             console.log(`Processing check: ${checkNameRaw}`);
 
-            // Heuristic: consider it a Cloud Build PR test if either:
-            // - the name contains '-pr-' (covers matrix/py versions)
-            // - or it matches the known package patterns
-            // Use the stripped name for pattern matching so names like
-            // 'core-python-sdk-pr-py313 (toolbox-testing-438616)' match correctly.
-            const looksLikePrName = checkName.includes('-pr-') || /\b(core|langchain|llamaindex)-python-sdk-pr\b/i.test(checkNameStripped);
+            // Hardcoded whitelist of PR test names (base names without project
+            // parenthetical). This mirrors the required status checks in
+            // `.github/sync-repo-settings.yaml` so we only export logs for those
+            // exact tests used by the repo.
+            const baseWhitelist = [
+              'core-python-sdk-pr-py313',
+              'core-python-sdk-pr-py312',
+              'core-python-sdk-pr-py311',
+              'core-python-sdk-pr-py310',
+              'core-python-sdk-pr-py39',
+              'langchain-python-sdk-pr-py313',
+              'langchain-python-sdk-pr-py312',
+              'langchain-python-sdk-pr-py311',
+              'langchain-python-sdk-pr-py310',
+              'langchain-python-sdk-pr-py39',
+              'llamaindex-python-sdk-pr-py313',
+              'llamaindex-python-sdk-pr-py312',
+              'llamaindex-python-sdk-pr-py311',
+              'llamaindex-python-sdk-pr-py310',
+              'llamaindex-python-sdk-pr-py39'
+            ];
+
+            const looksLikePrName = baseWhitelist.includes(checkNameStripped.toLowerCase());
+            console.log(`Whitelist contains ${baseWhitelist.length} entries; name match = ${looksLikePrName}`);
 
             // Ensure the details URL points to Cloud Build to avoid false positives
             const isCloudBuildUrl = /cloudbuild|cloud-build|console.cloud.google.com\/cloud-build|cloudbuild.googleapis.com/.test(detailsUrl);
