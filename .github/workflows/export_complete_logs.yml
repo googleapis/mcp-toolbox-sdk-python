@@ -30,9 +30,17 @@ on:
 
 jobs:
   export-logs:
-    # Run for manual dispatch (for sandbox testing) OR for failed Cloud Build PR tests
+    # Run for manual dispatch (for sandbox testing), or for PRs from this fork,
+    # or for failed Cloud Build PR tests (production path).
     if: >
       github.event_name == 'workflow_dispatch' ||
+      (
+        github.event_name == 'pull_request' &&
+        github.event.pull_request &&
+        github.event.pull_request.head &&
+        github.event.pull_request.head.repo &&
+        github.event.pull_request.head.repo.full_name == 'Ganga4060/mcp-toolbox-sdk-python'
+      ) ||
       (github.event.check_run.conclusion == 'failure' && contains(github.event.check_run.name, '-pr-'))
     
     permissions:
