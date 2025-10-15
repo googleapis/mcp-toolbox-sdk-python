@@ -61,7 +61,8 @@ jobs:
             // so don't redeclare `core` here or it will throw: "Identifier 'core' has
             // already been declared". Use the injected `core` directly.
             try {
-              const checkRun = context.payload.check_run || {};
+              // Allow reassignment if we discover a check run via the REST API
+              let checkRun = context.payload.check_run || {};
 
             // If this run was triggered manually via workflow_dispatch, allow passing
             // simulated inputs (name, details_url) so sandbox testing can exercise
@@ -103,6 +104,35 @@ jobs:
             ];
 
             const looksLikePrName = baseWhitelist.includes(checkNameStripped.toLowerCase());
+            console.log(`Whitelist contains ${baseWhitelist.length} entries; name match = ${looksLikePrName}`);
+
+            // If this was triggered by a pull_request event, there's no
+            // `check_run` payload. Try to find a failed check run for the PR
+            // commit SHA that matches our whitelist using the Checks API.
+            if (!checkRun.name && context.eventName === 'pull_request') {
+              const headSha = context.payload.pull_request && context.payload.pull_request.head && context.payload.pull_request.head.sha;
+              console.log(`pull_request event detected, head SHA = ${headSha}`);
+              if (headSha) {
+                const resp = await github.rest.checks.listForRef({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  ref: headSha,
+                });
+                const runs = resp.data && resp.data.check_runs ? resp.data.check_runs : [];
+                console.log(`Found ${runs.length} check runs for ref ${headSha}`);
+                for (const r of runs) {
+                  const nameStripped = (r.name || '').replace(/\s*\(.*\)$/, '').toLowerCase();
+                  const isWhitelisted = baseWhitelist.includes(nameStripped);
+                  const isFailure = r.conclusion === 'failure' || r.conclusion === 'cancelled' || r.conclusion === 'timed_out';
+                  const urlOk = r.details_url && /cloudbuild|cloud-build|console.cloud.google.com\/cloud-build|cloudbuild.googleapis.com/.test((r.details_url || '').toLowerCase());
+                  if (isWhitelisted && isFailure && urlOk) {
+                    console.log(`Selected check run '${r.name}' (id=${r.id}) from PR for export`);
+                    checkRun = r;
+                    break;
+                  }
+                }
+              }
+            }
             console.log(`Whitelist contains ${baseWhitelist.length} entries; name match = ${looksLikePrName}`);
 
             // Ensure the details URL points to Cloud Build to avoid false positives
