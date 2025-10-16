@@ -47,5 +47,12 @@
         '.kokoro/**',
       ],
     },
+    {
+      "description": "Disable pillow updates for python <=3.9 in pyproject.toml",
+      "matchFileNames": ["**/pyproject.toml"],
+      "matchPackageNames": ["Pillow"],
+      "matchCurrentValue": "==11.3.0",
+      "enabled": false
+    }
   ],
 }
