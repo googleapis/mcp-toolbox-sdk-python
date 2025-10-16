@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.5.3](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v0.5.2...toolbox-core-v0.5.3) (2025-10-16)
+
+
+### Miscellaneous Chores
+
+* **ci:** update toolbox server version ([#388](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/388)) ([daf6267](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/daf6267b4474abc36c6f6afdf13cb3b6e5fdce42))
+* **deps:** update dependency aiohttp to v3.13.0 ([#389](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/389)) ([f740ceb](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/f740ceb827f2ddfc46d66f0cbe3156c8e606a1ff))
+* **deps:** update dependency google-auth to v2.41.1 ([#383](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/383)) ([4d3fb88](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/4d3fb8845858b5eb42adbfaac6e87f1494f5c3bc))
+* **deps:** update python-nonmajor ([#386](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/386)) ([6625d04](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/6625d04296d25545fa49cb8f72628f38e3b8aa88))
+* **deps:** update python-nonmajor ([#387](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/387)) ([a30f85c](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/a30f85cfb986fbff9dc62495eb35d60aafb6979d))
+* update toolbox version ([#395](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/395)) ([a17a865](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/a17a8652c828534fdd90e9b82dc74337099af54b))
+
 ## [0.5.2](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v0.5.1...toolbox-core-v0.5.2) (2025-09-22)
 
 
