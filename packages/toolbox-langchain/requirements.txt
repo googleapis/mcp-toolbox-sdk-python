@@ -1,6 +1,6 @@
 -e ../toolbox-core
-langchain-core==0.3.78
+langchain-core==0.3.79
 PyYAML==6.0.3
-pydantic==2.11.10
-aiohttp==3.13.0
+pydantic==2.12.3
+aiohttp==3.13.1
 deprecated==1.2.18

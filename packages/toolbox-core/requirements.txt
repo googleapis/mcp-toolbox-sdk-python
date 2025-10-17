@@ -1,5 +1,5 @@
-aiohttp==3.13.0
-pydantic==2.11.10
+aiohttp==3.13.1
+pydantic==2.12.3
 deprecated==1.2.18
 requests==2.32.5
 google-auth==2.41.1
