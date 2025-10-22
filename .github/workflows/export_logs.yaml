@@ -55,9 +55,22 @@ jobs:
               'llamaindex-python-sdk-pr-py39 (toolbox-testing-438616)'
             ];
 
-            const sha = context.payload.check_suite.head_sha;
-            console.log(`Check suite completed for SHA: ${sha}`);
-            console.log(`Check suite conclusion: ${context.payload.check_suite.conclusion}`);
+            // Get SHA based on event type
+            let sha;
+            if (context.payload.check_suite) {
+              sha = context.payload.check_suite.head_sha;
+              console.log(`Check suite completed for SHA: ${sha}`);
+              console.log(`Check suite conclusion: ${context.payload.check_suite.conclusion}`);
+            } else if (context.payload.pull_request) {
+              sha = context.payload.pull_request.head.sha;
+              console.log(`Pull request event for SHA: ${sha}`);
+            } else if (context.payload.push) {
+              sha = context.payload.after || context.sha;
+              console.log(`Push event for SHA: ${sha}`);
+            } else {
+              sha = context.sha;
+              console.log(`Event ${context.eventName} for SHA: ${sha}`);
+            }
 
             // Get all check runs for this SHA
             const checks = await github.paginate(
