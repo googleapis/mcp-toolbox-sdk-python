@@ -39,25 +39,11 @@ jobs:
             console.log(pr);
        
 
-            const failedCloudBuildChecks = allChecks.filter(
-              (c) => c.status === 'completed' && c.conclusion === 'failure' && isCloudBuildCheck(c)
-            );
-
-            console.log(` Found ${failedCloudBuildChecks.length} failed Cloud Build-related checks out of ${allChecks.length} total checks`);
-
-            const failedData = failedCloudBuildChecks.map((c) => ({
-              name: c.name,
-              id: c.id,
-              html_url: c.html_url,
-              details_url: c.details_url,
-              external_id: c.external_id,
-            }));
-
-            core.setOutput('failed_check_data', JSON.stringify(failedData));
-            console.log('Failed check data:', failedData);
-
-      - name: Print detected failed checks
-        run: |
-          echo "Failed check data: ${{ steps.get_failed_checks.outputs.failed_check_data }}"
+            if (!pr) {
+              console.log('No pull request found in the context.');
+              core.setOutput('failed_check_data', JSON.stringify([]));
+              return;
+            }
+    
 
   
