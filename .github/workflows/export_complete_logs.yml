@@ -35,64 +35,81 @@ jobs:
         uses: actions/github-script@v6
         with:
           script: |
-            // Determine SHA based on event type
-            let sha;
-            let eventInfo;
-            
-            if (context.payload.pull_request) {
-              // Pull request event
-              sha = context.payload.pull_request.head.sha;
-              eventInfo = `PR #${context.payload.pull_request.number}`;
-            } else if (context.payload.push) {
-              // Push event
-              sha = context.payload.after || context.sha;
-              eventInfo = `push to ${context.ref}`;
-            } else {
-              // Other events (issues, workflow_dispatch, etc.)
-              sha = context.sha;
-              eventInfo = `${context.eventName} event`;
+            try {
+              // Determine SHA based on event type
+              let sha;
+              let eventInfo;
+              
+              if (context.payload.pull_request) {
+                // Pull request event
+                sha = context.payload.pull_request.head.sha;
+                eventInfo = `PR #${context.payload.pull_request.number}`;
+              } else if (context.payload.push) {
+                // Push event
+                sha = context.payload.after || context.sha;
+                eventInfo = `push to ${context.ref}`;
+              } else {
+                // Other events (issues, workflow_dispatch, etc.)
+                sha = context.sha;
+                eventInfo = `${context.eventName} event`;
+              }
+
+              console.log(`Checking ${eventInfo} at commit ${sha}`);
+
+              // Get ALL check runs for the ref (paginated)
+              let allChecks = [];
+              try {
+                allChecks = await github.paginate(
+                  github.rest.checks.listForRef,
+                  {
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    ref: sha,
+                  },
+                  (response) => response.data.check_runs
+                );
+                console.log(`Retrieved ${allChecks.length} total check runs`);
+              } catch (error) {
+                console.log(`Error fetching checks: ${error.message}`);
+                core.setOutput('failed_check_data', JSON.stringify([]));
+                return;
+              }
+
+              // Identify Cloud Build-related checks robustly
+              const isCloudBuildCheck = (c) => {
+                if (!c) return false;
+                const name = (c.name || '');
+                const details = (c.details_url || '');
+                // Match common variants like "Cloud Build", "cloud-build", plus URL hints
+                return /cloud[ -]?build/i.test(name)
+                  || /toolbox[- ]?testing/i.test(name)
+                  || /cloud-build\/builds\//i.test(details)
+                  || /console\.cloud\.google\.com\/cloud-build/i.test(details);
+              };
+
+              const failedCloudBuildChecks = allChecks.filter(
+                (c) => c && c.status === 'completed' && c.conclusion === 'failure' && isCloudBuildCheck(c)
+              );
+
+              console.log(`Found ${failedCloudBuildChecks.length} failed Cloud Build-related checks out of ${allChecks.length} total checks`);
+
+              const failedData = failedCloudBuildChecks.map((c) => ({
+                name: c.name || 'Unknown',
+                id: c.id || '',
+                html_url: c.html_url || '',
+                details_url: c.details_url || '',
+                external_id: c.external_id || '',
+              }));
+
+              core.setOutput('failed_check_data', JSON.stringify(failedData));
+              console.log('Failed check data:', JSON.stringify(failedData, null, 2));
+              
+            } catch (error) {
+              console.error(`Unhandled error: ${error.message}`);
+              console.error(error.stack);
+              core.setOutput('failed_check_data', JSON.stringify([]));
+              core.setFailed(`Failed to detect failing tests: ${error.message}`);
             }
-
-            console.log(`Checking ${eventInfo} at commit ${sha}`);
-
-            // Get ALL check runs for the ref (paginated)
-            const allChecks = await github.paginate(
-              github.rest.checks.listForRef,
-              {
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                ref: sha,
-              },
-              (response) => response.data.check_runs
-            );
-
-            // Identify Cloud Build-related checks robustly
-            const isCloudBuildCheck = (c) => {
-              const name = (c.name || '');
-              const details = (c.details_url || '');
-              // Match common variants like "Cloud Build", "cloud-build", plus URL hints
-              return /cloud[ -]?build/i.test(name)
-                || /toolbox[- ]?testing/i.test(name)
-                || /cloud-build\/builds\//i.test(details)
-                || /console\.cloud\.google\.com\/cloud-build/i.test(details);
-            };
-
-            const failedCloudBuildChecks = allChecks.filter(
-              (c) => c.status === 'completed' && c.conclusion === 'failure' && isCloudBuildCheck(c)
-            );
-
-            console.log(`Found ${failedCloudBuildChecks.length} failed Cloud Build-related checks out of ${allChecks.length} total checks`);
-
-            const failedData = failedCloudBuildChecks.map((c) => ({
-              name: c.name,
-              id: c.id,
-              html_url: c.html_url,
-              details_url: c.details_url,
-              external_id: c.external_id,
-            }));
-
-            core.setOutput('failed_check_data', JSON.stringify(failedData));
-            console.log('Failed check data:', failedData);
 
       - name: Print detected failed checks
         run: |
