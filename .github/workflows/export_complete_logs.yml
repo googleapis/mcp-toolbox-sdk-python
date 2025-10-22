@@ -15,8 +15,8 @@
 name: Export Complete Build Logs
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
+  check_suite:
+    types: [completed]
   workflow_dispatch:
 
 jobs:
@@ -29,23 +29,88 @@ jobs:
     outputs:
       failed_check_data: ${{ steps.get_failed_checks.outputs.failed_check_data }}
     steps:
-      - name: Get failing status checks for PR
+      - name: Verify all Cloud Build checks completed
+        id: verify_checks
+        uses: actions/github-script@v6
+        with:
+          script: |
+            // Required Cloud Build checks (15 total)
+            const requiredChecks = [
+              'core-python-sdk-pr-py313 (toolbox-testing-438616)',
+              'core-python-sdk-pr-py312 (toolbox-testing-438616)',
+              'core-python-sdk-pr-py311 (toolbox-testing-438616)',
+              'core-python-sdk-pr-py310 (toolbox-testing-438616)',
+              'core-python-sdk-pr-py39 (toolbox-testing-438616)',
+              'langchain-python-sdk-pr-py313 (toolbox-testing-438616)',
+              'langchain-python-sdk-pr-py312 (toolbox-testing-438616)',
+              'langchain-python-sdk-pr-py311 (toolbox-testing-438616)',
+              'langchain-python-sdk-pr-py310 (toolbox-testing-438616)',
+              'langchain-python-sdk-pr-py39 (toolbox-testing-438616)',
+              'llamaindex-python-sdk-pr-py313 (toolbox-testing-438616)',
+              'llamaindex-python-sdk-pr-py312 (toolbox-testing-438616)',
+              'llamaindex-python-sdk-pr-py311 (toolbox-testing-438616)',
+              'llamaindex-python-sdk-pr-py310 (toolbox-testing-438616)',
+              'llamaindex-python-sdk-pr-py39 (toolbox-testing-438616)'
+            ];
+
+            const sha = context.payload.check_suite.head_sha;
+            console.log(`Check suite completed for SHA: ${sha}`);
+            console.log(`Check suite conclusion: ${context.payload.check_suite.conclusion}`);
+
+            // Get all check runs for this SHA
+            const checks = await github.paginate(
+              github.rest.checks.listForRef,
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: sha,
+              },
+              (response) => response.data.check_runs
+            );
+
+            // Find status of required checks
+            const checkStatus = {};
+            for (const check of checks) {
+              if (requiredChecks.includes(check.name)) {
+                checkStatus[check.name] = {
+                  status: check.status,
+                  conclusion: check.conclusion
+                };
+              }
+            }
+
+            // Check if all required checks are present and completed
+            const missingChecks = requiredChecks.filter(name => !checkStatus[name]);
+            const pendingChecks = Object.entries(checkStatus)
+              .filter(([name, info]) => info.status !== 'completed')
+              .map(([name]) => name);
+
+            console.log(`Found ${Object.keys(checkStatus).length}/${requiredChecks.length} required Cloud Build checks`);
+            
+            if (missingChecks.length > 0) {
+              console.log(`⚠ Missing checks (${missingChecks.length}): ${missingChecks.slice(0, 5).join(', ')}${missingChecks.length > 5 ? '...' : ''}`);
+            }
+            
+            if (pendingChecks.length > 0) {
+              console.log(`⏳ Pending checks (${pendingChecks.length}): ${pendingChecks.slice(0, 5).join(', ')}${pendingChecks.length > 5 ? '...' : ''}`);
+              console.log('Not all Cloud Build checks are complete yet. Exiting...');
+              core.setOutput('all_checks_complete', 'false');
+              return;
+            }
+
+            console.log('✓ All 15 Cloud Build checks are complete!');
+            core.setOutput('all_checks_complete', 'true');
+            core.setOutput('sha', sha);
+
+      - name: Get failing Cloud Build checks
         id: get_failed_checks
+        if: steps.verify_checks.outputs.all_checks_complete == 'true'
         uses: actions/github-script@v6
         with:
           script: |
             try {
-              // Determine SHA based on event type
-              let sha;
-              let eventInfo;
-              
-              if (context.payload.pull_request) {
-                // Pull request event
-                sha = context.payload.pull_request.head.sha;
-                eventInfo = `PR #${context.payload.pull_request.number}`;
-              } 
-
-              console.log(`Checking ${eventInfo} at commit ${sha}`);
+              const sha = '${{ steps.verify_checks.outputs.sha }}';
+              console.log(`Detecting failed checks for SHA: ${sha}`);
 
               // Get ALL check runs for the ref (paginated)
               let allChecks = [];
@@ -97,7 +162,8 @@ jobs:
               
             } catch (error) {
               console.error(`Unhandled error: ${error.message}`);
-              console.error(error.stack);
+              consanalyze again
+              ole.error(error.stack);
               core.setOutput('failed_check_data', JSON.stringify([]));
               core.setFailed(`Failed to detect failing tests: ${error.message}`);
             }
