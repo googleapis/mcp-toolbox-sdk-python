@@ -15,11 +15,9 @@
 name: Export Complete Build Logs
 
 on:
-  pull_request:
-  push:
   check_suite:
     types: [completed]
-    
+  workflow_dispatch:
 
 jobs:
   detect-failing-tests:
@@ -36,86 +34,102 @@ jobs:
         uses: actions/github-script@v6
         with:
           script: |
-            // Required Cloud Build checks (15 total)
-            const requiredChecks = [
-              'core-python-sdk-pr-py313 (toolbox-testing-438616)',
-              'core-python-sdk-pr-py312 (toolbox-testing-438616)',
-              'core-python-sdk-pr-py311 (toolbox-testing-438616)',
-              'core-python-sdk-pr-py310 (toolbox-testing-438616)',
-              'core-python-sdk-pr-py39 (toolbox-testing-438616)',
-              'langchain-python-sdk-pr-py313 (toolbox-testing-438616)',
-              'langchain-python-sdk-pr-py312 (toolbox-testing-438616)',
-              'langchain-python-sdk-pr-py311 (toolbox-testing-438616)',
-              'langchain-python-sdk-pr-py310 (toolbox-testing-438616)',
-              'langchain-python-sdk-pr-py39 (toolbox-testing-438616)',
-              'llamaindex-python-sdk-pr-py313 (toolbox-testing-438616)',
-              'llamaindex-python-sdk-pr-py312 (toolbox-testing-438616)',
-              'llamaindex-python-sdk-pr-py311 (toolbox-testing-438616)',
-              'llamaindex-python-sdk-pr-py310 (toolbox-testing-438616)',
-              'llamaindex-python-sdk-pr-py39 (toolbox-testing-438616)'
-            ];
+            try {
+              // Required Cloud Build checks (15 total)
+              const requiredChecks = [
+                'core-python-sdk-pr-py313 (toolbox-testing-438616)',
+                'core-python-sdk-pr-py312 (toolbox-testing-438616)',
+                'core-python-sdk-pr-py311 (toolbox-testing-438616)',
+                'core-python-sdk-pr-py310 (toolbox-testing-438616)',
+                'core-python-sdk-pr-py39 (toolbox-testing-438616)',
+                'langchain-python-sdk-pr-py313 (toolbox-testing-438616)',
+                'langchain-python-sdk-pr-py312 (toolbox-testing-438616)',
+                'langchain-python-sdk-pr-py311 (toolbox-testing-438616)',
+                'langchain-python-sdk-pr-py310 (toolbox-testing-438616)',
+                'langchain-python-sdk-pr-py39 (toolbox-testing-438616)',
+                'llamaindex-python-sdk-pr-py313 (toolbox-testing-438616)',
+                'llamaindex-python-sdk-pr-py312 (toolbox-testing-438616)',
+                'llamaindex-python-sdk-pr-py311 (toolbox-testing-438616)',
+                'llamaindex-python-sdk-pr-py310 (toolbox-testing-438616)',
+                'llamaindex-python-sdk-pr-py39 (toolbox-testing-438616)'
+              ];
 
-            // Get SHA based on event type
-            let sha;
-            if (context.payload.check_suite) {
-              sha = context.payload.check_suite.head_sha;
+              // Get SHA from check_suite event
+              const sha = context.payload.check_suite?.head_sha || context.sha;
               console.log(`Check suite completed for SHA: ${sha}`);
-              console.log(`Check suite conclusion: ${context.payload.check_suite.conclusion}`);
-            } else if (context.payload.pull_request) {
-              sha = context.payload.pull_request.head.sha;
-              console.log(`Pull request event for SHA: ${sha}`);
-            } else if (context.payload.push) {
-              sha = context.payload.after || context.sha;
-              console.log(`Push event for SHA: ${sha}`);
-            } else {
-              sha = context.sha;
-              console.log(`Event ${context.eventName} for SHA: ${sha}`);
-            }
-
-            // Get all check runs for this SHA
-            const checks = await github.paginate(
-              github.rest.checks.listForRef,
-              {
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                ref: sha,
-              },
-              (response) => response.data.check_runs
-            );
-
-            // Find status of required checks
-            const checkStatus = {};
-            for (const check of checks) {
-              if (requiredChecks.includes(check.name)) {
-                checkStatus[check.name] = {
-                  status: check.status,
-                  conclusion: check.conclusion
-                };
+              
+              if (context.payload.check_suite?.conclusion) {
+                console.log(`Check suite conclusion: ${context.payload.check_suite.conclusion}`);
               }
-            }
 
-            // Check if all required checks are present and completed
-            const missingChecks = requiredChecks.filter(name => !checkStatus[name]);
-            const pendingChecks = Object.entries(checkStatus)
-              .filter(([name, info]) => info.status !== 'completed')
-              .map(([name]) => name);
+              // Get all check runs for this SHA
+              let checks = [];
+              try {
+                checks = await github.paginate(
+                  github.rest.checks.listForRef,
+                  {
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    ref: sha,
+                  },
+                  (response) => response.data.check_runs
+                );
+                console.log(`Retrieved ${checks.length} total check runs`);
+              } catch (error) {
+                console.error(`Error fetching checks: ${error.message}`);
+                core.setOutput('all_checks_complete', 'false');
+                return;
+              }
 
-            console.log(`Found ${Object.keys(checkStatus).length}/${requiredChecks.length} required Cloud Build checks`);
-            
-            if (missingChecks.length > 0) {
-              console.log(`⚠ Missing checks (${missingChecks.length}): ${missingChecks.slice(0, 5).join(', ')}${missingChecks.length > 5 ? '...' : ''}`);
-            }
-            
-            if (pendingChecks.length > 0) {
-              console.log(`⏳ Pending checks (${pendingChecks.length}): ${pendingChecks.slice(0, 5).join(', ')}${pendingChecks.length > 5 ? '...' : ''}`);
-              console.log('Not all Cloud Build checks are complete yet. Exiting...');
+              // Find status of required checks
+              const checkStatus = {};
+              try {
+                for (const check of checks) {
+                  if (check && check.name && requiredChecks.includes(check.name)) {
+                    checkStatus[check.name] = {
+                      status: check.status,
+                      conclusion: check.conclusion
+                    };
+                  }
+                }
+              } catch (error) {
+                console.error(`Error processing checks: ${error.message}`);
+                core.setOutput('all_checks_complete', 'false');
+                return;
+              }
+
+              // Check if all required checks are present and completed
+              const missingChecks = requiredChecks.filter(name => !checkStatus[name]);
+              const pendingChecks = Object.entries(checkStatus)
+                .filter(([name, info]) => info && info.status !== 'completed')
+                .map(([name]) => name);
+
+              console.log(`Found ${Object.keys(checkStatus).length}/${requiredChecks.length} required Cloud Build checks`);
+              
+              if (missingChecks.length > 0) {
+                console.log(`⚠ Missing checks (${missingChecks.length}): ${missingChecks.slice(0, 5).join(', ')}${missingChecks.length > 5 ? '...' : ''}`);
+                console.log('Not all Cloud Build checks have started yet. Exiting...');
+                core.setOutput('all_checks_complete', 'false');
+                return;
+              }
+              
+              if (pendingChecks.length > 0) {
+                console.log(`⏳ Pending checks (${pendingChecks.length}): ${pendingChecks.slice(0, 5).join(', ')}${pendingChecks.length > 5 ? '...' : ''}`);
+                console.log('Not all Cloud Build checks are complete yet. Exiting...');
+                core.setOutput('all_checks_complete', 'false');
+                return;
+              }
+
+              console.log('✓ All 15 Cloud Build checks are complete!');
+              core.setOutput('all_checks_complete', 'true');
+              core.setOutput('sha', sha);
+              
+            } catch (error) {
+              console.error(`Unhandled error in verification step: ${error.message}`);
+              console.error(error.stack);
               core.setOutput('all_checks_complete', 'false');
-              return;
+              core.setFailed(`Failed to verify checks: ${error.message}`);
             }
-
-            console.log('✓ All 15 Cloud Build checks are complete!');
-            core.setOutput('all_checks_complete', 'true');
-            core.setOutput('sha', sha);
 
       - name: Get failing Cloud Build checks
         id: get_failed_checks
