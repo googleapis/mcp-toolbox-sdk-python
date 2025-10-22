@@ -1,0 +1,81 @@
+# Copyright 2025 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: Export Complete Build Logs
+
+on:
+  pull_request:
+  push:
+  issues:
+  workflow_dispatch:
+
+jobs:
+  detect-failing-tests:
+    name: Detect Failing Tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: read
+    outputs:
+      failed_check_data: ${{ steps.get_failed_checks.outputs.failed_check_data }}
+    steps:
+      - name: Get failing status checks for PR
+        id: get_failed_checks
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const sha = pr.head.sha;
+            console.log(` Checking PR #${pr.number} at commit ${sha}`);
+            // Get ALL check runs for the ref (paginated)
+            const allChecks = await github.paginate(
+              github.rest.checks.listForRef,
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: sha,
+              },
+              (response) => response.data.check_runs
+            );
+
+            // Identify Cloud Build-related checks robustly
+            const isCloudBuildCheck = (c) => {
+              const name = (c.name || '');
+              const details = (c.details_url || '');
+              // Match common variants like "Cloud Build", "cloud-build", plus URL hints
+              return (core|langchain|llamaindex)-python-sdk-pr-py(313|312|311|310|39) \(toolbox-testing-438616\)
+            };
+
+            const failedCloudBuildChecks = allChecks.filter(
+              (c) => c.status === 'completed' && c.conclusion === 'failure' && isCloudBuildCheck(c)
+            );
+
+            console.log(` Found ${failedCloudBuildChecks.length} failed Cloud Build-related checks out of ${allChecks.length} total checks`);
+
+            const failedData = failedCloudBuildChecks.map((c) => ({
+              name: c.name,
+              id: c.id,
+              html_url: c.html_url,
+              details_url: c.details_url,
+              external_id: c.external_id,
+            }));
+
+            core.setOutput('failed_check_data', JSON.stringify(failedData));
+            console.log('Failed check data:', failedData);
+
+      - name: Print detected failed checks
+        run: |
+          echo "Failed check data: ${{ steps.get_failed_checks.outputs.failed_check_data }}"
+
+  
