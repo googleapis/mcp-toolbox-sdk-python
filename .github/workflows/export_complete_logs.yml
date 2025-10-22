@@ -36,28 +36,8 @@ jobs:
         with:
           script: |
             const pr = context.payload.pull_request;
-            const sha = pr.head.sha;
-            console.log(` Checking PR #${pr.number} at commit ${sha}`);
-            // Get ALL check runs for the ref (paginated)
-            const allChecks = await github.paginate(
-              github.rest.checks.listForRef,
-              {
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                ref: sha,
-              },
-              (response) => response.data.check_runs
-            );
-
-            // Identify Cloud Build-related checks robustly
-            const isCloudBuildCheck = (c) => {
-              const name = (c.name || '');
-              const details = (c.details_url || '');
-              // Match common variants like "Cloud Build", "cloud-build", plus URL hints
-              const pattern = /(core|langchain|llamaindex)-python-sdk-pr-py(313|312|311|310|39) \(toolbox-testing-438616\)/;
-  
-                
-            return pattern.test(name);
+            console.log(pr);
+           
             };
 
             const failedCloudBuildChecks = allChecks.filter(
