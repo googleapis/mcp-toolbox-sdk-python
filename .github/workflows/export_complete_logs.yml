@@ -35,11 +35,12 @@ jobs:
         uses: actions/github-script@v6
         with:
           script: |
-            const pr = context.payload.pull_request;
-            console.log(pr);
-       
+            const token = core.getInput('github-token', {required: true})
+            const github = new GitHub(token, {} )
+            console.log( context )
+            const PR_number = context.payload.pull_request.number
 
-            if (!pr) {
+            if (!PR_number) {
               console.log('No pull request found in the context.');
               core.setOutput('failed_check_data', JSON.stringify([]));
               return;
