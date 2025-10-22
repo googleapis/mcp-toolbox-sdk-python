@@ -21,7 +21,7 @@ on:
 
 jobs:
   detect-failing-tests:
-    name: Detect Failing Tests
+    name: Detect Failing Tests in a pr
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -110,7 +110,7 @@ jobs:
           script: |
             try {
               const sha = '${{ steps.verify_checks.outputs.sha }}';
-              console.log(`Detecting failed checks for SHA: ${sha}`);
+              console.log(`Detecting failed checks for SHA..: ${sha}`);
 
               // Get ALL check runs for the ref (paginated)
               let allChecks = [];
@@ -171,3 +171,4 @@ jobs:
       - name: Print detected failed checks
         run: |
           echo "Failed check data: ${{ steps.get_failed_checks.outputs.failed_check_data }}"
+
