@@ -35,15 +35,65 @@ jobs:
         uses: actions/github-script@v6
         with:
           script: |
-            const prNumber = context.payload.pull_request.number;
-
-            if (!prNumber) {
-              console.log('This script is running in a context without a pull request.');
-              core.setOutput('failed_check_data', JSON.stringify([]));
-              return;
+            // Determine SHA based on event type
+            let sha;
+            let eventInfo;
+            
+            if (context.payload.pull_request) {
+              // Pull request event
+              sha = context.payload.pull_request.head.sha;
+              eventInfo = `PR #${context.payload.pull_request.number}`;
+            } else if (context.payload.push) {
+              // Push event
+              sha = context.payload.after || context.sha;
+              eventInfo = `push to ${context.ref}`;
+            } else {
+              // Other events (issues, workflow_dispatch, etc.)
+              sha = context.sha;
+              eventInfo = `${context.eventName} event`;
             }
 
-            console.log(`Operating on Pull Request #${prNumber}`);
-    
+            console.log(`Checking ${eventInfo} at commit ${sha}`);
 
-  
+            // Get ALL check runs for the ref (paginated)
+            const allChecks = await github.paginate(
+              github.rest.checks.listForRef,
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: sha,
+              },
+              (response) => response.data.check_runs
+            );
+
+            // Identify Cloud Build-related checks robustly
+            const isCloudBuildCheck = (c) => {
+              const name = (c.name || '');
+              const details = (c.details_url || '');
+              // Match common variants like "Cloud Build", "cloud-build", plus URL hints
+              return /cloud[ -]?build/i.test(name)
+                || /toolbox[- ]?testing/i.test(name)
+                || /cloud-build\/builds\//i.test(details)
+                || /console\.cloud\.google\.com\/cloud-build/i.test(details);
+            };
+
+            const failedCloudBuildChecks = allChecks.filter(
+              (c) => c.status === 'completed' && c.conclusion === 'failure' && isCloudBuildCheck(c)
+            );
+
+            console.log(`Found ${failedCloudBuildChecks.length} failed Cloud Build-related checks out of ${allChecks.length} total checks`);
+
+            const failedData = failedCloudBuildChecks.map((c) => ({
+              name: c.name,
+              id: c.id,
+              html_url: c.html_url,
+              details_url: c.details_url,
+              external_id: c.external_id,
+            }));
+
+            core.setOutput('failed_check_data', JSON.stringify(failedData));
+            console.log('Failed check data:', failedData);
+
+      - name: Print detected failed checks
+        run: |
+          echo "Failed check data: ${{ steps.get_failed_checks.outputs.failed_check_data }}"
