@@ -16,8 +16,7 @@ name: Export Complete Build Logs
 
 on:
   pull_request:
-  push:
-  issues:
+    types: [opened, synchronize, reopened]
   workflow_dispatch:
 
 jobs:
@@ -44,15 +43,7 @@ jobs:
                 // Pull request event
                 sha = context.payload.pull_request.head.sha;
                 eventInfo = `PR #${context.payload.pull_request.number}`;
-              } else if (context.payload.push) {
-                // Push event
-                sha = context.payload.after || context.sha;
-                eventInfo = `push to ${context.ref}`;
-              } else {
-                // Other events (issues, workflow_dispatch, etc.)
-                sha = context.sha;
-                eventInfo = `${context.eventName} event`;
-              }
+              } 
 
               console.log(`Checking ${eventInfo} at commit ${sha}`);
 
