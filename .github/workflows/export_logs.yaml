@@ -15,8 +15,11 @@
 name: Export Complete Build Logs
 
 on:
+  pull_request:
+  push:
   check_suite:
     types: [completed]
+    
 
 jobs:
   detect-failing-tests:
