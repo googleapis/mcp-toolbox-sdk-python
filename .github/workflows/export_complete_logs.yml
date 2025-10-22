@@ -54,7 +54,10 @@ jobs:
               const name = (c.name || '');
               const details = (c.details_url || '');
               // Match common variants like "Cloud Build", "cloud-build", plus URL hints
-              return (core|langchain|llamaindex)-python-sdk-pr-py(313|312|311|310|39) \(toolbox-testing-438616\)
+              const pattern = /(core|langchain|llamaindex)-python-sdk-pr-py(313|312|311|310|39) \(toolbox-testing-438616\)/;
+  
+                
+            return pattern.test(name);
             };
 
             const failedCloudBuildChecks = allChecks.filter(
