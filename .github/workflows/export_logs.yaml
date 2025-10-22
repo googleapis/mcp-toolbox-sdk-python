@@ -1,0 +1,173 @@
+# Copyright 2025 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: Export Complete Build Logs
+
+on:
+  check_suite:
+    types: [completed]
+
+jobs:
+  detect-failing-tests:
+    name: Detect Failing Tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: read
+    outputs:
+      failed_check_data: ${{ steps.get_failed_checks.outputs.failed_check_data }}
+    steps:
+      - name: Verify all Cloud Build checks completed
+        id: verify_checks
+        uses: actions/github-script@v6
+        with:
+          script: |
+            // Required Cloud Build checks (15 total)
+            const requiredChecks = [
+              'core-python-sdk-pr-py313 (toolbox-testing-438616)',
+              'core-python-sdk-pr-py312 (toolbox-testing-438616)',
+              'core-python-sdk-pr-py311 (toolbox-testing-438616)',
+              'core-python-sdk-pr-py310 (toolbox-testing-438616)',
+              'core-python-sdk-pr-py39 (toolbox-testing-438616)',
+              'langchain-python-sdk-pr-py313 (toolbox-testing-438616)',
+              'langchain-python-sdk-pr-py312 (toolbox-testing-438616)',
+              'langchain-python-sdk-pr-py311 (toolbox-testing-438616)',
+              'langchain-python-sdk-pr-py310 (toolbox-testing-438616)',
+              'langchain-python-sdk-pr-py39 (toolbox-testing-438616)',
+              'llamaindex-python-sdk-pr-py313 (toolbox-testing-438616)',
+              'llamaindex-python-sdk-pr-py312 (toolbox-testing-438616)',
+              'llamaindex-python-sdk-pr-py311 (toolbox-testing-438616)',
+              'llamaindex-python-sdk-pr-py310 (toolbox-testing-438616)',
+              'llamaindex-python-sdk-pr-py39 (toolbox-testing-438616)'
+            ];
+
+            const sha = context.payload.check_suite.head_sha;
+            console.log(`Check suite completed for SHA: ${sha}`);
+            console.log(`Check suite conclusion: ${context.payload.check_suite.conclusion}`);
+
+            // Get all check runs for this SHA
+            const checks = await github.paginate(
+              github.rest.checks.listForRef,
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: sha,
+              },
+              (response) => response.data.check_runs
+            );
+
+            // Find status of required checks
+            const checkStatus = {};
+            for (const check of checks) {
+              if (requiredChecks.includes(check.name)) {
+                checkStatus[check.name] = {
+                  status: check.status,
+                  conclusion: check.conclusion
+                };
+              }
+            }
+
+            // Check if all required checks are present and completed
+            const missingChecks = requiredChecks.filter(name => !checkStatus[name]);
+            const pendingChecks = Object.entries(checkStatus)
+              .filter(([name, info]) => info.status !== 'completed')
+              .map(([name]) => name);
+
+            console.log(`Found ${Object.keys(checkStatus).length}/${requiredChecks.length} required Cloud Build checks`);
+            
+            if (missingChecks.length > 0) {
+              console.log(`⚠ Missing checks (${missingChecks.length}): ${missingChecks.slice(0, 5).join(', ')}${missingChecks.length > 5 ? '...' : ''}`);
+            }
+            
+            if (pendingChecks.length > 0) {
+              console.log(`⏳ Pending checks (${pendingChecks.length}): ${pendingChecks.slice(0, 5).join(', ')}${pendingChecks.length > 5 ? '...' : ''}`);
+              console.log('Not all Cloud Build checks are complete yet. Exiting...');
+              core.setOutput('all_checks_complete', 'false');
+              return;
+            }
+
+            console.log('✓ All 15 Cloud Build checks are complete!');
+            core.setOutput('all_checks_complete', 'true');
+            core.setOutput('sha', sha);
+
+      - name: Get failing Cloud Build checks
+        id: get_failed_checks
+        if: steps.verify_checks.outputs.all_checks_complete == 'true'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            try {
+              const sha = '${{ steps.verify_checks.outputs.sha }}';
+              console.log(`Detecting failed checks for SHA: ${sha}`);
+
+              // Get ALL check runs for the ref (paginated)
+              let allChecks = [];
+              try {
+                allChecks = await github.paginate(
+                  github.rest.checks.listForRef,
+                  {
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    ref: sha,
+                  },
+                  (response) => response.data.check_runs
+                );
+                console.log(`Retrieved ${allChecks.length} total check runs`);
+              } catch (error) {
+                console.log(`Error fetching checks: ${error.message}`);
+                core.setOutput('failed_check_data', JSON.stringify([]));
+                return;
+              }
+
+              // Identify Cloud Build-related checks robustly
+              const isCloudBuildCheck = (c) => {
+                if (!c) return false;
+                const name = (c.name || '');
+                const details = (c.details_url || '');
+                // Match common variants like "Cloud Build", "cloud-build", plus URL hints
+                return /cloud[ -]?build/i.test(name)
+                  || /toolbox[- ]?testing/i.test(name)
+                  || /cloud-build\/builds\//i.test(details)
+                  || /console\.cloud\.google\.com\/cloud-build/i.test(details);
+              };
+
+              const failedCloudBuildChecks = allChecks.filter(
+                (c) => c && c.status === 'completed' && c.conclusion === 'failure' && isCloudBuildCheck(c)
+              );
+
+              console.log(`Found ${failedCloudBuildChecks.length} failed Cloud Build-related checks out of ${allChecks.length} total checks`);
+
+              const failedData = failedCloudBuildChecks.map((c) => ({
+                name: c.name || 'Unknown',
+                id: c.id || '',
+                html_url: c.html_url || '',
+                details_url: c.details_url || '',
+                external_id: c.external_id || '',
+              }));
+
+              core.setOutput('failed_check_data', JSON.stringify(failedData));
+              console.log('Failed check data:', JSON.stringify(failedData, null, 2));
+              
+            } catch (error) {
+              console.error(`Unhandled error: ${error.message}`);
+              consanalyze again
+              ole.error(error.stack);
+              core.setOutput('failed_check_data', JSON.stringify([]));
+              core.setFailed(`Failed to detect failing tests: ${error.message}`);
+            }
+
+      - name: Print detected failed checks
+        run: |
+          echo "Failed check data: ${{ steps.get_failed_checks.outputs.failed_check_data }}"
+
