@@ -37,8 +37,7 @@ jobs:
           script: |
             const pr = context.payload.pull_request;
             console.log(pr);
-           
-            };
+       
 
             const failedCloudBuildChecks = allChecks.filter(
               (c) => c.status === 'completed' && c.conclusion === 'failure' && isCloudBuildCheck(c)
