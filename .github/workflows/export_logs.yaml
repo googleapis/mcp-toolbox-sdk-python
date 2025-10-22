@@ -1,9 +1,14 @@
-name: Export Complete Build Logs
+name: Export Build Logs
 
 on:
   check_suite:
     types: [completed]
-  
+  workflow_dispatch:
+    inputs:
+      test_sha:
+        description: 'Commit SHA to check (leave empty for latest)'
+        required: false
+        default: ''
 
 jobs:
   detect-failing-tests:
@@ -41,9 +46,11 @@ jobs:
                 'llamaindex-python-sdk-pr-py39 (toolbox-testing-438616)'
               ];
 
-              // Get SHA from check_suite event
-              const sha = context.payload.check_suite?.head_sha || context.sha;
-              console.log(`Check suite completed for SHA: ${sha}`);
+              // Get SHA from check_suite event or manual input
+              const sha = context.payload.check_suite?.head_sha 
+                       || '${{ github.event.inputs.test_sha }}' 
+                       || context.sha;
+              console.log(`Checking SHA: ${sha}`);
               
               if (context.payload.check_suite?.conclusion) {
                 console.log(`Check suite conclusion: ${context.payload.check_suite.conclusion}`);
