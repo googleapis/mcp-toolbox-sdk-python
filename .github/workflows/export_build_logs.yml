@@ -4,6 +4,11 @@ on:
   check_suite:
     types: [completed]  # Triggers AFTER all Cloud Build checks complete
   workflow_dispatch:
+    inputs:
+      test_sha:
+        description: 'Commit SHA to check (leave empty to use latest)'
+        required: false
+        type: string
 jobs:
   detect-failing-tests:
     name: Detect Failing Tests
