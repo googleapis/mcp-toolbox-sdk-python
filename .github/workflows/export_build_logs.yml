@@ -23,21 +23,21 @@ jobs:
             try {
               // Required Cloud Build checks (15 total)
               const requiredChecks = [
-                'core-python-sdk-pr-py313 (toolbox-testing-438616)',
-                'core-python-sdk-pr-py312 (toolbox-testing-438616)',
-                'core-python-sdk-pr-py311 (toolbox-testing-438616)',
-                'core-python-sdk-pr-py310 (toolbox-testing-438616)',
-                'core-python-sdk-pr-py39 (toolbox-testing-438616)',
-                'langchain-python-sdk-pr-py313 (toolbox-testing-438616)',
-                'langchain-python-sdk-pr-py312 (toolbox-testing-438616)',
-                'langchain-python-sdk-pr-py311 (toolbox-testing-438616)',
-                'langchain-python-sdk-pr-py310 (toolbox-testing-438616)',
-                'langchain-python-sdk-pr-py39 (toolbox-testing-438616)',
-                'llamaindex-python-sdk-pr-py313 (toolbox-testing-438616)',
-                'llamaindex-python-sdk-pr-py312 (toolbox-testing-438616)',
-                'llamaindex-python-sdk-pr-py311 (toolbox-testing-438616)',
-                'llamaindex-python-sdk-pr-py310 (toolbox-testing-438616)',
-                'llamaindex-python-sdk-pr-py39 (toolbox-testing-438616)'
+                'core-python-sdk-pr-py313(toolbox-testing-438616)',
+                'core-python-sdk-pr-py312(toolbox-testing-438616)',
+                'core-python-sdk-pr-py311(toolbox-testing-438616)',
+                'core-python-sdk-pr-py310(toolbox-testing-438616)',
+                'core-python-sdk-pr-py39(toolbox-testing-438616)',
+                'langchain-python-sdk-pr-py313(toolbox-testing-438616)',
+                'langchain-python-sdk-pr-py312(toolbox-testing-438616)',
+                'langchain-python-sdk-pr-py311(toolbox-testing-438616)',
+                'langchain-python-sdk-pr-py310(toolbox-testing-438616)',
+                'langchain-python-sdk-pr-py39(toolbox-testing-438616)',
+                'llamaindex-python-sdk-pr-py313(toolbox-testing-438616)',
+                'llamaindex-python-sdk-pr-py312(toolbox-testing-438616)',
+                'llamaindex-python-sdk-pr-py311(toolbox-testing-438616)',
+                'llamaindex-python-sdk-pr-py310(toolbox-testing-438616)',
+                'llamaindex-python-sdk-pr-py39(toolbox-testing-438616)'
               ];
 
               // Get SHA from check_suite event or manual input
