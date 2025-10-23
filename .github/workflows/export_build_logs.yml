@@ -4,7 +4,6 @@ on:
   check_suite:
     types: [completed]  # Triggers AFTER all Cloud Build checks complete
   workflow_dispatch:
-  pull_request:
 jobs:
   detect-failing-tests:
     name: Detect Failing Tests
@@ -68,12 +67,14 @@ jobs:
                 // Print details of all existing checks
                 console.log('\n=== All Check Runs Found ===');
                 checks.forEach((check, index) => {
-                  console.log(`\nCheck ${index + 1}:`);
-                  console.log(`  Name: ${check.name}`);
-                  console.log(`  Status: ${check.status}`);
-                  console.log(`  Conclusion: ${check.conclusion}`);
-                  console.log(`  App: ${check.app?.name || 'N/A'}`);
-                  console.log(`  Details URL: ${check.details_url || 'N/A'}`);
+                  if (check) {
+                    console.log(`\nCheck ${index + 1}:`);
+                    console.log(`  Name: ${check.name || 'N/A'}`);
+                    console.log(`  Status: ${check.status || 'N/A'}`);
+                    console.log(`  Conclusion: ${check.conclusion || 'N/A'}`);
+                    console.log(`  App: ${check.app?.name || 'N/A'}`);
+                    console.log(`  Details URL: ${check.details_url || 'N/A'}`);
+                  }
                 });
                 console.log('=== End Check Runs ===\n');
               } catch (error) {
