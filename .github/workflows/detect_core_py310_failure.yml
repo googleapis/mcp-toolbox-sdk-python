@@ -1,0 +1,85 @@
+name: Detect core-python-sdk-pr-py310 Failure
+
+on:
+  check_suite:
+    types: [completed]
+  workflow_dispatch:
+
+jobs:
+  detect-core-py310-failure:
+    name: Detect core-python-sdk-pr-py310 Failure
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: read
+    steps:
+      - name: Detect failing core-python-sdk-pr-py310 build
+        id: detect_failure
+        uses: actions/github-script@v6
+        with:
+          script: |
+            try {
+              const checkNames = [
+                'core-python-sdk-pr-py310',
+                'core-python-sdk-pr-py310 (gangothrinaini-playground)'
+              ];
+              const sha = context.payload.check_suite?.head_sha || context.sha;
+              console.log(`Checking SHA: ${sha}`);
+
+              // Get all check runs for this SHA
+              let checks = [];
+              try {
+                checks = await github.paginate(
+                  github.rest.checks.listForRef,
+                  {
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    ref: sha,
+                  },
+                  (response) => response.data.check_runs
+                );
+                console.log(`Retrieved ${checks.length} total check runs`);
+              } catch (error) {
+                console.error(`Error fetching checks: ${error.message}`);
+                core.setOutput('failure_detected', 'false');
+                return;
+              }
+
+              // Find the specific check (match any of the possible names)
+              const targetCheck = checks.find(
+                (check) => check && checkNames.includes(check.name)
+              );
+
+              if (!targetCheck) {
+                console.log(`Check '${checkNames.join(" or ")}' not found.`);
+                core.setOutput('failure_detected', 'false');
+                return;
+              }
+
+              if (targetCheck.status === 'completed' && targetCheck.conclusion === 'failure') {
+                console.log(`Check '${targetCheck.name}' has failed.`);
+                core.setOutput('failure_detected', 'true');
+                core.setOutput('name', targetCheck.name || 'Unknown');
+                core.setOutput('id', targetCheck.id || '');
+                core.setOutput('html_url', targetCheck.html_url || '');
+                core.setOutput('details_url', targetCheck.details_url || '');
+                core.setOutput('external_id', targetCheck.external_id || '');
+              } else {
+                console.log(`Check '${targetCheck.name}' has not failed.`);
+                core.setOutput('failure_detected', 'false');
+              }
+            } catch (error) {
+              console.error(`Unhandled error: ${error.message}`);
+              core.setOutput('failure_detected', 'false');
+              core.setFailed(`Failed to detect core-python-sdk-pr-py310 failure: ${error.message}`);
+            }
+
+      - name: Print detected failure details
+        if: steps.detect_failure.outputs.failure_detected == 'true'
+        run: |
+          echo "core-python-sdk-pr-py310 build failed!"
+          echo "Name: ${{ steps.detect_failure.outputs.name }}"
+          echo "ID: ${{ steps.detect_failure.outputs.id }}"
+          echo "HTML URL: ${{ steps.detect_failure.outputs.html_url }}"
+          echo "Details URL: ${{ steps.detect_failure.outputs.details_url }}"
+          echo "External ID: ${{ steps.detect_failure.outputs.external_id }}"
