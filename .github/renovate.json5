@@ -32,7 +32,6 @@
       ],
       branchName: 'auto-update/toolbox-server-v{{newValue}}',
       commitMessageTopic: 'chore(deps): update MCP Toolbox server for integration tests to {{newValue}}',
-      groupName: false,
       matchUpdateTypes: [
         'minor',
         'patch',
