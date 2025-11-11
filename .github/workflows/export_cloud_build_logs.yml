@@ -38,7 +38,7 @@ jobs:
     steps:
       - name: Detect all failed Cloud Build checks
         id: detect_failures
-        uses: actions/github-script@v7
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -94,7 +94,7 @@ jobs:
           echo "build_id=$build_id" >> $GITHUB_OUTPUT
           echo "project_id=$project_id" >> $GITHUB_OUTPUT
       - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
         with:
           credentials_json: ${{ env.GCLOUD_SERVICE_KEY }}
       - name: Fetch Cloud Build logs
@@ -117,7 +117,7 @@ jobs:
           fi
           echo "log_file_name=${LOG_FILE}" >> $GITHUB_OUTPUT
       - name: Upload Logs as Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         with:
           name: logs-${{ matrix.name }}-${{ steps.parse_build_info.outputs.build_id }}
           path: ${{ steps.fetch_cloud_build_logs.outputs.log_file_name }}
@@ -129,7 +129,7 @@ jobs:
     if: always()
     steps:
       - name: Compose and post PR comment with artifact links
-        uses: actions/github-script@v7
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         env:
           PR_NUMBER: ${{ needs.detect-build-failure.outputs.pr_number }}
         with:
