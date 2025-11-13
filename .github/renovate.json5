@@ -1,7 +1,7 @@
 {
   extends: [
     'config:recommended',
-    ':semanticCommits',
+    ':semanticCommitTypeAll(chore)',
     ':ignoreUnstable',
     'group:allNonMajor',
     ':separateMajorReleases',
@@ -21,6 +21,22 @@
         'github-actions',
       ],
       pinDigests: true,
+    },
+    {
+      description: 'Auto-update genai-toolbox server version',
+      matchPackageNames: [
+        'googleapis/genai-toolbox',
+      ],
+      matchManagers: [
+        'regex',
+      ],
+      "branchName": "auto-update/toolbox-server-v{{newValue}}",
+      "commitMessageTopic": "update MCP Toolbox server version in integration tests to v{{newValue}}",
+      "prTitle": "chore(deps): update mcp toolbox server for integration tests to v{{newValue}}",
+      matchUpdateTypes: [
+        'minor',
+        'patch',
+      ],
     },
     {
       matchPackageNames: [
@@ -46,6 +62,29 @@
       matchFileNames: [
         '.kokoro/**',
       ],
+    },
+    {
+      "description": "Disable pillow updates for python <=3.9 in pyproject.toml",
+      "matchFileNames": ["**/pyproject.toml"],
+      "matchPackageNames": ["Pillow"],
+      "matchCurrentValue": "==11.3.0",
+      "enabled": false
+    }
+  ],
+  regexManagers: [
+    {
+      fileMatch: [
+        'packages/toolbox-core/integration.cloudbuild.yaml',
+        'packages/toolbox-langchain/integration.cloudbuild.yaml',
+        'packages/toolbox-llamaindex/integration.cloudbuild.yaml',
+      ],
+      matchStrings: [
+        '_TOOLBOX_VERSION: [\'|"]?(?<currentValue>v?\\d+\\.\\d+\\.\\d+)[\'|"]?',
+      ],
+      datasourceTemplate: 'github-releases',
+      depNameTemplate: 'googleapis/genai-toolbox',
+      versioningTemplate: 'semver',
+      packageNameTemplate: 'googleapis/genai-toolbox',
     },
   ],
 }

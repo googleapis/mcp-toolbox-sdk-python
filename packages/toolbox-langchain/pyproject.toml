@@ -10,7 +10,7 @@ authors = [
 ]
 dependencies = [
     "toolbox-core==0.5.2",              # x-release-please-version
-    "langchain-core>=0.2.23,<1.0.0",
+    "langchain-core>=0.2.23,<2.0.0",
     "PyYAML>=6.0.1,<7.0.0",
     "pydantic>=2.7.0,<3.0.0",
     "aiohttp>=3.8.6,<4.0.0",
@@ -50,7 +50,8 @@ test = [
     "pytest-asyncio==1.2.0",
     "pytest==8.4.2",
     "pytest-cov==7.0.0",
-    "Pillow==11.3.0",
+    "Pillow==11.3.0; python_version == '3.9'",
+    "Pillow==12.0.0; python_version >= '3.10'",
     "google-cloud-secret-manager==2.24.0",
     "google-cloud-storage==3.4.0",
 ]
