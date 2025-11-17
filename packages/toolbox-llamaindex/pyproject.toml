@@ -10,7 +10,7 @@ authors = [
 ]
 dependencies = [
     "toolbox-core==0.5.2",              # x-release-please-version
-    "llama-index>=0.12.0,<1.0.0",
+    "llama-index-core>=0.12.0,<1.0.0",
     "PyYAML>=6.0.1,<7.0.0",
     "pydantic>=2.8.0,<3.0.0",
     "aiohttp>=3.8.6,<4.0.0",
