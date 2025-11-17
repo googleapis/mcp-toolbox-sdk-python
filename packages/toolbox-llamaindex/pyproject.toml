@@ -4,7 +4,7 @@ dynamic = ["version"]
 readme = "README.md"
 description = "Python SDK for interacting with the Toolbox service with LlamaIndex"
 license = {file = "LICENSE"}
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 authors = [
     {name = "Google LLC", email = "googleapis-packages@google.com"}
 ]
@@ -22,7 +22,6 @@ classifiers = [
     "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -50,7 +49,6 @@ test = [
     "pytest-asyncio==1.2.0",
     "pytest==8.4.2",
     "pytest-cov==7.0.0",
-    "Pillow==11.3.0; python_version == '3.9'",
     "Pillow==12.0.0; python_version >= '3.10'",
     "google-cloud-secret-manager==2.24.0",
     "google-cloud-storage==3.4.0",
@@ -67,6 +65,6 @@ target-version = ['py39']
 profile = "black"
 
 [tool.mypy]
-python_version = "3.9"
+python_version = "3.10"
 warn_unused_configs = true
 disallow_incomplete_defs = true
