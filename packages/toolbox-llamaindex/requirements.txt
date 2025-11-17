@@ -1,7 +1,5 @@
 -e ../toolbox-core
-llama-index==0.14.4
-llama-index-cli==0.5.3
-llama-index-embeddings-openai==0.5.1
+llama-index-core==0.14.4
 PyYAML==6.0.3
 pydantic==2.11.10
 aiohttp==3.13.0
