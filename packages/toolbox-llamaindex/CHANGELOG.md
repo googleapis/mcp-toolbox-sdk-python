@@ -10,18 +10,10 @@
 
 ### Miscellaneous Chores
 
-* **ci:** update toolbox server version ([#388](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/388)) ([daf6267](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/daf6267b4474abc36c6f6afdf13cb3b6e5fdce42))
-* **deps:** update chore(deps): update mcp toolbox server for integration tests to 0.19.1 to v0.19.1 ([#414](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/414)) ([f7134d2](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/f7134d299bf9230ecca041ecc754bc7ca554937b))
-* **deps:** update dependency aiohttp to v3.13.0 ([#389](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/389)) ([f740ceb](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/f740ceb827f2ddfc46d66f0cbe3156c8e606a1ff))
-* **deps:** update dependency isort to v7 ([#393](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/393)) ([4d06be0](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/4d06be0b400b17fade18b86639ba452e5c4b0bd3))
-* **deps:** update dependency pytest to v9 ([#416](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/416)) ([93a2c92](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/93a2c92506f09d6e4d9b18683703ae216dbed106))
-* **deps:** update python-nonmajor ([#378](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/378)) ([bd377c4](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/bd377c42307e439d0f6fc02834c629987669282b))
-* **deps:** update python-nonmajor ([#386](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/386)) ([6625d04](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/6625d04296d25545fa49cb8f72628f38e3b8aa88))
-* **deps:** update python-nonmajor ([#387](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/387)) ([a30f85c](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/a30f85cfb986fbff9dc62495eb35d60aafb6979d))
-* **deps:** update python-nonmajor ([#427](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/427)) ([7c3ace0](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/7c3ace008d19ae003362eb9ebe369f792eb12ca5))
-* **deps:** update update mcp toolbox server version in integration tests to v0.20.0 to v0.20.0 ([#421](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/421)) ([b844a23](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/b844a23e5f4e412d31067a76a50668b0bd57b41d))
-* **llamaindex:** update toolbox binary version ([#396](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/396)) ([80bce10](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/80bce1069640a3e7664fce1609367e02c7947c0f))
-* Update renovate config to disable updates for pillow for py3.9 ([#400](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/400)) ([92015c0](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/92015c091cc71d2c532332af81362bd2d8259abb))
+* **deps:** Pinned `llama-index-cli` to resolve a dependency conflict ([#423](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/423)).
+* **deps:** Updated the toolbox server version for CI and integration tests ([#388](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/388)), ([#414](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/414)), ([#421](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/421), [#396](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/396)).
+* **deps:** Updated dependencies: `aiohttp` to v3.13.0 ([#389](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/389)), `isort` to v7 ([#393](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/393)), `pytest` to v9 ([#416](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/416)), and other non-major Python dependencies ([#378](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/378)), ([#386](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/386)), ([#387](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/387)), ([#427](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/427)).
+* **chore:** Updated renovate config to disable updates for pillow for py3.9 ([#400](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/400)).
 
 ## [0.5.2](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-llamaindex-v0.5.1...toolbox-llamaindex-v0.5.2) (2025-09-22)
 
