@@ -3,11 +3,6 @@
 ## [0.5.3](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-llamaindex-v0.5.2...toolbox-llamaindex-v0.5.3) (2025-11-18)
 
 
-### Bug Fixes
-
-* **deps:** pin llama-index-cli to resolve dependency conflict ([#423](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/423)) ([6b43d24](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/6b43d24b5a4eafc774e8797e24d6c1252694f155))
-
-
 ### Miscellaneous Chores
 
 * **deps:** Pinned `llama-index-cli` to resolve a dependency conflict ([#423](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/423)).
