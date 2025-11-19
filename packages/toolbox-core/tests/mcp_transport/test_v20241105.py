@@ -13,11 +13,14 @@
 # limitations under the License.
 
 from unittest.mock import AsyncMock, Mock, patch
+
 import pytest
 import pytest_asyncio
 from aiohttp import ClientSession
+
 from toolbox_core.mcp_transport.v20241105.mcp import McpHttpTransport_v20241105
-from toolbox_core.protocol import Protocol, ManifestSchema
+from toolbox_core.protocol import ManifestSchema, Protocol
+
 
 def create_fake_tools_list_result():
     return {
@@ -34,6 +37,7 @@ def create_fake_tools_list_result():
         ]
     }
 
+
 @pytest_asyncio.fixture
 async def transport():
     mock_session = AsyncMock(spec=ClientSession)
@@ -43,22 +47,25 @@ async def transport():
     yield transport
     await transport.close()
 
+
 @pytest.mark.asyncio
 class TestMcpHttpTransport_v20241105:
-    
+
     # --- Request Sending Tests ---
 
     async def test_send_request_success(self, transport):
         mock_response = AsyncMock()
         mock_response.ok = True
         mock_response.status = 200
-        
+
         mock_content = Mock()
         mock_content.at_eof.return_value = False
         mock_response.content = mock_content
-        
+
         mock_response.json.return_value = {
-            "jsonrpc": "2.0", "id": "1", "result": {"foo": "bar"}
+            "jsonrpc": "2.0",
+            "id": "1",
+            "result": {"foo": "bar"},
         }
         transport._session.post.return_value.__aenter__.return_value = mock_response
 
@@ -81,9 +88,11 @@ class TestMcpHttpTransport_v20241105:
         mock_response.status = 200
         mock_response.content = Mock()
         mock_response.content.at_eof.return_value = False
-        
+
         mock_response.json.return_value = {
-            "jsonrpc": "2.0", "id": "1", "error": {"code": -32601, "message": "Method not found"}
+            "jsonrpc": "2.0",
+            "id": "1",
+            "error": {"code": -32601, "message": "Method not found"},
         }
         transport._session.post.return_value.__aenter__.return_value = mock_response
 
@@ -97,9 +106,9 @@ class TestMcpHttpTransport_v20241105:
         transport._session.post.return_value.__aenter__.return_value = mock_response
 
         await transport._send_request("url", "notifications/test", {})
-        
+
         call_kwargs = transport._session.post.call_args.kwargs
-        payload = call_kwargs['json']
+        payload = call_kwargs["json"]
         assert "id" not in payload
         assert payload["method"] == "notifications/test"
 
@@ -108,53 +117,71 @@ class TestMcpHttpTransport_v20241105:
     @patch("toolbox_core.mcp_transport.v20241105.mcp.version")
     async def test_initialize_session_success(self, mock_version, transport, mocker):
         mock_version.__version__ = "1.2.3"
-        mock_send = mocker.patch.object(transport, "_send_request", new_callable=AsyncMock)
-        
+        mock_send = mocker.patch.object(
+            transport, "_send_request", new_callable=AsyncMock
+        )
+
         mock_send.side_effect = [
             {
                 "protocolVersion": "2024-11-05",
                 "capabilities": {"tools": {"listChanged": False}},
-                "serverInfo": {"name": "test", "version": "1.0"}
+                "serverInfo": {"name": "test", "version": "1.0"},
             },
-            None
+            None,
         ]
-        
+
         await transport._initialize_session()
-        
+
         assert transport._server_version == "1.0"
         assert mock_send.call_count == 2
         init_call = mock_send.call_args_list[0]
-        assert init_call.kwargs['method'] == "initialize"
-        assert init_call.kwargs['params']['protocolVersion'] == "2024-11-05"
+        assert init_call.kwargs["method"] == "initialize"
+        assert init_call.kwargs["params"]["protocolVersion"] == "2024-11-05"
 
     async def test_initialize_session_protocol_mismatch(self, transport, mocker):
-        mocker.patch.object(transport, "_send_request", new_callable=AsyncMock, return_value={
-            "protocolVersion": "2099-01-01",
-            "capabilities": {"tools": {"listChanged": True}},
-            "serverInfo": {"name": "test", "version": "1.0"}
-        })
-        
+        mocker.patch.object(
+            transport,
+            "_send_request",
+            new_callable=AsyncMock,
+            return_value={
+                "protocolVersion": "2099-01-01",
+                "capabilities": {"tools": {"listChanged": True}},
+                "serverInfo": {"name": "test", "version": "1.0"},
+            },
+        )
+
         with pytest.raises(RuntimeError, match="MCP version mismatch"):
             await transport._initialize_session()
 
     async def test_initialize_session_missing_tools_capability(self, transport, mocker):
-        mocker.patch.object(transport, "_send_request", new_callable=AsyncMock, return_value={
-            "protocolVersion": "2024-11-05",
-            "capabilities": {}, # Empty tools capability evaluates to False
-            "serverInfo": {"name": "test", "version": "1.0"}
-        })
-        
-        with pytest.raises(RuntimeError, match="Server does not support the 'tools' capability"):
+        mocker.patch.object(
+            transport,
+            "_send_request",
+            new_callable=AsyncMock,
+            return_value={
+                "protocolVersion": "2024-11-05",
+                "capabilities": {},  # Empty tools capability evaluates to False
+                "serverInfo": {"name": "test", "version": "1.0"},
+            },
+        )
+
+        with pytest.raises(
+            RuntimeError, match="Server does not support the 'tools' capability"
+        ):
             await transport._initialize_session()
 
     # --- Tool Management Tests ---
 
     async def test_tools_list_success(self, transport, mocker):
         mocker.patch.object(transport, "_ensure_initialized", new_callable=AsyncMock)
-        mocker.patch.object(transport, "_send_request", new_callable=AsyncMock, 
-                            return_value=create_fake_tools_list_result())
+        mocker.patch.object(
+            transport,
+            "_send_request",
+            new_callable=AsyncMock,
+            return_value=create_fake_tools_list_result(),
+        )
         transport._server_version = "1.0"
-        
+
         manifest = await transport.tools_list()
         assert isinstance(manifest, ManifestSchema)
         assert "get_weather" in manifest.tools
@@ -163,8 +190,10 @@ class TestMcpHttpTransport_v20241105:
         """Test listing tools with a specific toolset name updates the URL."""
         mocker.patch.object(transport, "_ensure_initialized", new_callable=AsyncMock)
         mocker.patch.object(
-            transport, "_send_request", new_callable=AsyncMock,
-            return_value=create_fake_tools_list_result()
+            transport,
+            "_send_request",
+            new_callable=AsyncMock,
+            return_value=create_fake_tools_list_result(),
         )
         transport._server_version = "1.0.0"
 
@@ -179,18 +208,26 @@ class TestMcpHttpTransport_v20241105:
 
     async def test_tool_invoke_success(self, transport, mocker):
         mocker.patch.object(transport, "_ensure_initialized", new_callable=AsyncMock)
-        mocker.patch.object(transport, "_send_request", new_callable=AsyncMock,
-                            return_value={"content": [{"type": "text", "text": "Result"}]})
-        
+        mocker.patch.object(
+            transport,
+            "_send_request",
+            new_callable=AsyncMock,
+            return_value={"content": [{"type": "text", "text": "Result"}]},
+        )
+
         result = await transport.tool_invoke("tool", {}, {})
         assert result == "Result"
 
     async def test_tool_get_success(self, transport, mocker):
         mocker.patch.object(transport, "_ensure_initialized", new_callable=AsyncMock)
-        mocker.patch.object(transport, "_send_request", new_callable=AsyncMock,
-                            return_value=create_fake_tools_list_result())
+        mocker.patch.object(
+            transport,
+            "_send_request",
+            new_callable=AsyncMock,
+            return_value=create_fake_tools_list_result(),
+        )
         transport._server_version = "1.0"
-        
+
         manifest = await transport.tool_get("get_weather")
         assert "get_weather" in manifest.tools
         assert len(manifest.tools) == 1

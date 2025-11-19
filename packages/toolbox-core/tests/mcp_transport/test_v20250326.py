@@ -13,16 +13,22 @@
 # limitations under the License.
 
 from unittest.mock import AsyncMock, Mock, patch
+
 import pytest
 import pytest_asyncio
 from aiohttp import ClientSession
+
 from toolbox_core.mcp_transport.v20250326.mcp import McpHttpTransport_v20250326
-from toolbox_core.protocol import Protocol, ManifestSchema
+from toolbox_core.protocol import ManifestSchema, Protocol
+
 
 def create_fake_tools_list_result():
     return {
-        "tools": [{"name": "get_weather", "inputSchema": {"type": "object", "properties": {}}}]
+        "tools": [
+            {"name": "get_weather", "inputSchema": {"type": "object", "properties": {}}}
+        ]
     }
+
 
 @pytest_asyncio.fixture
 async def transport():
@@ -33,9 +39,10 @@ async def transport():
     yield transport
     await transport.close()
 
+
 @pytest.mark.asyncio
 class TestMcpHttpTransport_v20250326:
-    
+
     # --- Request Sending Tests (Standard + Session ID) ---
 
     async def test_send_request_success(self, transport):
@@ -84,7 +91,9 @@ class TestMcpHttpTransport_v20250326:
         mock_response.content = Mock()
         mock_response.content.at_eof.return_value = False
         mock_response.json.return_value = {
-            "jsonrpc": "2.0", "id": "1", "error": {"code": -32601, "message": "Error"}
+            "jsonrpc": "2.0",
+            "id": "1",
+            "error": {"code": -32601, "message": "Error"},
         }
         transport._session.post.return_value.__aenter__.return_value = mock_response
 
@@ -96,9 +105,9 @@ class TestMcpHttpTransport_v20250326:
         mock_response.ok = True
         mock_response.status = 204
         transport._session.post.return_value.__aenter__.return_value = mock_response
-        
+
         await transport._send_request("url", "notifications/test", {})
-        payload = transport._session.post.call_args.kwargs['json']
+        payload = transport._session.post.call_args.kwargs["json"]
         assert "id" not in payload
 
     # --- Initialization Tests (Session ID Required) ---
@@ -106,40 +115,53 @@ class TestMcpHttpTransport_v20250326:
     @patch("toolbox_core.mcp_transport.v20250326.mcp.version")
     async def test_initialize_session_success(self, mock_version, transport, mocker):
         mock_version.__version__ = "1.2.3"
-        mock_send = mocker.patch.object(transport, "_send_request", new_callable=AsyncMock)
-        
+        mock_send = mocker.patch.object(
+            transport, "_send_request", new_callable=AsyncMock
+        )
+
         mock_send.side_effect = [
             {
                 "protocolVersion": "2025-03-26",
                 "capabilities": {"tools": {"listChanged": True}},
                 "serverInfo": {"name": "test", "version": "1.0"},
-                "Mcp-Session-Id": "sess-123" # Required for this version
+                "Mcp-Session-Id": "sess-123",  # Required for this version
             },
-            None
+            None,
         ]
-        
+
         await transport._initialize_session()
         assert transport._session_id == "sess-123"
 
     async def test_initialize_session_missing_session_id(self, transport, mocker):
         """Specific test for 2025-03-26: Error if session ID is missing."""
-        mocker.patch.object(transport, "_send_request", new_callable=AsyncMock, return_value={
-            "protocolVersion": "2025-03-26",
-            "capabilities": {"tools": {"listChanged": True}},
-            "serverInfo": {"name": "test", "version": "1.0"}
-        })
+        mocker.patch.object(
+            transport,
+            "_send_request",
+            new_callable=AsyncMock,
+            return_value={
+                "protocolVersion": "2025-03-26",
+                "capabilities": {"tools": {"listChanged": True}},
+                "serverInfo": {"name": "test", "version": "1.0"},
+            },
+        )
         # Mock close since it will be called on failure
         mocker.patch.object(transport, "close", new_callable=AsyncMock)
-        
-        with pytest.raises(RuntimeError, match="Server did not return a Mcp-Session-Id"):
+
+        with pytest.raises(
+            RuntimeError, match="Server did not return a Mcp-Session-Id"
+        ):
             await transport._initialize_session()
 
     # --- Tool Management Tests ---
 
     async def test_tools_list_success(self, transport, mocker):
         mocker.patch.object(transport, "_ensure_initialized", new_callable=AsyncMock)
-        mocker.patch.object(transport, "_send_request", new_callable=AsyncMock, 
-                            return_value=create_fake_tools_list_result())
+        mocker.patch.object(
+            transport,
+            "_send_request",
+            new_callable=AsyncMock,
+            return_value=create_fake_tools_list_result(),
+        )
         transport._server_version = "1.0"
         manifest = await transport.tools_list()
         assert isinstance(manifest, ManifestSchema)
@@ -148,8 +170,10 @@ class TestMcpHttpTransport_v20250326:
         """Test listing tools with a specific toolset name updates the URL."""
         mocker.patch.object(transport, "_ensure_initialized", new_callable=AsyncMock)
         mocker.patch.object(
-            transport, "_send_request", new_callable=AsyncMock,
-            return_value=create_fake_tools_list_result()
+            transport,
+            "_send_request",
+            new_callable=AsyncMock,
+            return_value=create_fake_tools_list_result(),
         )
         transport._server_version = "1.0.0"
 
@@ -163,15 +187,23 @@ class TestMcpHttpTransport_v20250326:
 
     async def test_tool_invoke_success(self, transport, mocker):
         mocker.patch.object(transport, "_ensure_initialized", new_callable=AsyncMock)
-        mocker.patch.object(transport, "_send_request", new_callable=AsyncMock,
-                            return_value={"content": [{"type": "text", "text": "Result"}]})
+        mocker.patch.object(
+            transport,
+            "_send_request",
+            new_callable=AsyncMock,
+            return_value={"content": [{"type": "text", "text": "Result"}]},
+        )
         result = await transport.tool_invoke("tool", {}, {})
         assert result == "Result"
-    
+
     async def test_tool_get_success(self, transport, mocker):
         mocker.patch.object(transport, "_ensure_initialized", new_callable=AsyncMock)
-        mocker.patch.object(transport, "_send_request", new_callable=AsyncMock,
-                            return_value=create_fake_tools_list_result())
+        mocker.patch.object(
+            transport,
+            "_send_request",
+            new_callable=AsyncMock,
+            return_value=create_fake_tools_list_result(),
+        )
         transport._server_version = "1.0"
         manifest = await transport.tool_get("get_weather")
         assert "get_weather" in manifest.tools
