@@ -166,7 +166,7 @@ class TestAuth:
         auth_tool = tool.add_auth_token_getters({"my-test-auth": lambda: auth_token2})
         with pytest.raises(
             Exception,
-            match="Unauthorized",
+            match="tool invocation not authorized. Please make sure your specify correct auth headers",
         ):
             await auth_tool(id="2")
 
