@@ -162,18 +162,37 @@ class TestMcpHttpTransportBase:
         assert p_obj.type == "object"
         assert p_obj.additionalProperties.type == "integer"
 
-    def test_convert_tool_schema_with_auth(self, transport):
-        """Test schema conversion with authentication metadata."""
-        tool_data = {
-            "name": "drive_tool",
-            "description": "A tool that requires auth.",
-            "inputSchema": {"type": "object", "properties": {}},
-            "_meta": {
-                "toolbox/authInvoke": ["google"],
+    def test_convert_tool_schema_with_auth_params(self, transport):
+        raw_tool = {
+            "name": "auth_tool",
+            "description": "Tool with auth params",
+            "_meta": {"toolbox/authParam": {"api_key": ["header", "X-API-Key"]}},
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "api_key": {"type": "string"},
+                    "other_param": {"type": "string"},
+                },
             },
         }
-        tool_schema = transport._convert_tool_schema(tool_data)
-        assert tool_schema.authRequired == ["google"]
+
+        schema = transport._convert_tool_schema(raw_tool)
+        api_key_param = next(p for p in schema.parameters if p.name == "api_key")
+        assert api_key_param.authSources == ["header", "X-API-Key"]
+        other_param = next(p for p in schema.parameters if p.name == "other_param")
+        assert other_param.authSources is None
+
+    def test_convert_tool_schema_with_auth_invoke(self, transport):
+        raw_tool = {
+            "name": "invoke_auth_tool",
+            "description": "Tool requiring invocation auth",
+            "_meta": {"toolbox/authInvoke": ["Bearer", "OAuth2"]},
+            "inputSchema": {"type": "object", "properties": {}},
+        }
+
+        schema = transport._convert_tool_schema(raw_tool)
+
+        assert schema.authRequired == ["Bearer", "OAuth2"]
 
     @pytest.mark.asyncio
     async def test_close_managed_session(self, mocker):
