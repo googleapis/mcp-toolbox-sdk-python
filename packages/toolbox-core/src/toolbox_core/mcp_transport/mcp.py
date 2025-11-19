@@ -104,7 +104,7 @@ class _McpHttpTransportBase(ITransport, ABC):
             )
 
         return ToolSchema(
-            description=tool_data["description"] or "",
+            description=tool_data.get("description") or "",
             parameters=parameters,
             authRequired=invoke_auth,
         )
