@@ -143,7 +143,7 @@ class TestE2EClientAsync:
         auth_tool = tool.add_auth_token_getter("my-test-auth", lambda: auth_token2)
         with pytest.raises(
             Exception,
-            match="Unauthorized",
+            match="tool invocation not authorized. Please make sure your specify correct auth headers",
         ):
             await auth_tool.ainvoke({"id": "2"})
 
@@ -290,7 +290,7 @@ class TestE2EClientSync:
         auth_tool = tool.add_auth_token_getter("my-test-auth", lambda: auth_token2)
         with pytest.raises(
             Exception,
-            match="Unauthorized",
+            match="tool invocation not authorized. Please make sure your specify correct auth headers",
         ):
             auth_tool.invoke({"id": "2"})
 
