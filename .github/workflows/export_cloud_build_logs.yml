@@ -1,0 +1,182 @@
+# Copyright 2025 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+name: Export Cloud Build Failure Logs
+
+permissions: 
+  contents: read
+  checks: read
+  issues: write 
+  pull-requests: write 
+
+on:
+  check_suite:
+    types: [completed]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  detect-build-failure:
+    name: Detect Cloud Build Failures
+    runs-on: ubuntu-latest
+    outputs:
+      failure_detected: ${{ steps.detect_failures.outputs.failure_detected }}
+      failed_checks: ${{ steps.detect_failures.outputs.failed_checks }}
+      pr_number: ${{ steps.detect_failures.outputs.pr_number }}
+    steps:
+      - name: Detect all failed Cloud Build checks
+        id: detect_failures
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const prefixes = [
+              'core-python-sdk-pr-',
+              'langchain-python-sdk-pr-',
+              'llamaindex-python-sdk-pr-',
+            ];
+            const prList = context.payload.check_suite.pull_requests;
+            if (!prList || prList.length === 0) {
+              core.info('No PR found for this check suite. Skipping.');
+              core.setOutput('failure_detected', 'false');
+              return;
+            }
+            const pr_number = prList[0].number;
+            core.setOutput('pr_number', pr_number.toString());
+            const { owner, repo } = context.repo;
+            const sha = context.payload.check_suite.head_sha;
+            const { data: checks } = await github.rest.checks.listForRef({ owner, repo, ref: sha, per_page: 100 });
+            const failed = checks.check_runs.filter(
+              c =>
+                prefixes.some(prefix => c.name.startsWith(prefix)) &&
+                c.status === 'completed' &&
+                c.conclusion === 'failure'
+            );
+            if (failed.length === 0) {
+              core.info('No failed Cloud Build checks detected.');
+              core.setOutput('failure_detected', 'false');
+              return;
+            }
+            core.info(`Detected ${failed.length} failed build(s).`);
+            core.setOutput('failure_detected', 'true');
+            core.setOutput('failed_checks', JSON.stringify(failed.map(f => ({ name: f.name, id: f.id, html_url: f.html_url, details_url: f.details_url, external_id: f.external_id || '' }))));
+
+  
+  process-failed-builds:
+    needs: detect-build-failure
+    if: needs.detect-build-failure.outputs.failure_detected == 'true'
+    runs-on: ubuntu-latest
+    env:
+      GCLOUD_SERVICE_KEY: ${{ secrets.GCLOUD_SERVICE_KEY }}
+    strategy:
+      matrix:
+        include: ${{ fromJson(needs.detect-build-failure.outputs.failed_checks) }}
+    steps:
+      - name: Parse build ID and set project ID
+        id: parse_build_info
+        run: |
+          details_url="${{ matrix.details_url }}"
+          build_id=$(echo "$details_url" | sed -n 's#.*/builds/\([^?]*\).*#\1#p')
+          project_id=$(echo '${{ env.GCLOUD_SERVICE_KEY }}' | jq -r '.project_id')
+          echo "Build ID: $build_id"
+          echo "build_id=$build_id" >> $GITHUB_OUTPUT
+          echo "project_id=$project_id" >> $GITHUB_OUTPUT
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
+        with:
+          credentials_json: ${{ env.GCLOUD_SERVICE_KEY }}
+      - name: Fetch Cloud Build logs
+        id: fetch_cloud_build_logs
+        run: |
+          LOG_FILE="cloudbuild_error_logs.txt"
+          GCLOUD_OUTPUT=$(gcloud builds log "${{ steps.parse_build_info.outputs.build_id }}" --project="${{ steps.parse_build_info.outputs.project_id }}" 2>&1)
+          
+          if echo "$GCLOUD_OUTPUT" | grep -q "ERROR"; then
+            echo "Failed to fetch logs from gcloud builds log." > "${LOG_FILE}"
+            echo "--- gcloud command output ---" >> "${LOG_FILE}"
+            echo "$GCLOUD_OUTPUT" >> "${LOG_FILE}"
+            echo "-----------------------------" >> "${LOG_FILE}"
+            echo "Log URL: ${{ matrix.details_url }}" >> "${LOG_FILE}"
+          elif [ -z "$GCLOUD_OUTPUT" ]; then
+            echo "Warning: No logs found or gcloud command returned empty output." > "${LOG_FILE}"
+            echo "Log URL: ${{ matrix.details_url }}" >> "${LOG_FILE}"
+          else
+            echo "$GCLOUD_OUTPUT" > "${LOG_FILE}"
+          fi
+          echo "log_file_name=${LOG_FILE}" >> $GITHUB_OUTPUT
+      - name: Upload Logs as Artifact
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+        with:
+          name: logs-${{ matrix.name }}-${{ steps.parse_build_info.outputs.build_id }}
+          path: ${{ steps.fetch_cloud_build_logs.outputs.log_file_name }}
+          retention-days: 15
+
+  post-pr-comment:
+    needs: [detect-build-failure, process-failed-builds]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Compose and post PR comment with artifact links
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        env:
+          PR_NUMBER: ${{ needs.detect-build-failure.outputs.pr_number }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }} 
+          script: |
+            const prNumber = process.env.PR_NUMBER;
+            if (!prNumber) {
+              core.info('No PR number was passed from the detection job. Skipping.');
+              return;
+            }
+            const { owner, repo } = context.repo;
+            const run_id = context.runId;
+            const { data: artifacts } = await github.rest.actions.listWorkflowRunArtifacts({ owner, repo, run_id });
+            const logArtifacts = artifacts.artifacts.filter(a => a.name.startsWith('logs-'));
+            const { data: comments } = await github.rest.issues.listComments({ owner, repo, issue_number: prNumber });
+            
+            // The botLogin is 'github-actions' when using GITHUB_TOKEN
+            // You should filter comments by user.login for robustness
+            const botLogin = 'github-actions[bot]'; 
+            const existing = comments.find(c => c.user.login === 'github-actions[bot]' && c.body && c.body.includes('**Download Error logs:**'));
+            
+            if (logArtifacts.length > 0) {
+              let body = '🔗 **Download Error logs:**\n\n';
+              for (const artifact of logArtifacts) {
+                const url = `https://github.com/${owner}/${repo}/actions/runs/${run_id}/artifacts/${artifact.id}`;
+                const openParenIndex = artifact.name.indexOf('(');
+                let displayName;
+                if (openParenIndex !== -1) {
+                  displayName = artifact.name.substring(0, openParenIndex);
+                } else {
+                  displayName = artifact.name.replace(/^logs-/, ''); 
+                }
+                displayName = displayName.trim();
+
+                body += `- [${displayName}](${url})\n`;
+              }
+              if (existing) {
+                await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+                core.info(`Updated existing comment in PR #${prNumber}.`);
+              } else {
+                await github.rest.issues.createComment({ owner, repo, issue_number: prNumber, body });
+                core.info(`Posted new comment in PR #${prNumber}.`);
+              }
+            } else if (existing) {
+              await github.rest.issues.deleteComment({ owner, repo, comment_id: existing.id });
+              core.info(`Deleted previous failure comment in PR #${prNumber} as all tests now pass.`);
+            } else {
+              core.info('No failures found and no existing comment to delete.');
+            }
+
