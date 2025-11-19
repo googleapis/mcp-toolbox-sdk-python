@@ -57,7 +57,24 @@ class _McpHttpTransportBase(ITransport, ABC):
         return self._mcp_base_url
 
     def _convert_tool_schema(self, tool_data: dict) -> ToolSchema:
-        """Converts a raw MCP tool dictionary into the Toolbox ToolSchema."""
+        """
+        Safely converts the raw tool dictionary from the server into a ToolSchema object,
+        robustly handling optional authentication metadata.
+        """
+        param_auth = None
+        invoke_auth = []
+
+        if "_meta" in tool_data and isinstance(tool_data["_meta"], dict):
+            meta = tool_data["_meta"]
+            if "toolbox/authParam" in meta and isinstance(
+                meta["toolbox/authParam"], dict
+            ):
+                param_auth = meta["toolbox/authParam"]
+            if "toolbox/authInvoke" in meta and isinstance(
+                meta["toolbox/authInvoke"], list
+            ):
+                invoke_auth = meta["toolbox/authInvoke"]
+
         parameters = []
         input_schema = tool_data.get("inputSchema", {})
         properties = input_schema.get("properties", {})
@@ -71,6 +88,10 @@ class _McpHttpTransportBase(ITransport, ABC):
                 )
             else:
                 additional_props = True
+            if param_auth and name in param_auth:
+                auth_sources = param_auth[name]
+            else:
+                auth_sources = None
             parameters.append(
                 ParameterSchema(
                     name=name,
@@ -78,11 +99,14 @@ class _McpHttpTransportBase(ITransport, ABC):
                     description=schema.get("description", ""),
                     required=name in required,
                     additionalProperties=additional_props,
+                    authSources=auth_sources,
                 )
             )
 
         return ToolSchema(
-            description=tool_data.get("description") or "", parameters=parameters
+            description=tool_data["description"],
+            parameters=parameters,
+            authRequired=invoke_auth,
         )
 
     async def close(self):
