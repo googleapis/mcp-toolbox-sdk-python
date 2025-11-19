@@ -13,7 +13,6 @@
 # limitations under the License.
 
 from unittest.mock import AsyncMock, Mock, patch
-
 import pytest
 import pytest_asyncio
 from aiohttp import ClientSession
@@ -37,7 +36,6 @@ def create_fake_tools_list_result():
             )
         ]
     )
-
 
 @pytest_asyncio.fixture
 async def transport():
@@ -166,6 +164,12 @@ class TestMcpHttpTransportV20241105:
         ]
 
         await transport._initialize_session()
+        
+        assert transport._server_version == "1.0"
+        assert mock_send.call_count == 2
+        init_call = mock_send.call_args_list[0]
+        assert init_call.kwargs['method'] == "initialize"
+        assert init_call.kwargs['params']['protocolVersion'] == "2024-11-05"
 
         assert transport._server_version == "1.0"
         assert mock_send.call_count == 2
@@ -226,10 +230,8 @@ class TestMcpHttpTransportV20241105:
         """Test listing tools with a specific toolset name updates the URL."""
         mocker.patch.object(transport, "_ensure_initialized", new_callable=AsyncMock)
         mocker.patch.object(
-            transport,
-            "_send_request",
-            new_callable=AsyncMock,
-            return_value=create_fake_tools_list_result(),
+            transport, "_send_request", new_callable=AsyncMock,
+            return_value=create_fake_tools_list_result()
         )
         transport._server_version = "1.0.0"
 
