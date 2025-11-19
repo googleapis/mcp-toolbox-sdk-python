@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from unittest.mock import AsyncMock, Mock, patch
+
 import pytest
 import pytest_asyncio
 from aiohttp import ClientSession
@@ -23,7 +24,9 @@ from toolbox_core.protocol import ManifestSchema, Protocol
 
 def create_fake_tools_list_result():
     return {
-        "tools": [{"name": "get_weather", "inputSchema": {"type": "object", "properties": {}}}]
+        "tools": [
+            {"name": "get_weather", "inputSchema": {"type": "object", "properties": {}}}
+        ]
     }
 
 def create_fake_tools_list_result():

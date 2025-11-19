@@ -23,6 +23,7 @@ from aiohttp import ClientSession
 from toolbox_core.mcp_transport.mcp import _McpHttpTransportBase
 from toolbox_core.protocol import ToolSchema
 
+
 class ConcreteTransport(_McpHttpTransportBase):
     """A concrete class for testing the abstract base class."""
 
@@ -31,10 +32,15 @@ class ConcreteTransport(_McpHttpTransportBase):
 
     async def _send_request(self, *args, **kwargs) -> Any:
         pass
-    
-    async def tools_list(self, *args, **kwargs): pass
-    async def tool_get(self, *args, **kwargs): pass
-    async def tool_invoke(self, *args, **kwargs): pass
+
+    async def tools_list(self, *args, **kwargs):
+        pass
+
+    async def tool_get(self, *args, **kwargs):
+        pass
+
+    async def tool_invoke(self, *args, **kwargs):
+        pass
 
 
 @pytest_asyncio.fixture
@@ -52,6 +58,7 @@ async def transport(mocker):
 
     yield transport_instance
     await transport_instance.close()
+
 
 class TestMcpHttpTransportBase:
     @pytest.mark.asyncio
@@ -110,23 +117,23 @@ class TestMcpHttpTransportBase:
                 "type": "object",
                 "properties": {
                     "arg1": {"type": "string", "description": "Argument 1"},
-                    "arg2": {"type": "integer"}
+                    "arg2": {"type": "integer"},
                 },
-                "required": ["arg1"]
-            }
+                "required": ["arg1"],
+            },
         }
-        
+
         schema = transport._convert_tool_schema(raw_tool)
-        
+
         assert isinstance(schema, ToolSchema)
         assert schema.description == "A test tool"
         assert len(schema.parameters) == 2
-        
+
         p1 = next(p for p in schema.parameters if p.name == "arg1")
         assert p1.type == "string"
         assert p1.description == "Argument 1"
         assert p1.required is True
-        
+
         p2 = next(p for p in schema.parameters if p.name == "arg2")
         assert p2.type == "integer"
         assert p2.required is False
@@ -138,22 +145,19 @@ class TestMcpHttpTransportBase:
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "list_param": {
-                        "type": "array", 
-                        "items": {"type": "string"}
-                    },
+                    "list_param": {"type": "array", "items": {"type": "string"}},
                     "obj_param": {
                         "type": "object",
-                        "additionalProperties": {"type": "integer"}
-                    }
-                }
-            }
+                        "additionalProperties": {"type": "integer"},
+                    },
+                },
+            },
         }
-        
+
         schema = transport._convert_tool_schema(raw_tool)
         p_list = next(p for p in schema.parameters if p.name == "list_param")
         assert p_list.type == "array"
-        
+
         p_obj = next(p for p in schema.parameters if p.name == "obj_param")
         assert p_obj.type == "object"
         assert p_obj.additionalProperties.type == "integer"
