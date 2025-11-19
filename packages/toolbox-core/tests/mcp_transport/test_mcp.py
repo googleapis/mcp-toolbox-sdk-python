@@ -162,6 +162,19 @@ class TestMcpHttpTransportBase:
         assert p_obj.type == "object"
         assert p_obj.additionalProperties.type == "integer"
 
+    def test_convert_tool_schema_with_auth(self, transport):
+        """Test schema conversion with authentication metadata."""
+        tool_data = {
+            "name": "drive_tool",
+            "description": "A tool that requires auth.",
+            "inputSchema": {"type": "object", "properties": {}},
+            "_meta": {
+                "toolbox/authInvoke": ["google"],
+            },
+        }
+        tool_schema = transport._convert_tool_schema(tool_data)
+        assert tool_schema.authRequired == ["google"]
+
     @pytest.mark.asyncio
     async def test_close_managed_session(self, mocker):
         mock_close = mocker.patch("aiohttp.ClientSession.close", new_callable=AsyncMock)
