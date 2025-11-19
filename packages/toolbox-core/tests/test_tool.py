@@ -527,7 +527,9 @@ def test_add_auth_token_getter_unused_token(
             unused_auth_getters[next(iter(unused_auth_getters))],
         )
 
+
 # --- Tests for Parameter Binding ---
+
 
 @pytest.mark.asyncio
 async def test_bind_param_success(
