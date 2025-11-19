@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.5.3](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-langchain-v0.5.2...toolbox-langchain-v0.5.3) (2025-11-18)
+
+
+### Miscellaneous Chores
+
+* **deps:** Updated langchain-core version constraint to support v1 ([#417](https://github.com/googleapis/mcp-toolbox-sdk-python/pull/417))
+* **deps:** Updated dependencies: `aiohttp` to v3.13.0 ([#389](https.github.com/googleapis/mcp-toolbox-sdk-python/issues/389)), `isort` to v7 ([#393](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/393)), `langchain-core` to v1 ([#401](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/401)), `pytest` to v9 ([#416](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/416)), and other non-major Python dependencies ([#378](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/378)), ([#386](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/386)), ([#387](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/387)), ([#427](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/427)).
+* **ci:** Updated the toolbox server version for CI and integration tests ([#388](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/388)), ([#414](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/414)), ([#421](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/421), [#397](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/397)).
+* **ci:** Updated renovate config to disable updates for pillow for py3.9 ([#400](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/400)).
+
 ## [0.5.2](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-langchain-v0.5.1...toolbox-langchain-v0.5.2) (2025-09-22)
 
 

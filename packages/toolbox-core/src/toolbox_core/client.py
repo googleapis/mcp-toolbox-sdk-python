@@ -76,6 +76,7 @@ class ToolboxClient:
         else:
             raise ValueError(f"Unsupported MCP protocol version: {protocol}")
 
+        self.__transport = ToolboxTransport(url, session)
         self.__client_headers = client_headers if client_headers is not None else {}
 
     def __parse_tool(
