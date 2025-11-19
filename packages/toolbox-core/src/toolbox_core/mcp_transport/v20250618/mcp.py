@@ -95,8 +95,6 @@ class McpHttpTransport_v20250618(_McpHttpTransportBase):
             clientInfo=client_info,
         )
         params_dict = params.model_dump(mode="json", by_alias=True)
-        params_dict["processId"] = os.getpid()
-
         await self._perform_initialization_and_negotiation(params_dict)
 
         await self._send_request(
