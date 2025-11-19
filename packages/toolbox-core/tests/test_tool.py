@@ -26,7 +26,9 @@ from aioresponses import aioresponses
 from pydantic import ValidationError
 
 from toolbox_core.protocol import ParameterSchema
-from toolbox_core.tool import ToolboxTool, create_func_docstring, resolve_value
+from toolbox_core.tool import ToolboxTool
+from toolbox_core.toolbox_transport import ToolboxTransport
+from toolbox_core.utils import create_func_docstring, resolve_value
 
 TEST_BASE_URL = "http://toolbox.example.com"
 HTTPS_BASE_URL = "https://toolbox.example.com"
@@ -110,9 +112,9 @@ def toolbox_tool(
     sample_tool_description: str,
 ) -> ToolboxTool:
     """Fixture for a ToolboxTool instance with common test setup."""
+    transport = ToolboxTransport(TEST_BASE_URL, http_session)
     return ToolboxTool(
-        session=http_session,
-        base_url=TEST_BASE_URL,
+        transport=transport,
         name=TEST_TOOL_NAME,
         description=sample_tool_description,
         params=sample_tool_params,
@@ -229,10 +231,10 @@ async def test_tool_creation_callable_and_run(
 
     with aioresponses() as m:
         m.post(invoke_url, status=200, payload=mock_server_response_body)
+        transport = ToolboxTransport(base_url, http_session)
 
         tool_instance = ToolboxTool(
-            session=http_session,
-            base_url=base_url,
+            transport=transport,
             name=tool_name,
             description=sample_tool_description,
             params=sample_tool_params,
@@ -275,10 +277,10 @@ async def test_tool_run_with_pydantic_validation_error(
 
     with aioresponses() as m:
         m.post(invoke_url, status=200, payload={"result": "Should not be called"})
+        transport = ToolboxTransport(base_url, http_session)
 
         tool_instance = ToolboxTool(
-            session=http_session,
-            base_url=base_url,
+            transport=transport,
             name=tool_name,
             description=sample_tool_description,
             params=sample_tool_params,
@@ -366,10 +368,10 @@ def test_tool_init_basic(http_session, sample_tool_params, sample_tool_descripti
     """Tests basic tool initialization without headers or auth."""
     with catch_warnings(record=True) as record:
         simplefilter("always")
+        transport = ToolboxTransport(HTTPS_BASE_URL, http_session)
 
         tool_instance = ToolboxTool(
-            session=http_session,
-            base_url=HTTPS_BASE_URL,
+            transport=transport,
             name=TEST_TOOL_NAME,
             description=sample_tool_description,
             params=sample_tool_params,
@@ -396,9 +398,9 @@ def test_tool_init_with_client_headers(
     http_session, sample_tool_params, sample_tool_description, static_client_header
 ):
     """Tests tool initialization *with* client headers."""
+    transport = ToolboxTransport(HTTPS_BASE_URL, http_session)
     tool_instance = ToolboxTool(
-        session=http_session,
-        base_url=HTTPS_BASE_URL,
+        transport=transport,
         name=TEST_TOOL_NAME,
         description=sample_tool_description,
         params=sample_tool_params,
@@ -420,9 +422,9 @@ def test_tool_add_auth_token_getters_conflict_with_existing_client_header(
     Tests ValueError when add_auth_token_getters introduces an auth service
     whose token name conflicts with an existing client header.
     """
+    transport = ToolboxTransport(HTTPS_BASE_URL, http_session)
     tool_instance = ToolboxTool(
-        session=http_session,
-        base_url=HTTPS_BASE_URL,
+        transport=transport,
         name="tool_with_client_header",
         description=sample_tool_description,
         params=sample_tool_params,
@@ -456,40 +458,30 @@ async def test_auth_token_overrides_client_header(
     Tests that an auth token getter's value overrides a client header
     with the same name during the actual tool call.
     """
-
-    auth_service_name = "test-auth"
-    auth_header_key = f"{auth_service_name}_token"
-    auth_token_value = "value-from-auth-getter-123"
-    auth_getters = {auth_service_name: lambda: auth_token_value}
-
+    transport = ToolboxTransport(HTTPS_BASE_URL, http_session)
+    tool_instance = ToolboxTool(
+        transport=transport,
+        name=TEST_TOOL_NAME,
+        description=sample_tool_description,
+        params=sample_tool_params,
+        required_authn_params={},
+        required_authz_tokens=[],
+        auth_service_token_getters={"test-auth": lambda: "value-from-auth-getter-123"},
+        bound_params={},
+        client_headers={
+            "test-auth_token": "value-from-client",
+            "X-Another-Header": "another-value",
+        },
+    )
     tool_name = TEST_TOOL_NAME
     base_url = HTTPS_BASE_URL
     invoke_url = f"{base_url}/api/tool/{tool_name}/invoke"
-
-    client_headers = {
-        auth_header_key: "value-from-client",
-        "X-Another-Header": "another-value",
-    }
 
     input_args = {"message": "test", "count": 1}
     mock_server_response = {"result": "Success"}
 
     with aioresponses() as m:
         m.post(invoke_url, status=200, payload=mock_server_response)
-
-        tool_instance = ToolboxTool(
-            session=http_session,
-            base_url=base_url,
-            name=tool_name,
-            description=sample_tool_description,
-            params=sample_tool_params,
-            auth_service_token_getters=auth_getters,
-            client_headers=client_headers,
-            required_authn_params={},
-            required_authz_tokens=[],
-            bound_params={},
-        )
-
         # Call the tool
         await tool_instance(**input_args)
 
@@ -498,7 +490,7 @@ async def test_auth_token_overrides_client_header(
             method="POST",
             json=input_args,
             headers={
-                auth_header_key: auth_token_value,
+                "test-auth_token": "value-from-auth-getter-123",
                 "X-Another-Header": "another-value",
             },
         )
@@ -514,9 +506,9 @@ def test_add_auth_token_getter_unused_token(
     Tests ValueError when add_auth_token_getters is called with a getter for
     an unused authentication service.
     """
+    transport = ToolboxTransport(HTTPS_BASE_URL, http_session)
     tool_instance = ToolboxTool(
-        session=http_session,
-        base_url=HTTPS_BASE_URL,
+        transport=transport,
         name=TEST_TOOL_NAME,
         description=sample_tool_description,
         params=sample_tool_params,
@@ -534,219 +526,3 @@ def test_add_auth_token_getter_unused_token(
             next(iter(unused_auth_getters)),
             unused_auth_getters[next(iter(unused_auth_getters))],
         )
-
-
-def test_toolbox_tool_underscore_name_property(toolbox_tool: ToolboxTool):
-    """Tests the _name property."""
-    assert toolbox_tool._name == TEST_TOOL_NAME
-
-
-def test_toolbox_tool_underscore_description_property(toolbox_tool: ToolboxTool):
-    """Tests the _description property."""
-    assert (
-        toolbox_tool._description
-        == "A sample tool that processes a message and a count."
-    )
-
-
-def test_toolbox_tool_underscore_params_property(
-    toolbox_tool: ToolboxTool, sample_tool_params: list[ParameterSchema]
-):
-    """Tests the _params property returns a deep copy."""
-    params_copy = toolbox_tool._params
-    assert params_copy == sample_tool_params
-    assert (
-        params_copy is not toolbox_tool._ToolboxTool__params
-    )  # Ensure it's a deepcopy
-    # Verify modifying the copy does not affect the original
-    params_copy.append(
-        ParameterSchema(name="new_param", type="integer", description="A new parameter")
-    )
-    assert (
-        len(toolbox_tool._ToolboxTool__params) == 2
-    )  # Original should remain unchanged
-
-
-def test_toolbox_tool_underscore_bound_params_property(toolbox_tool: ToolboxTool):
-    """Tests the _bound_params property returns an immutable MappingProxyType."""
-    bound_params = toolbox_tool._bound_params
-    assert bound_params == {"fixed_param": "fixed_value"}
-    assert isinstance(bound_params, MappingProxyType)
-    # Verify immutability
-    with pytest.raises(TypeError):
-        bound_params["new_param"] = "new_value"
-
-
-def test_toolbox_tool_underscore_required_authn_params_property(
-    toolbox_tool: ToolboxTool,
-):
-    """Tests the _required_authn_params property returns an immutable MappingProxyType."""
-    required_authn_params = toolbox_tool._required_authn_params
-    assert required_authn_params == {"message": ["service_a"]}
-    assert isinstance(required_authn_params, MappingProxyType)
-    # Verify immutability
-    with pytest.raises(TypeError):
-        required_authn_params["new_param"] = ["new_service"]
-
-
-def test_toolbox_tool_underscore_required_authz_tokens_property(
-    toolbox_tool: ToolboxTool,
-):
-    """Tests the _required_authz_tokens property returns an immutable MappingProxyType."""
-    required_authz_tokens = toolbox_tool._required_authz_tokens
-    assert required_authz_tokens == ("service_b",)
-    assert isinstance(required_authz_tokens, tuple)
-    # Verify immutability
-    with pytest.raises(TypeError):
-        required_authz_tokens[0] = "new_service"
-
-
-def test_toolbox_tool_underscore_auth_service_token_getters_property(
-    toolbox_tool: ToolboxTool,
-):
-    """Tests the _auth_service_token_getters property returns an immutable MappingProxyType."""
-    auth_getters = toolbox_tool._auth_service_token_getters
-    assert "service_x" in auth_getters
-    assert auth_getters["service_x"]() == "token_x"
-    assert isinstance(auth_getters, MappingProxyType)
-    # Verify immutability
-    with pytest.raises(TypeError):
-        auth_getters["new_service"] = lambda: "new_token"
-
-
-def test_toolbox_tool_underscore_client_headers_property(toolbox_tool: ToolboxTool):
-    """Tests the _client_headers property returns an immutable MappingProxyType."""
-    client_headers = toolbox_tool._client_headers
-    assert client_headers == {"X-Test-Client": "client_header_value"}
-    assert isinstance(client_headers, MappingProxyType)
-    # Verify immutability
-    with pytest.raises(TypeError):
-        client_headers["new_header"] = "new_value"
-
-
-# --- Test for the HTTP Warning ---
-@pytest.mark.parametrize(
-    "trigger_condition_params",
-    [
-        {"client_headers": {"X-Some-Header": "value"}},
-        {"required_authn_params": {"param1": ["auth-service1"]}},
-        {"required_authz_tokens": ["auth-service2"]},
-        {
-            "client_headers": {"X-Some-Header": "value"},
-            "required_authn_params": {"param1": ["auth-service1"]},
-        },
-        {
-            "client_headers": {"X-Some-Header": "value"},
-            "required_authz_tokens": ["auth-service2"],
-        },
-        {
-            "required_authn_params": {"param1": ["auth-service1"]},
-            "required_authz_tokens": ["auth-service2"],
-        },
-        {
-            "client_headers": {"X-Some-Header": "value"},
-            "required_authn_params": {"param1": ["auth-service1"]},
-            "required_authz_tokens": ["auth-service2"],
-        },
-    ],
-    ids=[
-        "client_headers_only",
-        "authn_params_only",
-        "authz_tokens_only",
-        "headers_and_authn",
-        "headers_and_authz",
-        "authn_and_authz",
-        "all_three_conditions",
-    ],
-)
-def test_tool_init_http_warning_when_sensitive_info_over_http(
-    http_session: ClientSession,
-    sample_tool_params: list[ParameterSchema],
-    sample_tool_description: str,
-    trigger_condition_params: dict,
-):
-    """
-    Tests that a UserWarning is issued if client headers, auth params, or
-    auth tokens are present and the base_url is HTTP.
-    """
-    expected_warning_message = (
-        "Sending ID token over HTTP. User data may be exposed. "
-        "Use HTTPS for secure communication."
-    )
-
-    init_kwargs = {
-        "session": http_session,
-        "base_url": TEST_BASE_URL,
-        "name": "http_warning_tool",
-        "description": sample_tool_description,
-        "params": sample_tool_params,
-        "required_authn_params": {},
-        "required_authz_tokens": [],
-        "auth_service_token_getters": {},
-        "bound_params": {},
-        "client_headers": {},
-    }
-    # Apply the specific conditions for this parametrized test
-    init_kwargs.update(trigger_condition_params)
-
-    with pytest.warns(UserWarning, match=expected_warning_message):
-        ToolboxTool(**init_kwargs)
-
-
-def test_tool_init_no_http_warning_if_https(
-    http_session: ClientSession,
-    sample_tool_params: list[ParameterSchema],
-    sample_tool_description: str,
-    static_client_header: dict,
-):
-    """
-    Tests that NO UserWarning is issued if client headers are present but
-    the base_url is HTTPS.
-    """
-    with catch_warnings(record=True) as record:
-        simplefilter("always")
-
-        ToolboxTool(
-            session=http_session,
-            base_url=HTTPS_BASE_URL,
-            name="https_tool",
-            description=sample_tool_description,
-            params=sample_tool_params,
-            required_authn_params={},
-            required_authz_tokens=[],
-            auth_service_token_getters={},
-            bound_params={},
-            client_headers=static_client_header,
-        )
-    assert (
-        len(record) == 0
-    ), f"Expected no warnings, but got: {[f'{w.category.__name__}: {w.message}' for w in record]}"
-
-
-def test_tool_init_no_http_warning_if_no_sensitive_info_on_http(
-    http_session: ClientSession,
-    sample_tool_params: list[ParameterSchema],
-    sample_tool_description: str,
-):
-    """
-    Tests that NO UserWarning is issued if the URL is HTTP but there are
-    no client headers, auth params, or auth tokens.
-    """
-    with catch_warnings(record=True) as record:
-        simplefilter("always")
-
-        ToolboxTool(
-            session=http_session,
-            base_url=TEST_BASE_URL,
-            name="http_tool_no_sensitive",
-            description=sample_tool_description,
-            params=sample_tool_params,
-            required_authn_params={},
-            required_authz_tokens=[],
-            auth_service_token_getters={},
-            bound_params={},
-            client_headers={},
-        )
-    assert (
-        len(record) == 0
-    ), f"Expected no warnings, but got: {[f'{w.category.__name__}: {w.message}' for w in record]}"

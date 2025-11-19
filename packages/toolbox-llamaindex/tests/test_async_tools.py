@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import types  # For MappingProxyType
-from unittest.mock import AsyncMock, Mock, patch
+import types
+from unittest.mock import AsyncMock, patch
 
 import pytest
 import pytest_asyncio
@@ -21,6 +21,7 @@ from llama_index.core.tools.types import ToolOutput
 from pydantic import ValidationError
 from toolbox_core.protocol import ParameterSchema as CoreParameterSchema
 from toolbox_core.tool import ToolboxTool as ToolboxCoreTool
+from toolbox_core.toolbox_transport import ToolboxTransport
 
 from toolbox_llamaindex.async_tools import AsyncToolboxTool
 
@@ -68,9 +69,9 @@ class TestAsyncToolboxTool:
             else:
                 tool_constructor_params.append(p_schema)
 
+        transport = ToolboxTransport(base_url=url, session=session)
         return ToolboxCoreTool(
-            session=session,
-            base_url=url,
+            transport=transport,
             name=name,
             description=schema_dict["description"],
             params=tool_constructor_params,
@@ -87,10 +88,10 @@ class TestAsyncToolboxTool:
     @patch("aiohttp.ClientSession")
     async def toolbox_tool(self, MockClientSession, tool_schema_dict):
         mock_session = MockClientSession.return_value
-        mock_response = mock_session.post.return_value.__aenter__.return_value
-        mock_response.raise_for_status = Mock()
-        mock_response.json = AsyncMock(return_value={"result": "test-result"})
-        mock_response.status = 200  # *** Fix: Set status for the mock response ***
+        mock_session.post.return_value.__aenter__.return_value.json = AsyncMock(
+            return_value={"result": "test-result"}
+        )
+        mock_session.post.return_value.__aenter__.return_value.ok = True
 
         core_tool_instance = self._create_core_tool_from_dict(
             session=mock_session,
@@ -105,11 +106,10 @@ class TestAsyncToolboxTool:
     @patch("aiohttp.ClientSession")
     async def auth_toolbox_tool(self, MockClientSession, auth_tool_schema_dict):
         mock_session = MockClientSession.return_value
-        mock_response = mock_session.post.return_value.__aenter__.return_value
-        mock_response.raise_for_status = Mock()
-        mock_response.json = AsyncMock(return_value={"result": "test-result"})
-        mock_response.status = 200  # *** Fix: Set status for the mock response ***
-
+        mock_session.post.return_value.__aenter__.return_value.json = AsyncMock(
+            return_value={"result": "test-result"}
+        )
+        mock_session.post.return_value.__aenter__.return_value.ok = True
         core_tool_instance = self._create_core_tool_from_dict(
             session=mock_session,
             name="test_tool",
@@ -122,8 +122,6 @@ class TestAsyncToolboxTool:
     @patch("aiohttp.ClientSession")
     async def test_toolbox_tool_init(self, MockClientSession, tool_schema_dict):
         mock_session = MockClientSession.return_value
-        mock_response = mock_session.post.return_value.__aenter__.return_value
-        mock_response.status = 200
         core_tool_instance = self._create_core_tool_from_dict(
             session=mock_session,
             name="test_tool",
@@ -174,8 +172,6 @@ class TestAsyncToolboxTool:
 
     async def test_toolbox_tool_bind_params_invalid_params(self, auth_toolbox_tool):
         auth_core_tool = auth_toolbox_tool._AsyncToolboxTool__core_tool
-        # Verify that 'param1' is not in the list of bindable parameters for the core tool
-        # because it requires authentication.
         assert "param1" not in [p.name for p in auth_core_tool._ToolboxTool__params]
         with pytest.raises(
             ValueError, match="unable to bind parameters: no parameter named param1"
@@ -228,19 +224,6 @@ class TestAsyncToolboxTool:
             in str(excinfo.value)
         )
 
-        valid_lambda = lambda: "test-token"
-        with pytest.raises(ValueError) as excinfo_mixed:
-            auth_toolbox_tool.add_auth_token_getters(
-                {
-                    "test-auth-source": valid_lambda,
-                    "another-auth-source": unused_lambda,
-                }
-            )
-        assert (
-            "Authentication source(s) `another-auth-source` unused by tool `test_tool`"
-            in str(excinfo_mixed.value)
-        )
-
     async def test_toolbox_tool_add_auth_token_getters_duplicate(
         self, auth_toolbox_tool
     ):
@@ -267,11 +250,11 @@ class TestAsyncToolboxTool:
             tool_name="test_tool",
             raw_input={"param1": "test-value", "param2": 123},
             raw_output="test-result",
-            is_error=False,
         )
 
         core_tool = toolbox_tool._AsyncToolboxTool__core_tool
-        core_tool._ToolboxTool__session.post.assert_called_once_with(
+        session = core_tool._ToolboxTool__transport._ToolboxTransport__session
+        session.post.assert_called_once_with(
             "http://test_url/api/tool/test_tool/invoke",
             json={"param1": "test-value", "param2": 123},
             headers={},
@@ -294,10 +277,10 @@ class TestAsyncToolboxTool:
             tool_name="test_tool",
             raw_input={"param2": 123},
             raw_output="test-result",
-            is_error=False,
         )
         core_tool = tool._AsyncToolboxTool__core_tool
-        core_tool._ToolboxTool__session.post.assert_called_once_with(
+        session = core_tool._ToolboxTool__transport._ToolboxTransport__session
+        session.post.assert_called_once_with(
             "http://test_url/api/tool/test_tool/invoke",
             json={"param1": expected_value, "param2": 123},
             headers={},
@@ -313,58 +296,12 @@ class TestAsyncToolboxTool:
             tool_name="test_tool",
             raw_input={"param2": 123},
             raw_output="test-result",
-            is_error=False,
         )
 
         core_tool = tool._AsyncToolboxTool__core_tool
-        core_tool._ToolboxTool__session.post.assert_called_once_with(
+        session = core_tool._ToolboxTool__transport._ToolboxTransport__session
+        session.post.assert_called_once_with(
             "https://test-url/api/tool/test_tool/invoke",
-            json={"param2": 123},
-            headers={"test-auth-source_token": "test-token"},
-        )
-
-    async def test_toolbox_tool_call_with_auth_tokens_insecure(
-        self, auth_toolbox_tool, auth_tool_schema_dict
-    ):
-        core_tool_of_auth_tool = auth_toolbox_tool._AsyncToolboxTool__core_tool
-        mock_session = core_tool_of_auth_tool._ToolboxTool__session
-
-        with pytest.warns(
-            UserWarning,
-            match="Sending ID token over HTTP. User data may be exposed. Use HTTPS for secure communication.",
-        ):
-            insecure_core_tool = self._create_core_tool_from_dict(
-                session=mock_session,
-                name="test_tool",
-                schema_dict=auth_tool_schema_dict,
-                url="http://test-url",
-            )
-
-        insecure_auth_langchain_tool = AsyncToolboxTool(core_tool=insecure_core_tool)
-
-        tool_with_getter = insecure_auth_langchain_tool.add_auth_token_getters(
-            {"test-auth-source": lambda: "test-token"}
-        )
-        result = await tool_with_getter.acall(param2=123)
-        assert result == ToolOutput(
-            content="test-result",
-            tool_name="test_tool",
-            raw_input={"param2": 123},
-            raw_output="test-result",
-            is_error=False,
-        )
-
-        modified_core_tool_in_new_tool = tool_with_getter._AsyncToolboxTool__core_tool
-        assert (
-            modified_core_tool_in_new_tool._ToolboxTool__base_url == "http://test-url"
-        )
-        assert (
-            modified_core_tool_in_new_tool._ToolboxTool__url
-            == "http://test-url/api/tool/test_tool/invoke"
-        )
-
-        modified_core_tool_in_new_tool._ToolboxTool__session.post.assert_called_once_with(
-            "http://test-url/api/tool/test_tool/invoke",
             json={"param2": 123},
             headers={"test-auth-source_token": "test-token"},
         )

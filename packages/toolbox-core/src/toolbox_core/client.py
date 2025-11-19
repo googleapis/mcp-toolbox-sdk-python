@@ -19,8 +19,10 @@ from typing import Any, Awaitable, Callable, Mapping, Optional, Union
 from aiohttp import ClientSession
 from deprecated import deprecated
 
-from .protocol import ManifestSchema, ToolSchema
+from .itransport import ITransport
+from .protocol import ToolSchema
 from .tool import ToolboxTool
+from .toolbox_transport import ToolboxTransport
 from .utils import identify_auth_requirements, resolve_value
 
 
@@ -33,9 +35,7 @@ class ToolboxClient:
     is not provided.
     """
 
-    __base_url: str
-    __session: ClientSession
-    __manage_session: bool
+    __transport: ITransport
 
     def __init__(
         self,
@@ -56,15 +56,8 @@ class ToolboxClient:
                 should typically be managed externally.
             client_headers: Headers to include in each request sent through this client.
         """
-        self.__base_url = url
 
-        # If no aiohttp.ClientSession is provided, make our own
-        self.__manage_session = False
-        if session is None:
-            self.__manage_session = True
-            session = ClientSession()
-        self.__session = session
-
+        self.__transport = ToolboxTransport(url, session)
         self.__client_headers = client_headers if client_headers is not None else {}
 
     def __parse_tool(
@@ -103,8 +96,7 @@ class ToolboxClient:
         )
 
         tool = ToolboxTool(
-            session=self.__session,
-            base_url=self.__base_url,
+            transport=self.__transport,
             name=name,
             description=schema.description,
             # create a read-only values to prevent mutation
@@ -149,8 +141,7 @@ class ToolboxClient:
         If the session was provided externally during initialization, the caller
         is responsible for its lifecycle.
         """
-        if self.__manage_session and not self.__session.closed:
-            await self.__session.close()
+        await self.__transport.close()
 
     async def load_tool(
         self,
@@ -191,16 +182,7 @@ class ToolboxClient:
             for name, val in self.__client_headers.items()
         }
 
-        # request the definition of the tool from the server
-        url = f"{self.__base_url}/api/tool/{name}"
-        async with self.__session.get(url, headers=resolved_headers) as response:
-            if not response.ok:
-                error_text = await response.text()
-                raise RuntimeError(
-                    f"API request failed with status {response.status} ({response.reason}). Server response: {error_text}"
-                )
-            json = await response.json()
-        manifest: ManifestSchema = ManifestSchema(**json)
+        manifest = await self.__transport.tool_get(name, resolved_headers)
 
         # parse the provided definition to a tool
         if name not in manifest.tools:
@@ -274,16 +256,8 @@ class ToolboxClient:
             header_name: await resolve_value(original_headers[header_name])
             for header_name in original_headers
         }
-        # Request the definition of the toolset from the server
-        url = f"{self.__base_url}/api/toolset/{name or ''}"
-        async with self.__session.get(url, headers=resolved_headers) as response:
-            if not response.ok:
-                error_text = await response.text()
-                raise RuntimeError(
-                    f"API request failed with status {response.status} ({response.reason}). Server response: {error_text}"
-                )
-            json = await response.json()
-        manifest: ManifestSchema = ManifestSchema(**json)
+
+        manifest = await self.__transport.tools_list(name, resolved_headers)
 
         tools: list[ToolboxTool] = []
         overall_used_auth_keys: set[str] = set()
