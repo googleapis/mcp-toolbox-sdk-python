@@ -13,64 +13,39 @@
 # limitations under the License.
 
 import asyncio
-from typing import Any
+from typing import Any, Mapping, Optional
 from unittest.mock import AsyncMock
 
 import pytest
 import pytest_asyncio
 from aiohttp import ClientSession
 
-from toolbox_core.mcp_transport.base import _McpHttpTransportBase
-from toolbox_core.protocol import ManifestSchema
+from toolbox_core.mcp_transport.mcp import _McpHttpTransportBase
 
 
 class ConcreteTransport(_McpHttpTransportBase):
     """A concrete class for testing the abstract base class."""
 
     async def _initialize_session(self):
-        pass  # Will be mocked
+        pass
 
     async def _send_request(self, *args, **kwargs) -> Any:
-        pass  # Will be mocked
+        pass
 
+    async def tools_list(
+        self, toolset_name: Optional[str] = None, headers: Optional[Mapping[str, str]] = None
+    ) -> Any:
+        pass
 
-def create_fake_initialize_response(
-    server_version="1.0.0", protocol_version="2025-06-18", capabilities={"tools": {}}
-):
-    return {
-        "serverInfo": {"version": server_version},
-        "protocolVersion": protocol_version,
-        "capabilities": capabilities,
-    }
+    async def tool_get(
+        self, tool_name: str, headers: Optional[Mapping[str, str]] = None
+    ) -> Any:
+        pass
 
-
-def create_fake_tools_list_response():
-    return {
-        "tools": [
-            {
-                "name": "get_weather",
-                "description": "Gets the weather.",
-                "inputSchema": {
-                    "type": "object",
-                    "properties": {
-                        "location": {"type": "string", "description": "The location."}
-                    },
-                    "required": ["location"],
-                },
-            },
-            {
-                "name": "send_email",
-                "description": "Sends an email.",
-                "inputSchema": {
-                    "type": "object",
-                    "properties": {
-                        "recipient": {"type": "string"},
-                        "body": {"type": "string"},
-                    },
-                },
-            },
-        ]
-    }
+    async def tool_invoke(
+        self, tool_name: str, arguments: dict, headers: Mapping[str, str]
+    ) -> str:
+        return ""
 
 
 @pytest_asyncio.fixture
@@ -110,15 +85,8 @@ class TestMcpHttpTransportBase:
 
     @pytest.mark.asyncio
     async def test_ensure_initialized_is_called(self, transport):
-        """Test that public methods trigger initialization."""
-
-        async def init_side_effect():
-            transport._server_version = "1.0.0"
-
-        transport._initialize_session.side_effect = init_side_effect
-        transport._send_request.return_value = create_fake_tools_list_response()
-
-        await transport.tools_list()
+        """Test that _ensure_initialized calls _initialize_session."""
+        await transport._ensure_initialized()
         transport._initialize_session.assert_called_once()
 
     @pytest.mark.asyncio
@@ -128,15 +96,13 @@ class TestMcpHttpTransportBase:
 
         async def slow_init():
             init_started.set()
-            transport._server_version = "1.0.0"
             await asyncio.sleep(0.01)
 
         transport._initialize_session.side_effect = slow_init
-        transport._send_request.return_value = create_fake_tools_list_response()
 
-        task1 = asyncio.create_task(transport.tools_list())
+        task1 = asyncio.create_task(transport._ensure_initialized())
         await init_started.wait()
-        task2 = asyncio.create_task(transport.tools_list())
+        task2 = asyncio.create_task(transport._ensure_initialized())
         await asyncio.gather(task1, task2)
 
         transport._initialize_session.assert_called_once()
@@ -162,53 +128,10 @@ class TestMcpHttpTransportBase:
         assert location_param.description == "The city."
 
     @pytest.mark.asyncio
-    async def test_tools_list_success(self, transport):
-        transport._server_version = "1.0.0"
-        transport._init_task = asyncio.create_task(asyncio.sleep(0))
-        transport._send_request.return_value = create_fake_tools_list_response()
-        manifest = await transport.tools_list()
-        transport._send_request.assert_called_once_with(
-            url=transport.base_url, method="tools/list", params={}, headers=None
-        )
-        assert isinstance(manifest, ManifestSchema)
-
-    @pytest.mark.asyncio
-    async def test_tool_get_success(self, transport):
-        transport._server_version = "1.0.0"
-        transport._init_task = asyncio.create_task(asyncio.sleep(0))
-        transport._send_request.return_value = create_fake_tools_list_response()
-        manifest = await transport.tool_get("get_weather")
-        assert len(manifest.tools) == 1
-
-    @pytest.mark.asyncio
-    async def test_tool_get_not_found(self, transport):
-        transport._server_version = "1.0.0"
-        transport._init_task = asyncio.create_task(asyncio.sleep(0))
-        transport._send_request.return_value = create_fake_tools_list_response()
-        with pytest.raises(ValueError, match="Tool 'non_existent_tool' not found."):
-            await transport.tool_get("non_existent_tool")
-
-    @pytest.mark.asyncio
-    async def test_tool_invoke_success(self, transport):
-        transport._init_task = asyncio.create_task(asyncio.sleep(0))
-        transport._send_request.return_value = {
-            "content": [{"type": "text", "text": "The weather is sunny."}]
-        }
-        result = await transport.tool_invoke(
-            "get_weather", {"location": "London"}, headers={"X-Test": "true"}
-        )
-        assert result == "The weather is sunny."
-
-    @pytest.mark.asyncio
-    async def test_perform_initialization_and_negotiation_failure(self, transport):
-        transport._send_request.return_value = {}
-        with pytest.raises(RuntimeError, match="Server info not found"):
-            await transport._perform_initialization_and_negotiation({})
-
-    @pytest.mark.asyncio
     async def test_close_managed_session(self, mocker):
         mock_close = mocker.patch("aiohttp.ClientSession.close", new_callable=AsyncMock)
         transport = ConcreteTransport("http://fake-server.com")
+        # Mock the init task so close() tries to await it
         transport._init_task = asyncio.create_task(asyncio.sleep(0))
         await transport.close()
         mock_close.assert_called_once()

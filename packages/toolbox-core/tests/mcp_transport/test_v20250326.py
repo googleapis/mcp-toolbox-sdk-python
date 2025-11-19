@@ -1,4 +1,3 @@
-# test_v20250326.py
 # Copyright 2025 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,7 +18,8 @@ import pytest
 import pytest_asyncio
 from aiohttp import ClientSession
 
-from toolbox_core.mcp_transport.v20250326 import McpHttpTransport_v20250326
+from toolbox_core.mcp_transport.v20250326.mcp import McpHttpTransport_v20250326
+from toolbox_core.protocol import Protocol, ManifestSchema
 
 
 @pytest_asyncio.fixture
@@ -27,7 +27,7 @@ async def transport():
     """Creates a transport instance with a mocked session."""
     mock_session = AsyncMock(spec=ClientSession)
     transport_instance = McpHttpTransport_v20250326(
-        "http://fake-server.com", session=mock_session
+        "http://fake-server.com", session=mock_session, protocol=Protocol.MCP_v20250326
     )
     transport_instance._session = mock_session
     yield transport_instance
@@ -44,7 +44,9 @@ class TestMcpHttpTransport_v20250326:
         mock_response.ok = True
         mock_response.content = Mock()
         mock_response.content.at_eof.return_value = False
-        mock_response.json = AsyncMock(return_value={"result": "success"})
+        mock_response.json = AsyncMock(return_value={
+            "jsonrpc": "2.0", "id": "1", "result": {"status": "success"}
+        })
 
         await transport._send_request(
             "http://fake-server.com/mcp/", "test/method", {"param1": "value1"}
@@ -53,7 +55,7 @@ class TestMcpHttpTransport_v20250326:
         call_args = transport._session.post.call_args
         assert call_args.kwargs["json"]["params"]["Mcp-Session-Id"] == "test-session-id"
 
-    @patch("toolbox_core.mcp_transport.v20250326.version")
+    @patch("toolbox_core.mcp_transport.v20250326.mcp.version")
     async def test_initialize_session_success(self, mock_version, transport, mocker):
         """Test successful session initialization and session ID handling."""
         mock_version.__version__ = "1.2.3"
@@ -94,3 +96,15 @@ class TestMcpHttpTransport_v20250326:
             await transport._initialize_session()
 
         transport.close.assert_called_once()
+
+    async def test_tools_list_success(self, transport, mocker):
+        """Test listing tools works for this version."""
+        mocker.patch.object(transport, "_ensure_initialized", new_callable=AsyncMock)
+        mocker.patch.object(
+            transport, "_send_request", new_callable=AsyncMock, 
+            return_value={"tools": []}
+        )
+        transport._server_version = "1.0.0"
+        
+        manifest = await transport.tools_list()
+        assert isinstance(manifest, ManifestSchema)
