@@ -36,17 +36,12 @@ class McpHttpTransport_v20241105(_McpHttpTransportBase):
         req_headers = dict(headers or {})
         if method.startswith("notifications/"):
             notification = types.JSONRPCNotification(
-                jsonrpc="2.0",
-                method=method,
-                params=params
+                jsonrpc="2.0", method=method, params=params
             )
             payload = notification.model_dump(mode="json", exclude_none=True)
         else:
             request = types.JSONRPCRequest(
-                jsonrpc="2.0",
-                id=str(uuid.uuid4()),
-                method=method,
-                params=params
+                jsonrpc="2.0", id=str(uuid.uuid4()), method=method, params=params
             )
             payload = request.model_dump(mode="json", exclude_none=True)
 
@@ -89,7 +84,7 @@ class McpHttpTransport_v20241105(_McpHttpTransportBase):
             name="toolbox-python-sdk", version=version.__version__
         )
         capabilities = types.ClientCapabilities()
-        
+
         params = types.InitializeRequestParams(
             protocolVersion=self._protocol_version,
             capabilities=capabilities,
@@ -112,16 +107,18 @@ class McpHttpTransport_v20241105(_McpHttpTransportBase):
         initialize_result_dict = await self._send_request(
             url=self._mcp_base_url, method="initialize", params=params, headers=headers
         )
-        
+
         try:
-            initialize_result = types.InitializeResult.model_validate(initialize_result_dict)
+            initialize_result = types.InitializeResult.model_validate(
+                initialize_result_dict
+            )
         except Exception as e:
-             raise RuntimeError(f"Failed to parse initialize response: {e}")
+            raise RuntimeError(f"Failed to parse initialize response: {e}")
 
         self._server_version = initialize_result.serverInfo.version
 
         if initialize_result.protocolVersion != self._protocol_version:
-             raise RuntimeError(
+            raise RuntimeError(
                 "MCP version mismatch: client does not support server version"
                 f" {initialize_result.protocolVersion}"
             )
@@ -130,7 +127,7 @@ class McpHttpTransport_v20241105(_McpHttpTransportBase):
             if self._manage_session:
                 await self.close()
             raise RuntimeError("Server does not support the 'tools' capability.")
-            
+
         return initialize_result_dict
 
     async def _list_tools(
@@ -143,7 +140,7 @@ class McpHttpTransport_v20241105(_McpHttpTransportBase):
             url = self._mcp_base_url + toolset_name
         else:
             url = self._mcp_base_url
-            
+
         result_dict = await self._send_request(
             url=url, method="tools/list", params={}, headers=headers
         )
@@ -160,7 +157,7 @@ class McpHttpTransport_v20241105(_McpHttpTransportBase):
             raise RuntimeError("Server version not available.")
 
         result = await self._list_tools(toolset_name, headers)
-        
+
         tools_map = {}
         for tool in result.tools:
             tool_dict = tool.model_dump(mode="json", by_alias=True)
@@ -177,7 +174,7 @@ class McpHttpTransport_v20241105(_McpHttpTransportBase):
         """Gets a single tool from the server by listing all and filtering."""
         await self._ensure_initialized()
         if self._server_version is None:
-             raise RuntimeError("Server version not available.")
+            raise RuntimeError("Server version not available.")
 
         result = await self._list_tools(headers=headers)
         tool_def = None
@@ -186,7 +183,7 @@ class McpHttpTransport_v20241105(_McpHttpTransportBase):
                 tool_dict = tool.model_dump(mode="json", by_alias=True)
                 tool_def = self._convert_tool_schema(tool_dict)
                 break
-        
+
         if tool_def is None:
             raise ValueError(f"Tool '{tool_name}' not found.")
 
@@ -206,12 +203,10 @@ class McpHttpTransport_v20241105(_McpHttpTransportBase):
         result_dict = await self._send_request(
             url=url, method="tools/call", params=params, headers=headers
         )
-        
+
         result = types.CallToolResult.model_validate(result_dict)
-        
+
         content_str = "".join(
-            content.text
-            for content in result.content
-            if content.type == "text"
+            content.text for content in result.content if content.type == "text"
         )
         return content_str or "null"

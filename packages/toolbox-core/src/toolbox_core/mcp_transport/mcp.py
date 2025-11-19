@@ -26,6 +26,7 @@ from ..protocol import (
     ToolSchema,
 )
 
+
 class _McpHttpTransportBase(ITransport, ABC):
     """Base transport for MCP protocols."""
 
@@ -54,7 +55,7 @@ class _McpHttpTransportBase(ITransport, ABC):
     @property
     def base_url(self) -> str:
         return self._mcp_base_url
-    
+
     def _convert_tool_schema(self, tool_data: dict) -> ToolSchema:
         """Converts a raw MCP tool dictionary into the Toolbox ToolSchema."""
         parameters = []
@@ -81,8 +82,7 @@ class _McpHttpTransportBase(ITransport, ABC):
             )
 
         return ToolSchema(
-            description=tool_data.get("description") or "",
-            parameters=parameters
+            description=tool_data.get("description") or "", parameters=parameters
         )
 
     async def close(self):

@@ -50,7 +50,10 @@ class McpHttpTransport_v20250326(_McpHttpTransportBase):
             payload = notification.model_dump(mode="json", exclude_none=True)
         else:
             request = types.JSONRPCRequest(
-                jsonrpc="2.0", id=str(uuid.uuid4()), method=method, params=request_params
+                jsonrpc="2.0",
+                id=str(uuid.uuid4()),
+                method=method,
+                params=request_params,
             )
             payload = request.model_dump(mode="json", exclude_none=True)
 

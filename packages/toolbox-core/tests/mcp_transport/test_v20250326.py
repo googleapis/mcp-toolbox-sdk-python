@@ -19,7 +19,7 @@ import pytest_asyncio
 from aiohttp import ClientSession
 
 from toolbox_core.mcp_transport.v20250326.mcp import McpHttpTransport_v20250326
-from toolbox_core.protocol import Protocol, ManifestSchema
+from toolbox_core.protocol import ManifestSchema, Protocol
 
 
 @pytest_asyncio.fixture
@@ -44,9 +44,9 @@ class TestMcpHttpTransport_v20250326:
         mock_response.ok = True
         mock_response.content = Mock()
         mock_response.content.at_eof.return_value = False
-        mock_response.json = AsyncMock(return_value={
-            "jsonrpc": "2.0", "id": "1", "result": {"status": "success"}
-        })
+        mock_response.json = AsyncMock(
+            return_value={"jsonrpc": "2.0", "id": "1", "result": {"status": "success"}}
+        )
 
         await transport._send_request(
             "http://fake-server.com/mcp/", "test/method", {"param1": "value1"}
@@ -101,10 +101,12 @@ class TestMcpHttpTransport_v20250326:
         """Test listing tools works for this version."""
         mocker.patch.object(transport, "_ensure_initialized", new_callable=AsyncMock)
         mocker.patch.object(
-            transport, "_send_request", new_callable=AsyncMock, 
-            return_value={"tools": []}
+            transport,
+            "_send_request",
+            new_callable=AsyncMock,
+            return_value={"tools": []},
         )
         transport._server_version = "1.0.0"
-        
+
         manifest = await transport.tools_list()
         assert isinstance(manifest, ManifestSchema)

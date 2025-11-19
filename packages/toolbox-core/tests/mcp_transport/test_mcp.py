@@ -33,7 +33,9 @@ class ConcreteTransport(_McpHttpTransportBase):
         pass
 
     async def tools_list(
-        self, toolset_name: Optional[str] = None, headers: Optional[Mapping[str, str]] = None
+        self,
+        toolset_name: Optional[str] = None,
+        headers: Optional[Mapping[str, str]] = None,
     ) -> Any:
         pass
 

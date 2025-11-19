@@ -31,6 +31,7 @@ class JSONRPCRequest(BaseModel):
 
 class JSONRPCNotification(BaseModel):
     """A notification which does not expect a response (no ID)."""
+
     jsonrpc: Literal["2.0"]
     method: str
     params: dict[str, Any] | None = None

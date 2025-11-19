@@ -19,7 +19,7 @@ import pytest_asyncio
 from aiohttp import ClientSession
 
 from toolbox_core.mcp_transport.v20241105.mcp import McpHttpTransport_v20241105
-from toolbox_core.protocol import Protocol, ManifestSchema
+from toolbox_core.protocol import ManifestSchema, Protocol
 
 
 def create_fake_tools_list_result():
@@ -61,9 +61,9 @@ class TestMcpHttpTransport_v20241105:
         mock_response.status = 200
         mock_response.content = Mock()
         mock_response.content.at_eof.return_value = False
-        mock_response.json = AsyncMock(return_value={
-            "jsonrpc": "2.0", "id": "1", "result": {"status": "success"}
-        })
+        mock_response.json = AsyncMock(
+            return_value={"jsonrpc": "2.0", "id": "1", "result": {"status": "success"}}
+        )
 
         result = await transport._send_request(
             "http://fake-server.com/mcp/", "test/method", {}
@@ -95,7 +95,7 @@ class TestMcpHttpTransport_v20241105:
             return_value={
                 "jsonrpc": "2.0",
                 "id": "1",
-                "error": {"code": -32601, "message": "Method not found"}
+                "error": {"code": -32601, "message": "Method not found"},
             }
         )
 
@@ -127,13 +127,15 @@ class TestMcpHttpTransport_v20241105:
         mocker.patch.object(transport, "_ensure_initialized", new_callable=AsyncMock)
         # Mock _send_request to return the result payload directly
         mocker.patch.object(
-            transport, "_send_request", new_callable=AsyncMock, 
-            return_value=create_fake_tools_list_result()
+            transport,
+            "_send_request",
+            new_callable=AsyncMock,
+            return_value=create_fake_tools_list_result(),
         )
         transport._server_version = "1.0.0"
-        
+
         manifest = await transport.tools_list()
-        
+
         assert isinstance(manifest, ManifestSchema)
         assert "get_weather" in manifest.tools
         transport._send_request.assert_called_with(
@@ -144,9 +146,11 @@ class TestMcpHttpTransport_v20241105:
         """Test invoking a tool."""
         mocker.patch.object(transport, "_ensure_initialized", new_callable=AsyncMock)
         mocker.patch.object(
-            transport, "_send_request", new_callable=AsyncMock,
-            return_value={"content": [{"type": "text", "text": "Sunny"}]}
+            transport,
+            "_send_request",
+            new_callable=AsyncMock,
+            return_value={"content": [{"type": "text", "text": "Sunny"}]},
         )
-        
+
         result = await transport.tool_invoke("get_weather", {"loc": "US"}, {})
         assert result == "Sunny"
