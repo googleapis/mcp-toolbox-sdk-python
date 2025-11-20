@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.3](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v0.5.2...toolbox-core-v0.5.3) (2025-11-18)
+
+
+### Miscellaneous Chores
+
+* **ci:** Updated the toolbox server version for CI and integration tests ([#388](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/388)), ([#414](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/414)), ([#421](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/421), [#395](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/395)).
+* **deps:** Updated dependencies: `aiohttp` to v3.13.0 ([#389](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/389)), `google-auth` to v2.41.1 ([#383](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/383)), `isort` to v7 ([#393](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/393)), `pytest` to v9 ([#416](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/416)), and other non-major Python dependencies ([#386](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/386)), ([#387](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/387)), ([#427](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/427)).
+
 ## [0.5.2](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v0.5.1...toolbox-core-v0.5.2) (2025-09-22)
 
 
