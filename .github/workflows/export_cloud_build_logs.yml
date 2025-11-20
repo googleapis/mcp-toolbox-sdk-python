@@ -47,22 +47,34 @@ jobs:
               'langchain-python-sdk-pr-',
               'llamaindex-python-sdk-pr-',
             ];
-            let pr_number = undefined;
+              let pr_number = undefined;
               const { owner, repo } = context.repo;
               const sha = context.payload.check_suite.head_sha;
               if (context.payload.check_suite && context.payload.check_suite.pull_requests && context.payload.check_suite.pull_requests.length > 0) {
                 pr_number = context.payload.check_suite.pull_requests[0].number;
               }
+              //paginate through all open PRs to find matching head SHA
               if (!pr_number) {
-                const { data: prs } = await github.rest.pulls.list({
-                  owner,
-                  repo,
-                  state: 'open',
-                  per_page: 100
-                });
-                const match = prs.find(pr => pr.head && pr.head.sha === sha);
-                if (match) {
-                  pr_number = match.number;
+                let page = 1;
+                let found = false;
+                while (!found) {
+                  const { data: prs } = await github.rest.pulls.list({
+                    owner,
+                    repo,
+                    state: 'open',
+                    per_page: 100,
+                    page
+                  });
+                  if (!prs || prs.length === 0) {
+                    break;
+                  }
+                  const match = prs.find(pr => pr.head && pr.head.sha === sha);
+                  if (match) {
+                    pr_number = match.number;
+                    found = true;
+                  } else {
+                    page++;
+                  }
                 }
               }
               if (!pr_number) {
