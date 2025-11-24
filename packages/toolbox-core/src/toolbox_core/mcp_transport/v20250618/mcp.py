@@ -18,7 +18,7 @@ from typing import Any, Mapping, Optional
 
 from ... import version
 from ...protocol import ManifestSchema
-from ..mcp import _McpHttpTransportBase
+from ..transport_base import _McpHttpTransportBase
 from . import types
 
 

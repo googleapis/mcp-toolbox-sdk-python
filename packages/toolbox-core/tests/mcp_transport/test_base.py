@@ -20,7 +20,7 @@ import pytest
 import pytest_asyncio
 from aiohttp import ClientSession
 
-from toolbox_core.mcp_transport.mcp import _McpHttpTransportBase
+from toolbox_core.mcp_transport.transport_base import _McpHttpTransportBase
 from toolbox_core.protocol import ToolSchema
 
 
