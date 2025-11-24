@@ -91,20 +91,9 @@ class McpHttpTransportV20241105(_McpHttpTransportBase):
             clientInfo=client_info,
         )
         params_dict = params.model_dump(mode="json", by_alias=True)
-        await self._perform_initialization_and_negotiation(params_dict)
-
-        await self._send_request(
-            url=self._mcp_base_url, method="notifications/initialized", params={}
-        )
-
-    async def _perform_initialization_and_negotiation(
-        self, params: dict, headers: Optional[Mapping[str, str]] = None
-    ) -> Any:
-        """Performs the common initialization and version negotiation logic."""
         initialize_result_dict = await self._send_request(
-            url=self._mcp_base_url, method="initialize", params=params, headers=headers
+            url=self._mcp_base_url, method="initialize", params=params_dict,
         )
-
         try:
             initialize_result = types.InitializeResult.model_validate(
                 initialize_result_dict
@@ -113,19 +102,19 @@ class McpHttpTransportV20241105(_McpHttpTransportBase):
             raise RuntimeError(f"Failed to parse initialize response: {e}")
 
         self._server_version = initialize_result.serverInfo.version
-
         if initialize_result.protocolVersion != self._protocol_version:
             raise RuntimeError(
                 "MCP version mismatch: client does not support server version"
                 f" {initialize_result.protocolVersion}"
             )
-
         if not initialize_result.capabilities.tools:
             if self._manage_session:
                 await self.close()
             raise RuntimeError("Server does not support the 'tools' capability.")
 
-        return initialize_result_dict
+        await self._send_request(
+            url=self._mcp_base_url, method="notifications/initialized", params={}
+        )
 
     async def _list_tools(
         self,

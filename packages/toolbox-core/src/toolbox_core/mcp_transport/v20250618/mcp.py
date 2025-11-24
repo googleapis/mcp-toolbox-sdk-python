@@ -95,18 +95,8 @@ class McpHttpTransportV20250618(_McpHttpTransportBase):
             clientInfo=client_info,
         )
         params_dict = params.model_dump(mode="json", by_alias=True)
-        await self._perform_initialization_and_negotiation(params_dict)
-
-        await self._send_request(
-            url=self._mcp_base_url, method="notifications/initialized", params={}
-        )
-
-    async def _perform_initialization_and_negotiation(
-        self, params: dict, headers: Optional[Mapping[str, str]] = None
-    ) -> Any:
-        """Performs the common initialization and version negotiation logic."""
         initialize_result_dict = await self._send_request(
-            url=self._mcp_base_url, method="initialize", params=params, headers=headers
+            url=self._mcp_base_url, method="initialize", params=params_dict,
         )
 
         try:
@@ -129,7 +119,9 @@ class McpHttpTransportV20250618(_McpHttpTransportBase):
                 await self.close()
             raise RuntimeError("Server does not support the 'tools' capability.")
 
-        return initialize_result_dict
+        await self._send_request(
+            url=self._mcp_base_url, method="notifications/initialized", params={}
+        )
 
     async def _list_tools(
         self,
