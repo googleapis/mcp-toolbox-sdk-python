@@ -25,8 +25,7 @@ class Protocol(str, Enum):
     MCP_v20250618 = "2025-06-18"
     MCP_v20250326 = "2025-03-26"
     MCP_v20241105 = "2024-11-05"
-    MCP_LATEST = MCP_v20250618
-    MCP = MCP_LATEST
+    MCP = MCP_v20250618
 
     @staticmethod
     def get_supported_mcp_versions() -> list[str]:
