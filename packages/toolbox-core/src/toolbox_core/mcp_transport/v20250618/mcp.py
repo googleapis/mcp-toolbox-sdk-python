@@ -96,7 +96,9 @@ class McpHttpTransportV20250618(_McpHttpTransportBase):
         )
         params_dict = params.model_dump(mode="json", by_alias=True)
         initialize_result_dict = await self._send_request(
-            url=self._mcp_base_url, method="initialize", params=params_dict,
+            url=self._mcp_base_url,
+            method="initialize",
+            params=params_dict,
         )
 
         try:
