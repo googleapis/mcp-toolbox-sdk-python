@@ -12,12 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from unittest.mock import AsyncMock, Mock, patch
+import uuid
+from unittest.mock import ANY, AsyncMock, Mock, patch
 
 import pytest
 import pytest_asyncio
 from aiohttp import ClientSession
 
+from toolbox_core.mcp_transport.v20241105 import types
 from toolbox_core.mcp_transport.v20241105.mcp import McpHttpTransportV20241105
 from toolbox_core.protocol import ManifestSchema, Protocol
 
@@ -57,11 +59,9 @@ class TestMcpHttpTransport_v20241105:
         mock_response = AsyncMock()
         mock_response.ok = True
         mock_response.status = 200
-
         mock_content = Mock()
         mock_content.at_eof.return_value = False
         mock_response.content = mock_content
-
         mock_response.json.return_value = {
             "jsonrpc": "2.0",
             "id": "1",
@@ -69,7 +69,9 @@ class TestMcpHttpTransport_v20241105:
         }
         transport._session.post.return_value.__aenter__.return_value = mock_response
 
-        result = await transport._send_request("url", "method", {})
+        req = types.JSONRPCRequest(id="1", method="test_method", params={})
+        result = await transport._send_request(req, "http://fake-url.com")
+
         assert result == {"foo": "bar"}
 
     async def test_send_request_api_error(self, transport):
@@ -79,8 +81,10 @@ class TestMcpHttpTransport_v20241105:
         mock_response.text.return_value = "Error"
         transport._session.post.return_value.__aenter__.return_value = mock_response
 
+        req = types.JSONRPCRequest(id="1", method="test_method", params={})
+
         with pytest.raises(RuntimeError, match="API request failed with status 500"):
-            await transport._send_request("url", "method", {})
+            await transport._send_request(req, "http://fake-url.com")
 
     async def test_send_request_mcp_error(self, transport):
         mock_response = AsyncMock()
@@ -88,7 +92,6 @@ class TestMcpHttpTransport_v20241105:
         mock_response.status = 200
         mock_response.content = Mock()
         mock_response.content.at_eof.return_value = False
-
         mock_response.json.return_value = {
             "jsonrpc": "2.0",
             "id": "1",
@@ -96,8 +99,10 @@ class TestMcpHttpTransport_v20241105:
         }
         transport._session.post.return_value.__aenter__.return_value = mock_response
 
+        req = types.JSONRPCRequest(id="1", method="test_method", params={})
+
         with pytest.raises(RuntimeError, match="MCP request failed"):
-            await transport._send_request("url", "method", {})
+            await transport._send_request(req, "http://fake-url.com")
 
     async def test_send_notification(self, transport):
         mock_response = AsyncMock()
@@ -105,10 +110,13 @@ class TestMcpHttpTransport_v20241105:
         mock_response.status = 204
         transport._session.post.return_value.__aenter__.return_value = mock_response
 
-        await transport._send_request("url", "notifications/test", {})
+        notif = types.JSONRPCNotification(method="notifications/test", params={})
+        await transport._send_request(notif, "http://fake-url.com")
 
         call_kwargs = transport._session.post.call_args.kwargs
         payload = call_kwargs["json"]
+
+        # Verify serialization
         assert "id" not in payload
         assert payload["method"] == "notifications/test"
 
@@ -122,11 +130,13 @@ class TestMcpHttpTransport_v20241105:
         )
 
         mock_send.side_effect = [
+            # Response for InitializeRequest
             {
                 "protocolVersion": "2024-11-05",
                 "capabilities": {"tools": {"listChanged": False}},
                 "serverInfo": {"name": "test", "version": "1.0"},
             },
+            # Response for InitializedNotification (returns None)
             None,
         ]
 
@@ -134,9 +144,15 @@ class TestMcpHttpTransport_v20241105:
 
         assert transport._server_version == "1.0"
         assert mock_send.call_count == 2
+
         init_call = mock_send.call_args_list[0]
-        assert init_call.kwargs["method"] == "initialize"
-        assert init_call.kwargs["params"]["protocolVersion"] == "2024-11-05"
+        # Inspect the 'request' argument (args[0] or kwargs['request'])
+        # Depending on how it's called, it might be a positional arg
+        sent_request = init_call.kwargs.get("request") or init_call.args[0]
+
+        assert isinstance(sent_request, types.InitializeRequest)
+        assert sent_request.method == "initialize"
+        assert sent_request.params.protocolVersion == "2024-11-05"
 
     async def test_initialize_session_protocol_mismatch(self, transport, mocker):
         mocker.patch.object(
@@ -200,11 +216,17 @@ class TestMcpHttpTransport_v20241105:
         manifest = await transport.tools_list(toolset_name="custom_toolset")
 
         assert isinstance(manifest, ManifestSchema)
-        # Verify the toolset name was appended to the base URL
+
+        # Verify _send_request was called with a ListToolsRequest object and the correct URL
         expected_url = transport.base_url + "custom_toolset"
-        transport._send_request.assert_called_with(
-            url=expected_url, method="tools/list", params={}, headers=None
-        )
+
+        call_args = transport._send_request.call_args
+        sent_request = call_args.kwargs.get("request") or call_args.args[0]
+        sent_url = call_args.kwargs.get("url") or call_args.args[1]
+
+        assert isinstance(sent_request, types.ListToolsRequest)
+        assert sent_request.method == "tools/list"
+        assert sent_url == expected_url
 
     async def test_tool_invoke_success(self, transport, mocker):
         mocker.patch.object(transport, "_ensure_initialized", new_callable=AsyncMock)
@@ -217,6 +239,13 @@ class TestMcpHttpTransport_v20241105:
 
         result = await transport.tool_invoke("tool", {}, {})
         assert result == "Result"
+
+        # Verify CallToolRequest was used
+        call_args = transport._send_request.call_args
+        sent_request = call_args.kwargs.get("request") or call_args.args[0]
+
+        assert isinstance(sent_request, types.CallToolRequest)
+        assert sent_request.params.name == "tool"
 
     async def test_tool_get_success(self, transport, mocker):
         mocker.patch.object(transport, "_ensure_initialized", new_callable=AsyncMock)
