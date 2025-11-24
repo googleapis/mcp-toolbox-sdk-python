@@ -22,7 +22,7 @@ from ..mcp import _McpHttpTransportBase
 from . import types
 
 
-class McpHttpTransport_v20250618(_McpHttpTransportBase):
+class McpHttpTransportV20250618(_McpHttpTransportBase):
     """Transport for the MCP v2025-06-18 protocol."""
 
     async def _send_request(

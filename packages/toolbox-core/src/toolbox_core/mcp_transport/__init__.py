@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .v20241105.mcp import McpHttpTransport_v20241105
-from .v20250326.mcp import McpHttpTransport_v20250326
-from .v20250618.mcp import McpHttpTransport_v20250618
+from .v20241105.mcp import McpHttpTransportV20241105
+from .v20250326.mcp import McpHttpTransportV20250326
+from .v20250618.mcp import McpHttpTransportV20250618
 
 __all__ = [
-    "McpHttpTransport_v20241105",
-    "McpHttpTransport_v20250326",
-    "McpHttpTransport_v20250618",
+    "McpHttpTransportV20241105",
+    "McpHttpTransportV20250326",
+    "McpHttpTransportV20250618",
 ]

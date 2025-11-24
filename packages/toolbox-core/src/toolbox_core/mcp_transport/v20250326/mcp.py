@@ -22,7 +22,7 @@ from ..mcp import _McpHttpTransportBase
 from . import types
 
 
-class McpHttpTransport_v20250326(_McpHttpTransportBase):
+class McpHttpTransportV20250326(_McpHttpTransportBase):
     """Transport for the MCP v2025-03-26 protocol."""
 
     def __init__(self, *args, **kwargs):

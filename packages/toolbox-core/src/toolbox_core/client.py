@@ -21,9 +21,9 @@ from deprecated import deprecated
 
 from .itransport import ITransport
 from .mcp_transport import (
-    McpHttpTransport_v20241105,
-    McpHttpTransport_v20250326,
-    McpHttpTransport_v20250618,
+    McpHttpTransportV20241105,
+    McpHttpTransportV20250326,
+    McpHttpTransportV20250618,
 )
 from .protocol import Protocol, ToolSchema
 from .tool import ToolboxTool
@@ -68,11 +68,11 @@ class ToolboxClient:
             self.__transport = ToolboxTransport(url, session)
         elif protocol in Protocol.get_supported_mcp_versions():
             if protocol == Protocol.MCP_v20250618:
-                self.__transport = McpHttpTransport_v20250618(url, session, protocol)
+                self.__transport = McpHttpTransportV20250618(url, session, protocol)
             elif protocol == Protocol.MCP_v20250326:
-                self.__transport = McpHttpTransport_v20250326(url, session, protocol)
+                self.__transport = McpHttpTransportV20250326(url, session, protocol)
             elif protocol == Protocol.MCP_v20241105:
-                self.__transport = McpHttpTransport_v20241105(url, session, protocol)
+                self.__transport = McpHttpTransportV20241105(url, session, protocol)
         else:
             raise ValueError(f"Unsupported MCP protocol version: {protocol}")
 
