@@ -34,11 +34,34 @@ jobs:
     outputs:
       failure_detected: ${{ steps.detect_failures.outputs.failure_detected }}
       failed_checks: ${{ steps.detect_failures.outputs.failed_checks }}
-      pr_number: ${{ steps.detect_failures.outputs.pr_number }}
+      pr_number: ${{ steps.detect_pr_number.outputs.pr_number }}
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install GitHub CLI
+        run: sudo apt-get update && sudo apt-get install -y gh
+
+      - name: Detect PR number using gh CLI
+        id: detect_pr_number
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_NUMBER=$(gh pr list --search "${{ github.event.check_suite.head_sha }}" --state open --json number --jq '.[0].number')
+          if [ -z "$PR_NUMBER" ]; then
+            echo "No associated PR found."
+            echo "failure_detected=false" >> $GITHUB_OUTPUT
+            exit 0
+          else
+            echo "PR Number is $PR_NUMBER"
+            echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+          fi
+
       - name: Detect all failed Cloud Build checks
         id: detect_failures
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        uses: actions/github-script@v8
+        env:
+          PR_NUMBER: ${{ steps.detect_pr_number.outputs.pr_number }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -47,57 +70,27 @@ jobs:
               'langchain-python-sdk-pr-',
               'llamaindex-python-sdk-pr-',
             ];
-              let pr_number = undefined;
-              const { owner, repo } = context.repo;
-              const sha = context.payload.check_suite.head_sha;
-              if (context.payload.check_suite && context.payload.check_suite.pull_requests && context.payload.check_suite.pull_requests.length > 0) {
-                pr_number = context.payload.check_suite.pull_requests[0].number;
-              }
-              //paginate through all open PRs to find matching head SHA
-              if (!pr_number) {
-                let page = 1;
-                let found = false;
-                while (!found) {
-                  const { data: prs } = await github.rest.pulls.list({
-                    owner,
-                    repo,
-                    state: 'open',
-                    per_page: 100,
-                    page
-                  });
-                  if (!prs || prs.length === 0) {
-                    break;
-                  }
-                  const match = prs.find(pr => pr.head && pr.head.sha === sha);
-                  if (match) {
-                    pr_number = match.number;
-                    found = true;
-                  } else {
-                    page++;
-                  }
-                }
-              }
-              if (!pr_number) {
-                core.info('No PR found for this check suite or commit. Skipping.');
-                core.setOutput('failure_detected', 'false');
-                return;
-              }
-              core.setOutput('pr_number', pr_number.toString());
-              const { data: checks } = await github.rest.checks.listForRef({ owner, repo, ref: sha, per_page: 100 });
+            const pr_number = process.env.PR_NUMBER;
+            if (!pr_number) {
+              core.setOutput('failure_detected', 'false');
+              return;
+            }
+            const { owner, repo } = context.repo;
+            const sha = context.payload.check_suite.head_sha;
+            const { data: checks } = await github.rest.checks.listForRef({ owner, repo, ref: sha, per_page: 100 });
             const failed = checks.check_runs.filter(
-            c =>
+              c =>
                 prefixes.some(prefix => c.name.startsWith(prefix)) &&
                 c.status === 'completed' &&
                 c.conclusion === 'failure'
             );
             if (failed.length === 0) {
-            core.info('No failed Cloud Build checks detected.');
-            core.setOutput('failure_detected', 'false');
-            return;
+              core.setOutput('failure_detected', 'false');
+              return;
             }
-            core.info(`Detected ${failed.length} failed build(s).`);
             core.setOutput('failure_detected', 'true');
             core.setOutput('failed_checks', JSON.stringify(failed.map(f => ({ name: f.name, id: f.id, html_url: f.html_url, details_url: f.details_url, external_id: f.external_id || '' }))));
+            core.setOutput('pr_number', pr_number);
   
   process-failed-builds:
     needs: detect-build-failure
@@ -204,4 +197,3 @@ jobs:
             } else {
               core.info('No failures found and no existing comment to delete.');
             }
-
