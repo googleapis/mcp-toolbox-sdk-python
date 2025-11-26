@@ -37,7 +37,7 @@ jobs:
       pr_number: ${{ steps.detect_pr_number.outputs.pr_number }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6
 
       - name: Install GitHub CLI
         run: sudo apt-get update && sudo apt-get install -y gh
