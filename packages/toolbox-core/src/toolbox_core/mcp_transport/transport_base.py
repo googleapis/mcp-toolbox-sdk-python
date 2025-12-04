@@ -100,3 +100,14 @@ class _McpHttpTransportBase(ITransport, ABC):
     async def _initialize_session(self):
         """Initializes the MCP session."""
         pass
+
+    @abstractmethod
+    async def _send_request(
+        self,
+        url: str,
+        method: str,
+        params: dict,
+        headers: Optional[Mapping[str, str]] = None,
+    ) -> Any:
+        """Sends a JSON-RPC request to the MCP server."""
+        pass

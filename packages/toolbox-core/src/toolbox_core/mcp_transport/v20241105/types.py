@@ -14,39 +14,28 @@
 
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 
 class RequestParams(BaseModel):
     model_config = ConfigDict(extra="allow")
 
 
-class ClientRequest(BaseModel):
-    jsonrpc: Literal["2.0"] = "2.0"
-    id: str | int | None = None
+class JSONRPCRequest(BaseModel):
+    jsonrpc: Literal["2.0"]
+    id: str | int
     method: str
-    params: Any | None = None
+    params: dict[str, Any] | None = None
     model_config = ConfigDict(extra="allow")
 
 
-class ClientNotification(BaseModel):
-    jsonrpc: Literal["2.0"] = "2.0"
+class JSONRPCNotification(BaseModel):
+    """A notification which does not expect a response (no ID)."""
+
+    jsonrpc: Literal["2.0"]
     method: str
-    params: Any | None = None
+    params: dict[str, Any] | None = None
     model_config = ConfigDict(extra="allow")
-
-
-class JSONRPCRequest(ClientRequest):
-    """Generic request wrapper."""
-
-    # id, method, params inherited from ClientRequest
-    pass
-
-
-class JSONRPCNotification(ClientNotification):
-    """Generic notification wrapper."""
-
-    pass
 
 
 class JSONRPCResponse(BaseModel):
@@ -65,7 +54,7 @@ class ErrorData(BaseModel):
 
 class JSONRPCError(BaseModel):
     jsonrpc: Literal["2.0"]
-    id: str | int | None = None
+    id: str | int
     error: ErrorData
     model_config = ConfigDict(extra="allow")
 
@@ -89,32 +78,6 @@ class InitializeRequestParams(RequestParams):
     capabilities: ClientCapabilities
     clientInfo: Implementation
     model_config = ConfigDict(extra="allow")
-
-
-class InitializeRequest(ClientRequest):
-    method: Literal["initialize"] = "initialize"
-    params: InitializeRequestParams
-
-
-class ListToolsRequest(ClientRequest):
-    method: Literal["tools/list"] = "tools/list"
-    params: dict[str, Any] = Field(default_factory=dict)
-
-
-class CallToolRequestParams(BaseModel):
-    name: str
-    arguments: dict[str, Any]
-    model_config = ConfigDict(extra="allow")
-
-
-class CallToolRequest(ClientRequest):
-    method: Literal["tools/call"] = "tools/call"
-    params: CallToolRequestParams
-
-
-class InitializedNotification(ClientNotification):
-    method: Literal["notifications/initialized"] = "notifications/initialized"
-    params: dict[str, Any] = Field(default_factory=dict)
 
 
 class ServerCapabilities(BaseModel):

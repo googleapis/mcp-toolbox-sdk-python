@@ -12,8 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import uuid
-from typing import Any, Mapping, Optional, Union
+from typing import Any, Mapping, Optional
 
 from ... import version
 from ...protocol import ManifestSchema
@@ -26,30 +27,23 @@ class McpHttpTransportV20241105(_McpHttpTransportBase):
 
     async def _send_request(
         self,
-        request: Union[types.ClientRequest, types.ClientNotification],
         url: str,
+        method: str,
+        params: dict,
         headers: Optional[Mapping[str, str]] = None,
     ) -> Any:
-        """
-        Sends a typed MCP request or notification to the server.
-        Uses Pydantic model dumping instead of manual dict construction.
-        """
+        """Sends a JSON-RPC request to the MCP server."""
         req_headers = dict(headers or {})
-
-        # Ensure JSON-RPC required fields are present
-        # We check types explicitly to handle IDs correctly
-        if isinstance(request, types.ClientRequest):
-            # Requests must have an ID
-            if not request.id:
-                request.id = str(uuid.uuid4())
-            request.jsonrpc = "2.0"
-
-        elif isinstance(request, types.ClientNotification):
-            # Notifications do not have an ID
-            request.jsonrpc = "2.0"
-
-        # Serialize the Pydantic model
-        payload = request.model_dump(mode="json", exclude_none=True)
+        if method.startswith("notifications/"):
+            notification = types.JSONRPCNotification(
+                jsonrpc="2.0", method=method, params=params
+            )
+            payload = notification.model_dump(mode="json", exclude_none=True)
+        else:
+            request = types.JSONRPCRequest(
+                jsonrpc="2.0", id=str(uuid.uuid4()), method=method, params=params
+            )
+            payload = request.model_dump(mode="json", exclude_none=True)
 
         async with self._session.post(
             url, json=payload, headers=req_headers
@@ -85,25 +79,23 @@ class McpHttpTransportV20241105(_McpHttpTransportBase):
                 raise RuntimeError(f"Failed to parse JSON-RPC response: {e}")
 
     async def _initialize_session(self):
-        """Initializes the MCP session using typed InitializeRequest."""
+        """Initializes the MCP session."""
         client_info = types.Implementation(
             name="toolbox-python-sdk", version=version.__version__
         )
         capabilities = types.ClientCapabilities()
 
-        init_request = types.InitializeRequest(
-            params=types.InitializeRequestParams(
-                protocolVersion=self._protocol_version,
-                capabilities=capabilities,
-                clientInfo=client_info,
-            )
+        params = types.InitializeRequestParams(
+            protocolVersion=self._protocol_version,
+            capabilities=capabilities,
+            clientInfo=client_info,
         )
-
+        params_dict = params.model_dump(mode="json", by_alias=True)
         initialize_result_dict = await self._send_request(
-            request=init_request,
             url=self._mcp_base_url,
+            method="initialize",
+            params=params_dict,
         )
-
         try:
             initialize_result = types.InitializeResult.model_validate(
                 initialize_result_dict
@@ -122,24 +114,23 @@ class McpHttpTransportV20241105(_McpHttpTransportBase):
                 await self.close()
             raise RuntimeError("Server does not support the 'tools' capability.")
 
-        notify_initialized = types.InitializedNotification(params={})
-        await self._send_request(request=notify_initialized, url=self._mcp_base_url)
+        await self._send_request(
+            url=self._mcp_base_url, method="notifications/initialized", params={}
+        )
 
     async def _list_tools(
         self,
         toolset_name: Optional[str] = None,
         headers: Optional[Mapping[str, str]] = None,
     ) -> types.ListToolsResult:
-        """Private helper to fetch the raw tool list using ListToolsRequest."""
+        """Private helper to fetch the raw tool list from the server."""
         if toolset_name:
             url = self._mcp_base_url + toolset_name
         else:
             url = self._mcp_base_url
 
-        list_req = types.ListToolsRequest(params={})
-
         result_dict = await self._send_request(
-            request=list_req, url=url, headers=headers
+            url=url, method="tools/list", params={}, headers=headers
         )
         return types.ListToolsResult.model_validate(result_dict)
 
@@ -192,17 +183,13 @@ class McpHttpTransportV20241105(_McpHttpTransportBase):
     async def tool_invoke(
         self, tool_name: str, arguments: dict, headers: Optional[Mapping[str, str]]
     ) -> str:
-        """Invokes a specific tool using CallToolRequest."""
+        """Invokes a specific tool on the server using the MCP protocol."""
         await self._ensure_initialized()
 
         url = self._mcp_base_url
-
-        call_req = types.CallToolRequest(
-            params=types.CallToolRequestParams(name=tool_name, arguments=arguments)
-        )
-
+        params = {"name": tool_name, "arguments": arguments}
         result_dict = await self._send_request(
-            request=call_req, url=url, headers=headers
+            url=url, method="tools/call", params=params, headers=headers
         )
 
         result = types.CallToolResult.model_validate(result_dict)
