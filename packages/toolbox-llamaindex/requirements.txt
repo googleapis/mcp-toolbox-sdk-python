@@ -1,5 +1,5 @@
 -e ../toolbox-core
-llama-index-core==0.14.9
+llama-index-core==0.14.10
 PyYAML==6.0.3
 pydantic==2.12.5
 aiohttp==3.13.2
