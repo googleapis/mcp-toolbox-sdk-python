@@ -47,5 +47,5 @@ options:
   logging: CLOUD_LOGGING_ONLY
 substitutions:
   _VERSION: '3.13'
-  _TOOLBOX_VERSION: '0.21.0'
+  _TOOLBOX_VERSION: '0.22.0'
   _TOOLBOX_MANIFEST_VERSION: '34'
