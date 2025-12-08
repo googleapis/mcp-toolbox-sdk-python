@@ -159,9 +159,7 @@ class TestMcpHttpTransportV20241105:
         mock_send.side_effect = [
             types.InitializeResult(
                 protocolVersion="2024-11-05",
-                capabilities=types.ServerCapabilities(
-                    tools={"listChanged": False}
-                ),
+                capabilities=types.ServerCapabilities(tools={"listChanged": False}),
                 serverInfo=types.Implementation(name="test", version="1.0"),
             ),
             None,
@@ -183,9 +181,7 @@ class TestMcpHttpTransportV20241105:
             new_callable=AsyncMock,
             return_value=types.InitializeResult(
                 protocolVersion="2099-01-01",
-                capabilities=types.ServerCapabilities(
-                    tools={"listChanged": True}
-                ),
+                capabilities=types.ServerCapabilities(tools={"listChanged": True}),
                 serverInfo=types.Implementation(name="test", version="1.0"),
             ),
         )
@@ -243,7 +239,7 @@ class TestMcpHttpTransportV20241105:
         # Verify the toolset name was appended to the base URL
         # Verify the toolset name was appended to the base URL
         expected_url = transport.base_url + "custom_toolset"
-        
+
         call_args = transport._send_request.call_args
         assert call_args.kwargs["url"] == expected_url
         assert isinstance(call_args.kwargs["request"], types.ListToolsRequest)

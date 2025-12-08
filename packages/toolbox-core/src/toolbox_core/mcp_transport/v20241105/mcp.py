@@ -23,8 +23,6 @@ from ...protocol import ManifestSchema
 from ..transport_base import _McpHttpTransportBase
 from . import types
 
-from . import types
-
 ReceiveResultT = TypeVar("ReceiveResultT", bound=BaseModel)
 
 
@@ -43,9 +41,11 @@ class McpHttpTransportV20241105(_McpHttpTransportBase):
             notification = types.JSONRPCNotification(
                 jsonrpc="2.0",
                 method=request.method,
-                params=request.params.model_dump(mode="json", exclude_none=True)
-                if isinstance(request.params, BaseModel)
-                else request.params,
+                params=(
+                    request.params.model_dump(mode="json", exclude_none=True)
+                    if isinstance(request.params, BaseModel)
+                    else request.params
+                ),
             )
             payload = notification.model_dump(mode="json", exclude_none=True)
         else:
@@ -53,9 +53,11 @@ class McpHttpTransportV20241105(_McpHttpTransportBase):
                 jsonrpc="2.0",
                 id=str(uuid.uuid4()),
                 method=request.method,
-                params=request.params.model_dump(mode="json", exclude_none=True)
-                if isinstance(request.params, BaseModel)
-                else request.params,
+                params=(
+                    request.params.model_dump(mode="json", exclude_none=True)
+                    if isinstance(request.params, BaseModel)
+                    else request.params
+                ),
             )
             payload = json_req.model_dump(mode="json", exclude_none=True)
 
@@ -89,7 +91,9 @@ class McpHttpTransportV20241105(_McpHttpTransportBase):
             try:
                 rpc_response = types.JSONRPCResponse.model_validate(json_response)
                 if isinstance(request, types.MCPRequest):
-                    return request.get_result_model().model_validate(rpc_response.result)
+                    return request.get_result_model().model_validate(
+                        rpc_response.result
+                    )
                 return None
             except Exception as e:
                 raise RuntimeError(f"Failed to parse JSON-RPC response: {e}")
