@@ -161,6 +161,8 @@ class McpHttpTransportV20241105(_McpHttpTransportBase):
             headers=headers,
         )
         if result is None:
-            raise RuntimeError(f"Failed to invoke tool '{tool_name}': No response from server.")
+            raise RuntimeError(
+                f"Failed to invoke tool '{tool_name}': No response from server."
+            )
 
         return "".join(c.text for c in result.content if c.type == "text") or "null"
