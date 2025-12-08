@@ -14,125 +14,113 @@
 
 from typing import Any, Generic, Literal, Type, TypeVar
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
-class RequestParams(BaseModel):
+class _BaseMCPModel(BaseModel):
+    """Base model with common configuration."""
     model_config = ConfigDict(extra="allow")
 
 
-class JSONRPCRequest(BaseModel):
-    jsonrpc: Literal["2.0"]
-    id: str | int
+class RequestParams(_BaseMCPModel):
+    pass
+
+
+class JSONRPCRequest(_BaseMCPModel):
+    jsonrpc: Literal["2.0"] = "2.0"
+    id: str | int = Field(default_factory=lambda: str(uuid.uuid4()))
     method: str
     params: dict[str, Any] | None = None
-    model_config = ConfigDict(extra="allow")
 
 
-class JSONRPCNotification(BaseModel):
+class JSONRPCNotification(_BaseMCPModel):
     """A notification which does not expect a response (no ID)."""
-
-    jsonrpc: Literal["2.0"]
+    jsonrpc: Literal["2.0"] = "2.0"
     method: str
     params: dict[str, Any] | None = None
-    model_config = ConfigDict(extra="allow")
 
 
-class JSONRPCResponse(BaseModel):
+class JSONRPCResponse(_BaseMCPModel):
     jsonrpc: Literal["2.0"]
     id: str | int
     result: dict[str, Any]
-    model_config = ConfigDict(extra="allow")
 
 
-class ErrorData(BaseModel):
+class ErrorData(_BaseMCPModel):
     code: int
     message: str
     data: Any | None = None
-    model_config = ConfigDict(extra="allow")
 
 
-class JSONRPCError(BaseModel):
+class JSONRPCError(_BaseMCPModel):
     jsonrpc: Literal["2.0"]
     id: str | int
     error: ErrorData
-    model_config = ConfigDict(extra="allow")
 
 
-class BaseMetadata(BaseModel):
+class BaseMetadata(_BaseMCPModel):
     name: str
-    model_config = ConfigDict(extra="allow")
 
 
 class Implementation(BaseMetadata):
     version: str
-    model_config = ConfigDict(extra="allow")
 
 
-class ClientCapabilities(BaseModel):
-    model_config = ConfigDict(extra="allow")
+class ClientCapabilities(_BaseMCPModel):
+    pass
 
 
 class InitializeRequestParams(RequestParams):
     protocolVersion: str
     capabilities: ClientCapabilities
     clientInfo: Implementation
-    model_config = ConfigDict(extra="allow")
 
 
-class ServerCapabilities(BaseModel):
+class ServerCapabilities(_BaseMCPModel):
     prompts: dict[str, Any] | None = None
     tools: dict[str, Any] | None = None
-    model_config = ConfigDict(extra="allow")
 
 
-class InitializeResult(BaseModel):
+class InitializeResult(_BaseMCPModel):
     protocolVersion: str
     capabilities: ServerCapabilities
     serverInfo: Implementation
     instructions: str | None = None
-    model_config = ConfigDict(extra="allow")
 
 
 class Tool(BaseMetadata):
     description: str | None = None
     inputSchema: dict[str, Any]
-    model_config = ConfigDict(extra="allow")
 
 
-class ListToolsResult(BaseModel):
+class ListToolsResult(_BaseMCPModel):
     tools: list[Tool]
-    model_config = ConfigDict(extra="allow")
 
 
-class TextContent(BaseModel):
+class TextContent(_BaseMCPModel):
     type: Literal["text"]
     text: str
-    model_config = ConfigDict(extra="allow")
 
 
-class CallToolResult(BaseModel):
+class CallToolResult(_BaseMCPModel):
     content: list[TextContent]
     isError: bool = False
-    model_config = ConfigDict(extra="allow")
 
 
 ResultT = TypeVar("ResultT", bound=BaseModel)
 
 
-class MCPRequest(BaseModel, Generic[ResultT]):
+class MCPRequest(_BaseMCPModel, Generic[ResultT]):
     method: str
     params: dict[str, Any] | BaseModel | None = None
-    model_config = ConfigDict(extra="allow")
 
     def get_result_model(self) -> Type[ResultT]:
         raise NotImplementedError
 
 
-class MCPNotification(BaseModel):
+class MCPNotification(_BaseMCPModel):
     method: str
     params: dict[str, Any] | BaseModel | None = None
-    model_config = ConfigDict(extra="allow")
 
 
 class InitializeRequest(MCPRequest[InitializeResult]):
@@ -156,10 +144,9 @@ class ListToolsRequest(MCPRequest[ListToolsResult]):
         return ListToolsResult
 
 
-class CallToolRequestParams(BaseModel):
+class CallToolRequestParams(_BaseMCPModel):
     name: str
     arguments: dict[str, Any]
-    model_config = ConfigDict(extra="allow")
 
 
 class CallToolRequest(MCPRequest[CallToolResult]):
