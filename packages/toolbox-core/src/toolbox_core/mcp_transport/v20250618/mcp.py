@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-import uuid
-from typing import Any, Mapping, Optional, TypeVar
+from typing import Mapping, Optional, TypeVar
 
 from pydantic import BaseModel
 
@@ -39,25 +37,19 @@ class McpHttpTransportV20250618(_McpHttpTransportBase):
         req_headers = dict(headers or {})
         req_headers["MCP-Protocol-Version"] = self._protocol_version
 
-        # Extract params and method from the request object
-        if isinstance(request.params, BaseModel):
-            request_params = request.params.model_dump(mode="json", exclude_none=True)
-        else:
-            request_params = (request.params or {}).copy()
+        params = (
+            request.params.model_dump(mode="json", exclude_none=True)
+            if isinstance(request.params, BaseModel)
+            else request.params
+        )
 
+        rpc_msg: BaseModel
         if isinstance(request, types.MCPNotification):
-            notification = types.JSONRPCNotification(
-                jsonrpc="2.0", method=request.method, params=request_params
-            )
-            payload = notification.model_dump(mode="json", exclude_none=True)
+            rpc_msg = types.JSONRPCNotification(method=request.method, params=params)
         else:
-            json_req = types.JSONRPCRequest(
-                jsonrpc="2.0",
-                id=str(uuid.uuid4()),
-                method=request.method,
-                params=request_params,
-            )
-            payload = json_req.model_dump(mode="json", exclude_none=True)
+            rpc_msg = types.JSONRPCRequest(method=request.method, params=params)
+
+        payload = rpc_msg.model_dump(mode="json", exclude_none=True)
 
         async with self._session.post(
             url, json=payload, headers=req_headers
@@ -73,63 +65,53 @@ class McpHttpTransportV20250618(_McpHttpTransportBase):
             if response.status == 204 or response.content.at_eof():
                 return None
 
-            json_response = await response.json()
+            json_resp = await response.json()
 
-            if "error" in json_response:
+            # Check for JSON-RPC Error
+            if "error" in json_resp:
                 try:
-                    error_wrapper = types.JSONRPCError.model_validate(json_response)
-                    error_data = error_wrapper.error
+                    err = types.JSONRPCError.model_validate(json_resp).error
                     raise RuntimeError(
-                        f"MCP request failed with code {error_data.code}:"
-                        f" {error_data.message}"
+                        f"MCP request failed with code {err.code}: {err.message}"
                     )
                 except Exception:
                     # Fallback if the error doesn't match our schema exactly
-                    raw_error = json_response.get("error", {})
+                    raw_error = json_resp.get("error", {})
                     raise RuntimeError(f"MCP request failed: {raw_error}")
 
-            try:
-                rpc_response = types.JSONRPCResponse.model_validate(json_response)
-                if isinstance(request, types.MCPRequest):
-                    return request.get_result_model().model_validate(
-                        rpc_response.result
-                    )
-                return None
-            except Exception as e:
-                raise RuntimeError(f"Failed to parse JSON-RPC response: {e}")
+            # Parse Result
+            if isinstance(request, types.MCPRequest):
+                try:
+                    rpc_resp = types.JSONRPCResponse.model_validate(json_resp)
+                    return request.get_result_model().model_validate(rpc_resp.result)
+                except Exception as e:
+                    raise RuntimeError(f"Failed to parse JSON-RPC response: {e}")
+            return None
 
     async def _initialize_session(self):
         """Initializes the MCP session."""
-        client_info = types.Implementation(
-            name="toolbox-python-sdk", version=version.__version__
+        params = types.InitializeRequestParams(
+            protocolVersion=self._protocol_version,
+            capabilities=types.ClientCapabilities(),
+            clientInfo=types.Implementation(
+                name="toolbox-python-sdk", version=version.__version__
+            ),
         )
-        capabilities = types.ClientCapabilities()
 
-        params = types.InitializeRequestParams(
-            protocolVersion=self._protocol_version,
-            capabilities=capabilities,
-            clientInfo=client_info,
-        )
-        params = types.InitializeRequestParams(
-            protocolVersion=self._protocol_version,
-            capabilities=capabilities,
-            clientInfo=client_info,
-        )
-        initialize_request = types.InitializeRequest(params=params)
-        initialize_result = await self._send_request(
+        result = await self._send_request(
             url=self._mcp_base_url,
-            request=initialize_request,
+            request=types.InitializeRequest(params=params),
         )
 
-        self._server_version = initialize_result.serverInfo.version
+        self._server_version = result.serverInfo.version
 
-        if initialize_result.protocolVersion != self._protocol_version:
+        if result.protocolVersion != self._protocol_version:
             raise RuntimeError(
                 "MCP version mismatch: client does not support server version"
-                f" {initialize_result.protocolVersion}"
+                f" {result.protocolVersion}"
             )
 
-        if not initialize_result.capabilities.tools:
+        if not result.capabilities.tools:
             if self._manage_session:
                 await self.close()
             raise RuntimeError("Server does not support the 'tools' capability.")
@@ -139,26 +121,6 @@ class McpHttpTransportV20250618(_McpHttpTransportBase):
             request=types.InitializedNotification(),
         )
 
-    async def _list_tools(
-        self,
-        toolset_name: Optional[str] = None,
-        headers: Optional[Mapping[str, str]] = None,
-    ) -> types.ListToolsResult:
-        """Private helper to fetch the raw tool list from the server."""
-        if toolset_name:
-            url = self._mcp_base_url + toolset_name
-        else:
-            url = self._mcp_base_url
-
-        result = await self._send_request(
-            url=url,
-            request=types.ListToolsRequest(),
-            headers=headers,
-        )
-        if result is None:
-            raise RuntimeError("Failed to list tools: No response from server.")
-        return result
-
     async def tools_list(
         self,
         toolset_name: Optional[str] = None,
@@ -166,15 +128,20 @@ class McpHttpTransportV20250618(_McpHttpTransportBase):
     ) -> ManifestSchema:
         """Lists available tools from the server using the MCP protocol."""
         await self._ensure_initialized()
+
+        url = self._mcp_base_url + (toolset_name if toolset_name else "")
+        result = await self._send_request(
+            url=url, request=types.ListToolsRequest(), headers=headers
+        )
+        if result is None:
+            raise RuntimeError("Failed to list tools: No response from server.")
+
+        tools_map = {
+            t.name: self._convert_tool_schema(t.model_dump(mode="json", by_alias=True))
+            for t in result.tools
+        }
         if self._server_version is None:
             raise RuntimeError("Server version not available.")
-
-        result = await self._list_tools(toolset_name, headers)
-
-        tools_map = {}
-        for tool in result.tools:
-            tool_dict = tool.model_dump(mode="json", by_alias=True)
-            tools_map[tool.name] = self._convert_tool_schema(tool_dict)
 
         return ManifestSchema(
             serverVersion=self._server_version,
@@ -185,24 +152,14 @@ class McpHttpTransportV20250618(_McpHttpTransportBase):
         self, tool_name: str, headers: Optional[Mapping[str, str]] = None
     ) -> ManifestSchema:
         """Gets a single tool from the server by listing all and filtering."""
-        await self._ensure_initialized()
-        if self._server_version is None:
-            raise RuntimeError("Server version not available.")
+        manifest = await self.tools_list(headers=headers)
 
-        result = await self._list_tools(headers=headers)
-        tool_def = None
-        for tool in result.tools:
-            if tool.name == tool_name:
-                tool_dict = tool.model_dump(mode="json", by_alias=True)
-                tool_def = self._convert_tool_schema(tool_dict)
-                break
-
-        if tool_def is None:
+        if tool_name not in manifest.tools:
             raise ValueError(f"Tool '{tool_name}' not found.")
 
         return ManifestSchema(
-            serverVersion=self._server_version,
-            tools={tool_name: tool_def},
+            serverVersion=manifest.serverVersion,
+            tools={tool_name: manifest.tools[tool_name]},
         )
 
     async def tool_invoke(
@@ -211,20 +168,17 @@ class McpHttpTransportV20250618(_McpHttpTransportBase):
         """Invokes a specific tool on the server using the MCP protocol."""
         await self._ensure_initialized()
 
-        url = self._mcp_base_url
-        call_tool_request = types.CallToolRequest(
-            params=types.CallToolRequestParams(name=tool_name, arguments=arguments)
-        )
         result = await self._send_request(
-            url=url,
-            request=call_tool_request,
+            url=self._mcp_base_url,
+            request=types.CallToolRequest(
+                params=types.CallToolRequestParams(name=tool_name, arguments=arguments)
+            ),
             headers=headers,
         )
 
         if result is None:
-            raise RuntimeError(f"Failed to invoke tool '{tool_name}': No response from server.")
+            raise RuntimeError(
+                f"Failed to invoke tool '{tool_name}': No response from server."
+            )
 
-        content_str = "".join(
-            content.text for content in result.content if content.type == "text"
-        )
-        return content_str or "null"
+        return "".join(c.text for c in result.content if c.type == "text") or "null"
