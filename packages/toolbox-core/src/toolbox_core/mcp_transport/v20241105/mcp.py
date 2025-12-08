@@ -66,7 +66,9 @@ class McpHttpTransportV20241105(_McpHttpTransportBase):
             if "error" in json_resp:
                 try:
                     err = types.JSONRPCError.model_validate(json_resp).error
-                    raise RuntimeError(f"MCP request failed with code {err.code}: {err.message}")
+                    raise RuntimeError(
+                        f"MCP request failed with code {err.code}: {err.message}"
+                    )
                 except Exception:
                     raise RuntimeError(f"MCP request failed: {json_resp.get('error')}")
 
@@ -88,10 +90,9 @@ class McpHttpTransportV20241105(_McpHttpTransportBase):
                 name="toolbox-python-sdk", version=version.__version__
             ),
         )
-        
+
         result = await self._send_request(
-            url=self._mcp_base_url, 
-            request=types.InitializeRequest(params=params)
+            url=self._mcp_base_url, request=types.InitializeRequest(params=params)
         )
 
         self._server_version = result.serverInfo.version
@@ -115,7 +116,7 @@ class McpHttpTransportV20241105(_McpHttpTransportBase):
     ) -> ManifestSchema:
         """Lists available tools from the server using the MCP protocol."""
         await self._ensure_initialized()
-        
+
         url = self._mcp_base_url + (toolset_name if toolset_name else "")
         result = await self._send_request(
             url=url, request=types.ListToolsRequest(), headers=headers
@@ -133,13 +134,13 @@ class McpHttpTransportV20241105(_McpHttpTransportBase):
     ) -> ManifestSchema:
         """Gets a single tool from the server by listing all and filtering."""
         manifest = await self.tools_list(headers=headers)
-        
+
         if tool_name not in manifest.tools:
             raise ValueError(f"Tool '{tool_name}' not found.")
 
         return ManifestSchema(
-            serverVersion=manifest.serverVersion, 
-            tools={tool_name: manifest.tools[tool_name]}
+            serverVersion=manifest.serverVersion,
+            tools={tool_name: manifest.tools[tool_name]},
         )
 
     async def tool_invoke(

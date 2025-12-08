@@ -18,16 +18,25 @@ import pytest
 import pytest_asyncio
 from aiohttp import ClientSession
 
+from toolbox_core.mcp_transport.v20250618 import types
 from toolbox_core.mcp_transport.v20250618.mcp import McpHttpTransportV20250618
 from toolbox_core.protocol import ManifestSchema, Protocol
 
 
 def create_fake_tools_list_result():
-    return {
-        "tools": [
-            {"name": "get_weather", "inputSchema": {"type": "object", "properties": {}}}
+    return types.ListToolsResult(
+        tools=[
+            types.Tool(
+                name="get_weather",
+                description="Gets the weather.",
+                inputSchema={
+                    "type": "object",
+                    "properties": {"location": {"type": "string"}},
+                    "required": ["location"],
+                },
+            )
         ]
-    }
+    )
 
 
 @pytest_asyncio.fixture
@@ -54,8 +63,18 @@ class TestMcpHttpTransportV20250618:
         mock_response.json.return_value = {"jsonrpc": "2.0", "id": "1", "result": {}}
         transport._session.post.return_value.__aenter__.return_value = mock_response
 
-        result = await transport._send_request("url", "method", {})
-        assert result == {}
+        class TestResult(types.BaseModel):
+            pass
+
+        class TestRequest(types.MCPRequest[TestResult]):
+            method: str = "method"
+            params: dict = {}
+
+            def get_result_model(self):
+                return TestResult
+
+        result = await transport._send_request("url", TestRequest())
+        assert result == TestResult()
 
     async def test_send_request_adds_protocol_header(self, transport):
         """Test that the MCP-Protocol-Version header is added."""
@@ -66,7 +85,17 @@ class TestMcpHttpTransportV20250618:
         mock_response.json.return_value = {"jsonrpc": "2.0", "id": "1", "result": {}}
         transport._session.post.return_value.__aenter__.return_value = mock_response
 
-        await transport._send_request("url", "method", {})
+        class TestResult(types.BaseModel):
+            pass
+
+        class TestRequest(types.MCPRequest[TestResult]):
+            method: str = "method"
+            params: dict = {}
+
+            def get_result_model(self):
+                return TestResult
+
+        await transport._send_request("url", TestRequest())
 
         call_args = transport._session.post.call_args
         headers = call_args.kwargs["headers"]
@@ -79,8 +108,18 @@ class TestMcpHttpTransportV20250618:
         mock_response.text.return_value = "Error"
         transport._session.post.return_value.__aenter__.return_value = mock_response
 
+        class TestResult(types.BaseModel):
+            pass
+
+        class TestRequest(types.MCPRequest[TestResult]):
+            method: str = "method"
+            params: dict = {}
+
+            def get_result_model(self):
+                return TestResult
+
         with pytest.raises(RuntimeError, match="API request failed"):
-            await transport._send_request("url", "method", {})
+            await transport._send_request("url", TestRequest())
 
     async def test_send_request_mcp_error(self, transport):
         mock_response = AsyncMock()
@@ -95,8 +134,18 @@ class TestMcpHttpTransportV20250618:
         }
         transport._session.post.return_value.__aenter__.return_value = mock_response
 
+        class TestResult(types.BaseModel):
+            pass
+
+        class TestRequest(types.MCPRequest[TestResult]):
+            method: str = "method"
+            params: dict = {}
+
+            def get_result_model(self):
+                return TestResult
+
         with pytest.raises(RuntimeError, match="MCP request failed"):
-            await transport._send_request("url", "method", {})
+            await transport._send_request("url", TestRequest())
 
     async def test_send_notification(self, transport):
         mock_response = AsyncMock()
@@ -104,7 +153,11 @@ class TestMcpHttpTransportV20250618:
         mock_response.status = 204
         transport._session.post.return_value.__aenter__.return_value = mock_response
 
-        await transport._send_request("url", "notifications/test", {})
+        class TestNotification(types.MCPNotification):
+            method: str = "notifications/test"
+            params: dict = {}
+
+        await transport._send_request("url", TestNotification())
         payload = transport._session.post.call_args.kwargs["json"]
         assert "id" not in payload
 
@@ -118,11 +171,11 @@ class TestMcpHttpTransportV20250618:
         )
 
         mock_send.side_effect = [
-            {
-                "protocolVersion": "2025-06-18",
-                "capabilities": {"tools": {"listChanged": True}},
-                "serverInfo": {"name": "test", "version": "1.0"},
-            },
+            types.InitializeResult(
+                protocolVersion="2025-06-18",
+                capabilities=types.ServerCapabilities(tools={"listChanged": True}),
+                serverInfo=types.Implementation(name="test", version="1.0"),
+            ),
             None,
         ]
 
@@ -134,11 +187,11 @@ class TestMcpHttpTransportV20250618:
             transport,
             "_send_request",
             new_callable=AsyncMock,
-            return_value={
-                "protocolVersion": "2099-01-01",
-                "capabilities": {"tools": {"listChanged": True}},
-                "serverInfo": {"name": "test", "version": "1.0"},
-            },
+            return_value=types.InitializeResult(
+                protocolVersion="2099-01-01",
+                capabilities=types.ServerCapabilities(tools={"listChanged": True}),
+                serverInfo=types.Implementation(name="test", version="1.0"),
+            ),
         )
 
         with pytest.raises(RuntimeError, match="MCP version mismatch"):
@@ -149,11 +202,11 @@ class TestMcpHttpTransportV20250618:
             transport,
             "_send_request",
             new_callable=AsyncMock,
-            return_value={
-                "protocolVersion": "2025-06-18",
-                "capabilities": {},
-                "serverInfo": {"name": "test", "version": "1.0"},
-            },
+            return_value=types.InitializeResult(
+                protocolVersion="2025-06-18",
+                capabilities=types.ServerCapabilities(),
+                serverInfo=types.Implementation(name="test", version="1.0"),
+            ),
         )
 
         with pytest.raises(
@@ -190,9 +243,11 @@ class TestMcpHttpTransportV20250618:
 
         assert isinstance(manifest, ManifestSchema)
         expected_url = transport.base_url + "custom_toolset"
-        transport._send_request.assert_called_with(
-            url=expected_url, method="tools/list", params={}, headers=None
-        )
+
+        call_args = transport._send_request.call_args
+        assert call_args.kwargs["url"] == expected_url
+        assert isinstance(call_args.kwargs["request"], types.ListToolsRequest)
+        assert call_args.kwargs["headers"] is None
 
     async def test_tool_invoke_success(self, transport, mocker):
         mocker.patch.object(transport, "_ensure_initialized", new_callable=AsyncMock)
@@ -200,7 +255,9 @@ class TestMcpHttpTransportV20250618:
             transport,
             "_send_request",
             new_callable=AsyncMock,
-            return_value={"content": [{"type": "text", "text": "Result"}]},
+            return_value=types.CallToolResult(
+                content=[types.TextContent(type="text", text="Result")]
+            ),
         )
         result = await transport.tool_invoke("tool", {}, {})
         assert result == "Result"

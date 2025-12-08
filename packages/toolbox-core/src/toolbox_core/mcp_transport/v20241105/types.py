@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import uuid
 from typing import Any, Generic, Literal, Type, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -19,6 +20,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class _BaseMCPModel(BaseModel):
     """Base model with common configuration."""
+
     model_config = ConfigDict(extra="allow")
 
 
@@ -35,6 +37,7 @@ class JSONRPCRequest(_BaseMCPModel):
 
 class JSONRPCNotification(_BaseMCPModel):
     """A notification which does not expect a response (no ID)."""
+
     jsonrpc: Literal["2.0"] = "2.0"
     method: str
     params: dict[str, Any] | None = None
