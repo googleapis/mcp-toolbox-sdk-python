@@ -14,7 +14,7 @@
 
 import asyncio
 from abc import ABC, abstractmethod
-from typing import Any, Mapping, Optional
+from typing import Optional
 
 from aiohttp import ClientSession
 
@@ -36,7 +36,7 @@ class _McpHttpTransportBase(ITransport, ABC):
         session: Optional[ClientSession] = None,
         protocol: Protocol = Protocol.MCP,
     ):
-        self._mcp_base_url = base_url + "/mcp/"
+        self._mcp_base_url = f"{base_url}/mcp/"
         self._protocol_version = protocol.value
         self._server_version: Optional[str] = None
 
@@ -99,15 +99,4 @@ class _McpHttpTransportBase(ITransport, ABC):
     @abstractmethod
     async def _initialize_session(self):
         """Initializes the MCP session."""
-        pass
-
-    @abstractmethod
-    async def _send_request(
-        self,
-        url: str,
-        method: str,
-        params: dict,
-        headers: Optional[Mapping[str, str]] = None,
-    ) -> Any:
-        """Sends a JSON-RPC request to the MCP server."""
         pass
