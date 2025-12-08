@@ -41,8 +41,7 @@ async def transport():
 
 
 @pytest.mark.asyncio
-class TestMcpHttpTransport_v20250326:
-
+class TestMcpHttpTransportV20250326:
     # --- Request Sending Tests (Standard + Session ID) ---
 
     async def test_send_request_success(self, transport):

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, Literal
+from typing import Any, Generic, Literal, Type, TypeVar
 
 from pydantic import BaseModel, ConfigDict
 
@@ -115,3 +115,56 @@ class CallToolResult(BaseModel):
     content: list[TextContent]
     isError: bool = False
     model_config = ConfigDict(extra="allow")
+
+
+ResultT = TypeVar("ResultT", bound=BaseModel)
+
+
+class MCPRequest(BaseModel, Generic[ResultT]):
+    method: str
+    params: dict[str, Any] | BaseModel | None = None
+    model_config = ConfigDict(extra="allow")
+
+    def get_result_model(self) -> Type[ResultT]:
+        raise NotImplementedError
+
+
+class MCPNotification(BaseModel):
+    method: str
+    params: dict[str, Any] | BaseModel | None = None
+    model_config = ConfigDict(extra="allow")
+
+
+class InitializeRequest(MCPRequest[InitializeResult]):
+    method: Literal["initialize"] = "initialize"
+    params: InitializeRequestParams
+
+    def get_result_model(self) -> Type[InitializeResult]:
+        return InitializeResult
+
+
+class InitializedNotification(MCPNotification):
+    method: Literal["notifications/initialized"] = "notifications/initialized"
+    params: dict[str, Any] = {}
+
+
+class ListToolsRequest(MCPRequest[ListToolsResult]):
+    method: Literal["tools/list"] = "tools/list"
+    params: dict[str, Any] = {}
+
+    def get_result_model(self) -> Type[ListToolsResult]:
+        return ListToolsResult
+
+
+class CallToolRequestParams(BaseModel):
+    name: str
+    arguments: dict[str, Any]
+    model_config = ConfigDict(extra="allow")
+
+
+class CallToolRequest(MCPRequest[CallToolResult]):
+    method: Literal["tools/call"] = "tools/call"
+    params: CallToolRequestParams
+
+    def get_result_model(self) -> Type[CallToolResult]:
+        return CallToolResult
