@@ -150,11 +150,14 @@ class McpHttpTransportV20250618(_McpHttpTransportBase):
         else:
             url = self._mcp_base_url
 
-        return await self._send_request(
+        result = await self._send_request(
             url=url,
             request=types.ListToolsRequest(),
             headers=headers,
         )
+        if result is None:
+            raise RuntimeError("Failed to list tools: No response from server.")
+        return result
 
     async def tools_list(
         self,
@@ -217,6 +220,9 @@ class McpHttpTransportV20250618(_McpHttpTransportBase):
             request=call_tool_request,
             headers=headers,
         )
+
+        if result is None:
+            raise RuntimeError(f"Failed to invoke tool '{tool_name}': No response from server.")
 
         content_str = "".join(
             content.text for content in result.content if content.type == "text"

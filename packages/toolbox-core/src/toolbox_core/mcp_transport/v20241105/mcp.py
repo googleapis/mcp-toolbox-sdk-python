@@ -39,7 +39,7 @@ class McpHttpTransportV20241105(_McpHttpTransportBase):
             if isinstance(request.params, BaseModel)
             else request.params
         )
-
+        rpc_msg: BaseModel
         if isinstance(request, types.MCPNotification):
             rpc_msg = types.JSONRPCNotification(method=request.method, params=params)
         else:
@@ -121,11 +121,15 @@ class McpHttpTransportV20241105(_McpHttpTransportBase):
         result = await self._send_request(
             url=url, request=types.ListToolsRequest(), headers=headers
         )
+        if result is None:
+            raise RuntimeError("Failed to list tools: No response from server.")
 
         tools_map = {
             t.name: self._convert_tool_schema(t.model_dump(mode="json", by_alias=True))
             for t in result.tools
         }
+        if self._server_version is None:
+            raise RuntimeError("Server version not available.")
 
         return ManifestSchema(serverVersion=self._server_version, tools=tools_map)
 
@@ -156,5 +160,7 @@ class McpHttpTransportV20241105(_McpHttpTransportBase):
             ),
             headers=headers,
         )
+        if result is None:
+            raise RuntimeError(f"Failed to invoke tool '{tool_name}': No response from server.")
 
         return "".join(c.text for c in result.content if c.type == "text") or "null"
