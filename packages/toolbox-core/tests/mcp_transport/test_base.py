@@ -172,18 +172,23 @@ class TestMcpHttpTransportBase:
                 "properties": {
                     "apiKey": {"type": "string"},
                 },
-                "toolbox/authParam": "apiKey",
-                "toolbox/authInvoke": True,
+            },
+            "_meta": {
+                "toolbox/authParam": {"apiKey": ["my-auth-source"]},
+                "toolbox/authInvoke": ["my-auth-invoke"],
             },
         }
 
         schema = transport._convert_tool_schema(raw_tool)
 
         assert isinstance(schema, ToolSchema)
-        # Check that metadata was populated correctly
-        assert schema.metadata is not None
-        assert schema.metadata.get("authParam") == "apiKey"
-        assert schema.metadata.get("authInvoke") is True
+
+        # Check that authRequired (from toolbox/authInvoke) was populated
+        assert schema.authRequired == ["my-auth-invoke"]
+
+        # Check that authSources (from toolbox/authParam) was populated on the parameter
+        p_api_key = next(p for p in schema.parameters if p.name == "apiKey")
+        assert p_api_key.authSources == ["my-auth-source"]
 
     @pytest.mark.asyncio
     async def test_close_managed_session(self, mocker):
