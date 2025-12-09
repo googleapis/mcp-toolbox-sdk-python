@@ -36,15 +36,6 @@ class Protocol(str, Enum):
             Protocol.MCP_v20241105.value,
         ]
 
-    @staticmethod
-    def get_supported_mcp_versions() -> list[str]:
-        """Returns a list of supported MCP protocol versions."""
-        return [
-            Protocol.MCP_v20250618.value,
-            Protocol.MCP_v20250326.value,
-            Protocol.MCP_v20241105.value,
-        ]
-
 
 __TYPE_MAP = {
     "string": str,

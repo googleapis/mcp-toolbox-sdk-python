@@ -24,14 +24,6 @@ from toolbox_core.protocol import ManifestSchema, Protocol
 
 
 def create_fake_tools_list_result():
-    return {
-        "tools": [
-            {"name": "get_weather", "inputSchema": {"type": "object", "properties": {}}}
-        ]
-    }
-
-
-def create_fake_tools_list_result():
     return types.ListToolsResult(
         tools=[
             types.Tool(

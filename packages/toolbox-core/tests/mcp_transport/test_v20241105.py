@@ -170,12 +170,6 @@ class TestMcpHttpTransportV20241105:
         assert transport._server_version == "1.0"
         assert mock_send.call_count == 2
         init_call = mock_send.call_args_list[0]
-        assert init_call.kwargs["method"] == "initialize"
-        assert init_call.kwargs["params"]["protocolVersion"] == "2024-11-05"
-
-        assert transport._server_version == "1.0"
-        assert mock_send.call_count == 2
-        init_call = mock_send.call_args_list[0]
         init_call = mock_send.call_args_list[0]
         assert isinstance(init_call.kwargs["request"], types.InitializeRequest)
         assert init_call.kwargs["request"].params.protocolVersion == "2024-11-05"

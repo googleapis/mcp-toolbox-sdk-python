@@ -24,14 +24,6 @@ from toolbox_core.protocol import ManifestSchema, Protocol
 
 
 def create_fake_tools_list_result():
-    return {
-        "tools": [
-            {"name": "get_weather", "inputSchema": {"type": "object", "properties": {}}}
-        ]
-    }
-
-
-def create_fake_tools_list_result():
     return types.ListToolsResult(
         tools=[
             types.Tool(
@@ -83,20 +75,6 @@ class TestMcpHttpTransportV20250618:
 
         result = await transport._send_request("url", TestRequest())
         assert result == TestResult()
-
-    # --- Request Sending Tests (Standard + Header) ---
-
-    async def test_send_request_success(self, transport):
-        mock_response = AsyncMock()
-        mock_response.ok = True
-        mock_response.status = 200
-        mock_response.content = Mock()
-        mock_response.content.at_eof.return_value = False
-        mock_response.json.return_value = {"jsonrpc": "2.0", "id": "1", "result": {}}
-        transport._session.post.return_value.__aenter__.return_value = mock_response
-
-        result = await transport._send_request("url", "method", {})
-        assert result == {}
 
     async def test_send_request_adds_protocol_header(self, transport):
         """Test that the MCP-Protocol-Version header is added."""
