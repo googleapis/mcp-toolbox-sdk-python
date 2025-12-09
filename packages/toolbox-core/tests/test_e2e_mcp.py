@@ -24,11 +24,17 @@ from toolbox_core.protocol import Protocol
 from toolbox_core.tool import ToolboxTool
 
 
-# --- Shared Fixtures Defined at Module Level ---
-@pytest_asyncio.fixture(scope="function")
-async def toolbox():
+@pytest_asyncio.fixture(
+    scope="function",
+    params=[
+        Protocol.MCP_v20250618,
+        Protocol.MCP_v20250326,
+        Protocol.MCP_v20241105,
+    ],
+)
+async def toolbox(request):
     """Creates a ToolboxClient instance shared by all tests in this module."""
-    toolbox = ToolboxClient("http://localhost:5000", protocol=Protocol.MCP)
+    toolbox = ToolboxClient("http://localhost:5000", protocol=request.param)
     try:
         yield toolbox
     finally:
