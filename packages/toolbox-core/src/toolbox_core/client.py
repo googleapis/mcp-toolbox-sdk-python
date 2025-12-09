@@ -20,7 +20,12 @@ from aiohttp import ClientSession
 from deprecated import deprecated
 
 from .itransport import ITransport
-from .protocol import ToolSchema
+from .mcp_transport import (
+    McpHttpTransportV20241105,
+    McpHttpTransportV20250326,
+    McpHttpTransportV20250618,
+)
+from .protocol import Protocol, ToolSchema
 from .tool import ToolboxTool
 from .toolbox_transport import ToolboxTransport
 from .utils import identify_auth_requirements, resolve_value
@@ -44,6 +49,7 @@ class ToolboxClient:
         client_headers: Optional[
             Mapping[str, Union[Callable[[], str], Callable[[], Awaitable[str]], str]]
         ] = None,
+        protocol: Protocol = Protocol.TOOLBOX,
     ):
         """
         Initializes the ToolboxClient.
@@ -54,8 +60,21 @@ class ToolboxClient:
                 If None (default), a new session is created internally. Note that
                 if a session is provided, its lifecycle (including closing)
                 should typically be managed externally.
-            client_headers: Headers to include in each request sent through this client.
+            client_headers: Headers to include in each request sent through this
+            client.
+            protocol: The communication protocol to use.
         """
+        if protocol == Protocol.TOOLBOX:
+            self.__transport = ToolboxTransport(url, session)
+        elif protocol in Protocol.get_supported_mcp_versions():
+            if protocol == Protocol.MCP_v20250618:
+                self.__transport = McpHttpTransportV20250618(url, session, protocol)
+            elif protocol == Protocol.MCP_v20250326:
+                self.__transport = McpHttpTransportV20250326(url, session, protocol)
+            elif protocol == Protocol.MCP_v20241105:
+                self.__transport = McpHttpTransportV20241105(url, session, protocol)
+        else:
+            raise ValueError(f"Unsupported MCP protocol version: {protocol}")
 
         self.__transport = ToolboxTransport(url, session)
         self.__client_headers = client_headers if client_headers is not None else {}
