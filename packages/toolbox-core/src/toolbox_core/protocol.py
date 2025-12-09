@@ -36,7 +36,6 @@ class Protocol(str, Enum):
             Protocol.MCP_v20241105.value,
         ]
 
-
     @staticmethod
     def get_supported_mcp_versions() -> list[str]:
         """Returns a list of supported MCP protocol versions."""

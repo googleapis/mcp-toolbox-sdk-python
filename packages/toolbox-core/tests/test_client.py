@@ -529,6 +529,7 @@ def async_callable_header(async_callable_header_value) -> dict[str, AsyncMock]:
         "X-Async-Callable-Header": AsyncMock(return_value=async_callable_header_value)
     }
 
+
 @pytest.fixture
 def static_header() -> dict[str, str]:
     return {"X-Static-Header": "static-value"}
