@@ -162,6 +162,29 @@ class TestMcpHttpTransportBase:
         assert p_obj.type == "object"
         assert p_obj.additionalProperties.type == "integer"
 
+    def test_convert_tool_schema_with_auth_metadata(self, transport):
+        """Test converting tool schema with auth metadata fields."""
+        raw_tool = {
+            "name": "auth_tool",
+            "description": "Tool with auth params",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "apiKey": {"type": "string"},
+                },
+                "toolbox/authParam": "apiKey",
+                "toolbox/authInvoke": True,
+            },
+        }
+
+        schema = transport._convert_tool_schema(raw_tool)
+
+        assert isinstance(schema, ToolSchema)
+        # Check that metadata was populated correctly
+        assert schema.metadata is not None
+        assert schema.metadata.get("authParam") == "apiKey"
+        assert schema.metadata.get("authInvoke") is True
+
     @pytest.mark.asyncio
     async def test_close_managed_session(self, mocker):
         mock_close = mocker.patch("aiohttp.ClientSession.close", new_callable=AsyncMock)
