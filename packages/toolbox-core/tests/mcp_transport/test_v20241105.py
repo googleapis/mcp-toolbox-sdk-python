@@ -18,30 +18,31 @@ import pytest
 import pytest_asyncio
 from aiohttp import ClientSession
 
-from toolbox_core.mcp_transport.v20241105.mcp import McpHttpTransport_v20241105
+from toolbox_core.mcp_transport.v20241105 import types
+from toolbox_core.mcp_transport.v20241105.mcp import McpHttpTransportV20241105
 from toolbox_core.protocol import ManifestSchema, Protocol
 
 
 def create_fake_tools_list_result():
-    return {
-        "tools": [
-            {
-                "name": "get_weather",
-                "description": "Gets the weather.",
-                "inputSchema": {
+    return types.ListToolsResult(
+        tools=[
+            types.Tool(
+                name="get_weather",
+                description="Gets the weather.",
+                inputSchema={
                     "type": "object",
                     "properties": {"location": {"type": "string"}},
                     "required": ["location"],
                 },
-            }
+            )
         ]
-    }
+    )
 
 
 @pytest_asyncio.fixture
 async def transport():
     mock_session = AsyncMock(spec=ClientSession)
-    transport = McpHttpTransport_v20241105(
+    transport = McpHttpTransportV20241105(
         "http://fake-server.com", session=mock_session, protocol=Protocol.MCP_v20241105
     )
     yield transport
@@ -49,7 +50,7 @@ async def transport():
 
 
 @pytest.mark.asyncio
-class TestMcpHttpTransport_v20241105:
+class TestMcpHttpTransportV20241105:
 
     # --- Request Sending Tests ---
 
@@ -69,8 +70,18 @@ class TestMcpHttpTransport_v20241105:
         }
         transport._session.post.return_value.__aenter__.return_value = mock_response
 
-        result = await transport._send_request("url", "method", {})
-        assert result == {"foo": "bar"}
+        class TestResult(types.BaseModel):
+            foo: str
+
+        class TestRequest(types.MCPRequest[TestResult]):
+            method: str = "method"
+            params: dict = {}
+
+            def get_result_model(self):
+                return TestResult
+
+        result = await transport._send_request("url", TestRequest())
+        assert result == TestResult(foo="bar")
 
     async def test_send_request_api_error(self, transport):
         mock_response = AsyncMock()
@@ -79,8 +90,18 @@ class TestMcpHttpTransport_v20241105:
         mock_response.text.return_value = "Error"
         transport._session.post.return_value.__aenter__.return_value = mock_response
 
+        class TestResult(types.BaseModel):
+            pass
+
+        class TestRequest(types.MCPRequest[TestResult]):
+            method: str = "method"
+            params: dict = {}
+
+            def get_result_model(self):
+                return TestResult
+
         with pytest.raises(RuntimeError, match="API request failed with status 500"):
-            await transport._send_request("url", "method", {})
+            await transport._send_request("url", TestRequest())
 
     async def test_send_request_mcp_error(self, transport):
         mock_response = AsyncMock()
@@ -96,8 +117,18 @@ class TestMcpHttpTransport_v20241105:
         }
         transport._session.post.return_value.__aenter__.return_value = mock_response
 
+        class TestResult(types.BaseModel):
+            pass
+
+        class TestRequest(types.MCPRequest[TestResult]):
+            method: str = "method"
+            params: dict = {}
+
+            def get_result_model(self):
+                return TestResult
+
         with pytest.raises(RuntimeError, match="MCP request failed"):
-            await transport._send_request("url", "method", {})
+            await transport._send_request("url", TestRequest())
 
     async def test_send_notification(self, transport):
         mock_response = AsyncMock()
@@ -105,7 +136,11 @@ class TestMcpHttpTransport_v20241105:
         mock_response.status = 204
         transport._session.post.return_value.__aenter__.return_value = mock_response
 
-        await transport._send_request("url", "notifications/test", {})
+        class TestNotification(types.MCPNotification):
+            method: str = "notifications/test"
+            params: dict = {}
+
+        await transport._send_request("url", TestNotification())
 
         call_kwargs = transport._session.post.call_args.kwargs
         payload = call_kwargs["json"]
@@ -122,11 +157,11 @@ class TestMcpHttpTransport_v20241105:
         )
 
         mock_send.side_effect = [
-            {
-                "protocolVersion": "2024-11-05",
-                "capabilities": {"tools": {"listChanged": False}},
-                "serverInfo": {"name": "test", "version": "1.0"},
-            },
+            types.InitializeResult(
+                protocolVersion="2024-11-05",
+                capabilities=types.ServerCapabilities(tools={"listChanged": False}),
+                serverInfo=types.Implementation(name="test", version="1.0"),
+            ),
             None,
         ]
 
@@ -135,19 +170,20 @@ class TestMcpHttpTransport_v20241105:
         assert transport._server_version == "1.0"
         assert mock_send.call_count == 2
         init_call = mock_send.call_args_list[0]
-        assert init_call.kwargs["method"] == "initialize"
-        assert init_call.kwargs["params"]["protocolVersion"] == "2024-11-05"
+        init_call = mock_send.call_args_list[0]
+        assert isinstance(init_call.kwargs["request"], types.InitializeRequest)
+        assert init_call.kwargs["request"].params.protocolVersion == "2024-11-05"
 
     async def test_initialize_session_protocol_mismatch(self, transport, mocker):
         mocker.patch.object(
             transport,
             "_send_request",
             new_callable=AsyncMock,
-            return_value={
-                "protocolVersion": "2099-01-01",
-                "capabilities": {"tools": {"listChanged": True}},
-                "serverInfo": {"name": "test", "version": "1.0"},
-            },
+            return_value=types.InitializeResult(
+                protocolVersion="2099-01-01",
+                capabilities=types.ServerCapabilities(tools={"listChanged": True}),
+                serverInfo=types.Implementation(name="test", version="1.0"),
+            ),
         )
 
         with pytest.raises(RuntimeError, match="MCP version mismatch"):
@@ -158,11 +194,11 @@ class TestMcpHttpTransport_v20241105:
             transport,
             "_send_request",
             new_callable=AsyncMock,
-            return_value={
-                "protocolVersion": "2024-11-05",
-                "capabilities": {},  # Empty tools capability evaluates to False
-                "serverInfo": {"name": "test", "version": "1.0"},
-            },
+            return_value=types.InitializeResult(
+                protocolVersion="2024-11-05",
+                capabilities=types.ServerCapabilities(),
+                serverInfo=types.Implementation(name="test", version="1.0"),
+            ),
         )
 
         with pytest.raises(
@@ -201,10 +237,13 @@ class TestMcpHttpTransport_v20241105:
 
         assert isinstance(manifest, ManifestSchema)
         # Verify the toolset name was appended to the base URL
+        # Verify the toolset name was appended to the base URL
         expected_url = transport.base_url + "custom_toolset"
-        transport._send_request.assert_called_with(
-            url=expected_url, method="tools/list", params={}, headers=None
-        )
+
+        call_args = transport._send_request.call_args
+        assert call_args.kwargs["url"] == expected_url
+        assert isinstance(call_args.kwargs["request"], types.ListToolsRequest)
+        assert call_args.kwargs["headers"] is None
 
     async def test_tool_invoke_success(self, transport, mocker):
         mocker.patch.object(transport, "_ensure_initialized", new_callable=AsyncMock)
@@ -212,7 +251,9 @@ class TestMcpHttpTransport_v20241105:
             transport,
             "_send_request",
             new_callable=AsyncMock,
-            return_value={"content": [{"type": "text", "text": "Result"}]},
+            return_value=types.CallToolResult(
+                content=[types.TextContent(type="text", text="Result")]
+            ),
         )
 
         result = await transport.tool_invoke("tool", {}, {})
