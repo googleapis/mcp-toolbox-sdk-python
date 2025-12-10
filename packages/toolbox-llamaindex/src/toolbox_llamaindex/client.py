@@ -16,6 +16,7 @@ from asyncio import to_thread
 from typing import Any, Awaitable, Callable, Mapping, Optional, Union
 from warnings import warn
 
+from toolbox_core.protocol import Protocol
 from toolbox_core.sync_client import ToolboxSyncClient as ToolboxCoreSyncClient
 from toolbox_core.sync_tool import ToolboxSyncTool
 
@@ -30,6 +31,7 @@ class ToolboxClient:
         client_headers: Optional[
             Mapping[str, Union[Callable[[], str], Callable[[], Awaitable[str]], str]]
         ] = None,
+        protocol: Protocol = Protocol.MCP,
     ) -> None:
         """
         Initializes the ToolboxClient for the Toolbox service at the given URL.
@@ -38,7 +40,7 @@ class ToolboxClient:
             url: The base URL of the Toolbox service.
         """
         self.__core_client = ToolboxCoreSyncClient(
-            url=url, client_headers=client_headers
+            url=url, client_headers=client_headers, protocol=protocol
         )
 
     async def aload_tool(

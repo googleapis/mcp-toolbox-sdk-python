@@ -17,6 +17,7 @@ from unittest.mock import Mock, patch
 import pytest
 from pydantic import BaseModel
 from toolbox_core.protocol import ParameterSchema as CoreParameterSchema
+from toolbox_core.protocol import Protocol
 from toolbox_core.sync_tool import ToolboxSyncTool as ToolboxCoreSyncTool
 from toolbox_core.utils import params_to_pydantic_model
 
@@ -429,7 +430,7 @@ class TestToolboxClient:
         headers = {"X-Test-Header": "value"}
         ToolboxClient(URL, client_headers=headers)
         mock_core_client_constructor.assert_called_once_with(
-            url=URL, client_headers=headers
+            url=URL, client_headers=headers, protocol=Protocol.MCP_v20250618
         )
 
     @patch("toolbox_llamaindex.client.ToolboxCoreSyncClient")
