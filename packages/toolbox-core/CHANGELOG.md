@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.4](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v0.5.3...toolbox-core-v0.5.4) (2025-12-10)
+
+
+### Features
+
+* Add mcp support ([#450](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/450)) ([65a13ad](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/65a13ada3d73e1f2a63b3e97a418549a5d34c393)) ([#451](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/451)) ([538c84f](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/538c84fb2265faceb3893df1c3271d6db0809ea9))
+
+
 ## [0.5.3](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v0.5.2...toolbox-core-v0.5.3) (2025-11-18)
 
 
