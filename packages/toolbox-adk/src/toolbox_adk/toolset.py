@@ -77,14 +77,14 @@ class ToolboxToolset(BaseToolset):
         tools = []
         if self._toolset_name:
             core_tools = await self._client.load_toolset(
-                self._toolset_name, bound_params=self._bound_params
+                self._toolset_name, bound_params=self._bound_params or {}
             )
             tools.extend(core_tools)
 
         if self._tool_names:
             for name in self._tool_names:
                 core_tool = await self._client.load_tool(
-                    name, bound_params=self._bound_params
+                    name, bound_params=self._bound_params or {}
                 )
                 tools.append(core_tool)
 
