@@ -20,6 +20,7 @@ from typing import Any, Awaitable, Callable, Mapping, Optional, Union
 from deprecated import deprecated
 
 from .client import ToolboxClient
+from .protocol import Protocol
 from .sync_tool import ToolboxSyncTool
 
 
@@ -40,6 +41,7 @@ class ToolboxSyncClient:
         client_headers: Optional[
             Mapping[str, Union[Callable[[], str], Callable[[], Awaitable[str]], str]]
         ] = None,
+        protocol: Protocol,
     ):
         """
         Initializes the ToolboxSyncClient.
@@ -58,7 +60,7 @@ class ToolboxSyncClient:
             self.__class__.__loop = loop
 
         async def create_client():
-            return ToolboxClient(url, client_headers=client_headers)
+            return ToolboxClient(url, client_headers=client_headers, protocol)
 
         self.__async_client = run_coroutine_threadsafe(
             create_client(), self.__class__.__loop
