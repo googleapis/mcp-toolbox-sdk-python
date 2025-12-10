@@ -429,7 +429,7 @@ class TestToolboxClient:
         headers = {"X-Test-Header": "value"}
         ToolboxClient(URL, client_headers=headers)
         mock_core_client_constructor.assert_called_once_with(
-            url=URL, client_headers=headers
+            url=URL, client_headers=headers, protocol=Protocol.MCP_v20250618
         )
 
     @patch("toolbox_llamaindex.client.ToolboxCoreSyncClient")
