@@ -12,26 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: Sync Labels
-on:
-  push:
-    branches:
-      - main
+# Trigger presubmit tests for trusted contributors
+# https://github.com/googleapis/repo-automation-bots/tree/main/packages/trusted-contribution
+# Install: https://github.com/apps/trusted-contributions-gcf
 
-# Declare default permissions as read only.
-permissions: read-all
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: 'read'
-      issues: 'write'
-      pull-requests: 'write'
-    steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
-      - uses: micnncim/action-label-syncer@3abd5ab72fda571e69fffd97bd4e0033dd5f495c # v1.3.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          manifest: .github/labels.yaml
+trustedContributors:
+  - "dependabot[bot]"
+  - "renovate-bot"
+annotations:
+  # Trigger Cloud Build tests
+  - type: comment
+    text: "/gcbrun"
+  - type: label
+    text: "tests: run"

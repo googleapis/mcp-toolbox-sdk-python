@@ -37,7 +37,7 @@ jobs:
       pr_number: ${{ steps.detect_pr_number.outputs.pr_number }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
 
       - name: Install GitHub CLI
         run: sudo apt-get update && sudo apt-get install -y gh
@@ -59,7 +59,7 @@ jobs:
 
       - name: Detect all failed Cloud Build checks
         id: detect_failures
-        uses: actions/github-script@v8
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         env:
           PR_NUMBER: ${{ steps.detect_pr_number.outputs.pr_number }}
         with:

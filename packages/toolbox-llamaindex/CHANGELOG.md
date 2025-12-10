@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.4](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-llamaindex-v0.5.3...toolbox-llamaindex-v0.5.4) (2025-12-10)
+
+
+### Features
+
+* **toolbox-llamaindex:** add protocol toggle to llamaindex clients ([#453](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/453)) ([d5eece0](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/d5eece0d844feeb146199a2fad6c03f4fbec301b))
+
+
 ## [0.5.3](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-llamaindex-v0.5.2...toolbox-llamaindex-v0.5.3) (2025-11-18)
 
 

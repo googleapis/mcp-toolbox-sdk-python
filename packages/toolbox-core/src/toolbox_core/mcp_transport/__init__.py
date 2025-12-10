@@ -12,4 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__version__ = "0.5.4"
+from .v20241105.mcp import McpHttpTransportV20241105
+from .v20250326.mcp import McpHttpTransportV20250326
+from .v20250618.mcp import McpHttpTransportV20250618
+
+__all__ = [
+    "McpHttpTransportV20241105",
+    "McpHttpTransportV20250326",
+    "McpHttpTransportV20250618",
+]

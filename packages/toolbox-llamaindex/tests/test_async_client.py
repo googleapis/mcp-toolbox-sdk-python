@@ -19,6 +19,7 @@ import pytest
 from aiohttp import ClientSession
 from toolbox_core.client import ToolboxClient as ToolboxCoreClient
 from toolbox_core.protocol import ParameterSchema as CoreParameterSchema
+from toolbox_core.protocol import Protocol
 from toolbox_core.tool import ToolboxTool as ToolboxCoreTool
 
 from toolbox_llamaindex.async_client import AsyncToolboxClient
@@ -348,5 +349,8 @@ class TestAsyncToolboxClient:
         headers = {"X-Test-Header": "value"}
         AsyncToolboxClient(URL, session=mock_session, client_headers=headers)
         mock_core_client_constructor.assert_called_once_with(
-            url=URL, session=mock_session, client_headers=headers
+            url=URL,
+            session=mock_session,
+            client_headers=headers,
+            protocol=Protocol.MCP_v20250618,
         )

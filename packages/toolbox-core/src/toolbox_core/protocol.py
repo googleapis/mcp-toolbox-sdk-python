@@ -11,11 +11,31 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+from enum import Enum
 from inspect import Parameter
 from typing import Any, Optional, Type, Union
 
 from pydantic import BaseModel
+
+
+class Protocol(str, Enum):
+    """Defines how the client should choose between communication protocols."""
+
+    TOOLBOX = "toolbox"
+    MCP_v20250618 = "2025-06-18"
+    MCP_v20250326 = "2025-03-26"
+    MCP_v20241105 = "2024-11-05"
+    MCP = MCP_v20250618
+
+    @staticmethod
+    def get_supported_mcp_versions() -> list[str]:
+        """Returns a list of supported MCP protocol versions."""
+        return [
+            Protocol.MCP_v20250618.value,
+            Protocol.MCP_v20250326.value,
+            Protocol.MCP_v20241105.value,
+        ]
+
 
 __TYPE_MAP = {
     "string": str,

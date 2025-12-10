@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.4](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-langchain-v0.5.3...toolbox-langchain-v0.5.4) (2025-12-10)
+
+
+### Features
+
+* **toolbox-langchain:** add protocol toggle to langchain clients ([#452](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/452)) ([1f78e49](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/1f78e49bd2f53da9697c36681f3966b184667ddd))
+
+
 ## [0.5.3](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-langchain-v0.5.2...toolbox-langchain-v0.5.3) (2025-11-18)
 
 

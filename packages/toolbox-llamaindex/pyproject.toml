@@ -9,7 +9,7 @@ authors = [
     {name = "Google LLC", email = "googleapis-packages@google.com"}
 ]
 dependencies = [
-    "toolbox-core==0.5.3",              # x-release-please-version
+    "toolbox-core==0.5.4",              # x-release-please-version
     "llama-index-core>=0.12.0,<1.0.0",
     "PyYAML>=6.0.1,<7.0.0",
     "pydantic>=2.8.0,<3.0.0",
@@ -45,7 +45,7 @@ Changelog = "https://github.com/googleapis/mcp-toolbox-sdk-python/blob/main/pack
 test = [
     "black[jupyter]==25.11.0",
     "isort==7.0.0",
-    "mypy==1.18.2",
+    "mypy==1.19.0",
     "pytest-asyncio==1.3.0",
     "pytest==9.0.1",
     "pytest-cov==7.0.0",
