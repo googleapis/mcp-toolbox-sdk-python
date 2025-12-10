@@ -19,6 +19,7 @@ import pytest
 from aiohttp import ClientSession
 from toolbox_core.client import ToolboxClient as ToolboxCoreClient
 from toolbox_core.protocol import ParameterSchema as CoreParameterSchema
+from toolbox_core.protocol import Protocol
 from toolbox_core.tool import ToolboxTool as ToolboxCoreTool
 
 from toolbox_langchain.async_client import AsyncToolboxClient
