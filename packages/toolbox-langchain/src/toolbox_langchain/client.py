@@ -18,7 +18,6 @@ from warnings import warn
 
 from toolbox_core.protocol import Protocol
 from toolbox_core.sync_client import ToolboxSyncClient as ToolboxCoreSyncClient
-from toolbox_core.protocol import Protocol
 
 from .tools import ToolboxTool
 
