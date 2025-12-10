@@ -8,15 +8,6 @@
 * **toolbox-llamaindex:** add protocol toggle to llamaindex clients ([#453](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/453)) ([d5eece0](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/d5eece0d844feeb146199a2fad6c03f4fbec301b))
 
 
-### Miscellaneous Chores
-
-* **deps:** update dependency llama-index-core to v0.14.9 ([#444](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/444)) ([09781ca](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/09781ca4a8d85f6f6d07ecb6230c2287ab9f877e))
-* **deps:** update dependency mypy to v1.19.0 ([#443](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/443)) ([ca80201](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/ca80201a9b42a2e8b9604965477489dda8d7841e))
-* **deps:** update dependency pydantic to v2.12.5 ([#442](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/442)) ([8d8cffb](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/8d8cffb30ed5b011fe0ab06fc81f258a7006eb41))
-* **deps:** update python-nonmajor ([#447](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/447)) ([75e69bf](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/75e69bfa7f4a2b7eb5282d7a9b42971931310e4e))
-* **deps:** update update mcp toolbox server version in integration tests to v0.21.0 to v0.21.0 ([#431](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/431)) ([24c1cdd](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/24c1cddde2ed1800954de3b1c6291c034411c903))
-* **deps:** update update mcp toolbox server version in integration tests to v0.22.0 to v0.22.0 ([#448](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/448)) ([1fcf499](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/1fcf499d3761826bc7259455d30a06e48e0b1b5d))
-
 ## [0.5.3](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-llamaindex-v0.5.2...toolbox-llamaindex-v0.5.3) (2025-11-18)
 
 
