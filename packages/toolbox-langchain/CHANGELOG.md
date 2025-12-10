@@ -8,16 +8,6 @@
 * **toolbox-langchain:** add protocol toggle to langchain clients ([#452](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/452)) ([1f78e49](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/1f78e49bd2f53da9697c36681f3966b184667ddd))
 
 
-### Miscellaneous Chores
-
-* **deps:** bump langchain-core in /packages/toolbox-langchain ([#433](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/433)) ([a49d3bf](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/a49d3bfbaebe0e4e80692f246551c627c33492b3))
-* **deps:** update dependency langchain-core to v1.1.0 ([#436](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/436)) ([16221b6](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/16221b613b53156b6d3c5cb03c1044684271fe07))
-* **deps:** update dependency mypy to v1.19.0 ([#443](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/443)) ([ca80201](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/ca80201a9b42a2e8b9604965477489dda8d7841e))
-* **deps:** update dependency pydantic to v2.12.5 ([#442](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/442)) ([8d8cffb](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/8d8cffb30ed5b011fe0ab06fc81f258a7006eb41))
-* **deps:** update python-nonmajor ([#447](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/447)) ([75e69bf](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/75e69bfa7f4a2b7eb5282d7a9b42971931310e4e))
-* **deps:** update update mcp toolbox server version in integration tests to v0.21.0 to v0.21.0 ([#431](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/431)) ([24c1cdd](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/24c1cddde2ed1800954de3b1c6291c034411c903))
-* **deps:** update update mcp toolbox server version in integration tests to v0.22.0 to v0.22.0 ([#448](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/448)) ([1fcf499](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/1fcf499d3761826bc7259455d30a06e48e0b1b5d))
-
 ## [0.5.3](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-langchain-v0.5.2...toolbox-langchain-v0.5.3) (2025-11-18)
 
 
