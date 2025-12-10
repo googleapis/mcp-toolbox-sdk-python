@@ -691,3 +691,9 @@ class TestClientHeaders:
                     match=f"Client header\\(s\\) `X-Static-Header` already registered",
                 ):
                     client.add_headers(static_header)
+
+
+@pytest.mark.asyncio
+async def test_intentional_failure():
+    """This test is intentionally designed to fail for testing cloud build logs exporting workflow."""
+    assert False, "This is an intentional test failure"
