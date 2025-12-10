@@ -5,16 +5,8 @@
 
 ### Features
 
-* Add mcp support ([#450](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/450)) ([65a13ad](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/65a13ada3d73e1f2a63b3e97a418549a5d34c393))
-* **toolbox-core:** Allow specifying protocol in sync client ([#451](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/451)) ([538c84f](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/538c84fb2265faceb3893df1c3271d6db0809ea9))
+* Add mcp support ([#450](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/450)) ([65a13ad](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/65a13ada3d73e1f2a63b3e97a418549a5d34c393)) ([#451](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/451)) ([538c84f](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/538c84fb2265faceb3893df1c3271d6db0809ea9))
 
-
-### Miscellaneous Chores
-
-* **deps:** update dependency mypy to v1.19.0 ([#443](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/443)) ([ca80201](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/ca80201a9b42a2e8b9604965477489dda8d7841e))
-* **deps:** update dependency pydantic to v2.12.5 ([#442](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/442)) ([8d8cffb](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/8d8cffb30ed5b011fe0ab06fc81f258a7006eb41))
-* **deps:** update update mcp toolbox server version in integration tests to v0.21.0 to v0.21.0 ([#431](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/431)) ([24c1cdd](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/24c1cddde2ed1800954de3b1c6291c034411c903))
-* **deps:** update update mcp toolbox server version in integration tests to v0.22.0 to v0.22.0 ([#448](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/448)) ([1fcf499](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/1fcf499d3761826bc7259455d30a06e48e0b1b5d))
 
 ## [0.5.3](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v0.5.2...toolbox-core-v0.5.3) (2025-11-18)
 
