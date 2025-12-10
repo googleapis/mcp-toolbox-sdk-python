@@ -17,6 +17,7 @@ from warnings import warn
 
 from aiohttp import ClientSession
 from toolbox_core.client import ToolboxClient as ToolboxCoreClient
+from toolbox_core.protocol import Protocol
 
 from .async_tools import AsyncToolboxTool
 
@@ -33,6 +34,7 @@ class AsyncToolboxClient:
         client_headers: Optional[
             Mapping[str, Union[Callable[[], str], Callable[[], Awaitable[str]], str]]
         ] = None,
+        protocol: Protocol = Protocol.MCP,
     ):
         """
         Initializes the AsyncToolboxClient for the Toolbox service at the given URL.
@@ -42,7 +44,7 @@ class AsyncToolboxClient:
             session: An HTTP client session.
         """
         self.__core_client = ToolboxCoreClient(
-            url=url, session=session, client_headers=client_headers
+            url=url, session=session, client_headers=client_headers, protocol=protocol
         )
 
     async def aload_tool(
