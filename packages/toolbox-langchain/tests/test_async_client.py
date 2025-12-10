@@ -348,5 +348,8 @@ class TestAsyncToolboxClient:
         headers = {"X-Test-Header": "value"}
         AsyncToolboxClient(URL, session=mock_session, client_headers=headers)
         mock_core_client_constructor.assert_called_once_with(
-            url=URL, session=mock_session, client_headers=headers
+            url=URL,
+            session=mock_session,
+            client_headers=headers,
+            protocol=Protocol.MCP_v20250618,
         )
