@@ -18,6 +18,7 @@ from typing import Any, Awaitable, Callable, Dict, Optional, Union
 import google.auth
 import toolbox_core
 from google.auth import compute_engine, transport
+from google.auth.transport import requests
 from google.oauth2 import id_token
 
 from .credentials import CredentialConfig, CredentialType
@@ -72,10 +73,10 @@ class ToolboxClient:
             # No auth headers needed
             pass
 
-        elif creds.type == CredentialType.APPLICATION_DEFAULT_CREDENTIALS:
+        elif creds.type == CredentialType.WORKLOAD_IDENTITY:
             if not creds.target_audience:
                 raise ValueError(
-                    "target_audience is required for APPLICATION_DEFAULT_CREDENTIALS"
+                    "target_audience is required for WORKLOAD_IDENTITY"
                 )
 
             # Create an async capable token getter
@@ -113,7 +114,7 @@ class ToolboxClient:
         """Returns a callable that fetches a fresh ID token using ADC."""
 
         def get_token() -> str:
-            request = transport.requests.Request()
+            request = requests.Request()
             try:
                 token = id_token.fetch_id_token(request, audience)
                 return f"Bearer {token}"
@@ -133,7 +134,7 @@ class ToolboxClient:
 
     def _create_creds_token_getter(self, credentials: Any) -> Callable[[], str]:
         def get_token() -> str:
-            request = transport.requests.Request()
+            request = requests.Request()
             if not credentials.valid:
                 credentials.refresh(request)
             return f"Bearer {credentials.token}"

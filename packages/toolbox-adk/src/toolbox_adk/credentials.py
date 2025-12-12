@@ -22,7 +22,7 @@ from google.auth import credentials as google_creds
 class CredentialType(Enum):
     TOOLBOX_IDENTITY = "TOOLBOX_IDENTITY"
     WORKLOAD_IDENTITY = "WORKLOAD_IDENTITY"
-    APPLICATION_DEFAULT_CREDENTIALS = "APPLICATION_DEFAULT_CREDENTIALS"
+    # Removed APPLICATION_DEFAULT_CREDENTIALS based on client_wrapper change
     USER_IDENTITY = "USER_IDENTITY"
     MANUAL_TOKEN = "MANUAL_TOKEN"
     MANUAL_CREDS = "MANUAL_CREDS"
@@ -31,7 +31,7 @@ class CredentialType(Enum):
 @dataclass
 class CredentialConfig:
     type: CredentialType
-    # For APPLICATION_DEFAULT_CREDENTIALS
+    # For WORKLOAD_IDENTITY
     target_audience: Optional[str] = None
     # For USER_IDENTITY
     client_id: Optional[str] = None
@@ -54,6 +54,7 @@ class CredentialStrategy:
         """
         return CredentialConfig(type=CredentialType.TOOLBOX_IDENTITY)
 
+    @staticmethod
     @staticmethod
     def workload_identity(target_audience: str) -> CredentialConfig:
         """
