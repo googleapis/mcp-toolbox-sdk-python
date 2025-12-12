@@ -21,7 +21,7 @@ from google.auth import credentials as google_creds
 
 class CredentialType(Enum):
     TOOLBOX_IDENTITY = "TOOLBOX_IDENTITY"
-    APPLICATION_DEFAULT_CREDENTIALS = "APPLICATION_DEFAULT_CREDENTIALS"
+    WORKLOAD_IDENTITY = "WORKLOAD_IDENTITY"
     USER_IDENTITY = "USER_IDENTITY"
     MANUAL_TOKEN = "MANUAL_TOKEN"
     MANUAL_CREDS = "MANUAL_CREDS"
@@ -30,7 +30,7 @@ class CredentialType(Enum):
 @dataclass
 class CredentialConfig:
     type: CredentialType
-    # For APPLICATION_DEFAULT_CREDENTIALS
+    # For WORKLOAD_IDENTITY
     target_audience: Optional[str] = None
     # For USER_IDENTITY
     client_id: Optional[str] = None
@@ -54,22 +54,22 @@ class CredentialStrategy:
         return CredentialConfig(type=CredentialType.TOOLBOX_IDENTITY)
 
     @staticmethod
-    def APPLICATION_DEFAULT_CREDENTIALS(target_audience: str) -> CredentialConfig:
+    def WORKLOAD_IDENTITY(target_audience: str) -> CredentialConfig:
         """
         Uses the agent ADC to generate a Google-signed ID token for the specified audience.
         This is suitable for Cloud Run, GKE, or local development with `gcloud auth login`.
         """
         return CredentialConfig(
-            type=CredentialType.APPLICATION_DEFAULT_CREDENTIALS,
+            type=CredentialType.WORKLOAD_IDENTITY,
             target_audience=target_audience,
         )
 
     @staticmethod
-    def WORKLOAD_IDENTITY(target_audience: str) -> CredentialConfig:
+    def APPLICATION_DEFAULT_CREDENTIALS(target_audience: str) -> CredentialConfig:
         """
-        Alias for APPLICATION_DEFAULT_CREDENTIALS.
+        Alias for WORKLOAD_IDENTITY.
         """
-        return CredentialStrategy.APPLICATION_DEFAULT_CREDENTIALS(target_audience)
+        return CredentialStrategy.WORKLOAD_IDENTITY(target_audience)
 
     @staticmethod
     def USER_IDENTITY(
