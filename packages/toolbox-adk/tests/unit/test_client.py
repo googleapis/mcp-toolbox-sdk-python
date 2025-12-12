@@ -18,7 +18,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from toolbox_adk import CredentialStrategy, ToolboxClient
-from toolbox_adk.client import CredentialType
+from toolbox_adk.client import CredentialType, CredentialConfig
 
 
 @pytest.mark.asyncio
@@ -138,6 +138,14 @@ class TestToolboxClientAuth:
         assert token_getter() == ""
 
     @patch("toolbox_adk.client.toolbox_core.ToolboxClient")
+    async def test_init_api_key(self, mock_core_client):
+        creds = CredentialStrategy.api_key(key="123", header_name="x-foo")
+        client = ToolboxClient("http://test", credentials=creds)
+        headers = mock_core_client.call_args[1]["client_headers"]
+        assert headers["x-foo"] == "123"
+        assert "Authorization" not in headers
+
+    @patch("toolbox_adk.client.toolbox_core.ToolboxClient")
     async def test_init_manual_token(self, mock_core_client):
         creds = CredentialStrategy.manual_token(token="abc")
         client = ToolboxClient("http://test", credentials=creds)
@@ -202,6 +210,11 @@ class TestToolboxClientAuth:
 
         with pytest.raises(ValueError):
             creds = CredentialStrategy.manual_credentials(credentials=None)
+            ToolboxClient("http://test", credentials=creds)
+
+        with pytest.raises(ValueError, match="api_key and header_name are required for API_KEY"):
+            # Manually constructing invalid config since factory enforces signature
+            creds = CredentialConfig(type=CredentialType.API_KEY, api_key=None, header_name=None)
             ToolboxClient("http://test", credentials=creds)
 
     @patch("toolbox_adk.client.toolbox_core.ToolboxClient")

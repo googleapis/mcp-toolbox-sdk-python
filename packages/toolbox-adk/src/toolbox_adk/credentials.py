@@ -17,6 +17,8 @@ from enum import Enum
 from typing import Any, Dict, List, Optional
 
 from google.auth import credentials as google_creds
+from google.adk.auth.auth_credential import AuthCredential, AuthCredentialTypes
+from google.adk.auth.auth_tool import AuthConfig, AuthScheme
 
 
 class CredentialType(Enum):
@@ -25,6 +27,7 @@ class CredentialType(Enum):
     USER_IDENTITY = "USER_IDENTITY"
     MANUAL_TOKEN = "MANUAL_TOKEN"
     MANUAL_CREDS = "MANUAL_CREDS"
+    API_KEY = "API_KEY"
 
 
 @dataclass
@@ -41,6 +44,8 @@ class CredentialConfig:
     scheme: Optional[str] = None
     # For MANUAL_CREDS
     credentials: Optional[google_creds.Credentials] = None
+    # For API_KEY
+    api_key: Optional[str] = None
     # Common
     header_name: Optional[str] = None
 
@@ -111,4 +116,114 @@ class CredentialStrategy:
         return CredentialConfig(
             type=CredentialType.MANUAL_CREDS,
             credentials=credentials,
+        )
+
+    @staticmethod
+    def api_key(key: str, header_name: str = "X-API-Key") -> CredentialConfig:
+        """
+        Configures an API Key to be sent in a specific header.
+        """
+        return CredentialConfig(
+            type=CredentialType.API_KEY,
+            api_key=key,
+            header_name=header_name,
+        )
+
+    @staticmethod
+    def from_adk_auth_config(auth_config: AuthConfig) -> CredentialConfig:
+        """
+        Creates a CredentialConfig from an ADK AuthConfig object.
+
+        Args:
+            auth_config: The ADK AuthConfig object.
+
+        Returns:
+            CredentialConfig: The corresponding credential configuration.
+        """
+        if auth_config.raw_auth_credential is None:
+            raise ValueError("AuthConfig must have a raw_auth_credential.")
+
+        return CredentialStrategy.from_adk_credentials(
+            auth_credential=auth_config.raw_auth_credential,
+            auth_scheme=auth_config.auth_scheme,
+        )
+
+    @staticmethod
+    def from_adk_credentials(
+        auth_credential: AuthCredential, auth_scheme: Optional[AuthScheme] = None
+    ) -> CredentialConfig:
+        """
+        Creates a CredentialConfig from ADK AuthScheme and AuthCredential objects.
+
+        Args:
+            auth_credential: The ADK AuthCredential (containing secrets/tokens).
+            auth_scheme: The ADK AuthScheme (e.g. OAuth2, HTTP, API Key etc).
+                         Required for API Key credentials. Optional for others.
+
+        Returns:
+            CredentialConfig: The corresponding credential configuration.
+
+        Raises:
+            ValueError: If the credential type is not supported or required scheme is missing.
+        """
+        # Handle OAuth2
+        if (
+            auth_credential.auth_type == AuthCredentialTypes.OAUTH2
+            and auth_credential.oauth2
+        ):
+            # Extract client_id, client_secret, and scopes from the credential object.
+            return CredentialStrategy.user_identity(
+                client_id=auth_credential.oauth2.client_id,
+                client_secret=auth_credential.oauth2.client_secret,
+                scopes=auth_credential.oauth2.scopes,
+            )
+
+        # Handle HTTP Bearer
+        if (
+            auth_credential.auth_type == AuthCredentialTypes.HTTP
+            and auth_credential.http
+        ):
+            scheme_type = (auth_credential.http.scheme or "").lower()
+            if (
+                scheme_type == "bearer"
+                and auth_credential.http.credentials
+                and auth_credential.http.credentials.token
+            ):
+                return CredentialStrategy.manual_token(
+                    token=auth_credential.http.credentials.token, scheme="Bearer"
+                )
+            
+            raise ValueError(
+                f"Unsupported HTTP authentication scheme: {scheme_type}"
+            )
+
+        if (
+            auth_credential.auth_type == AuthCredentialTypes.API_KEY
+            and auth_credential.api_key
+        ):
+            if not auth_scheme:
+                raise ValueError("API Key credentials require the auth_scheme definition.")
+            
+            header_name = getattr(auth_scheme, "name", None)
+            if not header_name:
+                raise ValueError("API Key scheme must define the header name.")
+            
+            location = getattr(auth_scheme, "in_", "header") or "header"
+            # Handle Enum (APIKeyIn.header) or string values
+            location_str = str(location)
+            if "." in location_str:
+                location_str = location_str.split(".")[-1]
+            
+            if location_str.lower() != "header":
+                raise ValueError(
+                    f"Unsupported API Key location: {location}. Only 'header' is supported."
+                )
+
+            return CredentialStrategy.api_key(
+                key=auth_credential.api_key,
+                header_name=header_name,
+            )
+
+        raise ValueError(
+            f"Unsupported ADK credential type: {auth_credential.auth_type}"
         )
