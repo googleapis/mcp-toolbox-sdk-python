@@ -21,7 +21,7 @@ from google.auth import credentials as google_creds
 
 class CredentialType(Enum):
     TOOLBOX_IDENTITY = "TOOLBOX_IDENTITY"
-    APPLICATION_DEFAULT_CREDENTIALS = "APPLICATION_DEFAULT_CREDENTIALS"
+    WORKLOAD_IDENTITY = "WORKLOAD_IDENTITY"
     USER_IDENTITY = "USER_IDENTITY"
     MANUAL_TOKEN = "MANUAL_TOKEN"
     MANUAL_CREDS = "MANUAL_CREDS"
@@ -30,7 +30,7 @@ class CredentialType(Enum):
 @dataclass
 class CredentialConfig:
     type: CredentialType
-    # For APPLICATION_DEFAULT_CREDENTIALS
+    # For WORKLOAD_IDENTITY
     target_audience: Optional[str] = None
     # For USER_IDENTITY
     client_id: Optional[str] = None
@@ -47,32 +47,32 @@ class CredentialStrategy:
     """Factory for creating credential configurations for ToolboxToolset."""
 
     @staticmethod
-    def TOOLBOX_IDENTITY() -> CredentialConfig:
+    def toolbox_identity() -> CredentialConfig:
         """
         No credentials are sent. Relies on the remote Toolbox server's own identity.
         """
         return CredentialConfig(type=CredentialType.TOOLBOX_IDENTITY)
 
     @staticmethod
-    def APPLICATION_DEFAULT_CREDENTIALS(target_audience: str) -> CredentialConfig:
+    def workload_identity(target_audience: str) -> CredentialConfig:
         """
         Uses the agent ADC to generate a Google-signed ID token for the specified audience.
         This is suitable for Cloud Run, GKE, or local development with `gcloud auth login`.
         """
         return CredentialConfig(
-            type=CredentialType.APPLICATION_DEFAULT_CREDENTIALS,
+            type=CredentialType.WORKLOAD_IDENTITY,
             target_audience=target_audience,
         )
 
     @staticmethod
-    def WORKLOAD_IDENTITY(target_audience: str) -> CredentialConfig:
+    def application_default_credentials(target_audience: str) -> CredentialConfig:
         """
-        Alias for APPLICATION_DEFAULT_CREDENTIALS.
+        Alias for workload_identity.
         """
-        return CredentialStrategy.APPLICATION_DEFAULT_CREDENTIALS(target_audience)
+        return CredentialStrategy.workload_identity(target_audience)
 
     @staticmethod
-    def USER_IDENTITY(
+    def user_identity(
         client_id: str, client_secret: str, scopes: Optional[List[str]] = None
     ) -> CredentialConfig:
         """
@@ -87,7 +87,7 @@ class CredentialStrategy:
         )
 
     @staticmethod
-    def MANUAL_TOKEN(token: str, scheme: str = "Bearer") -> CredentialConfig:
+    def manual_token(token: str, scheme: str = "Bearer") -> CredentialConfig:
         """
         Send a hardcoded token string in the Authorization header.
         """
@@ -98,7 +98,7 @@ class CredentialStrategy:
         )
 
     @staticmethod
-    def MANUAL_CREDS(credentials: Any) -> CredentialConfig:
+    def manual_creds(credentials: Any) -> CredentialConfig:
         """
         Uses a provided Google Auth Credentials object.
         """
