@@ -109,6 +109,12 @@ class ToolboxClient:
             header_name = getattr(creds, "header_name", "Authorization") or "Authorization"
             self._core_client_headers[header_name] = get_user_token
 
+        elif creds.type == CredentialType.API_KEY:
+            if not creds.api_key or not creds.header_name:
+                raise ValueError("api_key and header_name are required for API_KEY")
+            
+            self._core_client_headers[creds.header_name] = creds.api_key
+
     def _create_adc_token_getter(self, audience: str) -> Callable[[], str]:
         """Returns a callable that fetches a fresh ID token using ADC."""
 
