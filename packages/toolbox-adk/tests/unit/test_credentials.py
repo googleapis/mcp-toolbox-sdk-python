@@ -17,23 +17,23 @@ from toolbox_adk.credentials import CredentialStrategy, CredentialType
 
 class TestCredentialStrategy:
     def test_toolbox_identity(self):
-        config = CredentialStrategy.TOOLBOX_IDENTITY()
+        config = CredentialStrategy.toolbox_identity()
         assert config.type == CredentialType.TOOLBOX_IDENTITY
 
     def test_workload_identity(self):
         audience = "https://example.com"
-        config = CredentialStrategy.WORKLOAD_IDENTITY(audience)
+        config = CredentialStrategy.workload_identity(audience)
         assert config.type == CredentialType.WORKLOAD_IDENTITY
         assert config.target_audience == audience
 
     def test_application_default_credentials_alias(self):
         audience = "https://example.com"
-        config = CredentialStrategy.APPLICATION_DEFAULT_CREDENTIALS(audience)
+        config = CredentialStrategy.application_default_credentials(audience)
         assert config.type == CredentialType.WORKLOAD_IDENTITY
         assert config.target_audience == audience
 
     def test_user_identity(self):
-        config = CredentialStrategy.USER_IDENTITY(
+        config = CredentialStrategy.user_identity(
             client_id="id", client_secret="secret", scopes=["scope1"]
         )
         assert config.type == CredentialType.USER_IDENTITY
@@ -42,17 +42,17 @@ class TestCredentialStrategy:
         assert config.scopes == ["scope1"]
 
     def test_manual_token(self):
-        config = CredentialStrategy.MANUAL_TOKEN(token="abc", scheme="Custom")
+        config = CredentialStrategy.manual_token(token="abc", scheme="Custom")
         assert config.type == CredentialType.MANUAL_TOKEN
         assert config.token == "abc"
         assert config.scheme == "Custom"
 
     def test_manual_token_defaults(self):
-        config = CredentialStrategy.MANUAL_TOKEN(token="abc")
+        config = CredentialStrategy.manual_token(token="abc")
         assert config.scheme == "Bearer"
 
     def test_manual_creds(self):
         fake_creds = object()
-        config = CredentialStrategy.MANUAL_CREDS(fake_creds)
+        config = CredentialStrategy.manual_creds(fake_creds)
         assert config.type == CredentialType.MANUAL_CREDS
         assert config.credentials == fake_creds
