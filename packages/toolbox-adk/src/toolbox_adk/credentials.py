@@ -61,6 +61,7 @@ class CredentialStrategy:
         return CredentialConfig(type=CredentialType.TOOLBOX_IDENTITY)
 
     @staticmethod
+    @staticmethod
     def workload_identity(target_audience: str) -> CredentialConfig:
         """
         Uses the agent ADC to generate a Google-signed ID token for the specified audience.
