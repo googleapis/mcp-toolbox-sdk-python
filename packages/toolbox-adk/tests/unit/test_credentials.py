@@ -51,8 +51,8 @@ class TestCredentialStrategy:
         config = CredentialStrategy.manual_token(token="abc")
         assert config.scheme == "Bearer"
 
-    def test_manual_creds(self):
+    def test_manual_credentials(self):
         fake_creds = object()
-        config = CredentialStrategy.manual_creds(fake_creds)
+        config = CredentialStrategy.manual_credentials(fake_creds)
         assert config.type == CredentialType.MANUAL_CREDS
         assert config.credentials == fake_creds
