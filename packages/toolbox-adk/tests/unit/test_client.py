@@ -216,6 +216,7 @@ class TestToolboxClientAuth:
             # Manually constructing invalid config since factory enforces signature
             creds = CredentialConfig(type=CredentialType.API_KEY, api_key=None, header_name=None)
             ToolboxClient("http://test", credentials=creds)
+            ToolboxClient("http://test", credentials=creds)
 
     @patch("toolbox_adk.client.toolbox_core.ToolboxClient")
     async def test_load_methods(self, mock_core_client_class):

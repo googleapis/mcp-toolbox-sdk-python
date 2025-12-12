@@ -246,8 +246,6 @@ class TestToolboxAdkIntegration:
             assert toolset._client._core_client_headers.get("Authorization") == "Bearer fake-integration-token"
         finally:
             await toolset.close()
-
-
     async def test_header_collision(self):
         """Test that CredentialStrategy overwrites passed Authorization headers."""
         # 1. Pass explicit header

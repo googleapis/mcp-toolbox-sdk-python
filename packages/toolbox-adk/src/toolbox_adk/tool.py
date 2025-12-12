@@ -13,8 +13,12 @@
 # limitations under the License.
 
 import logging
+<<<<<<< HEAD
 import logging
 from typing import Any, Awaitable, Callable, Dict, Optional
+=======
+from typing import Any, Awaitable, Callable, Dict, Optional, cast
+>>>>>>> a102b70 (test(toolbox-adk): Implement parity integration tests)
 
 import toolbox_core
 from fastapi.openapi.models import (
