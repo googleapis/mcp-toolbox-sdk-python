@@ -14,7 +14,7 @@ pip install toolbox-adk
 from toolbox_adk import ToolboxToolset, CredentialStrategy
 
 # Configure auth (e.g., Use the agent's identity)
-creds = CredentialStrategy.TOOLBOX_IDENTITY()
+creds = CredentialStrategy.toolbox_identity()
 
 # Create the toolset
 toolset = ToolboxToolset(

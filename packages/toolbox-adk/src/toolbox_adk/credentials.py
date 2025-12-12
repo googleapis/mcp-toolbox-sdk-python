@@ -47,14 +47,14 @@ class CredentialStrategy:
     """Factory for creating credential configurations for ToolboxToolset."""
 
     @staticmethod
-    def TOOLBOX_IDENTITY() -> CredentialConfig:
+    def toolbox_identity() -> CredentialConfig:
         """
         No credentials are sent. Relies on the remote Toolbox server's own identity.
         """
         return CredentialConfig(type=CredentialType.TOOLBOX_IDENTITY)
 
     @staticmethod
-    def WORKLOAD_IDENTITY(target_audience: str) -> CredentialConfig:
+    def workload_identity(target_audience: str) -> CredentialConfig:
         """
         Uses the agent ADC to generate a Google-signed ID token for the specified audience.
         This is suitable for Cloud Run, GKE, or local development with `gcloud auth login`.
@@ -65,14 +65,14 @@ class CredentialStrategy:
         )
 
     @staticmethod
-    def APPLICATION_DEFAULT_CREDENTIALS(target_audience: str) -> CredentialConfig:
+    def application_default_credentials(target_audience: str) -> CredentialConfig:
         """
-        Alias for WORKLOAD_IDENTITY.
+        Alias for workload_identity.
         """
-        return CredentialStrategy.WORKLOAD_IDENTITY(target_audience)
+        return CredentialStrategy.workload_identity(target_audience)
 
     @staticmethod
-    def USER_IDENTITY(
+    def user_identity(
         client_id: str, client_secret: str, scopes: Optional[List[str]] = None
     ) -> CredentialConfig:
         """
@@ -87,7 +87,7 @@ class CredentialStrategy:
         )
 
     @staticmethod
-    def MANUAL_TOKEN(token: str, scheme: str = "Bearer") -> CredentialConfig:
+    def manual_token(token: str, scheme: str = "Bearer") -> CredentialConfig:
         """
         Send a hardcoded token string in the Authorization header.
         """
@@ -98,7 +98,7 @@ class CredentialStrategy:
         )
 
     @staticmethod
-    def MANUAL_CREDS(credentials: Any) -> CredentialConfig:
+    def manual_creds(credentials: Any) -> CredentialConfig:
         """
         Uses a provided Google Auth Credentials object.
         """
