@@ -49,17 +49,14 @@ class ToolboxClient:
             additional_headers: Dictionary of headers (static or dynamic callables).
             **kwargs: Additional arguments passed to toolbox_core.ToolboxClient.
         """
-        self._server_url = server_url
-        self._credentials = credentials
-        self._additional_headers = additional_headers or {}
-
         self._core_client_headers: Dict[
             str, Union[str, Callable[[], str], Callable[[], Awaitable[str]]]
         ] = {}
 
         # Add static additional headers
-        for k, v in self._additional_headers.items():
-            self._core_client_headers[k] = v
+        if additional_headers:
+            for k, v in additional_headers.items():
+                self._core_client_headers[k] = v
 
         if credentials:
             self._configure_auth(credentials)
@@ -108,7 +105,8 @@ class ToolboxClient:
                     return ""
                 return f"Bearer {token}"
 
-            self._core_client_headers["Authorization"] = get_user_token
+            header_name = getattr(creds, "header_name", "Authorization") or "Authorization"
+            self._core_client_headers[header_name] = get_user_token
 
     def _create_adc_token_getter(self, audience: str) -> Callable[[], str]:
         """Returns a callable that fetches a fresh ID token using ADC."""
@@ -116,10 +114,11 @@ class ToolboxClient:
         def get_token() -> str:
             request = requests.Request()
             try:
+                # Try fetching ID token directly (e.g. on Cloud Run/GKE with metadata server)
                 token = id_token.fetch_id_token(request, audience)
                 return f"Bearer {token}"
             except Exception:
-                # Fallback to default credentials
+                # Fallback to default credentials (e.g. local gcloud auth)
                 creds, _ = google.auth.default()
                 if not creds.valid:
                     creds.refresh(request)
