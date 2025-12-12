@@ -145,25 +145,25 @@ class TestToolboxClientAuth:
         assert headers["Authorization"] == "Bearer abc"
 
     @patch("toolbox_adk.client.toolbox_core.ToolboxClient")
-    async def test_init_manual_creds(self, mock_core_client):
+    async def test_init_manual_credentials(self, mock_core_client):
         mock_google_creds = MagicMock()
         mock_google_creds.valid = True
         mock_google_creds.token = "creds-token"
 
-        creds = CredentialStrategy.manual_creds(credentials=mock_google_creds)
+        creds = CredentialStrategy.manual_credentials(credentials=mock_google_creds)
         client = ToolboxClient("http://test", credentials=creds)
 
         token_getter = mock_core_client.call_args[1]["client_headers"]["Authorization"]
         assert token_getter() == "Bearer creds-token"
 
     @patch("toolbox_adk.client.toolbox_core.ToolboxClient")
-    async def test_init_manual_creds_refresh(self, mock_core_client):
+    async def test_init_manual_credentials_refresh(self, mock_core_client):
         """Test MANUAL_CREDS refreshes if invalid."""
         mock_google_creds = MagicMock()
         mock_google_creds.valid = False
         mock_google_creds.token = "refreshed-token"
 
-        creds = CredentialStrategy.manual_creds(credentials=mock_google_creds)
+        creds = CredentialStrategy.manual_credentials(credentials=mock_google_creds)
         client = ToolboxClient("http://test", credentials=creds)
 
         token_getter = mock_core_client.call_args[1]["client_headers"]["Authorization"]
@@ -201,7 +201,7 @@ class TestToolboxClientAuth:
             ToolboxClient("http://test", credentials=creds)
 
         with pytest.raises(ValueError):
-            creds = CredentialStrategy.manual_creds(credentials=None)
+            creds = CredentialStrategy.manual_credentials(credentials=None)
             ToolboxClient("http://test", credentials=creds)
 
     @patch("toolbox_adk.client.toolbox_core.ToolboxClient")
