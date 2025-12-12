@@ -19,6 +19,95 @@ The primary entry point is the `ToolboxToolset`, which loads tools from a remote
 > [!NOTE]
 > The `ToolboxToolset` in this package mirrors the `ToolboxToolset` in the [`adk-python`](https://github.com/google/adk-python) package. The `adk-python` version is a shim that delegates all functionality to this implementation.
 
+This section describes how to configure and use the `ToolboxToolset`.
+
+### Authentication
+
+The `ToolboxToolset` requires credentials to authenticate with the Toolbox server. You can configure these credentials using the `CredentialStrategy` class.
+
+#### Supported Strategies
+
+##### 1. Toolbox Identity
+Use the agent's identity to authenticate with the Toolbox server. This is typically used when the agent itself has been granted permissions within the Toolbox system.
+
+```python
+from toolbox_adk import CredentialStrategy
+
+creds = CredentialStrategy.toolbox_identity()
+```
+
+##### 2. User Identity (OAuth2)
+Configures the ADK-native interactive 3-legged OAuth flow to get consent and credentials from the end-user at runtime.
+
+```python
+from toolbox_adk import CredentialStrategy
+
+creds = CredentialStrategy.user_identity(
+    client_id="your-client-id",
+    client_secret="your-client-secret",
+    scopes=["https://www.googleapis.com/auth/cloud-platform"]
+)
+```
+
+##### 3. Workload Identity (ADC)
+Uses the agent's Application Default Credentials (ADC). Suitable for Cloud Run, GKE, or local development with `gcloud auth login`.
+
+```python
+from toolbox_adk import CredentialStrategy
+
+# target_audience: The audience for the generated ID token
+creds = CredentialStrategy.workload_identity(target_audience="https://my-service-url")
+```
+
+##### 4. HTTP Bearer Token
+Use a static bearer token for authentication.
+
+```python
+from toolbox_adk import CredentialStrategy
+
+creds = CredentialStrategy.manual_token(token="your-static-bearer-token")
+```
+
+##### 5. Manual Google Credentials
+Use an existing `google.auth.credentials.Credentials` object.
+
+```python
+from toolbox_adk import CredentialStrategy
+import google.auth
+
+creds_obj, _ = google.auth.default()
+creds = CredentialStrategy.manual_credentials(credentials=creds_obj)
+```
+
+##### 6. API Key
+Use a static API key passed in a specific header (default: `X-API-Key`).
+
+```python
+from toolbox_adk import CredentialStrategy
+
+# Default header: X-API-Key
+creds = CredentialStrategy.api_key(key="my-secret-key")
+
+# Custom header
+creds = CredentialStrategy.api_key(key="my-secret-key", header_name="X-My-Header")
+```
+
+##### 7. Authentication from ADK
+If you are using the ADK `Tool` class, you can automatically convert ADK credentials to Toolbox credentials.
+This supports **OAuth2**, **HTTP Bearer**, and **API Key**.
+
+```python
+from toolbox_adk import CredentialStrategy
+
+# auth_scheme: The ADK AuthScheme definition
+# auth_credential: The runtime credential collected by ADK
+toolbox_creds = CredentialStrategy.from_adk_credentials(auth_scheme, auth_credential)
+```
+
+### Creating the Toolset
+
+Once you have configured your credentials, you can create an instance of `ToolboxToolset`.
+
 ```python
 from toolbox_adk import ToolboxToolset, CredentialStrategy
 from google.adk.agents import Agent
