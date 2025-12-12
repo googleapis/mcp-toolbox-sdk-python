@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 from typing import Any, Awaitable, Callable, Dict, Optional, cast
 
 import toolbox_core
@@ -146,6 +147,12 @@ class ToolboxTool(BaseTool):
                 ctx.error = e
                 if "credential" in str(e).lower() or isinstance(e, ValueError):
                     raise e
+                
+                logging.warning(
+                    f"Unexpected error in get_auth_response during 3LO retrieval: {e}. "
+                    "Falling back to request_credential.",
+                    exc_info=True
+                )
                 # Fallback to request logic
                 ctx_any = cast(Any, tool_context)
                 ctx_any.request_credential(auth_config_adk)

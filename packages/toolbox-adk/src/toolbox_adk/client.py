@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 from contextvars import ContextVar
 from typing import Any, Awaitable, Callable, Dict, Optional, Union
 
@@ -118,8 +119,12 @@ class ToolboxClient:
             try:
                 token = id_token.fetch_id_token(request, audience)
                 return f"Bearer {token}"
-            except Exception:
+            except Exception as e:
                 # Fallback to default credentials
+                logging.warning(
+                    f"Failed to fetch ID token for audience {audience} using ADC: {e}. "
+                    "Falling back to google.auth.default()."
+                )
                 creds, _ = google.auth.default()
                 if not creds.valid:
                     creds.refresh(request)

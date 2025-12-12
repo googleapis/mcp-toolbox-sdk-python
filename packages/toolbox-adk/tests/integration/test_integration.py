@@ -159,6 +159,8 @@ class TestToolboxAdkIntegration:
                 # If it fails, strictly it's likely a 401 or similar from the backend interactions.
                 # This confirms the wrapper proceeded to call the backend and did NOT request credentials again.
                 mock_ctx_second.request_credential.assert_not_called()
+                err_msg = str(e).lower()
+                assert any(x in err_msg for x in ["401", "403", "unauthorized", "forbidden"]), f"Caught UNEXPECTED exception: {type(e).__name__}: {e}"
                 print(f"Caught expected server exception with fake token: {e}")
 
         finally:
