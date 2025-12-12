@@ -150,9 +150,9 @@ class TestToolboxClientAuth:
             USER_TOKEN_CONTEXT_VAR.reset(token)
 
     async def test_validation_errors(self):
-        with pytest.raises(ValueError):
-            # ADC requires audience
-            creds = CredentialStrategy.APPLICATION_DEFAULT_CREDENTIALS(
+        with pytest.raises(ValueError, match="target_audience is required for WORKLOAD_IDENTITY"):
+            # WORKLOAD_IDENTITY requires audience
+            creds = CredentialStrategy.WORKLOAD_IDENTITY(
                 target_audience=""
             )
             ToolboxClient("http://test", credentials=creds)
