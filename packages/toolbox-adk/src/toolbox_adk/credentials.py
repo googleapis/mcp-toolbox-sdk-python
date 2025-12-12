@@ -17,6 +17,8 @@ from enum import Enum
 from typing import Any, Dict, List, Optional
 
 from google.auth import credentials as google_creds
+from google.adk.auth.auth_credential import AuthCredential, AuthCredentialTypes
+from google.adk.auth.auth_tool import AuthConfig, AuthScheme
 
 
 class CredentialType(Enum):
@@ -105,4 +107,71 @@ class CredentialStrategy:
         return CredentialConfig(
             type=CredentialType.MANUAL_CREDS,
             credentials=credentials,
+        )
+
+    @staticmethod
+    def from_adk_auth_config(auth_config: "AuthConfig") -> CredentialConfig:
+        """
+        Creates a CredentialConfig from an ADK AuthConfig object.
+
+        Args:
+            auth_config: The ADK AuthConfig object.
+
+        Returns:
+            CredentialConfig: The corresponding credential configuration.
+        """
+        if auth_config.raw_auth_credential is None:
+            raise ValueError("AuthConfig must have a raw_auth_credential.")
+
+        return CredentialStrategy.from_adk_credentials(
+            auth_config.auth_scheme, auth_config.raw_auth_credential
+        )
+
+    @staticmethod
+    def from_adk_credentials(
+        auth_scheme: "AuthScheme", auth_credential: "AuthCredential"
+    ) -> CredentialConfig:
+        """
+        Creates a CredentialConfig from ADK AuthScheme and AuthCredential objects.
+
+        Args:
+            auth_scheme: The ADK AuthScheme (e.g. OAuth2, HTTP, etc).
+            auth_credential: The ADK AuthCredential (containing secrets/tokens).
+
+        Returns:
+            CredentialConfig: The corresponding credential configuration.
+
+        Raises:
+            ValueError: If the credential type is not supported.
+        """
+        # Handle OAuth2
+        if (
+            auth_credential.auth_type == AuthCredentialTypes.OAUTH2
+            and auth_credential.oauth2
+        ):
+            # Extract client_id, client_secret, and scopes from the credential object.
+            return CredentialStrategy.user_identity(
+                client_id=auth_credential.oauth2.client_id,
+                client_secret=auth_credential.oauth2.client_secret,
+                scopes=auth_credential.oauth2.scopes,
+            )
+
+        # Handle HTTP Bearer
+        if (
+            auth_credential.auth_type == AuthCredentialTypes.HTTP
+            and auth_credential.http
+        ):
+            # Verify scheme is Bearer and extract token.
+            scheme_type = (auth_credential.http.scheme or "").lower()
+            if (
+                scheme_type == "bearer"
+                and auth_credential.http.credentials
+                and auth_credential.http.credentials.token
+            ):
+                return CredentialStrategy.manual_token(
+                    token=auth_credential.http.credentials.token, scheme="Bearer"
+                )
+
+        raise ValueError(
+            f"Unsupported ADK credential type: {auth_credential.auth_type}"
         )
