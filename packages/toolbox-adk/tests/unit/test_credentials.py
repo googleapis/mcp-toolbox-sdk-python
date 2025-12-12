@@ -20,16 +20,16 @@ class TestCredentialStrategy:
         config = CredentialStrategy.TOOLBOX_IDENTITY()
         assert config.type == CredentialType.TOOLBOX_IDENTITY
 
-    def test_application_default_credentials(self):
-        audience = "https://example.com"
-        config = CredentialStrategy.APPLICATION_DEFAULT_CREDENTIALS(audience)
-        assert config.type == CredentialType.APPLICATION_DEFAULT_CREDENTIALS
-        assert config.target_audience == audience
-
-    def test_workload_identity_alias(self):
+    def test_workload_identity(self):
         audience = "https://example.com"
         config = CredentialStrategy.WORKLOAD_IDENTITY(audience)
-        assert config.type == CredentialType.APPLICATION_DEFAULT_CREDENTIALS
+        assert config.type == CredentialType.WORKLOAD_IDENTITY
+        assert config.target_audience == audience
+
+    def test_application_default_credentials_alias(self):
+        audience = "https://example.com"
+        config = CredentialStrategy.APPLICATION_DEFAULT_CREDENTIALS(audience)
+        assert config.type == CredentialType.WORKLOAD_IDENTITY
         assert config.target_audience == audience
 
     def test_user_identity(self):
