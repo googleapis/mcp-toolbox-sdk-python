@@ -1,7 +1,7 @@
 [project]
 name = "toolbox-adk"
 dynamic = ["version"]
-description = "ADK Integration for MCP Toolbox"
+description = "Agent Development Kit Integration for MCP Toolbox"
 readme = "README.md"
 authors = [{name = "Google LLC", email = "googleapis-packages@google.com"}]
 license = {file = "LICENSE"}
