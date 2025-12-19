@@ -52,6 +52,7 @@ class ToolboxClient:
         self._core_client_headers: Dict[
             str, Union[str, Callable[[], str], Callable[[], Awaitable[str]]]
         ] = {}
+        self._credentials = credentials
 
         # Add static additional headers
         if additional_headers:
@@ -114,11 +115,7 @@ class ToolboxClient:
             
             self._core_client_headers[creds.header_name] = creds.api_key
 
-        elif creds.type == CredentialType.API_KEY:
-            if not creds.api_key or not creds.header_name:
-                raise ValueError("api_key and header_name are required for API_KEY")
-            
-            self._core_client_headers[creds.header_name] = creds.api_key
+
 
     def _create_adc_token_getter(self, audience: str) -> Callable[[], str]:
         """Returns a callable that fetches a fresh ID token using ADC."""
