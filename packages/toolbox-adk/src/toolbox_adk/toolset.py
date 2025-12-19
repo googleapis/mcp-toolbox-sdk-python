@@ -59,18 +59,29 @@ class ToolboxToolset(BaseToolset):
             post_hook: Hook to run after every tool execution.
         """
         super().__init__()
-        self._client = ToolboxClient(
-            server_url=server_url,
-            credentials=credentials,
-            additional_headers=additional_headers,
-            **kwargs,
-        )
-        self._toolset_name = toolset_name
-        self._tool_names = tool_names
-        self._bound_params = bound_params
-        self._auth_token_getters = auth_token_getters
-        self._pre_hook = pre_hook
-        self._post_hook = post_hook
+        self.__server_url = server_url
+        self.__credentials = credentials
+        self.__additional_headers = additional_headers
+        self.__kwargs = kwargs
+        self.__client: Optional[ToolboxClient] = None
+        
+        self.__toolset_name = toolset_name
+        self.__tool_names = tool_names
+        self.__bound_params = bound_params
+        self.__auth_token_getters = auth_token_getters
+        self.__pre_hook = pre_hook
+        self.__post_hook = post_hook
+
+    @property
+    def client(self) -> ToolboxClient:
+        if self.__client is None:
+             self.__client = ToolboxClient(
+                server_url=self.__server_url,
+                credentials=self.__credentials,
+                additional_headers=self.__additional_headers,
+                **self.__kwargs,
+            )
+        return self.__client
 
     @override
     async def get_tools(
@@ -81,30 +92,30 @@ class ToolboxToolset(BaseToolset):
 
         tools = []
         # 1. Load specific toolset if requested
-        if self._toolset_name:
-            core_tools = await self._client.load_toolset(
-                self._toolset_name,
-                bound_params=self._bound_params or {},
-                auth_token_getters=self._auth_token_getters or {},
+        if self.__toolset_name:
+            core_tools = await self.client.load_toolset(
+                self.__toolset_name,
+                bound_params=self.__bound_params or {},
+                auth_token_getters=self.__auth_token_getters or {},
             )
             tools.extend(core_tools)
 
         # 2. Load specific tools if requested
-        if self._tool_names:
-            for name in self._tool_names:
-                core_tool = await self._client.load_tool(
+        if self.__tool_names:
+            for name in self.__tool_names:
+                core_tool = await self.client.load_tool(
                     name,
-                    bound_params=self._bound_params or {},
-                    auth_token_getters=self._auth_token_getters or {},
+                    bound_params=self.__bound_params or {},
+                    auth_token_getters=self.__auth_token_getters or {},
                 )
                 tools.append(core_tool)
 
         # 3. If NO tools/toolsets were specified, default to loading everything (default toolset)
-        if not self._toolset_name and not self._tool_names:
-            core_tools = await self._client.load_toolset(
+        if not self.__toolset_name and not self.__tool_names:
+            core_tools = await self.client.load_toolset(
                 None,
-                bound_params=self._bound_params or {},
-                auth_token_getters=self._auth_token_getters or {},
+                bound_params=self.__bound_params or {},
+                auth_token_getters=self.__auth_token_getters or {},
             )
             tools.extend(core_tools)
 
@@ -112,12 +123,13 @@ class ToolboxToolset(BaseToolset):
         return [
             ToolboxTool(
                 core_tool=t,
-                pre_hook=self._pre_hook,
-                post_hook=self._post_hook,
-                auth_config=self._client.credential_config,
+                pre_hook=self.__pre_hook,
+                post_hook=self.__post_hook,
+                auth_config=self.client.credential_config,
             )
             for t in tools
         ]
 
     async def close(self):
-        await self._client.close()
+        if self.__client:
+            await self.__client.close()
