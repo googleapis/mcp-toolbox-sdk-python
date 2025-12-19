@@ -99,5 +99,7 @@ class TestToolboxToolset:
         mock_instance.close = AsyncMock()
 
         toolset = ToolboxToolset("url")
+        # Access client to trigger lazy creation
+        _ = toolset.client
         await toolset.close()
         mock_instance.close.assert_awaited()
