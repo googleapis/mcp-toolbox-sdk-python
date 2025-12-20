@@ -12,16 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, Awaitable, Callable, Dict, Optional, cast
+import logging
+from typing import Any, Awaitable, Callable, Dict, Optional
 
 import toolbox_core
 from fastapi.openapi.models import (
     OAuth2,
     OAuthFlowAuthorizationCode,
     OAuthFlows,
-    SecurityScheme,
 )
-from google.adk.agents.readonly_context import ReadonlyContext
 from google.adk.auth.auth_credential import (
     AuthCredential,
     AuthCredentialTypes,
@@ -29,6 +28,7 @@ from google.adk.auth.auth_credential import (
 )
 from google.adk.auth.auth_tool import AuthConfig
 from google.adk.tools.base_tool import BaseTool
+from google.adk.tools.tool_context import ToolContext
 from toolbox_core.tool import ToolboxTool as CoreToolboxTool
 from typing_extensions import override
 
@@ -39,7 +39,7 @@ from .credentials import CredentialConfig, CredentialType
 class ToolboxContext:
     """Context object passed to pre/post hooks."""
 
-    def __init__(self, arguments: Dict[str, Any], tool_context: ReadonlyContext):
+    def __init__(self, arguments: Dict[str, Any], tool_context: ToolContext):
         self.arguments = arguments
         self.tool_context = tool_context
         self.result: Optional[Any] = None
@@ -68,11 +68,13 @@ class ToolboxTool(BaseTool):
         # We act as a proxy.
         # We need to extract metadata from the core tool to satisfy BaseTool's contract.
 
-        name = getattr(core_tool, "__name__", "unknown_tool")
-        description = (
-            getattr(core_tool, "__doc__", "No description provided.")
-            or "No description provided."
-        )
+        name = getattr(core_tool, "__name__", None)
+        if not name:
+            raise ValueError(f"Core tool {core_tool} must have a valid __name__")
+
+        description = getattr(core_tool, "__doc__", None)
+        if not description:
+            raise ValueError(f"Core tool {name} must have a valid __doc__ (description)")
 
         super().__init__(
             name=name,
@@ -89,7 +91,7 @@ class ToolboxTool(BaseTool):
     async def run_async(
         self,
         args: Dict[str, Any],
-        tool_context: ReadonlyContext,
+        tool_context: ToolContext,
     ) -> Any:
         # Create context
         ctx = ToolboxContext(arguments=args, tool_context=tool_context)
@@ -134,21 +136,25 @@ class ToolboxTool(BaseTool):
             # Check if we already have credentials from a previous exchange
             try:
                 # get_auth_response returns AuthCredential if found
-                ctx_any = cast(Any, tool_context)
-                creds = ctx_any.get_auth_response(auth_config_adk)
+                creds = tool_context.get_auth_response(auth_config_adk)
                 if creds and creds.oauth2 and creds.oauth2.access_token:
                     reset_token = USER_TOKEN_CONTEXT_VAR.set(creds.oauth2.access_token)
                 else:
                     # Request credentials and pause execution
-                    ctx_any.request_credential(auth_config_adk)
+                    tool_context.request_credential(auth_config_adk)
                     return None
             except Exception as e:
                 ctx.error = e
                 if "credential" in str(e).lower() or isinstance(e, ValueError):
                     raise e
+                
+                logging.warning(
+                    f"Unexpected error in get_auth_response during 3LO retrieval: {e}. "
+                    "Falling back to request_credential.",
+                    exc_info=True
+                )
                 # Fallback to request logic
-                ctx_any = cast(Any, tool_context)
-                ctx_any.request_credential(auth_config_adk)
+                tool_context.request_credential(auth_config_adk)
                 return None
 
         try:

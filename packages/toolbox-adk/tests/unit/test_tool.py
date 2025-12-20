@@ -26,6 +26,7 @@ class TestToolboxTool:
     async def test_run_async_passthrough(self):
         mock_core = AsyncMock()
         mock_core.__name__ = "my_tool"
+        mock_core.__doc__ = "my description"
         mock_core.return_value = "success"
 
         tool = ToolboxTool(mock_core)
@@ -42,6 +43,7 @@ class TestToolboxTool:
     async def test_hooks(self):
         mock_core = AsyncMock(return_value="res")
         mock_core.__name__ = "hooked_tool"
+        mock_core.__doc__ = "hooked description"
 
         async def before(ctx: ToolboxContext):
             ctx.arguments["arg"] += 1
@@ -61,6 +63,8 @@ class TestToolboxTool:
     @pytest.mark.asyncio
     async def test_error_in_hook(self):
         mock_core = AsyncMock()
+        mock_core.__name__ = "mock"
+        mock_core.__doc__ = "mock"
 
         async def failing_hook(ctx):
             raise ValueError("Boom")
@@ -75,6 +79,8 @@ class TestToolboxTool:
     @pytest.mark.asyncio
     async def test_run_async_exception_handling(self):
         mock_core = AsyncMock(side_effect=ValueError("Execution failed"))
+        mock_core.__name__ = "mock"
+        mock_core.__doc__ = "mock"
         tool = ToolboxTool(mock_core)
 
         ctx = MagicMock()
@@ -89,6 +95,8 @@ class TestToolboxTool:
     async def test_run_async_exception_captured_in_hook(self):
         # Allow verifying ctx.error via post_hook
         mock_core = AsyncMock(side_effect=ValueError("Fail"))
+        mock_core.__name__ = "mock"
+        mock_core.__doc__ = "mock"
 
         captured_error = None
 
@@ -108,6 +116,8 @@ class TestToolboxTool:
     async def test_auth_check_no_token(self):
         # Scenario: ADK context has no token initially
         mock_core = AsyncMock(return_value="ok")
+        mock_core.__name__ = "mock"
+        mock_core.__doc__ = "mock"
         tool = ToolboxTool(mock_core)
 
         ctx = MagicMock()
@@ -121,20 +131,29 @@ class TestToolboxTool:
     @pytest.mark.asyncio
     async def test_bind_params(self):
         mock_core = MagicMock()
-        mock_core.bind_params.return_value = "new_core_tool"
+        mock_core.__name__ = "mock"
+        mock_core.__doc__ = "mock"
+        
+        # return_value must be an object with metadata
+        new_core_mock = MagicMock()
+        new_core_mock.__name__ = "bound_mock"
+        new_core_mock.__doc__ = "bound mock"
+        mock_core.bind_params.return_value = new_core_mock
 
         tool = ToolboxTool(mock_core, pre_hook=None)
         new_tool = tool.bind_params({"a": 1})
 
         assert isinstance(new_tool, ToolboxTool)
         # Note: Mocked string return prevents full type verification.
-        assert new_tool._core_tool == "new_core_tool"
+        assert new_tool._core_tool == new_core_mock
         mock_core.bind_params.assert_called_with({"a": 1})
 
     @pytest.mark.asyncio
     async def test_3lo_missing_client_secret(self):
         # Test ValueError when client_id/secret missing
         core_tool = AsyncMock()
+        core_tool.__name__ = "mock"
+        core_tool.__doc__ = "mock"
         auth_config = CredentialConfig(type=CredentialType.USER_IDENTITY)
         # Missing client_id/secret
 
@@ -150,6 +169,8 @@ class TestToolboxTool:
     async def test_3lo_request_credential_when_missing(self):
         # Test that if creds are missing, request_credential is called and returns None
         core_tool = AsyncMock()
+        core_tool.__name__ = "mock"
+        core_tool.__doc__ = "mock"
         auth_config = CredentialConfig(
             type=CredentialType.USER_IDENTITY, client_id="cid", client_secret="csec"
         )
@@ -173,6 +194,8 @@ class TestToolboxTool:
     async def test_3lo_uses_existing_credential(self):
         # Test that if creds exist, they are used and injected
         core_tool = AsyncMock(return_value="success")
+        core_tool.__name__ = "mock"
+        core_tool.__doc__ = "mock"
         auth_config = CredentialConfig(
             type=CredentialType.USER_IDENTITY, client_id="cid", client_secret="csec"
         )
@@ -198,6 +221,8 @@ class TestToolboxTool:
     async def test_3lo_exception_reraise(self):
         # Test that specific credential errors are re-raised
         core_tool = AsyncMock()
+        core_tool.__name__ = "mock"
+        core_tool.__doc__ = "mock"
         auth_config = CredentialConfig(
             type=CredentialType.USER_IDENTITY, client_id="cid", client_secret="csec"
         )
@@ -214,6 +239,8 @@ class TestToolboxTool:
     async def test_3lo_exception_fallback(self):
         # Test that non-credential errors trigger fallback request
         core_tool = AsyncMock()
+        core_tool.__name__ = "mock"
+        core_tool.__doc__ = "mock"
         auth_config = CredentialConfig(
             type=CredentialType.USER_IDENTITY, client_id="cid", client_secret="csec"
         )
@@ -230,14 +257,22 @@ class TestToolboxTool:
         ctx.request_credential.assert_called_once()
 
     def test_init_defaults(self):
-        # Test initialization with minimal tool metadata
+        # Test initialization with minimal tool metadata checks
         class EmptyTool:
             pass
 
         core_tool = EmptyTool()
-        args = {"core_tool": core_tool}
 
-        # Runtime check relies on attributes, not strict type hierarchy.
+        # Now we expect ValueError because valid metadata is enforced
+        with pytest.raises(ValueError, match="must have a valid __name__"):
+            ToolboxTool(core_tool)
+
+        core_tool.__name__ = "valid_tool"
+        # Still fails on doc
+        with pytest.raises(ValueError, match="must have a valid __doc__"):
+            ToolboxTool(core_tool)
+
+        core_tool.__doc__ = "valid description"
         tool = ToolboxTool(core_tool)
-        assert tool.name == "unknown_tool"
-        assert tool.description == "No description provided."
+        assert tool.name == "valid_tool"
+        assert tool.description == "valid description"
