@@ -12,6 +12,32 @@ It provides a seamless bridge between the `toolbox-core` SDK and the ADK's `Base
 pip install toolbox-adk
 ```
 
+## Usage
+
+The primary entry point is the `ToolboxToolset`, which loads tools from a remote Toolbox server and adapts them for use with ADK agents.
+
+> [!NOTE]
+> The `ToolboxToolset` in this package mirrors the `ToolboxToolset` in the [`adk-python`](https://github.com/google/adk-python) package. The `adk-python` version is a shim that delegates all functionality to this implementation.
+
+```python
+from toolbox_adk import ToolboxToolset
+from google.adk.agents import Agent
+
+# Create the Toolset
+toolset = ToolboxToolset(
+    server_url="http://127.0.0.1:5000",
+    toolset_name="my-toolset" 
+)
+
+# Use in your ADK Agent
+agent = Agent(tools=[toolset])
+```
+
+> [!TIP]
+> By default, it uses **Toolbox Identity** (no authentication), which is suitable for local development.
+>
+> For production environments (Cloud Run, GKE) or accessing protected resources, see the [Authentication](#authentication) section for strategies like Workload Identity or OAuth2.
+
 ## Authentication
 
 The `ToolboxToolset` requires credentials to authenticate with the Toolbox server. You can configure these credentials using the `CredentialStrategy` factory methods.
@@ -98,33 +124,23 @@ creds = CredentialStrategy.from_adk_auth_config(auth_config)
 creds = CredentialStrategy.from_adk_credentials(auth_credential, scheme)
 ```
 
-## Usage
+### 8. Tool-Specific Authentication
+*Resolve authentication tokens dynamically for specific tools.*
 
-The primary entry point is the `ToolboxToolset`, which loads tools from a remote Toolbox server and adapts them for use with ADK agents.
-
-> [!NOTE]
-> The `ToolboxToolset` in this package mirrors the `ToolboxToolset` in the [`adk-python`](https://github.com/google/adk-python) package. The `adk-python` version is a shim that delegates all functionality to this implementation.
-
-### creating the Toolset
-
-Once you have configured your credentials, you can create and use the `ToolboxToolset`.
+Some tools may define their own authentication requirements (e.g., Salesforce OAuth, GitHub PAT) via `authSources` in their schema. You can provide a mapping of getters to resolve these tokens at runtime.
 
 ```python
-from toolbox_adk import ToolboxToolset, CredentialStrategy
-from google.adk.agents import Agent
+async def get_salesforce_token():
+    # Fetch token from secret manager or reliable source
+    return "sf-access-token"
 
-# 1. Configure Authentication Strategy
-creds = CredentialStrategy.workload_identity(target_audience="https://my-toolbox-service.run.app")
-
-# 2. Create the Toolset
 toolset = ToolboxToolset(
-    server_url="https://my-toolbox-service.run.app",
-    toolset_name="my-toolset", # Optional: Load specific toolset
-    credentials=creds
+    server_url="...",
+    auth_token_getters={
+        "salesforce-auth": get_salesforce_token,   # Async callable
+        "github-pat": lambda: "my-pat-token"       # Sync callable or static lambda
+    }
 )
-
-# 3. Use in your ADK Agent
-agent = Agent(tools=[toolset])
 ```
 
 ## Advanced Configuration
@@ -157,24 +173,6 @@ toolset = ToolboxToolset(
 )
 ```
 
-### Auth Token Getters
-
-Some tools may define their own authentication requirements (e.g., Salesforce OAuth, GitHub PAT) via `authSources` in their schema. You can provide a mapping of getters to resolve these tokens at runtime.
-
-```python
-async def get_salesforce_token():
-    # Fetch token from secret manager or reliable source
-    return "sf-access-token"
-
-toolset = ToolboxToolset(
-    server_url="...",
-    auth_token_getters={
-        "salesforce-auth": get_salesforce_token,   # Async callable
-        "github-pat": lambda: "my-pat-token"       # Sync callable or static lambda
-    }
-)
-```
-
 ### Usage with Hooks
 
 You can attach `pre_hook` and `post_hook` functions to execute logic before and after every tool invocation.
@@ -196,6 +194,8 @@ async def log_end(context: ToolboxContext):
     # Inspect result or error
     if context.error:
         print(f"Tool failed: {context.error}")
+    else:
+        print(f"Tool succeeded with result: {context.result}")
 
 toolset = ToolboxToolset(
     server_url="...",
