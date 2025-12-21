@@ -29,7 +29,11 @@ class TestToolboxToolset:
 
         # Setup mocks returning list of tools
         t1 = MagicMock()
+        t1.__name__ = "tool1"
+        t1.__doc__ = "desc1"
         t2 = MagicMock()
+        t2.__name__ = "tool2"
+        t2.__doc__ = "desc2"
         mock_client.load_toolset = AsyncMock(return_value=[t1])
         mock_client.load_tool = AsyncMock(return_value=t2)
 
@@ -57,6 +61,8 @@ class TestToolboxToolset:
 
         # Setup mocks
         t1 = MagicMock()
+        t1.__name__ = "tool1"
+        t1.__doc__ = "desc1"
         mock_client.load_tool = AsyncMock(return_value=t1)
 
         auth_getters = {"service": lambda: "token"}
@@ -75,7 +81,10 @@ class TestToolboxToolset:
     @pytest.mark.asyncio
     async def test_hooks_propagation(self, mock_client_cls):
         mock_client = mock_client_cls.return_value
-        mock_client.load_toolset = AsyncMock(return_value=[MagicMock()])
+        t1 = MagicMock()
+        t1.__name__ = "tool1"
+        t1.__doc__ = "desc1"
+        mock_client.load_toolset = AsyncMock(return_value=[t1])
 
         hook = AsyncMock()
         toolset = ToolboxToolset("url", toolset_name="s", pre_hook=hook)
