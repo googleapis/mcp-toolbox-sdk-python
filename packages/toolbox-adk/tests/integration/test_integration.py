@@ -265,7 +265,7 @@ class TestToolboxAdkIntegration:
         )
 
         # Accessing private member for verification
-        auth_header = toolset._client._core_client_headers.get("Authorization")
+        auth_header = toolset.client._core_client_headers.get("Authorization")
 
         assert auth_header == creds_token, "CredentialStrategy MUST overwrite additional_headers['Authorization']"
 
