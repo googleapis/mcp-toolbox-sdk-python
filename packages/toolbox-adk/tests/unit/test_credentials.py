@@ -139,13 +139,7 @@ class TestCredentialStrategy:
         auth_credential = AuthCredential(
             auth_type=AuthCredentialTypes.API_KEY, api_key="abc"
         )
-        # Omit 'in' / 'in_'
-        # We simulate an object that lacks 'in_' or has it as None
-        # Using a simple namespace or partial mock since APIKey might enforce required fields if verified strictly
-        # But let's assume usage where it might be missing or we use a loose object.
-        # Actually fastapi APIKey requires 'in_', so we might need to mock or use a cleaner dict approach if supporting loose objects.
-        # ADK AuthScheme is typically a Pydantic model.
-        # Let's try to construct APIKey without 'in' if possible, or use a mock.
+        # Omit 'in' / 'in_' to test default location (header)
         auth_scheme = APIKey(type="apiKey", name="x-api-key", **{"in": "header"}) # This is explicit.
         # To test DEFAULT, we need an object that returns None for .in_
         
