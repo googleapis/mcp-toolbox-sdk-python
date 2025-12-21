@@ -149,7 +149,7 @@ class ToolboxTool(BaseTool):
                     raise e
                 
                 logging.warning(
-                    f"Unexpected error in get_auth_response during 3LO retrieval: {e}. "
+                    f"Unexpected error in get_auth_response during User Identity (OAuth2) retrieval: {e}. "
                     "Falling back to request_credential.",
                     exc_info=True
                 )
