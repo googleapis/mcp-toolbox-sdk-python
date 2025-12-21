@@ -6,6 +6,24 @@ This package allows Google ADK (Agent Development Kit) agents to natively use to
 
 It provides a seamless bridge between the `toolbox-core` SDK and the ADK's `BaseTool` / `BaseToolset` interfaces, handling authentication propagation, header management, and tool wrapping automatically.
 
+## Table of Contents
+
+- [Installation](#installation)
+- [Usage](#usage)
+- [Authentication](#authentication)
+    - [Workload Identity (ADC)](#1-workload-identity-adc)
+    - [User Identity (OAuth2)](#2-user-identity-oauth2)
+    - [API Key](#3-api-key)
+    - [HTTP Bearer Token](#4-http-bearer-token)
+    - [Manual Google Credentials](#5-manual-google-credentials)
+    - [Toolbox Identity (No Auth)](#6-toolbox-identity-no-auth)
+    - [Native ADK Integration](#7-native-adk-integration)
+    - [Tool-Specific Authentication](#8-tool-specific-authentication)
+- [Advanced Configuration](#advanced-configuration)
+    - [Additional Headers](#additional-headers)
+    - [Global Parameter Binding](#global-parameter-binding)
+    - [Usage with Hooks](#usage-with-hooks)
+
 ## Installation
 
 ```bash
@@ -42,30 +60,45 @@ agent = Agent(tools=[toolset])
 
 The `ToolboxToolset` requires credentials to authenticate with the Toolbox server. You can configure these credentials using the `CredentialStrategy` factory methods.
 
+The strategies handle two main types of authentication:
+*   **Client-to-Server**: Securing the connection to the Toolbox server (e.g., Workload Identity, API keys).
+*   **User Identity**: Authenticating the end-user for specific tools (e.g., 3-legged OAuth).
+
 ### 1. Workload Identity (ADC)
 *Recommended for Cloud Run, GKE, or local development with `gcloud auth login`.*
 
-Uses the agent's Application Default Credentials (ADC) to generate an OIDC ID token. This is the standard way for one service to authenticate to another on Google Cloud.
+Uses the agent's Application Default Credentials (ADC) to generate an OIDC token. This is the standard way for one service to authenticate to another on Google Cloud.
 
 ```python
-from toolbox_adk import CredentialStrategy
+from toolbox_adk import CredentialStrategy, ToolboxToolset
 
 # target_audience: The URL of your Toolbox server
 creds = CredentialStrategy.workload_identity(target_audience="https://my-toolbox-service.run.app")
+
+toolset = ToolboxToolset(
+    server_url="https://my-toolbox-service.run.app",
+    credentials=creds
+)
 ```
 
 ### 2. User Identity (OAuth2)
 *Recommended for tools that act on behalf of the user.*
 
-Configures the ADK-native interactive 3-legged OAuth flow to get consent and credentials from the end-user at runtime.
+Configures the ADK-native interactive 3-legged OAuth flow to get consent and credentials from the end-user at runtime. This strategy is passed to the `ToolboxToolset` just like any other credential strategy.
 
 ```python
-from toolbox_adk import CredentialStrategy
+from toolbox_adk import CredentialStrategy, ToolboxToolset
 
 creds = CredentialStrategy.user_identity(
     client_id="YOUR_CLIENT_ID",
     client_secret="YOUR_CLIENT_SECRET",
     scopes=["https://www.googleapis.com/auth/cloud-platform"]
+)
+
+# The toolset will now initiate OAuth flows when required by tools
+toolset = ToolboxToolset(
+    server_url="...",
+    credentials=creds
 )
 ```
 
