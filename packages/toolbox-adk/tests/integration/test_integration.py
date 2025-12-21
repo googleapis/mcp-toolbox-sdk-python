@@ -206,7 +206,7 @@ class TestToolboxAdkIntegration:
         )
         try:
             # Check configured headers locally
-            headers = toolset._client._core_client_headers
+            headers = toolset.client._core_client_headers
             assert headers["x-foo"] == "my-key"
             
             await toolset.get_tools()
@@ -243,7 +243,7 @@ class TestToolboxAdkIntegration:
 
         try:
             # 4. Verify initialization
-            assert toolset._client._core_client_headers.get("Authorization") == "Bearer fake-integration-token"
+            assert toolset.client._core_client_headers.get("Authorization") == "Bearer fake-integration-token"
         finally:
             await toolset.close()
 
@@ -265,7 +265,7 @@ class TestToolboxAdkIntegration:
         )
 
         # Accessing private member for verification
-        auth_header = toolset._client._core_client_headers.get("Authorization")
+        auth_header = toolset.client._core_client_headers.get("Authorization")
 
         assert auth_header == creds_token, "CredentialStrategy MUST overwrite additional_headers['Authorization']"
 
