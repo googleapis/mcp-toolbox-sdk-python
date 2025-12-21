@@ -52,6 +52,7 @@ class ToolboxClient:
         self._core_client_headers: Dict[
             str, Union[str, Callable[[], str], Callable[[], Awaitable[str]]]
         ] = {}
+        self._credentials = credentials
 
         # Add static additional headers
         if additional_headers:
