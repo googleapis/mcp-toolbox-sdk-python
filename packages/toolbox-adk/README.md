@@ -194,12 +194,16 @@ toolset = ToolboxToolset(
 
 ### Global Parameter Binding
 
-Bind values to tool parameters globally across all loaded tools. These values will be fixed and hidden from the LLM.
+Bind values to tool parameters globally across all loaded tools. These values will be **fixed** and **hidden** from the LLM.
+
+*   **Schema Hiding**: The bound parameters are removed from the tool schema sent to the model, simplifying the context window.
+*   **Auto-Injection**: The values are automatically injected into the tool arguments during execution.
 
 ```python
 toolset = ToolboxToolset(
     server_url="...",
     bound_params={
+        # 'region' will be removed from the LLM schema and injected automatically
         "region": "us-central1",
         "api_key": lambda: get_api_key() # Can be a callable
     }
