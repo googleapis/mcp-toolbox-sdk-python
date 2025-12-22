@@ -38,20 +38,16 @@ class McpHttpTransportV20250326(_McpHttpTransportBase):
         headers: Optional[Mapping[str, str]] = None,
     ) -> ReceiveResultT | None:
         """Sends a JSON-RPC request to the MCP server."""
-        raw_params = (
+        params = (
             request.params.model_dump(mode="json", exclude_none=True)
             if isinstance(request.params, BaseModel)
             else request.params
         )
 
-        # Inject Session ID if available (v2025-03-26 specific)
-        params = raw_params
+        # Inject Session ID into headers if available (v2025-03-26 specific)
+        req_headers = dict(headers or {})
         if request.method != "initialize" and self._session_id:
-            if params is None:
-                params = {}
-            elif isinstance(params, dict):
-                params = params.copy()
-            params["Mcp-Session-Id"] = self._session_id
+            req_headers["Mcp-Session-Id"] = self._session_id
 
         rpc_msg: BaseModel
         if isinstance(request, types.MCPNotification):
@@ -62,8 +58,11 @@ class McpHttpTransportV20250326(_McpHttpTransportBase):
         payload = rpc_msg.model_dump(mode="json", exclude_none=True)
 
         async with self._session.post(
-            url, json=payload, headers=dict(headers or {})
+            url, json=payload, headers=req_headers
         ) as response:
+            if "Mcp-Session-Id" in response.headers:
+                self._session_id = response.headers["Mcp-Session-Id"]
+
             if not response.ok:
                 error_text = await response.text()
                 raise RuntimeError(
@@ -127,8 +126,7 @@ class McpHttpTransportV20250326(_McpHttpTransportBase):
             raise RuntimeError("Server does not support the 'tools' capability.")
 
         # Extract session ID from extra fields (v2025-03-26 specific)
-        extra = result.model_extra or {}
-        self._session_id = extra.get("Mcp-Session-Id")
+        # Session ID is captured from headers in _send_request
 
         if not self._session_id:
             if self._manage_session:
