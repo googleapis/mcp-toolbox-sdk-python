@@ -172,7 +172,7 @@ class TestAuth:
         auth_tool = tool.add_auth_token_getters({"my-test-auth": lambda: auth_token2})
         with pytest.raises(
             Exception,
-            match="API request failed with status 401 (Unauthorized)",
+            match=r"401 \(Unauthorized\)",
         ):
             await auth_tool(id="2")
 
