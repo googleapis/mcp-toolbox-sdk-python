@@ -144,7 +144,6 @@ class TestE2EClientAsync:
         with pytest.raises(
             Exception,
             match=r"401 \(Unauthorized\)",
-
         ):
             await auth_tool.acall(id="2")
 
