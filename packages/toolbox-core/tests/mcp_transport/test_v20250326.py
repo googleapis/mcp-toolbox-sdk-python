@@ -76,7 +76,7 @@ class TestMcpHttpTransportV20250326:
         assert result == TestResult()
 
     async def test_send_request_with_session_id(self, transport):
-        """Test that the session ID is injected into params."""
+        """Test that the session ID is injected into headers."""
         transport._session_id = "test-session-id"
         mock_response = AsyncMock()
         mock_response.ok = True
@@ -99,7 +99,8 @@ class TestMcpHttpTransportV20250326:
 
         call_args = transport._session.post.call_args
         sent_params = call_args.kwargs["json"]["params"]
-        assert sent_params["Mcp-Session-Id"] == "test-session-id"
+        sent_headers = call_args.kwargs["headers"]
+        assert sent_headers["Mcp-Session-Id"] == "test-session-id"
         assert sent_params["param"] == "value"
 
     async def test_send_request_api_error(self, transport):
@@ -171,17 +172,20 @@ class TestMcpHttpTransportV20250326:
             transport, "_send_request", new_callable=AsyncMock
         )
 
-        mock_send.side_effect = [
-            types.InitializeResult.model_validate(
-                {
-                    "protocolVersion": "2025-03-26",
-                    "capabilities": {"tools": {"listChanged": True}},
-                    "serverInfo": {"name": "test", "version": "1.0"},
-                    "Mcp-Session-Id": "sess-123",
-                }
-            ),
-            None,
-        ]
+        async def side_effect(*args, **kwargs):
+            request = kwargs.get("request")
+            if isinstance(request, types.InitializeRequest):
+                transport._session_id = "sess-123"
+                return types.InitializeResult.model_validate(
+                    {
+                        "protocolVersion": "2025-03-26",
+                        "capabilities": {"tools": {"listChanged": True}},
+                        "serverInfo": {"name": "test", "version": "1.0"},
+                    }
+                )
+            return None
+
+        mock_send.side_effect = side_effect
 
         await transport._initialize_session()
         assert transport._session_id == "sess-123"
