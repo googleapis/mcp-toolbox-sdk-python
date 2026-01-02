@@ -438,10 +438,7 @@ class TestAuth:
 
             with pytest.raises(
                 Exception,
-                # The exception might differ slightly depending on how the server responds to waiting for auth,
-                # but generically it should fail authorization. 
-                # toolbox-core says "tool invocation not authorized"
-                match="tool invocation not authorized",
+                match=r"unauthorized Tool call: Please make sure your specify correct auth headers: unauthorized",
             ):
                 await tool.run_async({"id": "2"}, ctx)
         finally:
