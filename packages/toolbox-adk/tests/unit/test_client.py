@@ -150,7 +150,7 @@ class TestToolboxClientAuth:
         mock_google_creds.valid = True
         mock_google_creds.token = "creds-token"
 
-        creds = CredentialStrategy.manual_creds(credentials=mock_google_creds)
+        creds = CredentialStrategy.manual_credentials(credentials=mock_google_creds)
         client = ToolboxClient("http://test", credentials=creds)
 
         token_getter = mock_core_client.call_args[1]["client_headers"]["Authorization"]
@@ -163,7 +163,7 @@ class TestToolboxClientAuth:
         mock_google_creds.valid = False
         mock_google_creds.token = "refreshed-token"
 
-        creds = CredentialStrategy.manual_creds(credentials=mock_google_creds)
+        creds = CredentialStrategy.manual_credentials(credentials=mock_google_creds)
         client = ToolboxClient("http://test", credentials=creds)
 
         token_getter = mock_core_client.call_args[1]["client_headers"]["Authorization"]
@@ -201,7 +201,7 @@ class TestToolboxClientAuth:
             ToolboxClient("http://test", credentials=creds)
 
         with pytest.raises(ValueError):
-            creds = CredentialStrategy.manual_creds(credentials=None)
+            creds = CredentialStrategy.manual_credentials(credentials=None)
             ToolboxClient("http://test", credentials=creds)
 
     @patch("toolbox_adk.client.toolbox_core.ToolboxClient")
