@@ -22,7 +22,6 @@ from google.auth import credentials as google_creds
 class CredentialType(Enum):
     TOOLBOX_IDENTITY = "TOOLBOX_IDENTITY"
     WORKLOAD_IDENTITY = "WORKLOAD_IDENTITY"
-    APPLICATION_DEFAULT_CREDENTIALS = "APPLICATION_DEFAULT_CREDENTIALS"
     USER_IDENTITY = "USER_IDENTITY"
     MANUAL_TOKEN = "MANUAL_TOKEN"
     MANUAL_CREDS = "MANUAL_CREDS"
@@ -31,7 +30,7 @@ class CredentialType(Enum):
 @dataclass
 class CredentialConfig:
     type: CredentialType
-    # For APPLICATION_DEFAULT_CREDENTIALS
+    # For WORKLOAD_IDENTITY
     target_audience: Optional[str] = None
     # For USER_IDENTITY
     client_id: Optional[str] = None
@@ -42,6 +41,8 @@ class CredentialConfig:
     scheme: Optional[str] = None
     # For MANUAL_CREDS
     credentials: Optional[google_creds.Credentials] = None
+    # Common
+    header_name: Optional[str] = None
 
 
 class CredentialStrategy:
@@ -74,7 +75,10 @@ class CredentialStrategy:
 
     @staticmethod
     def user_identity(
-        client_id: str, client_secret: str, scopes: Optional[List[str]] = None
+        client_id: str,
+        client_secret: str,
+        scopes: Optional[List[str]] = None,
+        header_name: Optional[str] = None,
     ) -> CredentialConfig:
         """
         Configures the ADK-native interactive 3-legged OAuth flow to get consent
@@ -85,6 +89,7 @@ class CredentialStrategy:
             client_id=client_id,
             client_secret=client_secret,
             scopes=scopes,
+            header_name=header_name,
         )
 
     @staticmethod
