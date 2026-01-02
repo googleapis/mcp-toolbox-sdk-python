@@ -145,7 +145,7 @@ class TestToolboxClientAuth:
         assert headers["Authorization"] == "Bearer abc"
 
     @patch("toolbox_adk.client.toolbox_core.ToolboxClient")
-    async def test_init_manual_creds(self, mock_core_client):
+    async def test_init_manual_credentials(self, mock_core_client):
         mock_google_creds = MagicMock()
         mock_google_creds.valid = True
         mock_google_creds.token = "creds-token"
@@ -157,7 +157,7 @@ class TestToolboxClientAuth:
         assert token_getter() == "Bearer creds-token"
 
     @patch("toolbox_adk.client.toolbox_core.ToolboxClient")
-    async def test_init_manual_creds_refresh(self, mock_core_client):
+    async def test_init_manual_credentials_refresh(self, mock_core_client):
         """Test MANUAL_CREDS refreshes if invalid."""
         mock_google_creds = MagicMock()
         mock_google_creds.valid = False
