@@ -43,8 +43,7 @@ from google.adk.agents import Agent
 
 # Create the Toolset
 toolset = ToolboxToolset(
-    server_url="http://127.0.0.1:5000",
-    toolset_name="my-toolset" 
+    server_url="http://127.0.0.1:5000" 
 )
 
 # Use in your ADK Agent
