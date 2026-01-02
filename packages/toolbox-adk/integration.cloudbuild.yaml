@@ -17,19 +17,21 @@ steps:
     name: 'python:${_VERSION}'
     dir: 'packages/toolbox-adk'
     args:
+      - pip
       - install
       - '-r'
       - 'requirements.txt'
       - '--user'
-    entrypoint: pip
+    entrypoint: uv
   - id: Install test requirements
     name: 'python:${_VERSION}'
     args:
+      - pip
       - install
       - '-e'
       - 'packages/toolbox-adk[test]'
       - '--user'
-    entrypoint: pip
+    entrypoint: uv
   - id: Run integration tests
     name: 'python:${_VERSION}'
     dir: 'packages/toolbox-adk'
