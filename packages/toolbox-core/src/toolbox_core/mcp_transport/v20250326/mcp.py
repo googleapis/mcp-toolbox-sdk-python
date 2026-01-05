@@ -60,6 +60,9 @@ class McpHttpTransportV20250326(_McpHttpTransportBase):
         async with self._session.post(
             url, json=payload, headers=req_headers
         ) as response:
+            if request.method == "initialize" and "Mcp-Session-Id" in response.headers:
+                self._session_id = response.headers["Mcp-Session-Id"]
+                
             if not response.ok:
                 error_text = await response.text()
                 raise RuntimeError(
