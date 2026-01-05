@@ -127,6 +127,7 @@ class McpHttpTransportV20250326(_McpHttpTransportBase):
 
         # Extract session ID from extra fields (v2025-03-26 specific)
         # Session ID is captured from headers in _send_request
+        
         if not self._session_id:
             if self._manage_session:
                 await self.close()
