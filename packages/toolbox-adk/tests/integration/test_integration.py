@@ -197,6 +197,57 @@ class TestToolboxAdkIntegration:
         finally:
             await toolset.close()
 
+    async def test_api_key_integration(self):
+        """Test the API_KEY strategy."""
+        toolset = ToolboxToolset(
+            server_url="http://localhost:5000",
+            toolset_name="my-toolset",
+            credentials=CredentialStrategy.api_key(key="my-key", header_name="x-foo"),
+        )
+        try:
+            # Check configured headers locally
+            headers = toolset._client._core_client_headers
+            assert headers["x-foo"] == "my-key"
+            
+            await toolset.get_tools()
+        finally:
+            await toolset.close()
+
+    async def test_adk_integration_optional_params(self):
+        """test that we can create credentials from ADK objects without auth_scheme."""
+        from google.adk.auth.auth_credential import (
+            AuthCredential,
+            AuthCredentialTypes,
+            HttpCredentials,
+            HttpAuth,
+        )
+
+        # 1. Create ADK credential (HTTP Bearer)
+        adk_creds = AuthCredential(
+            auth_type=AuthCredentialTypes.HTTP,
+            http=HttpAuth(
+                scheme="Bearer",
+                credentials=HttpCredentials(token="fake-integration-token")
+            )
+        )
+
+        # 2. Convert using ONLY credential (optional scheme)
+        strategy = CredentialStrategy.from_adk_credentials(auth_credential=adk_creds)
+
+        # 3. Use in Toolset
+        toolset = ToolboxToolset(
+            server_url="http://localhost:5000",
+            toolset_name="my-toolset",
+            credentials=strategy,
+        )
+
+        try:
+            # 4. Verify initialization
+            assert toolset._client._core_client_headers.get("Authorization") == "Bearer fake-integration-token"
+        finally:
+            await toolset.close()
+
+
     async def test_header_collision(self):
         """Test that CredentialStrategy overwrites passed Authorization headers."""
         # 1. Pass explicit header
