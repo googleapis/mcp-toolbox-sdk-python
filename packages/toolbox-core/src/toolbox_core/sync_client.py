@@ -14,7 +14,7 @@
 
 
 from asyncio import AbstractEventLoop, new_event_loop, run_coroutine_threadsafe
-from threading import Thread
+from threading import Lock, Thread
 from typing import Any, Awaitable, Callable, Mapping, Optional, Union
 
 from deprecated import deprecated
@@ -34,6 +34,7 @@ class ToolboxSyncClient:
 
     __loop: Optional[AbstractEventLoop] = None
     __thread: Optional[Thread] = None
+    __lock: Lock = Lock()
 
     def __init__(
         self,
@@ -53,11 +54,13 @@ class ToolboxSyncClient:
         # Running a loop in a background thread allows us to support async
         # methods from non-async environments.
         if self.__class__.__loop is None:
-            loop = new_event_loop()
-            thread = Thread(target=loop.run_forever, daemon=True)
-            thread.start()
-            self.__class__.__thread = thread
-            self.__class__.__loop = loop
+            with self.__class__.__lock:
+                if self.__class__.__loop is None:
+                    loop = new_event_loop()
+                    thread = Thread(target=loop.run_forever, daemon=True)
+                    thread.start()
+                    self.__class__.__thread = thread
+                    self.__class__.__loop = loop
 
         async def create_client():
             return ToolboxClient(url, client_headers=client_headers, protocol=protocol)
