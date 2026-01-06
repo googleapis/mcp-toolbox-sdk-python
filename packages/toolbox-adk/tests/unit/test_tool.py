@@ -152,8 +152,8 @@ class TestToolboxTool:
     async def test_3lo_missing_client_secret(self):
         # Test ValueError when client_id/secret missing
         core_tool = AsyncMock()
-        core_tool.__name__ = "mock"
-        core_tool.__doc__ = "mock"
+        core_tool.__name__ = "mock_tool"
+        core_tool.__doc__ = "mock doc"
         auth_config = CredentialConfig(type=CredentialType.USER_IDENTITY)
         # Missing client_id/secret
 
@@ -171,6 +171,9 @@ class TestToolboxTool:
         core_tool = AsyncMock()
         core_tool.__name__ = "mock"
         core_tool.__doc__ = "mock"
+        core_tool.__name__ = "mock_tool"
+        core_tool.__doc__ = "mock doc"
+
         auth_config = CredentialConfig(
             type=CredentialType.USER_IDENTITY, client_id="cid", client_secret="csec"
         )
@@ -196,6 +199,9 @@ class TestToolboxTool:
         core_tool = AsyncMock(return_value="success")
         core_tool.__name__ = "mock"
         core_tool.__doc__ = "mock"
+        core_tool.__name__ = "mock_tool"
+        core_tool.__doc__ = "mock doc"
+
         auth_config = CredentialConfig(
             type=CredentialType.USER_IDENTITY, client_id="cid", client_secret="csec"
         )
@@ -223,6 +229,9 @@ class TestToolboxTool:
         core_tool = AsyncMock()
         core_tool.__name__ = "mock"
         core_tool.__doc__ = "mock"
+        core_tool.__name__ = "mock_tool"
+        core_tool.__doc__ = "mock doc"
+
         auth_config = CredentialConfig(
             type=CredentialType.USER_IDENTITY, client_id="cid", client_secret="csec"
         )
@@ -241,6 +250,9 @@ class TestToolboxTool:
         core_tool = AsyncMock()
         core_tool.__name__ = "mock"
         core_tool.__doc__ = "mock"
+        core_tool.__name__ = "mock_tool"
+        core_tool.__doc__ = "mock doc"
+
         auth_config = CredentialConfig(
             type=CredentialType.USER_IDENTITY, client_id="cid", client_secret="csec"
         )
@@ -266,7 +278,6 @@ class TestToolboxTool:
         # Now we expect ValueError because valid metadata is enforced
         with pytest.raises(ValueError, match="must have a valid __name__"):
             ToolboxTool(core_tool)
-
         core_tool.__name__ = "valid_tool"
         # Still fails on doc
         with pytest.raises(ValueError, match="must have a valid __doc__"):

@@ -105,6 +105,13 @@ def toolbox_version() -> str:
 @pytest_asyncio.fixture(scope="session")
 def tools_file_path(project_id: str) -> Generator[str]:
     """Provides a temporary file path containing the tools manifest."""
+    if os.environ.get("TEST_MOCK_GCP"):
+        content = "tools: []"  # Dummy manifest
+        path = create_tmpfile(content)
+        yield path
+        os.remove(path)
+        return
+
     tools_manifest = access_secret_version(
         project_id=project_id,
         secret_id="sdk_testing_tools",
@@ -117,6 +124,8 @@ def tools_file_path(project_id: str) -> Generator[str]:
 
 @pytest_asyncio.fixture(scope="session")
 def auth_token1(project_id: str) -> str:
+    if os.environ.get("TEST_MOCK_GCP"):
+        return "mock-token-1"
     client_id = access_secret_version(
         project_id=project_id, secret_id="sdk_testing_client1"
     )
@@ -125,6 +134,8 @@ def auth_token1(project_id: str) -> str:
 
 @pytest_asyncio.fixture(scope="session")
 def auth_token2(project_id: str) -> str:
+    if os.environ.get("TEST_MOCK_GCP"):
+        return "mock-token-2"
     client_id = access_secret_version(
         project_id=project_id, secret_id="sdk_testing_client2"
     )
@@ -134,6 +145,10 @@ def auth_token2(project_id: str) -> str:
 @pytest_asyncio.fixture(scope="session")
 def toolbox_server(toolbox_version: str, tools_file_path: str) -> Generator[None]:
     """Starts the toolbox server as a subprocess."""
+    if os.environ.get("TEST_MOCK_GCP"):
+        yield
+        return
+
     print("Downloading toolbox binary from gcs bucket...")
     source_blob_name = get_toolbox_binary_url(toolbox_version)
     download_blob("genai-toolbox", source_blob_name, "toolbox")

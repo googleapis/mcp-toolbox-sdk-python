@@ -115,6 +115,8 @@ class ToolboxClient:
             
             self._core_client_headers[creds.header_name] = creds.api_key
 
+
+
     def _create_adc_token_getter(self, audience: str) -> Callable[[], str]:
         """Returns a callable that fetches a fresh ID token using ADC."""
 
