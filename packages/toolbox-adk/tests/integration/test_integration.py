@@ -438,7 +438,7 @@ class TestAuth:
 
             with pytest.raises(
                 Exception,
-                match=r"unauthorized Tool call: Please make sure your specify correct auth headers: unauthorized",
+                match="tool invocation not authorized",
             ):
                 await tool.run_async({"id": "2"}, ctx)
         finally:
