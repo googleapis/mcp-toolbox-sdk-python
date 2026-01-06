@@ -6,6 +6,24 @@ This package allows Google ADK (Agent Development Kit) agents to natively use to
 
 It provides a seamless bridge between the `toolbox-core` SDK and the ADK's `BaseTool` / `BaseToolset` interfaces, handling authentication propagation, header management, and tool wrapping automatically.
 
+## Table of Contents
+
+- [Installation](#installation)
+- [Usage](#usage)
+- [Authentication](#authentication)
+    - [Workload Identity (ADC)](#1-workload-identity-adc)
+    - [User Identity (OAuth2)](#2-user-identity-oauth2)
+    - [API Key](#3-api-key)
+    - [HTTP Bearer Token](#4-http-bearer-token)
+    - [Manual Google Credentials](#5-manual-google-credentials)
+    - [Toolbox Identity (No Auth)](#6-toolbox-identity-no-auth)
+    - [Native ADK Integration](#7-native-adk-integration)
+    - [Tool-Specific Authentication](#8-tool-specific-authentication)
+- [Advanced Configuration](#advanced-configuration)
+    - [Additional Headers](#additional-headers)
+    - [Global Parameter Binding](#global-parameter-binding)
+    - [Usage with Hooks](#usage-with-hooks)
+
 ## Installation
 
 ```bash
@@ -20,36 +38,40 @@ The primary entry point is the `ToolboxToolset`, which loads tools from a remote
 > The `ToolboxToolset` in this package mirrors the `ToolboxToolset` in the [`adk-python`](https://github.com/google/adk-python) package. The `adk-python` version is a shim that delegates all functionality to this implementation.
 
 ```python
-from toolbox_adk import ToolboxToolset, CredentialStrategy
+from toolbox_adk import ToolboxToolset
 from google.adk.agents import Agent
 
-# 1. Configure Authentication Strategy
-# Use the agent's own identity (Workload Identity)
-creds = CredentialStrategy.workload_identity(target_audience="https://my-toolbox-service-url")
-
-# 2. Create the Toolset
+# Create the Toolset
 toolset = ToolboxToolset(
-    server_url="https://my-toolbox-service-url",
-    toolset_name="my-toolset", # Optional: Load specific toolset
-    credentials=creds
+    server_url="http://127.0.0.1:5000" 
 )
 
-# 3. Use in your ADK Agent
+# Use in your ADK Agent
 agent = Agent(tools=[toolset])
 ```
 
-## Authentication Strategies
+> [!TIP]
+> By default, it uses **Toolbox Identity** (no authentication), which is suitable for local development.
+>
+> For production environments (Cloud Run, GKE) or accessing protected resources, see the [Authentication](#authentication) section for strategies like Workload Identity or OAuth2.
 
-The `toolbox-adk` package provides flexible authentication strategies to handle `Client-to-Server` authentication (securing the connection to the Toolbox server) and `User Identity` propagation (authenticating the user for specific tools).
+## Authentication
 
-Use the `CredentialStrategy` factory methods to create your configuration.
+The `ToolboxToolset` requires credentials to authenticate with the Toolbox server. You can configure these credentials using the `CredentialStrategy` factory methods.
 
-### Workload Identity (Recommended for Cloud Run / GKE)
+The strategies handle two main types of authentication:
+*   **Client-to-Server**: Securing the connection to the Toolbox server (e.g., Workload Identity, API keys).
+*   **User Identity**: Authenticating the end-user for specific tools (e.g., 3-legged OAuth).
 
-Uses the agent's environment credentials (ADC) to generate an OIDC ID token. This is the standard way for one service to authenticate to another on Google Cloud.
+### 1. Workload Identity (ADC)
+*Recommended for Cloud Run, GKE, or local development with `gcloud auth login`.*
+
+Uses the agent's Application Default Credentials (ADC) to generate an OIDC token. This is the standard way for one service to authenticate to another on Google Cloud.
 
 ```python
-# target_audience should match the URL of your Toolbox server
+from toolbox_adk import CredentialStrategy, ToolboxToolset
+
+# target_audience: The URL of your Toolbox server
 creds = CredentialStrategy.workload_identity(target_audience="https://my-toolbox-service.run.app")
 
 toolset = ToolboxToolset(
@@ -58,42 +80,33 @@ toolset = ToolboxToolset(
 )
 ```
 
-### User Identity (3-Legged OAuth)
+### 2. User Identity (OAuth2)
+*Recommended for tools that act on behalf of the user.*
 
-Propagates the end-user's identity to the Toolbox. This is used when the tools themselves need to act on behalf of the user (e.g., accessing the user's Drive or Calendar).
+Configures the ADK-native interactive 3-legged OAuth flow to get consent and credentials from the end-user at runtime. This strategy is passed to the `ToolboxToolset` just like any other credential strategy.
 
 ```python
+from toolbox_adk import CredentialStrategy, ToolboxToolset
+
 creds = CredentialStrategy.user_identity(
     client_id="YOUR_CLIENT_ID",
     client_secret="YOUR_CLIENT_SECRET",
-    scopes=["https://www.googleapis.com/auth/drive"]
+    scopes=["https://www.googleapis.com/auth/cloud-platform"]
+)
+
+# The toolset will now initiate OAuth flows when required by tools
+toolset = ToolboxToolset(
+    server_url="...",
+    credentials=creds
 )
 ```
 
-### Manual Token (Development / Testing)
-
-Manually supply a token (e.g., a static API key or a temporary token).
-
-```python
-creds = CredentialStrategy.manual_token(token="my-secret-token")
-```
-
-### Manual Credentials Object
-
-Uses a provided `google.auth` Credentials object directly.
+### 3. API Key
+*Use a static API key passed in a specific header (default: `X-API-Key`).*
 
 ```python
-from google.oauth2 import service_account
+from toolbox_adk import CredentialStrategy
 
-my_creds = service_account.Credentials.from_service_account_file('key.json')
-creds = CredentialStrategy.manual_credentials(my_creds)
-```
-
-### API Key
-
-Use a static API key passed in a specific header (default: `X-API-Key`).
-
-```python
 # Default header: X-API-Key
 creds = CredentialStrategy.api_key(key="my-secret-key")
 
@@ -101,29 +114,65 @@ creds = CredentialStrategy.api_key(key="my-secret-key")
 creds = CredentialStrategy.api_key(key="my-secret-key", header_name="X-My-Header")
 ```
 
-### Toolbox Identity (No Auth)
-
-Use this if your Toolbox server does not require authentication (e.g., local development).
+### 4. HTTP Bearer Token
+*Manually supply a static bearer token.*
 
 ```python
+from toolbox_adk import CredentialStrategy
+
+creds = CredentialStrategy.manual_token(token="your-static-bearer-token")
+```
+
+### 5. Manual Google Credentials
+*Use an existing `google.auth.credentials.Credentials` object.*
+
+```python
+from toolbox_adk import CredentialStrategy
+import google.auth
+
+creds_obj, _ = google.auth.default()
+creds = CredentialStrategy.manual_credentials(credentials=creds_obj)
+```
+
+### 6. Toolbox Identity (No Auth)
+*Use this if your Toolbox server does not require authentication (e.g., local development).*
+
+```python
+from toolbox_adk import CredentialStrategy
+
 creds = CredentialStrategy.toolbox_identity()
 ```
 
-### Native ADK Integration
-
-If you are using ADK's configuration system (`AuthConfig` objects), you can create the strategy directly from it.
+### 7. Native ADK Integration
+*Convert ADK-native `AuthConfig` or `AuthCredential` objects.*
 
 ```python
-# auth_config is an instance of google.adk.auth.auth_tool.AuthConfig
+from toolbox_adk import CredentialStrategy
+
+# From AuthConfig
 creds = CredentialStrategy.from_adk_auth_config(auth_config)
+
+# From AuthCredential + AuthScheme
+creds = CredentialStrategy.from_adk_credentials(auth_credential, scheme)
 ```
 
-Or if you have the `AuthScheme` and `AuthCredential` objects separately:
+### 8. Tool-Specific Authentication
+*Resolve authentication tokens dynamically for specific tools.*
+
+Some tools may define their own authentication requirements (e.g., Salesforce OAuth, GitHub PAT) via `authSources` in their schema. You can provide a mapping of getters to resolve these tokens at runtime.
 
 ```python
-# scheme is google.adk.auth.auth_tool.AuthScheme
-# credential is google.adk.auth.auth_credential.AuthCredential
-creds = CredentialStrategy.from_adk_credentials(auth_credential, scheme)
+async def get_salesforce_token():
+    # Fetch token from secret manager or reliable source
+    return "sf-access-token"
+
+toolset = ToolboxToolset(
+    server_url="...",
+    auth_token_getters={
+        "salesforce-auth": get_salesforce_token,   # Async callable
+        "github-pat": lambda: "my-pat-token"       # Sync callable or static lambda
+    }
+)
 ```
 
 ## Advanced Configuration
@@ -144,32 +193,18 @@ toolset = ToolboxToolset(
 
 ### Global Parameter Binding
 
-Bind values to tool parameters globally across all loaded tools. These values will be fixed and hidden from the LLM.
+Bind values to tool parameters globally across all loaded tools. These values will be **fixed** and **hidden** from the LLM.
+
+*   **Schema Hiding**: The bound parameters are removed from the tool schema sent to the model, simplifying the context window.
+*   **Auto-Injection**: The values are automatically injected into the tool arguments during execution.
 
 ```python
 toolset = ToolboxToolset(
     server_url="...",
     bound_params={
+        # 'region' will be removed from the LLM schema and injected automatically
         "region": "us-central1",
         "api_key": lambda: get_api_key() # Can be a callable
-    }
-)
-```
-
-### Auth Token Getters
-
-Some tools may define their own authentication requirements (e.g., Salesforce OAuth, GitHub PAT) via `authSources` in their schema. You can provide a mapping of getters to resolve these tokens at runtime.
-
-```python
-async def get_salesforce_token():
-    # Fetch token from secret manager or reliable source
-    return "sf-access-token"
-
-toolset = ToolboxToolset(
-    server_url="...",
-    auth_token_getters={
-        "salesforce-auth": get_salesforce_token,   # Async callable
-        "github-pat": lambda: "my-pat-token"       # Sync callable or static lambda
     }
 )
 ```
@@ -195,6 +230,8 @@ async def log_end(context: ToolboxContext):
     # Inspect result or error
     if context.error:
         print(f"Tool failed: {context.error}")
+    else:
+        print(f"Tool succeeded with result: {context.result}")
 
 toolset = ToolboxToolset(
     server_url="...",
