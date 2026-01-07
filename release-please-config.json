@@ -47,6 +47,7 @@
     "packages/toolbox-adk": {
       "component": "toolbox-adk",
       "extra-files": [
+        "pyproject.toml",
         "src/toolbox_adk/version.py"
       ]
     }
