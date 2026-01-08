@@ -36,16 +36,6 @@ from .client import USER_TOKEN_CONTEXT_VAR
 from .credentials import CredentialConfig, CredentialType
 
 
-class ToolboxContext:
-    """Context object passed to pre/post hooks."""
-
-    def __init__(self, arguments: Dict[str, Any], tool_context: ToolContext):
-        self.arguments = arguments
-        self.tool_context = tool_context
-        self.result: Optional[Any] = None
-        self.error: Optional[Exception] = None
-
-
 class ToolboxTool(BaseTool):
     """
     A tool that delegates to a remote Toolbox tool, integrated with ADK.
@@ -54,15 +44,17 @@ class ToolboxTool(BaseTool):
     def __init__(
         self,
         core_tool: CoreToolboxTool,
-        pre_hook: Optional[Callable[[ToolboxContext], Awaitable[None]]] = None,
-        post_hook: Optional[Callable[[ToolboxContext], Awaitable[None]]] = None,
+        pre_hook: Optional[Callable[[ToolContext, Dict[str, Any]], Awaitable[None]]] = None,
+        post_hook: Optional[
+            Callable[[ToolContext, Dict[str, Any], Optional[Any], Optional[Exception]], Awaitable[None]]
+        ] = None,
         auth_config: Optional[CredentialConfig] = None,
     ):
         """
         Args:
             core_tool: The underlying toolbox_core.py tool instance.
-            pre_hook: Async function called before execution. Can modify ctx.arguments.
-            post_hook: Async function called after execution (finally block). Can inspect ctx.result/error.
+            pre_hook: Async function called before execution. Receives (tool_context, arguments).
+            post_hook: Async function called after execution. Receives (tool_context, arguments, result, error).
             auth_config: Credential configuration to handle interactive flows.
         """
         # We act as a proxy.
@@ -93,12 +85,9 @@ class ToolboxTool(BaseTool):
         args: Dict[str, Any],
         tool_context: ToolContext,
     ) -> Any:
-        # Create context
-        ctx = ToolboxContext(arguments=args, tool_context=tool_context)
-
         # 1. Pre-hook
         if self._pre_hook:
-            await self._pre_hook(ctx)
+            await self._pre_hook(tool_context, args)
 
         # 2. ADK Auth Integration (3LO)
         # Check if USER_IDENTITY is configured
@@ -144,7 +133,6 @@ class ToolboxTool(BaseTool):
                     tool_context.request_credential(auth_config_adk)
                     return None
             except Exception as e:
-                ctx.error = e
                 if "credential" in str(e).lower() or isinstance(e, ValueError):
                     raise e
                 
@@ -157,21 +145,22 @@ class ToolboxTool(BaseTool):
                 tool_context.request_credential(auth_config_adk)
                 return None
 
+        result: Optional[Any] = None
+        error: Optional[Exception] = None
+
         try:
             # Execute the core tool
-            result = await self._core_tool(**ctx.arguments)
-
-            ctx.result = result
+            result = await self._core_tool(**args)
             return result
 
         except Exception as e:
-            ctx.error = e
+            error = e
             raise e
         finally:
             if reset_token:
                 USER_TOKEN_CONTEXT_VAR.reset(reset_token)
             if self._post_hook:
-                await self._post_hook(ctx)
+                await self._post_hook(tool_context, args, result, error)
 
     def bind_params(self, bounded_params: Dict[str, Any]) -> "ToolboxTool":
         """Allows runtime binding of parameters, delegating to core tool."""
