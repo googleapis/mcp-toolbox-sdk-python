@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.6](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-langchain-v0.5.5...toolbox-langchain-v0.5.6) (2026-01-08)
+
+
+### Miscellaneous Chores
+
+* **toolbox-langchain:** Synchronize toolbox-python-sdks versions
+
 ## [0.5.5](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-langchain-v0.5.4...toolbox-langchain-v0.5.5) (2026-01-07)
 
 

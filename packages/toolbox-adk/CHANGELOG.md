@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.5.6](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-adk-v0.5.5...toolbox-adk-v0.5.6) (2026-01-08)
+
+
+### Bug Fixes
+
+* **adk:** pin opentelemetry deps to resolve py3.10 pip timeout ([#487](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/487)) ([295a897](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/295a897892459e9cf4f3ff8260b342f9986d3d88))
+
+
+### Miscellaneous Chores
+
+* update toolbox-core to be local dependencies in tests ([#484](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/484)) ([a99964f](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/a99964f60ddeb953751477dee899a480955c78a7))
+
 ## [0.5.5](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-adk-v0.0.1...toolbox-adk-v0.5.5) (2026-01-07)
 
 
