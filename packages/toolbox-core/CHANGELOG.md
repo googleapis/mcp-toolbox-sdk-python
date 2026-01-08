@@ -1,19 +1,5 @@
 # Changelog
 
-## [0.5.5](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v0.5.4...toolbox-core-v0.5.5) (2026-01-07)
-
-
-### Bug Fixes
-
-* **toolbox-core:** do not allow session id override  ([#477](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/477)) ([79604b2](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/79604b22139e33540ccc19d5c096f99e38b117eb))
-* **toolbox-core:** fix mcp transport declaration ([#474](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/474)) ([97165d2](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/97165d20101d3d01a630c6779381952970498bc4))
-* **toolbox-core:** fix race condition in SyncClient loop init ([#468](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/468)) ([6c5d01e](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/6c5d01e2907eda4553d0215847e79bf9ff6d8e14))
-
-
-### Miscellaneous Chores
-
-* drop support for python 3.9 ([#460](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/460)) ([ad43f0c](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/ad43f0c6429112cfedd288a73795b668eba837e3))
-
 ## [0.5.4](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v0.5.3...toolbox-core-v0.5.4) (2025-12-10)
 
 
