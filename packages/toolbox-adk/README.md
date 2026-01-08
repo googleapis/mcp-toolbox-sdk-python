@@ -217,21 +217,22 @@ You can attach `pre_hook` and `post_hook` functions to execute logic before and 
 > The `pre_hook` can modify `context.arguments` to dynamically alter the inputs passed to the tool.
 
 ```python
-from toolbox_adk import ToolboxContext
+from google.adk.tools.tool_context import ToolContext
+from typing import Any, Dict, Optional
 
-async def log_start(context: ToolboxContext):
-    print(f"Starting tool with args: {context.arguments}")
-    # context.tool_context is the underlying ADK ToolContext
+async def log_start(context: ToolContext, args: Dict[str, Any]):
+    print(f"Starting tool with args: {args}")
+    # context is the ADK ToolContext
     # Example: Inject or modify arguments
-    # context.arguments["user_id"] = "123"
+    # args["user_id"] = "123"
 
-async def log_end(context: ToolboxContext):
+async def log_end(context: ToolContext, args: Dict[str, Any], result: Optional[Any], error: Optional[Exception]):
     print("Finished tool execution")
     # Inspect result or error
-    if context.error:
-        print(f"Tool failed: {context.error}")
+    if error:
+        print(f"Tool failed: {error}")
     else:
-        print(f"Tool succeeded with result: {context.result}")
+        print(f"Tool succeeded with result: {result}")
 
 toolset = ToolboxToolset(
     server_url="...",

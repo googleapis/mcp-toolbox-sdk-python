@@ -27,7 +27,7 @@ from google.adk.auth.auth_credential import (
 )
 from google.adk.tools.base_tool import BaseTool
 
-from toolbox_adk import CredentialStrategy, ToolboxTool, ToolboxToolset, ToolboxContext
+from toolbox_adk import CredentialStrategy, ToolboxTool, ToolboxToolset
 
 # Ensure TOOLBOX_VERSION is set for the fixture
 if "TOOLBOX_VERSION" not in os.environ:

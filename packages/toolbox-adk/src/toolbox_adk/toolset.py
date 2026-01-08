@@ -17,11 +17,12 @@ from typing import Any, Awaitable, Callable, Dict, List, Mapping, Optional, Unio
 from google.adk.agents.readonly_context import ReadonlyContext
 from google.adk.tools.base_tool import BaseTool
 from google.adk.tools.base_toolset import BaseToolset
+from google.adk.tools.tool_context import ToolContext
 from typing_extensions import override
 
 from .client import ToolboxClient
 from .credentials import CredentialConfig
-from .tool import ToolboxContext, ToolboxTool
+from .tool import ToolboxTool
 
 
 class ToolboxToolset(BaseToolset):
@@ -42,8 +43,15 @@ class ToolboxToolset(BaseToolset):
         auth_token_getters: Optional[
             Mapping[str, Union[Callable[[], str], Callable[[], Awaitable[str]]]]
         ] = None,
-        pre_hook: Optional[Callable[[ToolboxContext], Awaitable[None]]] = None,
-        post_hook: Optional[Callable[[ToolboxContext], Awaitable[None]]] = None,
+        pre_hook: Optional[
+            Callable[[ToolContext, Dict[str, Any]], Awaitable[None]]
+        ] = None,
+        post_hook: Optional[
+            Callable[
+                [ToolContext, Dict[str, Any], Optional[Any], Optional[Exception]],
+                Awaitable[None],
+            ]
+        ] = None,
         **kwargs: Any,
     ):
         """

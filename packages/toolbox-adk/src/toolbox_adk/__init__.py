@@ -14,7 +14,7 @@
 
 from .client import ToolboxClient
 from .credentials import CredentialConfig, CredentialStrategy, CredentialType
-from .tool import ToolboxContext, ToolboxTool
+from .tool import ToolboxTool
 from .toolset import ToolboxToolset
 from .version import __version__
 
@@ -24,6 +24,5 @@ __all__ = [
     "CredentialType",
     "ToolboxClient",
     "ToolboxTool",
-    "ToolboxContext",
     "ToolboxToolset",
 ]

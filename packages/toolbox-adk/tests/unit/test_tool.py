@@ -17,7 +17,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from toolbox_adk.credentials import CredentialConfig, CredentialType
-from toolbox_adk.tool import ToolboxContext, ToolboxTool
+from toolbox_adk.tool import ToolboxTool
 
 
 class TestToolboxTool:
@@ -45,13 +45,13 @@ class TestToolboxTool:
         mock_core.__name__ = "hooked_tool"
         mock_core.__doc__ = "hooked description"
 
-        async def before(ctx: ToolboxContext):
-            ctx.arguments["arg"] += 1
+        async def before(ctx, args):
+            args["arg"] += 1
 
-        async def after(ctx: ToolboxContext):
-            assert ctx.result == "res"
+        async def after(ctx, args, result, error):
+            assert result == "res"
             # Verify we can see the modified arg
-            assert ctx.arguments["arg"] == 2
+            assert args["arg"] == 2
 
         tool = ToolboxTool(mock_core, pre_hook=before, post_hook=after)
 
@@ -66,7 +66,7 @@ class TestToolboxTool:
         mock_core.__name__ = "mock"
         mock_core.__doc__ = "mock"
 
-        async def failing_hook(ctx):
+        async def failing_hook(ctx, args):
             raise ValueError("Boom")
 
         tool = ToolboxTool(mock_core, pre_hook=failing_hook)
@@ -100,9 +100,9 @@ class TestToolboxTool:
 
         captured_error = None
 
-        async def after(ctx):
+        async def after(ctx, args, result, error):
             nonlocal captured_error
-            captured_error = ctx.error
+            captured_error = error
 
         tool = ToolboxTool(mock_core, post_hook=after)
 
