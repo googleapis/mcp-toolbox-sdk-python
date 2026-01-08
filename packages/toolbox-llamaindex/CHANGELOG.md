@@ -1,12 +1,5 @@
 # Changelog
 
-## [0.5.5](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-llamaindex-v0.5.4...toolbox-llamaindex-v0.5.5) (2026-01-07)
-
-
-### Miscellaneous Chores
-
-* drop support for python 3.9 ([#460](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/460)) ([ad43f0c](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/ad43f0c6429112cfedd288a73795b668eba837e3))
-
 ## [0.5.4](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-llamaindex-v0.5.3...toolbox-llamaindex-v0.5.4) (2025-12-10)
 
 
