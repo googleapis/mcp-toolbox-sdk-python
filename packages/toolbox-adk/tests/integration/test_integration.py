@@ -489,7 +489,7 @@ class TestAuth:
 
             with pytest.raises(
                 Exception,
-                match="tool invocation not authorized",
+                match=r"401 \(Unauthorized\)",
             ):
                 await tool.run_async({"id": "2"}, ctx)
         finally:
