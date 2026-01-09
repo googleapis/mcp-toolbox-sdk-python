@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.7](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-adk-v0.5.6...toolbox-adk-v0.5.7) (2026-01-09)
+
+
+### Miscellaneous Chores
+
+* **toolbox-adk:** Synchronize toolbox-python-sdks versions
+
 ## [0.5.6](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-adk-v0.0.1...toolbox-adk-v0.5.6) (2026-01-08)
 
 
