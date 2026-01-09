@@ -29,10 +29,10 @@
         'googleapis/genai-toolbox',
       ],
       matchManagers: [
-        'regex',
+        'custom.regex',
       ],
-      "commitMessageTopic": "MCP Toolbox server version in integration tests to v{{newValue}}",
-      "prTitle": "chore(deps): update mcp toolbox server for integration tests to v{{newValue}}",
+      commitMessageTopic: 'MCP Toolbox server version in integration tests to v{{newValue}}',
+      prTitle: 'chore(deps): update mcp toolbox server for integration tests to v{{newValue}}',
       matchUpdateTypes: [
         'minor',
         'patch',
@@ -64,12 +64,13 @@
       ],
     },
   ],
-  regexManagers: [
+  customManagers: [
     {
-      fileMatch: [
-        'packages/toolbox-core/integration.cloudbuild.yaml',
-        'packages/toolbox-langchain/integration.cloudbuild.yaml',
-        'packages/toolbox-llamaindex/integration.cloudbuild.yaml',
+      customType: 'regex',
+      managerFilePatterns: [
+        '/packages/toolbox-core/integration.cloudbuild.yaml/',
+        '/packages/toolbox-langchain/integration.cloudbuild.yaml/',
+        '/packages/toolbox-llamaindex/integration.cloudbuild.yaml/',
       ],
       matchStrings: [
         '_TOOLBOX_VERSION: [\'|"]?(?<currentValue>v?\\d+\\.\\d+\\.\\d+)[\'|"]?',
