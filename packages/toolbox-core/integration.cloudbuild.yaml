@@ -17,7 +17,6 @@ steps:
     name: 'python:${_VERSION}'
     dir: 'packages/toolbox-core'
     env:
-      - 'PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1'
     args:
       - '-c'
       - |
@@ -31,7 +30,6 @@ steps:
     name: 'python:${_VERSION}'
     dir: 'packages/toolbox-core'
     env:
-      - 'PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1'
     args:
       - '-c'
       - |
@@ -42,7 +40,6 @@ steps:
     name: 'python:${_VERSION}'
     dir: 'packages/toolbox-core'
     env:
-      - 'PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1'
       - TOOLBOX_URL=$_TOOLBOX_URL
       - TOOLBOX_VERSION=$_TOOLBOX_VERSION
       - GOOGLE_CLOUD_PROJECT=$PROJECT_ID
