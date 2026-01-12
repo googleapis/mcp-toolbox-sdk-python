@@ -16,20 +16,26 @@ steps:
   - id: Install library requirements
     name: 'python:${_VERSION}'
     dir: 'packages/toolbox-adk'
+    env:
     args:
-      - install
-      - '-r'
-      - 'requirements.txt'
-      - '--user'
-    entrypoint: pip
+      - '-c'
+      - |
+        pip install uv
+        uv venv /workspace/venv
+        source /workspace/venv/bin/activate
+        uv pip install uv
+        uv pip install -r requirements.txt
+    entrypoint: /bin/bash
   - id: Install test requirements
     name: 'python:${_VERSION}'
+    dir: 'packages/toolbox-adk'
+    env:
     args:
-      - install
-      - '-e'
-      - 'packages/toolbox-adk[test]'
-      - '--user'
-    entrypoint: pip
+      - '-c'
+      - |
+        source /workspace/venv/bin/activate
+        uv pip install -e '.[test]'
+    entrypoint: /bin/bash
   - id: Run integration tests
     name: 'python:${_VERSION}'
     dir: 'packages/toolbox-adk'
@@ -40,7 +46,8 @@ steps:
       - TOOLBOX_MANIFEST_VERSION=${_TOOLBOX_MANIFEST_VERSION}
     args:
       - '-c'
-      - >-
+      - |
+        source /workspace/venv/bin/activate
         python -m pytest --cov=src/toolbox_adk --cov-report=term --cov-fail-under=90 tests/
     entrypoint: /bin/bash
 options:
