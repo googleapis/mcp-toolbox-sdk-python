@@ -23,6 +23,7 @@ steps:
         pip install uv
         uv venv /workspace/venv
         source /workspace/venv/bin/activate
+        uv pip install uv
         uv pip install -r requirements.txt
     entrypoint: /bin/bash
   - id: Install test requirements
@@ -32,7 +33,6 @@ steps:
     args:
       - '-c'
       - |
-        pip install uv
         source /workspace/venv/bin/activate
         uv pip install -e '.[test]'
     entrypoint: /bin/bash
