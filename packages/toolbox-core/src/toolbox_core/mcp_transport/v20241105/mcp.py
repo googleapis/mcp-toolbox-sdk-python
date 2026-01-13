@@ -81,7 +81,7 @@ class McpHttpTransportV20241105(_McpHttpTransportBase):
                     raise RuntimeError(f"Failed to parse JSON-RPC response: {e}")
             return None
 
-    async def _initialize_session(self, headers: Optional[Mapping[str, str]] = None):
+    async def _initialize_session(self, headers: Optional[Mapping[str, str]] = None) -> None:
         """Initializes the MCP session."""
         params = types.InitializeRequestParams(
             protocolVersion=self._protocol_version,
@@ -96,6 +96,9 @@ class McpHttpTransportV20241105(_McpHttpTransportBase):
             request=types.InitializeRequest(params=params),
             headers=headers,
         )
+
+        if result is None:
+            raise RuntimeError("Failed to initialize session: No response from server.")
 
         self._server_version = result.serverInfo.version
         if result.protocolVersion != self._protocol_version:
