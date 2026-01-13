@@ -14,7 +14,7 @@
 
 import asyncio
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Mapping, Optional
 
 from aiohttp import ClientSession
 
@@ -45,11 +45,13 @@ class _McpHttpTransportBase(ITransport, ABC):
         self._init_lock = asyncio.Lock()
         self._init_task: Optional[asyncio.Task] = None
 
-    async def _ensure_initialized(self):
+    async def _ensure_initialized(self, headers: Optional[Mapping[str, str]] = None):
         """Ensures the session is initialized before making requests."""
         async with self._init_lock:
             if self._init_task is None:
-                self._init_task = asyncio.create_task(self._initialize_session())
+                self._init_task = asyncio.create_task(
+                    self._initialize_session(headers=headers)
+                )
         await self._init_task
 
     @property
@@ -122,6 +124,6 @@ class _McpHttpTransportBase(ITransport, ABC):
             await self._session.close()
 
     @abstractmethod
-    async def _initialize_session(self):
+    async def _initialize_session(self, headers: Optional[Mapping[str, str]] = None):
         """Initializes the MCP session."""
         pass
