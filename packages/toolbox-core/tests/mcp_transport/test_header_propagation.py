@@ -82,9 +82,7 @@ async def test_initialize_passes_headers_to_request(
     transport._send_request = AsyncMock()
     transport._send_request.return_value = types_module.InitializeResult(
         protocolVersion=protocol_version_str,
-        capabilities=types_module.ServerCapabilities(
-            tools={"listChanged": True}
-        ),
+        capabilities=types_module.ServerCapabilities(tools={"listChanged": True}),
         serverInfo=types_module.Implementation(name="test", version="1.0"),
     )
 
