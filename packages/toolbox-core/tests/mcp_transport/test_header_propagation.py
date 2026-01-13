@@ -16,16 +16,46 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from toolbox_core.mcp_transport.v20250326 import types
+from toolbox_core.mcp_transport.v20241105 import types as types_v20241105
+from toolbox_core.mcp_transport.v20241105.mcp import McpHttpTransportV20241105
+from toolbox_core.mcp_transport.v20250326 import types as types_v20250326
 from toolbox_core.mcp_transport.v20250326.mcp import McpHttpTransportV20250326
+from toolbox_core.mcp_transport.v20250618 import types as types_v20250618
+from toolbox_core.mcp_transport.v20250618.mcp import McpHttpTransportV20250618
 from toolbox_core.protocol import Protocol
+
+TEST_CASES = [
+    (
+        McpHttpTransportV20241105,
+        Protocol.MCP_v20241105,
+        types_v20241105,
+        "2024-11-05",
+    ),
+    (
+        McpHttpTransportV20250326,
+        Protocol.MCP_v20250326,
+        types_v20250326,
+        "2025-03-26",
+    ),
+    (
+        McpHttpTransportV20250618,
+        Protocol.MCP_v20250618,
+        types_v20250618,
+        "2025-06-18",
+    ),
+]
 
 
 @pytest.mark.asyncio
-async def test_ensure_initialized_passes_headers():
+@pytest.mark.parametrize(
+    "TransportClass, protocol_enum, types_module, protocol_version_str", TEST_CASES
+)
+async def test_ensure_initialized_passes_headers(
+    TransportClass, protocol_enum, types_module, protocol_version_str
+):
     mock_session = AsyncMock()
-    transport = McpHttpTransportV20250326(
-        "http://fake.com", session=mock_session, protocol=Protocol.MCP_v20250326
+    transport = TransportClass(
+        "http://fake.com", session=mock_session, protocol=protocol_enum
     )
 
     transport._initialize_session = AsyncMock()
@@ -37,23 +67,31 @@ async def test_ensure_initialized_passes_headers():
 
 
 @pytest.mark.asyncio
-async def test_initialize_passes_headers_to_request():
+@pytest.mark.parametrize(
+    "TransportClass, protocol_enum, types_module, protocol_version_str", TEST_CASES
+)
+async def test_initialize_passes_headers_to_request(
+    TransportClass, protocol_enum, types_module, protocol_version_str
+):
     mock_session = AsyncMock()
-    transport = McpHttpTransportV20250326(
-        "http://fake.com", session=mock_session, protocol=Protocol.MCP_v20250326
+    transport = TransportClass(
+        "http://fake.com", session=mock_session, protocol=protocol_enum
     )
 
     # Mock _send_request to simulate successful init
     transport._send_request = AsyncMock()
-    transport._send_request.return_value = types.InitializeResult(
-        protocolVersion="2025-03-26",
-        capabilities=types.ServerCapabilities(tools={"listChanged": True}),
-        serverInfo=types.Implementation(name="test", version="1.0"),
+    transport._send_request.return_value = types_module.InitializeResult(
+        protocolVersion=protocol_version_str,
+        capabilities=types_module.ServerCapabilities(
+            tools={"listChanged": True}
+        ),
+        serverInfo=types_module.Implementation(name="test", version="1.0"),
     )
 
     # Mock session ID injection which happens in _send_request usually,
-    # but here we just set it manually to satisfy the check
-    transport._session_id = "test-session"
+    # but here we just set it manually to satisfy the check for v20250326
+    if isinstance(transport, McpHttpTransportV20250326):
+        transport._session_id = "test-session"
 
     test_headers = {"Authorization": "Bearer token"}
     await transport._initialize_session(headers=test_headers)
@@ -63,10 +101,12 @@ async def test_initialize_passes_headers_to_request():
 
     # First call: InitializeRequest
     init_call = transport._send_request.call_args_list[0]
-    assert isinstance(init_call.kwargs["request"], types.InitializeRequest)
+    assert isinstance(init_call.kwargs["request"], types_module.InitializeRequest)
     assert init_call.kwargs["headers"] == test_headers
 
     # Second call: InitializedNotification
     notify_call = transport._send_request.call_args_list[1]
-    assert isinstance(notify_call.kwargs["request"], types.InitializedNotification)
+    assert isinstance(
+        notify_call.kwargs["request"], types_module.InitializedNotification
+    )
     assert notify_call.kwargs["headers"] == test_headers
