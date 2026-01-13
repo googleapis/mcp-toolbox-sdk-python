@@ -8,7 +8,7 @@
 * enable Python 3.14 support ([#494](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/494)) ([0ced95b](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/0ced95bcd7694f76e9bfc5166fbe9c0c260ca54a))
 
 
-## Miscellaneous Chores
+### Miscellaneous Chores
 
 * replace pip with uv for 60% faster integration tests ([#495](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/495)) ([fbc3f54](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/fbc3f54bf1bf00c1acd9cdedc0c3cf0e8a3566c3))
 
