@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.5.7](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-langchain-v0.5.6...toolbox-langchain-v0.5.7) (2026-01-13)
+
+
+### Features
+
+* enable Python 3.14 support ([#494](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/494)) ([0ced95b](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/0ced95bcd7694f76e9bfc5166fbe9c0c260ca54a))
+* replace pip with uv for 60% faster integration tests ([#495](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/495)) ([fbc3f54](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/fbc3f54bf1bf00c1acd9cdedc0c3cf0e8a3566c3))
+
+
+### Miscellaneous Chores
+
+* **deps:** update mcp toolbox server version in integration tests to v0.25.0 to v0.25.0 ([#492](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/492)) ([2ab131e](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/2ab131e2c77637ab18028b94d53ef9da4fad6f88))
+
 ## [0.5.6](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-langchain-v0.5.4...toolbox-langchain-v0.5.6) (2026-01-08)
 
 
