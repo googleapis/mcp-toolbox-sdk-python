@@ -88,7 +88,9 @@ class McpHttpTransportV20250618(_McpHttpTransportBase):
                     raise RuntimeError(f"Failed to parse JSON-RPC response: {e}")
             return None
 
-    async def _initialize_session(self):
+    async def _initialize_session(
+        self, headers: Optional[Mapping[str, str]] = None
+    ) -> None:
         """Initializes the MCP session."""
         params = types.InitializeRequestParams(
             protocolVersion=self._protocol_version,
@@ -101,7 +103,11 @@ class McpHttpTransportV20250618(_McpHttpTransportBase):
         result = await self._send_request(
             url=self._mcp_base_url,
             request=types.InitializeRequest(params=params),
+            headers=headers,
         )
+
+        if result is None:
+            raise RuntimeError("Failed to initialize session: No response from server.")
 
         self._server_version = result.serverInfo.version
 
@@ -119,6 +125,7 @@ class McpHttpTransportV20250618(_McpHttpTransportBase):
         await self._send_request(
             url=self._mcp_base_url,
             request=types.InitializedNotification(),
+            headers=headers,
         )
 
     async def tools_list(
@@ -127,7 +134,7 @@ class McpHttpTransportV20250618(_McpHttpTransportBase):
         headers: Optional[Mapping[str, str]] = None,
     ) -> ManifestSchema:
         """Lists available tools from the server using the MCP protocol."""
-        await self._ensure_initialized()
+        await self._ensure_initialized(headers=headers)
 
         url = self._mcp_base_url + (toolset_name if toolset_name else "")
         result = await self._send_request(
@@ -166,7 +173,7 @@ class McpHttpTransportV20250618(_McpHttpTransportBase):
         self, tool_name: str, arguments: dict, headers: Optional[Mapping[str, str]]
     ) -> str:
         """Invokes a specific tool on the server using the MCP protocol."""
-        await self._ensure_initialized()
+        await self._ensure_initialized(headers=headers)
 
         result = await self._send_request(
             url=self._mcp_base_url,

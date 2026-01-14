@@ -27,7 +27,7 @@ from toolbox_core.protocol import ToolSchema
 class ConcreteTransport(_McpHttpTransportBase):
     """A concrete class for testing the abstract base class."""
 
-    async def _initialize_session(self):
+    async def _initialize_session(self, headers=None):
         pass
 
     async def _send_request(self, *args, **kwargs) -> Any:
@@ -95,7 +95,7 @@ class TestMcpHttpTransportBase:
         """Test the lock ensures initialization only happens once with concurrent calls."""
         init_started = asyncio.Event()
 
-        async def slow_init():
+        async def slow_init(*args, **kwargs):
             init_started.set()
             await asyncio.sleep(0.01)
 
