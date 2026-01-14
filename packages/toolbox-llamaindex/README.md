@@ -12,6 +12,9 @@ applications, enabling advanced orchestration and interaction with GenAI models.
 - [Installation](#installation)
 - [Quickstart](#quickstart)
 - [Usage](#usage)
+- [Transport Protocols](#transport-protocols)
+    - [Supported Protocols](#supported-protocols)
+    - [Example](#example)
 - [Loading Tools](#loading-tools)
     - [Load a toolset](#load-a-toolset)
     - [Load a single tool](#load-a-single-tool)
@@ -91,6 +94,50 @@ from toolbox_llamaindex import ToolboxClient
 
 # Replace with your Toolbox service's URL
 async with ToolboxClient("http://127.0.0.1:5000") as toolbox:
+```
+
+## Transport Protocols
+
+The SDK supports multiple transport protocols for communicating with the Toolbox server. By default, the client uses the latest supported version of the **Model Context Protocol (MCP)**.
+
+You can explicitly select a protocol using the `protocol` option during client initialization. This is useful if you need to use the native Toolbox HTTP protocol or pin the client to a specific legacy version of MCP.
+
+> [!NOTE]
+> * **Native Toolbox Transport**: This uses the service's native **REST over HTTP** API.
+> * **MCP Transports**: These options use the **Model Context Protocol over HTTP**.
+
+### Supported Protocols
+
+| Constant | Description |
+| :--- | :--- |
+| `Protocol.MCP` | **(Default)** Alias for the latest supported MCP version (currently `v2025-06-18`). |
+| `Protocol.TOOLBOX` | The native Toolbox HTTP protocol. |
+| `Protocol.MCP_v20250618` | MCP Protocol version 2025-06-18. |
+| `Protocol.MCP_v20250326` | MCP Protocol version 2025-03-26. |
+| `Protocol.MCP_v20241105` | MCP Protocol version 2024-11-05. |
+
+### Example
+
+If you wish to use the native Toolbox protocol:
+
+```py
+from toolbox_llamaindex import ToolboxClient
+from toolbox_core.protocol import Protocol
+
+async with ToolboxClient("http://127.0.0.1:5000", protocol=Protocol.TOOLBOX) as toolbox:
+    # Use client
+    pass
+```
+
+If you want to pin the MCP Version 2025-03-26:
+
+```py
+from toolbox_llamaindex import ToolboxClient
+from toolbox_core.protocol import Protocol
+
+async with ToolboxClient("http://127.0.0.1:5000", protocol=Protocol.MCP_v20250326) as toolbox:
+    # Use client
+    pass
 ```
 
 ## Loading Tools
