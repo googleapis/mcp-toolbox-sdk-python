@@ -188,4 +188,10 @@ class McpHttpTransportV20250618(_McpHttpTransportBase):
                 f"Failed to invoke tool '{tool_name}': No response from server."
             )
 
-        return "".join(c.text for c in result.content if c.type == "text") or "null"
+        texts = [c.text for c in result.content if c.type == "text"]
+
+        if len(texts) > 1:
+            if all(t.strip().startswith("{") and t.strip().endswith("}") for t in texts):
+                return f"[{','.join(texts)}]"
+
+        return "".join(texts) or "null"
