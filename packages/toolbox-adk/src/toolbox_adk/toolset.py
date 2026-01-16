@@ -138,6 +138,7 @@ class ToolboxToolset(BaseToolset):
             for t in tools
         ]
 
+    @override
     async def close(self):
         if self.__client:
             await self.__client.close()
