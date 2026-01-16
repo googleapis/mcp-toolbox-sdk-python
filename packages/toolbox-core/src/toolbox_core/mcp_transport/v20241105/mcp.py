@@ -177,7 +177,9 @@ class McpHttpTransportV20241105(_McpHttpTransportBase):
         texts = [c.text for c in result.content if c.type == "text"]
 
         if len(texts) > 1:
-            if all(t.strip().startswith("{") and t.strip().endswith("}") for t in texts):
+            if all(
+                t.strip().startswith("{") and t.strip().endswith("}") for t in texts
+            ):
                 return f"[{','.join(texts)}]"
 
         return "".join(texts) or "null"
