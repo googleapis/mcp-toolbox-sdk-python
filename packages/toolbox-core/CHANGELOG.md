@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.5.8](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v0.5.7...toolbox-core-v0.5.8) (2026-01-16)
+
+
+### Bug Fixes
+
+* **mcp:** correctly propagate client headers during init ([#499](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/499)) ([34a97dd](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/34a97dd1de23ecd40c38ab923e3deabf9bafb364))
+
+
+### Documentation
+
+* **mcp:** add transport protocol info ([#501](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/501)) ([2b8b39b](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/2b8b39bf8ead85b33a22eb6401287b12b68d65d9))
+
 ## [0.5.7](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v0.5.6...toolbox-core-v0.5.7) (2026-01-13)
 
 

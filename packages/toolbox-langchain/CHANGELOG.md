@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.8](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-langchain-v0.5.7...toolbox-langchain-v0.5.8) (2026-01-16)
+
+
+### Documentation
+
+* **mcp:** add transport protocol info ([#501](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/501)) ([2b8b39b](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/2b8b39bf8ead85b33a22eb6401287b12b68d65d9))
+
 ## [0.5.7](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-langchain-v0.5.6...toolbox-langchain-v0.5.7) (2026-01-13)
 
 
