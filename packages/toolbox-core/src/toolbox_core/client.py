@@ -24,6 +24,7 @@ from .mcp_transport import (
     McpHttpTransportV20241105,
     McpHttpTransportV20250326,
     McpHttpTransportV20250618,
+    McpHttpTransportV20251125,
 )
 from .protocol import Protocol, ToolSchema
 from .tool import ToolboxTool
