@@ -19,7 +19,7 @@ import pytest_asyncio
 from aiohttp import ClientSession
 
 from toolbox_core.mcp_transport.v20251125 import types
-from toolbox_core.mcp_transport.v20251125.mcp import McpHttpTransportv20251125
+from toolbox_core.mcp_transport.v20251125.mcp import McpHttpTransportV20251125
 from toolbox_core.protocol import ManifestSchema, Protocol
 
 
@@ -42,7 +42,7 @@ def create_fake_tools_list_result():
 @pytest_asyncio.fixture
 async def transport():
     mock_session = AsyncMock(spec=ClientSession)
-    transport = McpHttpTransportv20251125(
+    transport = McpHttpTransportV20251125(
         "http://fake-server.com", session=mock_session, protocol=Protocol.MCP_v20251125
     )
     yield transport
