@@ -14,11 +14,11 @@
 
 steps:
   - id: Install library requirements
-    name: 'python:${_VERSION}'
-    dir: 'packages/toolbox-core'
+    name: "python:${_VERSION}"
+    dir: "packages/toolbox-core"
     env:
     args:
-      - '-c'
+      - "-c"
       - |
         pip install uv
         uv venv /workspace/venv
@@ -27,25 +27,25 @@ steps:
         uv pip install -r requirements.txt
     entrypoint: /bin/bash
   - id: Install test requirements
-    name: 'python:${_VERSION}'
-    dir: 'packages/toolbox-core'
+    name: "python:${_VERSION}"
+    dir: "packages/toolbox-core"
     env:
     args:
-      - '-c'
+      - "-c"
       - |
         source /workspace/venv/bin/activate
         uv pip install -e '.[test]'
     entrypoint: /bin/bash
   - id: Run integration tests
-    name: 'python:${_VERSION}'
-    dir: 'packages/toolbox-core'
+    name: "python:${_VERSION}"
+    dir: "packages/toolbox-core"
     env:
       - TOOLBOX_URL=$_TOOLBOX_URL
       - TOOLBOX_VERSION=$_TOOLBOX_VERSION
       - GOOGLE_CLOUD_PROJECT=$PROJECT_ID
       - TOOLBOX_MANIFEST_VERSION=${_TOOLBOX_MANIFEST_VERSION}
     args:
-      - '-c'
+      - "-c"
       - |
         source /workspace/venv/bin/activate
         python -m pytest --cov=src/toolbox_core --cov-report=term --cov-fail-under=90 tests/
@@ -53,6 +53,6 @@ steps:
 options:
   logging: CLOUD_LOGGING_ONLY
 substitutions:
-  _VERSION: '3.13'
-  _TOOLBOX_VERSION: '0.26.0'
-  _TOOLBOX_MANIFEST_VERSION: '34'
+  _VERSION: "3.13"
+  _TOOLBOX_VERSION: "0.26.0"
+  _TOOLBOX_MANIFEST_VERSION: "34"
