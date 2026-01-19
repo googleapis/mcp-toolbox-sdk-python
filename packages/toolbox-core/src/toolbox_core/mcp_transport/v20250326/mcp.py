@@ -207,4 +207,4 @@ class McpHttpTransportV20250326(_McpHttpTransportBase):
                 f"Failed to invoke tool '{tool_name}': No response from server."
             )
 
-        return "".join(c.text for c in result.content if c.type == "text") or "null"
+        return self._process_tool_result_content(result.content)
