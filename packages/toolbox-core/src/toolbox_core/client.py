@@ -67,7 +67,9 @@ class ToolboxClient:
         if protocol == Protocol.TOOLBOX:
             self.__transport = ToolboxTransport(url, session)
         elif protocol in Protocol.get_supported_mcp_versions():
-            if protocol == Protocol.MCP_v20250618:
+            if protocol == Protocol.MCP_v20251125:
+                self.__transport = McpHttpTransportV20251125(url, session, protocol)
+            elif protocol == Protocol.MCP_v20250618:
                 self.__transport = McpHttpTransportV20250618(url, session, protocol)
             elif protocol == Protocol.MCP_v20250326:
                 self.__transport = McpHttpTransportV20250326(url, session, protocol)

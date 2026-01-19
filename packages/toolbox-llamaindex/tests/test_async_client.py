@@ -352,5 +352,5 @@ class TestAsyncToolboxClient:
             url=URL,
             session=mock_session,
             client_headers=headers,
-            protocol=Protocol.MCP_v20250618,
+            protocol=Protocol.MCP_v20251125,
         )
