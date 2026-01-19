@@ -50,7 +50,7 @@ async def transport():
 
 
 @pytest.mark.asyncio
-class TestMcpHttpTransportv20251125:
+class TestMcpHttpTransportV20251125:
 
     # --- Request Sending Tests (Standard + Header) ---
 
