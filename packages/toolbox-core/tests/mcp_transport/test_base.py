@@ -206,3 +206,42 @@ class TestMcpHttpTransportBase:
         transport._init_task = asyncio.create_task(asyncio.sleep(0))
         await transport.close()
         mock_session.close.assert_not_called()
+
+    def test_process_tool_result_content(self, transport):
+        """Test processing tool result content."""
+        from types import SimpleNamespace
+
+        # Case 1: Single text
+        c1 = [SimpleNamespace(type="text", text="hello")]
+        assert transport._process_tool_result_content(c1) == "hello"
+
+        # Case 2: Multiple valid JSON objects
+        c2 = [
+            SimpleNamespace(type="text", text='{"a": 1}'),
+            SimpleNamespace(type="text", text='{"b": 2}'),
+        ]
+        assert transport._process_tool_result_content(c2) == '[{"a": 1},{"b": 2}]'
+
+        # Case 3: Invalid JSON fallback
+        c3 = [
+            SimpleNamespace(type="text", text='{"a": 1}'),
+            SimpleNamespace(type="text", text="invalid"),
+        ]
+        assert transport._process_tool_result_content(c3) == '{"a": 1}invalid'
+
+        # Case 4: Valid JSON but not objects (heuristic check)
+        c4 = [
+            SimpleNamespace(type="text", text="1"),
+            SimpleNamespace(type="text", text="2"),
+        ]
+        assert transport._process_tool_result_content(c4) == "12"
+
+        # Case 5: Empty
+        assert transport._process_tool_result_content([]) == "null"
+
+        # Case 6: Non-text ignored
+        c6 = [
+            SimpleNamespace(type="image", text="ignored"),
+            SimpleNamespace(type="text", text="kept"),
+        ]
+        assert transport._process_tool_result_content(c6) == "kept"

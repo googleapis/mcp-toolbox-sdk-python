@@ -269,3 +269,71 @@ class TestMcpHttpTransportV20250326:
         transport._server_version = "1.0"
         manifest = await transport.tool_get("get_weather")
         assert "get_weather" in manifest.tools
+
+    async def test_tool_invoke_multiple_json_objects(self, transport, mocker):
+        # Mock _ensure_initialized to do nothing
+        mocker.patch.object(transport, "_ensure_initialized", new_callable=AsyncMock)
+
+        # Mock _send_request to return multiple JSON objects as separate text content
+        mock_response = types.CallToolResult(
+            content=[
+                types.TextContent(type="text", text='{"foo":"bar", "baz": "qux"}'),
+                types.TextContent(type="text", text='{"foo":"quux", "baz":"corge"}'),
+            ]
+        )
+
+        mocker.patch.object(
+            transport,
+            "_send_request",
+            new_callable=AsyncMock,
+            return_value=mock_response,
+        )
+
+        # Invoke tool
+        result = await transport.tool_invoke("tool", {}, {})
+
+        # Expected result: A JSON list containing the objects
+        expected = '[{"foo":"bar", "baz": "qux"},{"foo":"quux", "baz":"corge"}]'
+
+        assert result == expected
+
+    async def test_tool_invoke_split_text(self, transport, mocker):
+        # Verify that split text (not complete JSON objects) is still joined normally
+        mocker.patch.object(transport, "_ensure_initialized", new_callable=AsyncMock)
+
+        mock_response = types.CallToolResult(
+            content=[
+                types.TextContent(type="text", text="Hello "),
+                types.TextContent(type="text", text="World"),
+            ]
+        )
+        mocker.patch.object(
+            transport,
+            "_send_request",
+            new_callable=AsyncMock,
+            return_value=mock_response,
+        )
+
+        result = await transport.tool_invoke("tool", {}, {})
+        assert result == "Hello World"
+
+    async def test_tool_invoke_split_json_object(self, transport, mocker):
+        # Verify that a split JSON object is joined correctly (not wrapped in list)
+        mocker.patch.object(transport, "_ensure_initialized", new_callable=AsyncMock)
+
+        # "{"a": 1}" split as "{"a": " and "1}"
+        mock_response = types.CallToolResult(
+            content=[
+                types.TextContent(type="text", text='{"a": '),
+                types.TextContent(type="text", text="1}"),
+            ]
+        )
+        mocker.patch.object(
+            transport,
+            "_send_request",
+            new_callable=AsyncMock,
+            return_value=mock_response,
+        )
+
+        result = await transport.tool_invoke("tool", {}, {})
+        assert result == '{"a": 1}'

@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import asyncio
+import json
 from abc import ABC, abstractmethod
 from typing import Mapping, Optional
 
@@ -59,6 +60,21 @@ class _McpHttpTransportBase(ITransport, ABC):
     @property
     def base_url(self) -> str:
         return self._mcp_base_url
+
+    def _process_tool_result_content(self, content: list) -> str:
+        """Processes the tool result content, handling multiple JSON objects."""
+        texts = [c.text for c in content if getattr(c, "type", "") == "text"]
+
+        if len(texts) > 1:
+            try:
+                # Check if all chunks are valid JSON objects (dictionaries)
+                if all(isinstance(json.loads(t), dict) for t in texts):
+                    return f"[{','.join(texts)}]"
+            except (ValueError, TypeError):
+                # Not valid JSON or not objects, fall back to simple concatenation
+                pass
+
+        return "".join(texts) or "null"
 
     def _convert_tool_schema(self, tool_data: dict) -> ToolSchema:
         """
