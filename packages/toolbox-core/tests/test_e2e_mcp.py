@@ -30,7 +30,7 @@ from toolbox_core.tool import ToolboxTool
 )
 async def toolbox(request):
     """Creates a ToolboxClient instance shared by all tests in this module."""
-    toolbox = ToolboxClient("http://localhost:5000", protocol=request.param)
+    toolbox = ToolboxClient("http://localhost:5000", protocol=Protocol(request.param))
     try:
         yield toolbox
     finally:
