@@ -55,5 +55,5 @@ options:
 substitutions:
   _VERSION: '3.13'
   # Default values (can be overridden by triggers)
-  _TOOLBOX_VERSION: '1.0.0'
+  _TOOLBOX_VERSION: '0.26.0'
   _TOOLBOX_MANIFEST_VERSION: '34'
