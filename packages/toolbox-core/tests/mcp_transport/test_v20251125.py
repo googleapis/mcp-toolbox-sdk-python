@@ -240,11 +240,8 @@ class TestMcpHttpTransportV20251125:
         assert init_call.kwargs["headers"] == test_headers
 
         notify_call = transport._send_request.call_args_list[1]
-        assert isinstance(
-            notify_call.kwargs["request"], types.InitializedNotification
-        )
+        assert isinstance(notify_call.kwargs["request"], types.InitializedNotification)
         assert notify_call.kwargs["headers"] == test_headers
-
 
     # --- Tool Management Tests ---
 
