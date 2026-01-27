@@ -302,3 +302,58 @@ class TestMcpHttpTransportV20251125:
         transport._server_version = "1.0"
         manifest = await transport.tool_get("get_weather")
         assert "get_weather" in manifest.tools
+
+    async def test_tool_invoke_multiple_json_objects(self, transport, mocker):
+        mocker.patch.object(transport, "_ensure_initialized", new_callable=AsyncMock)
+        mock_response = types.CallToolResult(
+            content=[
+                types.TextContent(type="text", text='{"foo":"bar", "baz": "qux"}'),
+                types.TextContent(type="text", text='{"foo":"quux", "baz":"corge"}'),
+            ]
+        )
+
+        mocker.patch.object(
+            transport,
+            "_send_request",
+            new_callable=AsyncMock,
+            return_value=mock_response,
+        )
+        result = await transport.tool_invoke("tool", {}, {})
+        expected = '[{"foo":"bar", "baz": "qux"},{"foo":"quux", "baz":"corge"}]'
+        assert result == expected
+
+    async def test_tool_invoke_split_text(self, transport, mocker):
+        mocker.patch.object(transport, "_ensure_initialized", new_callable=AsyncMock)
+        mock_response = types.CallToolResult(
+            content=[
+                types.TextContent(type="text", text="Hello "),
+                types.TextContent(type="text", text="World"),
+            ]
+        )
+        mocker.patch.object(
+            transport,
+            "_send_request",
+            new_callable=AsyncMock,
+            return_value=mock_response,
+        )
+
+        result = await transport.tool_invoke("tool", {}, {})
+        assert result == "Hello World"
+
+    async def test_tool_invoke_split_json_object(self, transport, mocker):
+        mocker.patch.object(transport, "_ensure_initialized", new_callable=AsyncMock)
+        mock_response = types.CallToolResult(
+            content=[
+                types.TextContent(type="text", text='{"a": '),
+                types.TextContent(type="text", text="1}"),
+            ]
+        )
+        mocker.patch.object(
+            transport,
+            "_send_request",
+            new_callable=AsyncMock,
+            return_value=mock_response,
+        )
+
+        result = await transport.tool_invoke("tool", {}, {})
+        assert result == '{"a": 1}'
