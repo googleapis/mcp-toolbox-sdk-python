@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.5.8](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-adk-v0.5.7...toolbox-adk-v0.5.8) (2026-01-27)
+
+
+### Bug Fixes
+
+* **adk:** add missing [@override](https://github.com/override) decorator to close method ([#502](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/502)) ([fc376a4](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/fc376a41bd928465bc34866c8ce539e3c4620ded))
+
+
+### Miscellaneous Chores
+
+* **deps:** update dependency black to v26 ([#505](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/505)) ([bb65376](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/bb653763c99ac97e60080440c507e933985cea98))
+* **deps:** update mcp toolbox server for integration tests to v0.26.0 ([#512](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/512)) ([8cc3886](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/8cc3886d65b67d45569000fa642abb884a2d252c))
+
 ## [0.5.7](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-adk-v0.5.6...toolbox-adk-v0.5.7) (2026-01-13)
 
 
