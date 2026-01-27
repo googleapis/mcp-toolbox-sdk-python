@@ -214,6 +214,37 @@ class TestMcpHttpTransportV20250618:
         ):
             await transport._initialize_session()
 
+    async def test_ensure_initialized_passes_headers(self, transport):
+        transport._initialize_session = AsyncMock()
+
+        test_headers = {"X-Test": "123"}
+        await transport._ensure_initialized(headers=test_headers)
+
+        transport._initialize_session.assert_called_with(headers=test_headers)
+
+    async def test_initialize_passes_headers_to_request(self, transport):
+        transport._send_request = AsyncMock()
+        transport._send_request.return_value = types.InitializeResult(
+            protocolVersion="2025-06-18",
+            capabilities=types.ServerCapabilities(tools={"listChanged": True}),
+            serverInfo=types.Implementation(name="test", version="1.0"),
+        )
+
+        test_headers = {"Authorization": "Bearer token"}
+        await transport._initialize_session(headers=test_headers)
+
+        assert transport._send_request.call_count == 2
+
+        init_call = transport._send_request.call_args_list[0]
+        assert isinstance(init_call.kwargs["request"], types.InitializeRequest)
+        assert init_call.kwargs["headers"] == test_headers
+
+        notify_call = transport._send_request.call_args_list[1]
+        assert isinstance(
+            notify_call.kwargs["request"], types.InitializedNotification
+        )
+        assert notify_call.kwargs["headers"] == test_headers
+
     # --- Tool Management Tests ---
 
     async def test_tools_list_success(self, transport, mocker):
