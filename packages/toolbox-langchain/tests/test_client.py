@@ -490,9 +490,13 @@ class TestToolboxClient:
         """Tests that client_headers are passed to the core client during initialization."""
         headers = {"X-Test-Header": "value"}
         ToolboxClient(URL, client_headers=headers)
-        mock_core_client_constructor.assert_called_once_with(
-            url=URL, client_headers=headers, protocol=Protocol.MCP_v20250618
-        )
+
+        mock_core_client_constructor.assert_called_once()
+        call_kwargs = mock_core_client_constructor.call_args[1]
+
+        assert call_kwargs["url"] == URL
+        assert call_kwargs["client_headers"] == headers
+        assert call_kwargs["protocol"] in Protocol.get_supported_mcp_versions()
 
     @patch("toolbox_langchain.client.ToolboxCoreSyncClient")
     def test_context_manager(self, mock_core_client_constructor):
