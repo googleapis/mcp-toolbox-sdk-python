@@ -76,19 +76,19 @@ class ToolboxClient:
                 "Please use Protocol.MCP_v20251125 to use the latest features."
             )
 
-        if protocol == Protocol.TOOLBOX:
-            self.__transport = ToolboxTransport(url, session)
-        elif protocol in Protocol.get_supported_mcp_versions():
-            if protocol == Protocol.MCP_v20251125:
+        match protocol:
+            case Protocol.TOOLBOX:
+                self.__transport = ToolboxTransport(url, session)
+            case Protocol.MCP_v20251125:
                 self.__transport = McpHttpTransportV20251125(url, session, protocol)
-            elif protocol == Protocol.MCP_v20250618:
+            case Protocol.MCP_v20250618:
                 self.__transport = McpHttpTransportV20250618(url, session, protocol)
-            elif protocol == Protocol.MCP_v20250326:
+            case Protocol.MCP_v20250326:
                 self.__transport = McpHttpTransportV20250326(url, session, protocol)
-            elif protocol == Protocol.MCP_v20241105:
+            case Protocol.MCP_v20241105:
                 self.__transport = McpHttpTransportV20241105(url, session, protocol)
-        else:
-            raise ValueError(f"Unsupported MCP protocol version: {protocol}")
+            case _:
+                raise ValueError(f"Unsupported MCP protocol version: {protocol}")
 
         self.__client_headers = client_headers if client_headers is not None else {}
 
