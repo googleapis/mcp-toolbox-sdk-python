@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.5.8](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-llamaindex-v0.5.7...toolbox-llamaindex-v0.5.8) (2026-01-28)
+
+
+### Features
+
+* **mcp:** add MCP v20251125 ([#507](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/507)) ([9c2d264](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/9c2d2649066f0034c6f66f08d3edc11193c75a3d))
+  * **mcp:** keep v20250618 the default mcp protocol ([#520](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/520)) ([ec791a5](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/ec791a55a9f7ac6b9954bb805a369e4b6db06766))
+
+### Documentation
+
+* **mcp:** add transport protocol info ([#501](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/501)) ([2b8b39b](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/2b8b39bf8ead85b33a22eb6401287b12b68d65d9))
+
+> [!NOTE]
+> For additional changelogs of the underlying `toolbox-core` package, visit: https://github.com/googleapis/mcp-toolbox-sdk-python/releases/tag/toolbox-core-v0.5.8
+
 ## [0.5.7](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-llamaindex-v0.5.6...toolbox-llamaindex-v0.5.7) (2026-01-13)
 
 
