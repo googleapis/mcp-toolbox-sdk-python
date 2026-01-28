@@ -26,6 +26,7 @@ from google.adk.auth.auth_credential import (
     OAuth2Auth,
 )
 from google.adk.tools.base_tool import BaseTool
+from toolbox_core.protocol import Protocol
 
 from toolbox_adk import CredentialStrategy, ToolboxTool, ToolboxToolset
 
@@ -64,6 +65,55 @@ class TestToolboxAdkIntegration:
             ctx = MagicMock()
             result = await tool.run_async({"id": "1"}, ctx)
 
+            assert "row1" in result
+
+        finally:
+            await toolset.close()
+
+    async def test_load_toolset_with_default_protocol(self):
+        """Test initializing toolset with default protocol (MCP)."""
+        toolset = ToolboxToolset(
+            server_url="http://localhost:5000",
+            toolset_name="my-toolset",
+            credentials=CredentialStrategy.toolbox_identity(),
+        )
+
+        try:
+            tools = await toolset.get_tools()
+            assert len(tools) > 0
+            
+            # Find 'get-row-by-id'
+            tool = next((t for t in tools if t.name == "get-row-by-id"), None)
+            assert tool is not None
+            
+            # Run it to ensure it actually works without the protocol
+            ctx = MagicMock()
+            result = await tool.run_async({"id": "1"}, ctx)
+            assert "row1" in result
+
+        finally:
+            await toolset.close()
+
+    async def test_load_toolset_with_explicit_protocol(self):
+        """Test initializing toolset with specific protocol (TOOLBOX)."""
+        toolset = ToolboxToolset(
+            server_url="http://localhost:5000",
+            toolset_name="my-toolset",
+            credentials=CredentialStrategy.toolbox_identity(),
+            protocol=Protocol.TOOLBOX,
+        )
+
+        try:
+            tools = await toolset.get_tools()
+            assert len(tools) > 0
+            
+            # Find 'get-row-by-id'
+            tool = next((t for t in tools if t.name == "get-row-by-id"), None)
+            assert tool is not None
+            
+            # Run it to ensure it actually works with the protocol
+            ctx = MagicMock()
+            result = await tool.run_async({"id": "1"}, ctx)
             assert "row1" in result
 
         finally:
