@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.5.8](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v0.5.7...toolbox-core-v0.5.8) (2026-01-28)
+
+
+### Features
+
+* **mcp:** add MCP v20251125 ([#507](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/507)) ([9c2d264](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/9c2d2649066f0034c6f66f08d3edc11193c75a3d))
+
+
+### Bug Fixes
+
+* **mcp:** correctly propagate client headers during init ([#499](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/499)) ([34a97dd](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/34a97dd1de23ecd40c38ab923e3deabf9bafb364))
+* **mcp:** merge multiple JSON objects in MCP tool output ([#504](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/504)) ([1131664](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/11316645d8d0d580aa17e6feb896ea6d60ec2bcd))
+
+
+### Miscellaneous Chores
+
+* **deps:** update dependency black to v26 ([#505](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/505)) ([bb65376](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/bb653763c99ac97e60080440c507e933985cea98))
+* **deps:** update mcp toolbox server version in integration tests to v0.26.0 to v0.26.0 ([#510](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/510)) ([537bb4e](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/537bb4ebb38e1dba16367c22e1d572646996bd53))
+* keep v20250618 the default mcp protocol ([#520](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/520)) ([ec791a5](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/ec791a55a9f7ac6b9954bb805a369e4b6db06766))
+
+
+### Documentation
+
+* **mcp:** add transport protocol info ([#501](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/501)) ([2b8b39b](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/2b8b39bf8ead85b33a22eb6401287b12b68d65d9))
+
 ## [0.5.7](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v0.5.6...toolbox-core-v0.5.7) (2026-01-13)
 
 
