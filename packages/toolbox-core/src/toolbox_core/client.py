@@ -13,6 +13,7 @@
 # limitations under the License.
 
 
+import logging
 from types import MappingProxyType
 from typing import Any, Awaitable, Callable, Mapping, Optional, Union
 
@@ -65,6 +66,16 @@ class ToolboxClient:
             client.
             protocol: The communication protocol to use.
         """
+        if protocol in [
+            Protocol.MCP_v20250618,
+            Protocol.MCP_v20250326,
+            Protocol.MCP_v20241105,
+        ]:
+            logging.getLogger(__name__).warning(
+                f"A newer version of MCP ({Protocol.MCP_v20251125.value}) is available. "
+                "Please use Protocol.MCP_v20251125 to use the latest features."
+            )
+
         if protocol == Protocol.TOOLBOX:
             self.__transport = ToolboxTransport(url, session)
         elif protocol in Protocol.get_supported_mcp_versions():

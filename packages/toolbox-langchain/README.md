@@ -63,7 +63,7 @@ from langgraph.prebuilt import create_react_agent
 async with ToolboxClient("http://127.0.0.1:5000") as toolbox:
     tools = toolbox.load_toolset()
 
-    model = ChatVertexAI(model="gemini-2.0-flash-001")
+    model = ChatVertexAIx(model="gemini-2.0-flash-001")
     agent = create_react_agent(model, tools)
 
     prompt = "How's the weather today?"
@@ -106,7 +106,7 @@ You can explicitly select a protocol using the `protocol` option during client i
 
 | Constant | Description |
 | :--- | :--- |
-| `Protocol.MCP` | **(Default)** Alias for the latest supported MCP version (currently `v2025-11-25`). |
+| `Protocol.MCP` | **(Default)** Alias for the latest supported MCP version (currently `2025-06-18`). |
 | `Protocol.TOOLBOX` | The native Toolbox HTTP protocol. |
 | `Protocol.MCP_v20251125` | MCP Protocol version 2025-11-25. |
 | `Protocol.MCP_v20250618` | MCP Protocol version 2025-06-18. |
