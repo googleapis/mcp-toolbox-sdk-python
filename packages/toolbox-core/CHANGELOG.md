@@ -6,6 +6,7 @@
 ### Features
 
 * **mcp:** add MCP v20251125 ([#507](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/507)) ([9c2d264](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/9c2d2649066f0034c6f66f08d3edc11193c75a3d))
+  * **mcp:** keep v20250618 the default mcp protocol ([#520](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/520)) ([ec791a5](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/ec791a55a9f7ac6b9954bb805a369e4b6db06766))
 
 
 ### Bug Fixes
