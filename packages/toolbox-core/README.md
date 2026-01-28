@@ -159,7 +159,7 @@ You can explicitly select a protocol using the `protocol` option during client i
 
 | Constant | Description |
 | :--- | :--- |
-| `Protocol.MCP` | **(Default)** Alias for the latest supported MCP version (currently `2025-06-18`). |
+| `Protocol.MCP` | **(Default)** Alias for the default MCP version (currently `2025-06-18`). |
 | `Protocol.TOOLBOX` | The native Toolbox HTTP protocol. |
 | `Protocol.MCP_v20251125` | MCP Protocol version 2025-11-25. |
 | `Protocol.MCP_v20250618` | MCP Protocol version 2025-06-18. |
