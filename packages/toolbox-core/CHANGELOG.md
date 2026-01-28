@@ -14,13 +14,6 @@
 * **mcp:** merge multiple JSON objects in MCP tool output ([#504](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/504)) ([1131664](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/11316645d8d0d580aa17e6feb896ea6d60ec2bcd))
 
 
-### Miscellaneous Chores
-
-* **deps:** update dependency black to v26 ([#505](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/505)) ([bb65376](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/bb653763c99ac97e60080440c507e933985cea98))
-* **deps:** update mcp toolbox server version in integration tests to v0.26.0 to v0.26.0 ([#510](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/510)) ([537bb4e](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/537bb4ebb38e1dba16367c22e1d572646996bd53))
-* keep v20250618 the default mcp protocol ([#520](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/520)) ([ec791a5](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/ec791a55a9f7ac6b9954bb805a369e4b6db06766))
-
-
 ### Documentation
 
 * **mcp:** add transport protocol info ([#501](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/501)) ([2b8b39b](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/2b8b39bf8ead85b33a22eb6401287b12b68d65d9))
