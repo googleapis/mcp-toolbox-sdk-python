@@ -71,7 +71,7 @@ class ToolboxClient:
             Protocol.MCP_v20250326,
             Protocol.MCP_v20241105,
         ]:
-            logging.getLogger(__name__).warning(
+            logging.warning(
                 f"A newer version of MCP ({Protocol.MCP_v20251125.value}) is available. "
                 "Please use Protocol.MCP_v20251125 to use the latest features."
             )
