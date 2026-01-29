@@ -12,9 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from toolbox_core.protocol import Protocol
 
 from toolbox_adk.tool import ToolboxTool
 from toolbox_adk.toolset import ToolboxToolset
@@ -103,3 +105,15 @@ class TestToolboxToolset:
         _ = toolset.client
         await toolset.close()
         mock_instance.close.assert_awaited()
+
+    @patch("toolbox_adk.toolset.ToolboxClient")
+    def test_init_with_protocol(self, mock_client_cls):
+        """Test that protocol argument is passed to the client."""
+        toolset = ToolboxToolset("url", protocol=Protocol.MCP)
+        # Access client to trigger init
+        _ = toolset.client
+        
+        mock_client_cls.assert_called_once()
+        call_kwargs = mock_client_cls.call_args[1]
+        assert call_kwargs["protocol"] == Protocol.MCP
+
