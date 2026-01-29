@@ -2,22 +2,18 @@
 
 ## [0.5.8](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-adk-v0.5.7...toolbox-adk-v0.5.8) (2026-01-29)
 
+### Features
 
-### Bug Fixes
-
-* **adk:** add missing [@override](https://github.com/override) decorator to close method ([#502](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/502)) ([fc376a4](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/fc376a41bd928465bc34866c8ce539e3c4620ded))
-
-
-### Miscellaneous Chores
-
-* **adk:** add protocol parameter tests ([#522](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/522)) ([5974a6f](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/5974a6fe86260dab2fe5ce9cf3ebe9a03e9c2776))
-* **deps:** update dependency black to v26 ([#505](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/505)) ([bb65376](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/bb653763c99ac97e60080440c507e933985cea98))
-* **deps:** update mcp toolbox server for integration tests to v0.26.0 ([#512](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/512)) ([8cc3886](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/8cc3886d65b67d45569000fa642abb884a2d252c))
-
+* **mcp:** add MCP v20251125 ([#507](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/507)) ([9c2d264](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/9c2d2649066f0034c6f66f08d3edc11193c75a3d))
+  * **mcp:** keep v20250618 the default mcp protocol ([#520](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/520)) ([ec791a5](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/ec791a55a9f7ac6b9954bb805a369e4b6db06766))
 
 ### Documentation
 
 * **adk:** add transport protocols section ([#521](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/521)) ([2158f0e](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/2158f0e2b504d7d5ce5e6dd043c08e4956cdd02d))
+
+> [!NOTE]
+> For additional changelogs of the underlying `toolbox-core` package, visit: https://github.com/googleapis/mcp-toolbox-sdk-python/releases/tag/toolbox-core-v0.5.8
+
 
 ## [0.5.7](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-adk-v0.5.6...toolbox-adk-v0.5.7) (2026-01-13)
 
