@@ -23,6 +23,9 @@ from toolbox_core.sync_tool import ToolboxSyncTool
 from .tools import ToolboxTool
 
 
+from .version import __version__
+
+
 class ToolboxClient:
 
     def __init__(
@@ -40,7 +43,11 @@ class ToolboxClient:
             url: The base URL of the Toolbox service.
         """
         self.__core_client = ToolboxCoreSyncClient(
-            url=url, client_headers=client_headers, protocol=protocol
+            url=url,
+            client_headers=client_headers,
+            protocol=protocol,
+            client_name="toolbox-llamaindex",
+            client_version=__version__,
         )
 
     async def aload_tool(

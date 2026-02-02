@@ -22,6 +22,9 @@ from toolbox_core.protocol import Protocol
 from .async_tools import AsyncToolboxTool
 
 
+from .version import __version__
+
+
 # This class is an internal implementation detail and is not exposed to the
 # end-user. It should not be used directly by external code. Changes to this
 # class will not be considered breaking changes to the public API.
@@ -44,7 +47,12 @@ class AsyncToolboxClient:
             session: An HTTP client session.
         """
         self.__core_client = ToolboxCoreClient(
-            url=url, session=session, client_headers=client_headers, protocol=protocol
+            url=url,
+            session=session,
+            client_headers=client_headers,
+            protocol=protocol,
+            client_name="toolbox-llamaindex",
+            client_version=__version__,
         )
 
     async def aload_tool(

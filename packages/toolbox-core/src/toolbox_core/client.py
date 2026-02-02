@@ -52,6 +52,8 @@ class ToolboxClient:
             Mapping[str, Union[Callable[[], str], Callable[[], Awaitable[str]], str]]
         ] = None,
         protocol: Protocol = Protocol.MCP,
+        client_name: Optional[str] = None,
+        client_version: Optional[str] = None,
     ):
         """
         Initializes the ToolboxClient.
@@ -80,13 +82,21 @@ class ToolboxClient:
             case Protocol.TOOLBOX:
                 self.__transport = ToolboxTransport(url, session)
             case Protocol.MCP_v20251125:
-                self.__transport = McpHttpTransportV20251125(url, session, protocol)
+                self.__transport = McpHttpTransportV20251125(
+                    url, session, protocol, client_name, client_version
+                )
             case Protocol.MCP_v20250618:
-                self.__transport = McpHttpTransportV20250618(url, session, protocol)
+                self.__transport = McpHttpTransportV20250618(
+                    url, session, protocol, client_name, client_version
+                )
             case Protocol.MCP_v20250326:
-                self.__transport = McpHttpTransportV20250326(url, session, protocol)
+                self.__transport = McpHttpTransportV20250326(
+                    url, session, protocol, client_name, client_version
+                )
             case Protocol.MCP_v20241105:
-                self.__transport = McpHttpTransportV20241105(url, session, protocol)
+                self.__transport = McpHttpTransportV20241105(
+                    url, session, protocol, client_name, client_version
+                )
             case _:
                 raise ValueError(f"Unsupported MCP protocol version: {protocol}")
 

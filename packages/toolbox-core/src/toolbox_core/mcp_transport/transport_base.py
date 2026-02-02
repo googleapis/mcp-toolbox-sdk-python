@@ -36,10 +36,15 @@ class _McpHttpTransportBase(ITransport, ABC):
         base_url: str,
         session: Optional[ClientSession] = None,
         protocol: Protocol = Protocol.MCP,
+        client_name: Optional[str] = None,
+        client_version: Optional[str] = None,
     ):
         self._mcp_base_url = f"{base_url}/mcp/"
         self._protocol_version = protocol.value
         self._server_version: Optional[str] = None
+
+        self._client_name = client_name
+        self._client_version = client_version
 
         self._manage_session = session is None
         self._session = session or ClientSession()

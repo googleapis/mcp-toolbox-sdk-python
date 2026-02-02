@@ -43,6 +43,8 @@ class ToolboxSyncClient:
             Mapping[str, Union[Callable[[], str], Callable[[], Awaitable[str]], str]]
         ] = None,
         protocol: Protocol = Protocol.MCP,
+        client_name: Optional[str] = None,
+        client_version: Optional[str] = None,
     ):
         """
         Initializes the ToolboxSyncClient.
@@ -63,7 +65,13 @@ class ToolboxSyncClient:
                     self.__class__.__loop = loop
 
         async def create_client():
-            return ToolboxClient(url, client_headers=client_headers, protocol=protocol)
+            return ToolboxClient(
+                url,
+                client_headers=client_headers,
+                protocol=protocol,
+                client_name=client_name,
+                client_version=client_version,
+            )
 
         self.__async_client = run_coroutine_threadsafe(
             create_client(), self.__class__.__loop

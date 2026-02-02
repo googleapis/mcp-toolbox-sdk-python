@@ -62,8 +62,14 @@ class ToolboxClient:
         if credentials:
             self._configure_auth(credentials)
 
+        from .version import __version__
+
         self._client = toolbox_core.ToolboxClient(
-            url=server_url, client_headers=self._core_client_headers, **kwargs
+            url=server_url,
+            client_headers=self._core_client_headers,
+            client_name="toolbox-adk",
+            client_version=__version__,
+            **kwargs,
         )
 
     def _configure_auth(self, creds: CredentialConfig) -> None:
