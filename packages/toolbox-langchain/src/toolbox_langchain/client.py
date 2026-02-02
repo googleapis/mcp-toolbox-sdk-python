@@ -20,6 +20,7 @@ from toolbox_core.protocol import Protocol
 from toolbox_core.sync_client import ToolboxSyncClient as ToolboxCoreSyncClient
 
 from .tools import ToolboxTool
+from .version import __version__
 
 
 class ToolboxClient:
@@ -39,7 +40,11 @@ class ToolboxClient:
             url: The base URL of the Toolbox service.
         """
         self.__core_client = ToolboxCoreSyncClient(
-            url=url, client_headers=client_headers, protocol=protocol
+            url=url,
+            client_headers=client_headers,
+            protocol=protocol,
+            client_name="toolbox-langchain-python",
+            client_version=__version__,
         )
 
     async def aload_tool(

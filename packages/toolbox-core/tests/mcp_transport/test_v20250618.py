@@ -182,6 +182,40 @@ class TestMcpHttpTransportV20250618:
         await transport._initialize_session()
         assert transport._server_version == "1.0"
 
+    @patch("toolbox_core.mcp_transport.v20250618.mcp.version")
+    async def test_initialize_session_custom_client_info(
+        self, mock_version, transport, mocker
+    ):
+        mock_version.__version__ = "1.2.3"
+
+        # Override transport's client info
+        transport._client_name = "custom-client"
+        transport._client_version = "9.9.9"
+
+        mock_send = mocker.patch.object(
+            transport, "_send_request", new_callable=AsyncMock
+        )
+
+        async def side_effect(*args, **kwargs):
+            request = kwargs.get("request")
+            if isinstance(request, types.InitializeRequest):
+                # Verify the client info in the request
+                assert request.params.clientInfo.name == "custom-client"
+                assert request.params.clientInfo.version == "9.9.9"
+
+                return types.InitializeResult.model_validate(
+                    {
+                        "protocolVersion": "2025-06-18",
+                        "capabilities": {"tools": {"listChanged": True}},
+                        "serverInfo": {"name": "test", "version": "1.0"},
+                    }
+                )
+            return None
+
+        mock_send.side_effect = side_effect
+
+        await transport._initialize_session()
+
     async def test_initialize_session_protocol_mismatch(self, transport, mocker):
         mocker.patch.object(
             transport,

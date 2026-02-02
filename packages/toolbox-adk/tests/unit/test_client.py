@@ -36,6 +36,8 @@ class TestToolboxClientAuth:
         assert "client_headers" in kwargs
         headers = kwargs["client_headers"]
         assert "Authorization" not in headers
+        assert kwargs["client_name"] == "toolbox-adk-python"
+        assert kwargs["client_version"] is not None
 
     @patch("toolbox_adk.client.toolbox_core.ToolboxClient")
     @patch("toolbox_adk.client.id_token.fetch_id_token")
