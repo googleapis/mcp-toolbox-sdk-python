@@ -175,7 +175,9 @@ class TestMcpHttpTransportV20241105:
         assert init_call.kwargs["request"].params.protocolVersion == "2024-11-05"
 
     @patch("toolbox_core.mcp_transport.v20241105.mcp.version")
-    async def test_initialize_session_custom_client_info(self, mock_version, transport, mocker):
+    async def test_initialize_session_custom_client_info(
+        self, mock_version, transport, mocker
+    ):
         mock_version.__version__ = "1.2.3"
 
         # Override transport's client info

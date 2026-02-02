@@ -20,8 +20,6 @@ from toolbox_core.protocol import Protocol
 from toolbox_core.sync_client import ToolboxSyncClient as ToolboxCoreSyncClient
 
 from .tools import ToolboxTool
-
-
 from .version import __version__
 
 
