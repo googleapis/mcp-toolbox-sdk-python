@@ -96,7 +96,7 @@ class McpHttpTransportV20251125(_McpHttpTransportBase):
             protocolVersion=self._protocol_version,
             capabilities=types.ClientCapabilities(),
             clientInfo=types.Implementation(
-                name=self._client_name or "toolbox-python-sdk",
+                name=self._client_name or "toolbox-core-python",
                 version=self._client_version or version.__version__,
             ),
         )
