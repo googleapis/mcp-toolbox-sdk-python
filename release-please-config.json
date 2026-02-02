@@ -1,5 +1,6 @@
 {
   "release-type": "python",
+  "separate-pull-requests": true,
   "bump-minor-pre-major": true,
   "bump-patch-for-minor-pre-major": true,
   "include-v-in-tag": true,
@@ -51,17 +52,5 @@
         "src/toolbox_adk/version.py"
       ]
     }
-  },
-  "plugins": [
-    {
-      "type": "linked-versions",
-      "groupName": "toolbox-python-sdks",
-      "components": [
-        "toolbox-core",
-        "toolbox-langchain",
-        "toolbox-llamaindex",
-        "toolbox-adk"
-      ]
-    }
-  ]
+  }
 }

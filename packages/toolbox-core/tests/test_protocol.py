@@ -26,7 +26,7 @@ def test_get_supported_mcp_versions():
     Tests that get_supported_mcp_versions returns the correct list of versions,
     sorted from newest to oldest.
     """
-    expected_versions = ["2025-06-18", "2025-03-26", "2024-11-05"]
+    expected_versions = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"]
     supported_versions = Protocol.get_supported_mcp_versions()
 
     assert supported_versions == expected_versions

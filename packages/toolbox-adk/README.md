@@ -1,6 +1,6 @@
 ![MCP Toolbox Logo](https://raw.githubusercontent.com/googleapis/genai-toolbox/main/logo.png)
 
-# Toolbox ADK Integration
+# MCP Toolbox SDK for ADK
 
 This package allows Google ADK (Agent Development Kit) agents to natively use tools from the [MCP Toolbox](https://github.com/googleapis/genai-toolbox).
 
@@ -10,6 +10,9 @@ It provides a seamless bridge between the `toolbox-core` SDK and the ADK's `Base
 
 - [Installation](#installation)
 - [Usage](#usage)
+- [Transport Protocols](#transport-protocols)
+    - [Supported Protocols](#supported-protocols)
+    - [Example](#example)
 - [Authentication](#authentication)
     - [Workload Identity (ADC)](#1-workload-identity-adc)
     - [User Identity (OAuth2)](#2-user-identity-oauth2)
@@ -48,6 +51,53 @@ toolset = ToolboxToolset(
 
 # Use in your ADK Agent
 agent = Agent(tools=[toolset])
+```
+
+## Transport Protocols
+
+The SDK supports multiple transport protocols for communicating with the Toolbox server. By default, the client uses the latest supported version of the **Model Context Protocol (MCP)**.
+
+You can explicitly select a protocol using the `protocol` option during toolset initialization. This is useful if you need to use the native Toolbox HTTP protocol or pin the client to a specific legacy version of MCP.
+
+> [!NOTE]
+> * **Native Toolbox Transport**: This uses the service's native **REST over HTTP** API.
+> * **MCP Transports**: These options use the **Model Context Protocol over HTTP**.
+
+### Supported Protocols
+
+| Constant | Description |
+| :--- | :--- |
+| `Protocol.MCP` | **(Default)** Alias for the default MCP version (currently `2025-06-18`). |
+| `Protocol.TOOLBOX` | The native Toolbox HTTP protocol. |
+| `Protocol.MCP_v20251125` | MCP Protocol version 2025-11-25. |
+| `Protocol.MCP_v20250618` | MCP Protocol version 2025-06-18. |
+| `Protocol.MCP_v20250326` | MCP Protocol version 2025-03-26. |
+| `Protocol.MCP_v20241105` | MCP Protocol version 2024-11-05. |
+
+### Example
+
+If you wish to use the native Toolbox protocol:
+
+```python
+from toolbox_adk import ToolboxToolset
+from toolbox_core.protocol import Protocol
+
+toolset = ToolboxToolset(
+    server_url="http://127.0.0.1:5000",
+    protocol=Protocol.TOOLBOX
+)
+```
+
+If you want to pin the MCP Version 2025-03-26:
+
+```python
+from toolbox_adk import ToolboxToolset
+from toolbox_core.protocol import Protocol
+
+toolset = ToolboxToolset(
+    server_url="http://127.0.0.1:5000",
+    protocol=Protocol.MCP_v20250326
+)
 ```
 
 > [!TIP]

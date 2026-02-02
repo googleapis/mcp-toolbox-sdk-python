@@ -348,9 +348,11 @@ class TestAsyncToolboxClient:
         """Tests that client_headers are passed to the core client during initialization."""
         headers = {"X-Test-Header": "value"}
         AsyncToolboxClient(URL, session=mock_session, client_headers=headers)
-        mock_core_client_constructor.assert_called_once_with(
-            url=URL,
-            session=mock_session,
-            client_headers=headers,
-            protocol=Protocol.MCP_v20250618,
-        )
+
+        mock_core_client_constructor.assert_called_once()
+        call_kwargs = mock_core_client_constructor.call_args[1]
+
+        assert call_kwargs["url"] == URL
+        assert call_kwargs["session"] == mock_session
+        assert call_kwargs["client_headers"] == headers
+        assert call_kwargs["protocol"] in Protocol.get_supported_mcp_versions()

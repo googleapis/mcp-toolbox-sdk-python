@@ -13,6 +13,7 @@
 # limitations under the License.
 
 
+import logging
 from types import MappingProxyType
 from typing import Any, Awaitable, Callable, Mapping, Optional, Union
 
@@ -24,6 +25,7 @@ from .mcp_transport import (
     McpHttpTransportV20241105,
     McpHttpTransportV20250326,
     McpHttpTransportV20250618,
+    McpHttpTransportV20251125,
 )
 from .protocol import Protocol, ToolSchema
 from .tool import ToolboxTool
@@ -64,17 +66,29 @@ class ToolboxClient:
             client.
             protocol: The communication protocol to use.
         """
-        if protocol == Protocol.TOOLBOX:
-            self.__transport = ToolboxTransport(url, session)
-        elif protocol in Protocol.get_supported_mcp_versions():
-            if protocol == Protocol.MCP_v20250618:
+        if protocol in [
+            Protocol.MCP_v20250618,
+            Protocol.MCP_v20250326,
+            Protocol.MCP_v20241105,
+        ]:
+            logging.warning(
+                f"A newer version of MCP ({Protocol.MCP_v20251125.value}) is available. "
+                "Please use Protocol.MCP_v20251125 to use the latest features."
+            )
+
+        match protocol:
+            case Protocol.TOOLBOX:
+                self.__transport = ToolboxTransport(url, session)
+            case Protocol.MCP_v20251125:
+                self.__transport = McpHttpTransportV20251125(url, session, protocol)
+            case Protocol.MCP_v20250618:
                 self.__transport = McpHttpTransportV20250618(url, session, protocol)
-            elif protocol == Protocol.MCP_v20250326:
+            case Protocol.MCP_v20250326:
                 self.__transport = McpHttpTransportV20250326(url, session, protocol)
-            elif protocol == Protocol.MCP_v20241105:
+            case Protocol.MCP_v20241105:
                 self.__transport = McpHttpTransportV20241105(url, session, protocol)
-        else:
-            raise ValueError(f"Unsupported MCP protocol version: {protocol}")
+            case _:
+                raise ValueError(f"Unsupported MCP protocol version: {protocol}")
 
         self.__client_headers = client_headers if client_headers is not None else {}
 
