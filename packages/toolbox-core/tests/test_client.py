@@ -15,14 +15,14 @@
 
 import inspect
 from typing import Mapping, Optional
-from unittest.mock import AsyncMock, Mock
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from aiohttp import web
 
 from toolbox_core.client import ToolboxClient
 from toolbox_core.itransport import ITransport
-from toolbox_core.protocol import ManifestSchema, ParameterSchema, ToolSchema
+from toolbox_core.protocol import ManifestSchema, ParameterSchema, Protocol, ToolSchema
 
 TEST_BASE_URL = "http://toolbox.example.com"
 
@@ -691,3 +691,22 @@ class TestClientHeaders:
                     match=f"Client header\\(s\\) `X-Static-Header` already registered",
                 ):
                     client.add_headers(static_header)
+
+
+@pytest.mark.asyncio
+async def test_client_init_with_client_info():
+    """Tests that client_name and client_version are passed to the transport."""
+    client_name = "test-client"
+    client_version = "1.2.3"
+
+    with patch("toolbox_core.client.McpHttpTransportV20251125") as mock_transport:
+        ToolboxClient(
+            TEST_BASE_URL,
+            protocol=Protocol.MCP_v20251125,
+            client_name=client_name,
+            client_version=client_version,
+        )
+        mock_transport.assert_called_once()
+        call_args = mock_transport.call_args[0]
+        assert call_args[3] == client_name
+        assert call_args[4] == client_version
