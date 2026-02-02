@@ -436,7 +436,7 @@ class TestToolboxClient:
         assert call_kwargs["url"] == URL
         assert call_kwargs["client_headers"] == headers
         assert call_kwargs["protocol"] in Protocol.get_supported_mcp_versions()
-        assert call_kwargs["client_name"] == "toolbox-llamaindex"
+        assert call_kwargs["client_name"] == "toolbox-llamaindex-python"
         assert call_kwargs["client_version"] is not None
 
     @patch("toolbox_llamaindex.client.ToolboxCoreSyncClient")

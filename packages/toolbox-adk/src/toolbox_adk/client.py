@@ -67,7 +67,7 @@ class ToolboxClient:
         self._client = toolbox_core.ToolboxClient(
             url=server_url,
             client_headers=self._core_client_headers,
-            client_name="toolbox-adk",
+            client_name="toolbox-adk-python",
             client_version=__version__,
             **kwargs,
         )

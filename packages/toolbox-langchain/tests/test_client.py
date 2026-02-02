@@ -497,7 +497,7 @@ class TestToolboxClient:
         assert call_kwargs["url"] == URL
         assert call_kwargs["client_headers"] == headers
         assert call_kwargs["protocol"] in Protocol.get_supported_mcp_versions()
-        assert call_kwargs["client_name"] == "toolbox-langchain"
+        assert call_kwargs["client_name"] == "toolbox-langchain-python"
         assert call_kwargs["client_version"] is not None
 
     @patch("toolbox_langchain.client.ToolboxCoreSyncClient")

@@ -43,7 +43,7 @@ class ToolboxClient:
             url=url,
             client_headers=client_headers,
             protocol=protocol,
-            client_name="toolbox-langchain",
+            client_name="toolbox-langchain-python",
             client_version=__version__,
         )
 

@@ -49,7 +49,7 @@ class AsyncToolboxClient:
             session=session,
             client_headers=client_headers,
             protocol=protocol,
-            client_name="toolbox-llamaindex",
+            client_name="toolbox-llamaindex-python",
             client_version=__version__,
         )
 
