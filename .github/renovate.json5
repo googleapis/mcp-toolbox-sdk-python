@@ -68,9 +68,7 @@
     {
       customType: 'regex',
       managerFilePatterns: [
-        '/packages/toolbox-core/integration.cloudbuild.yaml/',
-        '/packages/toolbox-langchain/integration.cloudbuild.yaml/',
-        '/packages/toolbox-llamaindex/integration.cloudbuild.yaml/',
+        'packages/*/integration.cloudbuild.yaml',
       ],
       matchStrings: [
         '_TOOLBOX_VERSION: [\'|"]?(?<currentValue>v?\\d+\\.\\d+\\.\\d+)[\'|"]?',
