@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.9](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v0.5.8...toolbox-core-v0.5.9) (2026-02-04)
+
+
+### Features
+
+* Enable package-specific client identification for MCP ([#525](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/525)) ([7ac0d3f](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/7ac0d3f167af1e47c26a3f43bdb48f3fc0a92109))
+
 ## [0.5.8](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v0.5.7...toolbox-core-v0.5.8) (2026-01-28)
 
 
