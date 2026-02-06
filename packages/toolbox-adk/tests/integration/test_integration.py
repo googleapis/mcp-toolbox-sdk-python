@@ -188,6 +188,10 @@ class TestToolboxAdkIntegration:
             assert declaration.name == "get-n-rows"
             assert "num_rows" in declaration.parameters.properties
 
+            # Force the proxy tool to require auth to properly simulate the 3LO flow branches
+            tool._core_tool._required_authn_params = {"mock_param": "mock_service"}
+            tool._core_tool._required_authz_tokens = []
+
             # Create a mock context that behaves like ADK's ReadonlyContext
             mock_ctx_first = MagicMock()
             # Simulate "No Auth Response Found"
@@ -201,7 +205,7 @@ class TestToolboxAdkIntegration:
             result_first = await tool.run_async({"num_rows": "1"}, mock_ctx_first)
 
             # The wrapper should catch the missing creds and request them.
-            assert result_first is None, "Tool should return None sig for auth requirement"
+            assert isinstance(result_first, dict) and "error" in result_first, "Tool should return error sig for auth requirement"
             mock_ctx_first.request_credential.assert_called_once()
             
             # Inspect the requested config
