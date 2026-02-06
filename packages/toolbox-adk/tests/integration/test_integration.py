@@ -203,30 +203,41 @@ class TestToolboxAdkIntegration:
             # The wrapper should catch the missing creds and request them.
             assert result_first is None, "Tool should return None sig for auth requirement"
             mock_ctx_first.request_credential.assert_called_once()
-
+            
             # Inspect the requested config
             auth_config = mock_ctx_first.request_credential.call_args[0][0]
             assert auth_config.raw_auth_credential.oauth2.client_id == "test-client-id"
+            # Verify the default fallback scopes were assigned correctly to avoid upstream crashes
+            assert auth_config.auth_scheme.flows.authorizationCode.scopes == {"openid": "", "profile": "", "email": ""}
 
             mock_ctx_second = MagicMock()
 
             # Simulate "Auth Response Found"
             mock_creds = AuthCredential(
                 auth_type=AuthCredentialTypes.OAUTH2,
-                oauth2=OAuth2Auth(access_token="fake-access-token"),
+                oauth2=OAuth2Auth(access_token="fake-access-token", id_token="fake-id-token"),
             )
             mock_ctx_second.get_auth_response.return_value = mock_creds
+
+            # Setup the credential service mock to verify credential persistence across sessions
+            mock_cred_service = AsyncMock()
+            mock_ctx_second._invocation_context = MagicMock()
+            mock_ctx_second._invocation_context.credential_service = mock_cred_service
 
             print("Running tool second time (expecting success or server error)...")
 
             try:
                 result_second = await tool.run_async({"num_rows": "1"}, mock_ctx_second)
                 assert result_second is not None
+                # Verify that the tool saved the credentials to the storage service backends locally
+                mock_cred_service.save_credential.assert_called_once()
             except Exception as e:
                 mock_ctx_second.request_credential.assert_not_called()
                 err_msg = str(e).lower()
                 assert any(x in err_msg for x in ["401", "403", "unauthorized", "forbidden"]), f"Caught UNEXPECTED exception: {type(e).__name__}: {e}"
                 print(f"Caught expected server exception with fake token: {e}")
+                # Verify that the tool AT LEAST triggered save_credential before failing via core_tool inner HTTP req
+                mock_cred_service.save_credential.assert_called_once()
 
         finally:
             await toolset.close()
