@@ -189,6 +189,9 @@ class TestToolboxAdkIntegration:
             assert "num_rows" in declaration.parameters.properties
 
             # Force the proxy tool to require auth to properly simulate the 3LO flow branches
+            tool._core_tool._ToolboxTool__required_authn_params = {"mock_param": "mock_service"}
+            tool._core_tool._ToolboxTool__required_authz_tokens = []
+
             # Create a mock context that behaves like ADK's ReadonlyContext
             mock_ctx_first = MagicMock()
             # Simulate "No Auth Response Found"
@@ -199,12 +202,7 @@ class TestToolboxAdkIntegration:
             mock_ctx_first._invocation_context.credential_service = mock_cred_service_first
 
             print("Running tool first time (expecting auth request)...")
-            from unittest.mock import patch, PropertyMock
-            with patch.object(type(tool._core_tool), "_required_authn_params", new_callable=PropertyMock) as mock_auth, \
-                 patch.object(type(tool._core_tool), "_required_authz_tokens", new_callable=PropertyMock) as mock_authz:
-                mock_auth.return_value = {"mock_param": "mock_service"}
-                mock_authz.return_value = []
-                result_first = await tool.run_async({"num_rows": "1"}, mock_ctx_first)
+            result_first = await tool.run_async({"num_rows": "1"}, mock_ctx_first)
 
             # The wrapper should catch the missing creds and request them.
             assert isinstance(result_first, dict) and "error" in result_first, "Tool should return error sig for auth requirement"
@@ -233,11 +231,7 @@ class TestToolboxAdkIntegration:
             print("Running tool second time (expecting success or server error)...")
 
             try:
-                with patch.object(type(tool._core_tool), "_required_authn_params", new_callable=PropertyMock) as mock_auth, \
-                     patch.object(type(tool._core_tool), "_required_authz_tokens", new_callable=PropertyMock) as mock_authz:
-                    mock_auth.return_value = {"mock_param": "mock_service"}
-                    mock_authz.return_value = []
-                    result_second = await tool.run_async({"num_rows": "1"}, mock_ctx_second)
+                result_second = await tool.run_async({"num_rows": "1"}, mock_ctx_second)
                 assert result_second is not None
                 # Verify that the tool saved the credentials to the storage service backends locally
                 mock_cred_service.save_credential.assert_called_once()
