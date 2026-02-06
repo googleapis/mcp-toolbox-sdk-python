@@ -36,6 +36,22 @@ from typing_extensions import override
 from .client import USER_TOKEN_CONTEXT_VAR
 from .credentials import CredentialConfig, CredentialType
 
+# --- Monkey Patch ADK OAuth2 Exchange to Retain ID Tokens ---
+# TODO(id_token): Remove this monkey patch once the PR https://github.com/google/adk-python/pull/4402 is merged.
+# Google's ID Token is required by MCP Toolbox but ADK's `update_credential_with_tokens` natively drops the `id_token`.
+import google.adk.auth.oauth2_credential_util as oauth2_credential_util
+import google.adk.auth.exchanger.oauth2_credential_exchanger as oauth2_credential_exchanger
+_orig_update_cred = oauth2_credential_util.update_credential_with_tokens
+
+def _patched_update_credential_with_tokens(auth_credential, tokens):
+    _orig_update_cred(auth_credential, tokens)
+    if tokens and "id_token" in tokens and auth_credential and auth_credential.oauth2:
+        # Pydantic's `extra="allow"` config preserves this dynamically set attribute
+        setattr(auth_credential.oauth2, "id_token", tokens["id_token"])
+
+oauth2_credential_util.update_credential_with_tokens = _patched_update_credential_with_tokens
+oauth2_credential_exchanger.update_credential_with_tokens = _patched_update_credential_with_tokens
+# -------------------------------------------------------------
 
 class ToolboxTool(BaseTool):
     """
@@ -135,56 +151,98 @@ class ToolboxTool(BaseTool):
         reset_token = None
 
         if self._auth_config and self._auth_config.type == CredentialType.USER_IDENTITY:
-            if not self._auth_config.client_id or not self._auth_config.client_secret:
-                raise ValueError("USER_IDENTITY requires client_id and client_secret")
-
-            # Construct ADK AuthConfig
-            scopes = self._auth_config.scopes or [
-                "https://www.googleapis.com/auth/cloud-platform"
-            ]
-            scope_dict = {s: "" for s in scopes}
-
-            auth_config_adk = AuthConfig(
-                auth_scheme=OAuth2(
-                    flows=OAuthFlows(
-                        authorizationCode=OAuthFlowAuthorizationCode(
-                            authorizationUrl="https://accounts.google.com/o/oauth2/auth",
-                            tokenUrl="https://oauth2.googleapis.com/token",
-                            scopes=scope_dict,
-                        )
-                    )
-                ),
-                raw_auth_credential=AuthCredential(
-                    auth_type=AuthCredentialTypes.OAUTH2,
-                    oauth2=OAuth2Auth(
-                        client_id=self._auth_config.client_id,
-                        client_secret=self._auth_config.client_secret,
-                    ),
-                ),
+            requires_auth = (
+                len(self._core_tool._required_authn_params) > 0
+                or len(self._core_tool._required_authz_tokens) > 0
             )
 
-            # Check if we already have credentials from a previous exchange
-            try:
-                # get_auth_response returns AuthCredential if found
-                creds = tool_context.get_auth_response(auth_config_adk)
-                if creds and creds.oauth2 and creds.oauth2.access_token:
-                    reset_token = USER_TOKEN_CONTEXT_VAR.set(creds.oauth2.access_token)
-                else:
-                    # Request credentials and pause execution
-                    tool_context.request_credential(auth_config_adk)
-                    return None
-            except Exception as e:
-                if "credential" in str(e).lower() or isinstance(e, ValueError):
-                    raise e
-                
-                logging.warning(
-                    f"Unexpected error in get_auth_response during User Identity (OAuth2) retrieval: {e}. "
-                    "Falling back to request_credential.",
-                    exc_info=True
+            if requires_auth:
+                if not self._auth_config.client_id or not self._auth_config.client_secret:
+                    raise ValueError("USER_IDENTITY requires client_id and client_secret")
+
+                # Construct ADK AuthConfig
+                scopes = self._auth_config.scopes or ["openid", "profile", "email"]
+                scope_dict = {s: "" for s in scopes}
+
+                auth_config_adk = AuthConfig(
+                    auth_scheme=OAuth2(
+                        flows=OAuthFlows(
+                            authorizationCode=OAuthFlowAuthorizationCode(
+                                authorizationUrl="https://accounts.google.com/o/oauth2/auth",
+                                tokenUrl="https://oauth2.googleapis.com/token",
+                                scopes=scope_dict,
+                            )
+                        )
+                    ),
+                    raw_auth_credential=AuthCredential(
+                        auth_type=AuthCredentialTypes.OAUTH2,
+                        oauth2=OAuth2Auth(
+                            client_id=self._auth_config.client_id,
+                            client_secret=self._auth_config.client_secret,
+                        ),
+                    ),
                 )
-                # Fallback to request logic
-                tool_context.request_credential(auth_config_adk)
-                return None
+
+                # Check if we already have credentials from a previous exchange
+                try:
+                    # Try to load credential from credential service first (persists across sessions)
+                    creds = None
+                    try:
+                        if tool_context._invocation_context.credential_service:
+                            creds = await tool_context._invocation_context.credential_service.load_credential(
+                                auth_config=auth_config_adk,
+                                callback_context=tool_context
+                            )
+                    except ValueError:
+                        # Credential service might not be initialized
+                        pass
+                    
+                    if not creds:
+                        # Fallback to session state (get_auth_response returns AuthCredential if found)
+                        creds = tool_context.get_auth_response(auth_config_adk)
+                        
+                    if creds and creds.oauth2 and creds.oauth2.access_token:
+                        reset_token = USER_TOKEN_CONTEXT_VAR.set(creds.oauth2.access_token)
+                        
+                        # Bind the token to the underlying core_tool so it constructs headers properly
+                        needed_services = set()
+                        for requested_service in (list(self._core_tool._required_authn_params.values()) + list(self._core_tool._required_authz_tokens)):
+                            if isinstance(requested_service, list):
+                                needed_services.update(requested_service)
+                            else:
+                                needed_services.add(requested_service)
+                                
+                        for s in needed_services:
+                            # Only add if not already registered (prevents ValueError on duplicate params or subsequent runs)
+                            if not hasattr(self._core_tool, '_auth_token_getters') or s not in self._core_tool._auth_token_getters:
+                                # TODO(id_token): Uncomment this line and remove the `getattr` fallback below once PR https://github.com/google/adk-python/pull/4402 is merged.
+                                # self._core_tool = self._core_tool.add_auth_token_getter(s, lambda t=creds.oauth2.id_token or creds.oauth2.access_token: t)
+                                self._core_tool = self._core_tool.add_auth_token_getter(s, lambda t=getattr(creds.oauth2, "id_token", creds.oauth2.access_token): t)
+                        # Once we use it from get_auth_response, save it to the auth service for future use
+                        try:
+                            if tool_context._invocation_context.credential_service:
+                                auth_config_adk.exchanged_auth_credential = creds
+                                await tool_context._invocation_context.credential_service.save_credential(
+                                    auth_config=auth_config_adk,
+                                    callback_context=tool_context
+                                )
+                        except Exception as e:
+                            logging.debug(f"Failed to save credential to service: {e}")
+                    else:
+                        tool_context.request_credential(auth_config_adk)
+                        return {"error": f"OAuth2 Credentials required for {self.name}. A consent link has been generated for the user. Do NOT attempt to run this tool again until the user confirms they have logged in."}
+                except Exception as e:
+                    if "credential" in str(e).lower() or isinstance(e, ValueError):
+                        raise e
+                    
+                    logging.warning(
+                        f"Unexpected error in get_auth_response during User Identity (OAuth2) retrieval: {e}. "
+                        "Falling back to request_credential.",
+                        exc_info=True
+                    )
+                    # Fallback to request logic
+                    tool_context.request_credential(auth_config_adk)
+                    return {"error": f"OAuth2 Credentials required for {self.name}. A consent link has been generated for the user. Do NOT attempt to run this tool again until the user confirms they have logged in."}
 
         result: Optional[Any] = None
         error: Optional[Exception] = None
