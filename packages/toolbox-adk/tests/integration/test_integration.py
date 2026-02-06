@@ -189,8 +189,8 @@ class TestToolboxAdkIntegration:
             assert "num_rows" in declaration.parameters.properties
 
             # Force the proxy tool to require auth to properly simulate the 3LO flow branches
-            tool._core_tool._ToolboxTool__required_authn_params = {"mock_param": "mock_service"}
-            tool._core_tool._ToolboxTool__required_authz_tokens = []
+            tool._core_tool._ToolboxTool__required_authn_params = {}
+            tool._core_tool._ToolboxTool__required_authz_tokens = ["mock_service"]
 
             # Create a mock context that behaves like ADK's ReadonlyContext
             mock_ctx_first = MagicMock()
