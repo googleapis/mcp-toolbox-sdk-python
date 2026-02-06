@@ -60,6 +60,14 @@ class TestToolboxAdkIntegration:
             tool = next((t for t in tools if t.name == "get-row-by-id"), None)
             assert tool is not None
             assert isinstance(tool, ToolboxTool)
+            
+            # Verify the function declaration schema builds correctly end-to-end
+            declaration = tool._get_declaration()
+            assert declaration is not None
+            assert declaration.name == "get-row-by-id"
+            assert declaration.parameters is not None
+            assert hasattr(declaration.parameters, 'properties')
+            assert "id" in declaration.parameters.properties
 
             # Run it
             ctx = MagicMock()
@@ -173,6 +181,12 @@ class TestToolboxAdkIntegration:
             tool = tools[0]
             assert isinstance(tool, ToolboxTool)
             assert tool.name == "get-n-rows"
+            
+            # Verify the function declaration schema builds correctly end-to-end
+            declaration = tool._get_declaration()
+            assert declaration is not None
+            assert declaration.name == "get-n-rows"
+            assert "num_rows" in declaration.parameters.properties
 
             # Create a mock context that behaves like ADK's ReadonlyContext
             mock_ctx_first = MagicMock()
@@ -183,9 +197,7 @@ class TestToolboxAdkIntegration:
             result_first = await tool.run_async({"num_rows": "1"}, mock_ctx_first)
 
             # The wrapper should catch the missing creds and request them.
-            assert (
-                result_first is None
-            ), "Tool should return None to signal auth requirement"
+            assert isinstance(result_first, dict) and "error" in result_first, "Tool should return error sig for auth requirement"
             mock_ctx_first.request_credential.assert_called_once()
 
             # Inspect the requested config
