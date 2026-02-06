@@ -225,6 +225,7 @@ class TestToolboxAdkIntegration:
 
             # Setup the credential service mock to verify credential persistence across sessions
             mock_cred_service = AsyncMock()
+            mock_cred_service.load_credential.return_value = None
             mock_ctx_second._invocation_context = MagicMock()
             mock_ctx_second._invocation_context.credential_service = mock_cred_service
 
