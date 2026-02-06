@@ -267,6 +267,72 @@ class TestToolboxTool:
         # Should catch RuntimeError, call request_credential, and return None
         assert result is None
         ctx.request_credential.assert_called_once()
+        
+    def test_param_type_to_schema_type(self):
+        core_tool = MagicMock()
+        core_tool.__name__ = "mock_tool"
+        core_tool.__doc__ = "mock doc"
+        tool = ToolboxTool(core_tool)
+        
+        from google.genai.types import Type
+        assert tool._param_type_to_schema_type("string") == Type.STRING
+        assert tool._param_type_to_schema_type("integer") == Type.INTEGER
+        assert tool._param_type_to_schema_type("boolean") == Type.BOOLEAN
+        assert tool._param_type_to_schema_type("number") == Type.NUMBER
+        assert tool._param_type_to_schema_type("array") == Type.ARRAY
+        assert tool._param_type_to_schema_type("object") == Type.OBJECT
+        assert tool._param_type_to_schema_type("unknown") == Type.STRING
+
+    def test_get_declaration(self):
+        # Create a mock for core tool parameters
+        class MockParam:
+            def __init__(self, name, param_type, description, required):
+                self.name = name
+                self.type = param_type
+                self.description = description
+                self.required = required
+
+        core_tool = MagicMock()
+        core_tool.__name__ = "mock_tool"
+        core_tool.__doc__ = "mock doc"
+        core_tool._params = [
+            MockParam("city", "string", "The city name", True),
+            MockParam("count", "integer", "Number of results", False)
+        ]
+        
+        tool = ToolboxTool(core_tool)
+        declaration = tool._get_declaration()
+        
+        from google.genai.types import Type
+        assert declaration.name == "mock_tool"
+        assert declaration.description == "mock doc"
+        
+        parameters = declaration.parameters
+        assert parameters is not None
+        assert parameters.type == Type.OBJECT
+        assert "city" in parameters.properties
+        assert "count" in parameters.properties
+        
+        assert parameters.properties["city"].type == Type.STRING
+        assert parameters.properties["city"].description == "The city name"
+        
+        assert parameters.properties["count"].type == Type.INTEGER
+        assert parameters.properties["count"].description == "Number of results"
+        
+        assert parameters.required == ["city"]
+        
+    def test_get_declaration_no_params(self):
+        core_tool = MagicMock()
+        core_tool.__name__ = "mock_tool"
+        core_tool.__doc__ = "mock doc"
+        core_tool._params = []
+        
+        tool = ToolboxTool(core_tool)
+        declaration = tool._get_declaration()
+        
+        assert declaration.name == "mock_tool"
+        assert declaration.description == "mock doc"
+        assert getattr(declaration, "parameters", None) is None
 
     def test_init_defaults(self):
         # Test initialization with minimal tool metadata checks
