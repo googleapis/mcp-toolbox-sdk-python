@@ -98,9 +98,9 @@ class ToolboxTool(BaseTool):
         properties = {}
         required = []
         
-        # We do not use `google.genai.types.FunctionDeclaration.from_callable` here
-        # because it explicitly drops argument descriptions from the schema properties,
-        # lumping them all into the root description instead.
+        # We do not use `google.genai.types.FunctionDeclaration.from_callable`
+        # here because it explicitly drops argument descriptions from the schema
+        # properties, lumping them all into the root description instead.
         if hasattr(self._core_tool, '_params') and self._core_tool._params:
             for param in self._core_tool._params:
                 properties[param.name] = Schema(
