@@ -94,9 +94,13 @@ class ToolboxTool(BaseTool):
 
     @override
     def _get_declaration(self) -> Optional[FunctionDeclaration]:
+        """Gets the function declaration for the tool."""
         properties = {}
         required = []
         
+        # We do not use `google.genai.types.FunctionDeclaration.from_callable` here
+        # because it explicitly drops argument descriptions from the schema properties,
+        # lumping them all into the root description instead.
         if hasattr(self._core_tool, '_params') and self._core_tool._params:
             for param in self._core_tool._params:
                 properties[param.name] = Schema(
@@ -105,13 +109,13 @@ class ToolboxTool(BaseTool):
                 )
                 if param.required:
                     required.append(param.name)
-        
+
         parameters = Schema(
             type=Type.OBJECT,
             properties=properties,
             required=required
         ) if properties else None
-            
+
         return FunctionDeclaration(
             name=self.name,
             description=self.description,
@@ -124,11 +128,9 @@ class ToolboxTool(BaseTool):
         args: Dict[str, Any],
         tool_context: ToolContext,
     ) -> Any:
-        # 1. Pre-hook
         if self._pre_hook:
             await self._pre_hook(tool_context, args)
 
-        # 2. ADK Auth Integration (3LO)
         # Check if USER_IDENTITY is configured
         reset_token = None
 
