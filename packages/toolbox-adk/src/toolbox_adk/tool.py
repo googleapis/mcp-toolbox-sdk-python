@@ -37,8 +37,8 @@ from .client import USER_TOKEN_CONTEXT_VAR
 from .credentials import CredentialConfig, CredentialType
 
 # --- Monkey Patch ADK OAuth2 Exchange to Retain ID Tokens ---
-# TODO(id_token): Remove this monkey patch once the PR https://github.com/google/adk-python/pull/4402 is merged.
 # Google's ID Token is required by MCP Toolbox but ADK's `update_credential_with_tokens` natively drops the `id_token`.
+# TODO(id_token): Remove this monkey patch once the PR https://github.com/google/adk-python/pull/4402 is merged.
 import google.adk.auth.oauth2_credential_util as oauth2_credential_util
 import google.adk.auth.exchanger.oauth2_credential_exchanger as oauth2_credential_exchanger
 _orig_update_cred = oauth2_credential_util.update_credential_with_tokens
@@ -46,7 +46,6 @@ _orig_update_cred = oauth2_credential_util.update_credential_with_tokens
 def _patched_update_credential_with_tokens(auth_credential, tokens):
     _orig_update_cred(auth_credential, tokens)
     if tokens and "id_token" in tokens and auth_credential and auth_credential.oauth2:
-        # Pydantic's `extra="allow"` config preserves this dynamically set attribute
         setattr(auth_credential.oauth2, "id_token", tokens["id_token"])
 
 oauth2_credential_util.update_credential_with_tokens = _patched_update_credential_with_tokens
