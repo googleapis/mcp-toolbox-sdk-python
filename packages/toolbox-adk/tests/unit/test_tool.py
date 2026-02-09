@@ -18,6 +18,7 @@ import pytest
 
 from toolbox_adk.credentials import CredentialConfig, CredentialType
 from toolbox_adk.tool import ToolboxTool
+from google.genai.types import Type
 
 
 class TestToolboxTool:
@@ -274,7 +275,6 @@ class TestToolboxTool:
         core_tool.__doc__ = "mock doc"
         tool = ToolboxTool(core_tool)
         
-        from google.genai.types import Type
         assert tool._param_type_to_schema_type("string") == Type.STRING
         assert tool._param_type_to_schema_type("integer") == Type.INTEGER
         assert tool._param_type_to_schema_type("boolean") == Type.BOOLEAN
@@ -303,7 +303,6 @@ class TestToolboxTool:
         tool = ToolboxTool(core_tool)
         declaration = tool._get_declaration()
         
-        from google.genai.types import Type
         assert declaration.name == "mock_tool"
         assert declaration.description == "mock doc"
         
