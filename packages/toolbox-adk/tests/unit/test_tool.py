@@ -155,6 +155,8 @@ class TestToolboxTool:
         core_tool = AsyncMock()
         core_tool.__name__ = "mock_tool"
         core_tool.__doc__ = "mock doc"
+        core_tool._required_authn_params = {"mock_param": "mock_service"}
+        core_tool._required_authz_tokens = []
         auth_config = CredentialConfig(type=CredentialType.USER_IDENTITY)
         # Missing client_id/secret
 
@@ -174,6 +176,8 @@ class TestToolboxTool:
         core_tool.__doc__ = "mock"
         core_tool.__name__ = "mock_tool"
         core_tool.__doc__ = "mock doc"
+        core_tool._required_authn_params = {"mock_param": "mock_service"}
+        core_tool._required_authz_tokens = []
 
         auth_config = CredentialConfig(
             type=CredentialType.USER_IDENTITY, client_id="cid", client_secret="csec"
@@ -187,8 +191,8 @@ class TestToolboxTool:
 
         result = await tool.run_async({}, ctx)
 
-        # Verify result is None (signal pause)
-        assert result is None
+        # Verify result is error/stop
+        assert isinstance(result, dict) and "error" in result
         # Verify request_credential was called
         ctx.request_credential.assert_called_once()
         # Verify core tool was NOT called
@@ -198,10 +202,12 @@ class TestToolboxTool:
     async def test_3lo_uses_existing_credential(self):
         # Test that if creds exist, they are used and injected
         core_tool = AsyncMock(return_value="success")
-        core_tool.__name__ = "mock"
-        core_tool.__doc__ = "mock"
         core_tool.__name__ = "mock_tool"
         core_tool.__doc__ = "mock doc"
+        # Setup overlapping needed services to test deduplication
+        core_tool._required_authn_params = {"mock_param": "mock_service", "another_param": "mock_service"}
+        core_tool._required_authz_tokens = ["mock_service"]
+        core_tool.add_auth_token_getter = MagicMock(return_value=core_tool)
 
         auth_config = CredentialConfig(
             type=CredentialType.USER_IDENTITY, client_id="cid", client_secret="csec"
@@ -210,10 +216,18 @@ class TestToolboxTool:
         tool = ToolboxTool(core_tool, auth_config=auth_config)
 
         ctx = MagicMock()
-        # Mock get_auth_response returning valid creds
+        # Mock get_auth_response returning valid creds with both access & id tokens
         mock_creds = MagicMock()
-        mock_creds.oauth2.access_token = "valid_token"
+        mock_creds.oauth2.access_token = "valid_access_token"
+        mock_creds.oauth2.id_token = "valid_id_token"
         ctx.get_auth_response.return_value = mock_creds
+
+        # Set up invocation context and credential service mock to verify saving and avoid await errors
+        mock_cred_service = MagicMock()
+        mock_cred_service.load_credential = AsyncMock(return_value=None)
+        mock_cred_service.save_credential = AsyncMock(return_value=None)
+        ctx._invocation_context = MagicMock()
+        ctx._invocation_context.credential_service = mock_cred_service
 
         result = await tool.run_async({}, ctx)
 
@@ -223,21 +237,42 @@ class TestToolboxTool:
         ctx.request_credential.assert_not_called()
         # Verify core tool WAS called
         core_tool.assert_called_once()
+        
+        # Verify deduplication: add_auth_token_getter should only be called ONCE for "mock_service"
+        core_tool.add_auth_token_getter.assert_called_once()
+        call_args_getter = core_tool.add_auth_token_getter.call_args[0]
+        assert call_args_getter[0] == "mock_service"
+        # Evaluate the getter lambda to ensure it prefers id_token
+        token_getter_lambda = call_args_getter[1]
+        assert token_getter_lambda() == "valid_id_token"
+
+        # Verify save_credential was called with the exchanged credential
+        mock_cred_service.save_credential.assert_called_once()
+        call_args = mock_cred_service.save_credential.call_args[1]
+        assert call_args["auth_config"].exchanged_auth_credential == mock_creds
+        
+        # Verify safe scope fallback to ["openid", "profile", "email"] when scopes is None
+        assert call_args["auth_config"].auth_scheme.flows.authorizationCode.scopes == {"openid": "", "profile": "", "email": ""}
 
     @pytest.mark.asyncio
     async def test_3lo_exception_reraise(self):
         # Test that specific credential errors are re-raised
         core_tool = AsyncMock()
-        core_tool.__name__ = "mock"
-        core_tool.__doc__ = "mock"
         core_tool.__name__ = "mock_tool"
         core_tool.__doc__ = "mock doc"
+        core_tool._required_authn_params = {"mock_param": "mock_service"}
+        core_tool._required_authz_tokens = []
 
         auth_config = CredentialConfig(
             type=CredentialType.USER_IDENTITY, client_id="cid", client_secret="csec"
         )
         tool = ToolboxTool(core_tool, auth_config=auth_config)
         ctx = MagicMock()
+
+        mock_cred_service = MagicMock()
+        mock_cred_service.load_credential = AsyncMock(return_value=None)
+        ctx._invocation_context = MagicMock()
+        ctx._invocation_context.credential_service = mock_cred_service
 
         # Mock get_auth_response raising ValueError
         ctx.get_auth_response.side_effect = ValueError("Invalid Credential")
@@ -253,6 +288,8 @@ class TestToolboxTool:
         core_tool.__doc__ = "mock"
         core_tool.__name__ = "mock_tool"
         core_tool.__doc__ = "mock doc"
+        core_tool._required_authn_params = {"mock_param": "mock_service"}
+        core_tool._required_authz_tokens = []
 
         auth_config = CredentialConfig(
             type=CredentialType.USER_IDENTITY, client_id="cid", client_secret="csec"
@@ -265,8 +302,8 @@ class TestToolboxTool:
 
         result = await tool.run_async({}, ctx)
 
-        # Should catch RuntimeError, call request_credential, and return None
-        assert result is None
+        # Should catch RuntimeError, call request_credential, and return error map
+        assert isinstance(result, dict) and "error" in result
         ctx.request_credential.assert_called_once()
         
     def test_param_type_to_schema_type(self):
