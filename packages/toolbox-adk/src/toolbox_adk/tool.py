@@ -27,6 +27,7 @@ from google.adk.auth.auth_credential import (
     OAuth2Auth,
 )
 from google.adk.auth.auth_tool import AuthConfig
+from google.genai.types import FunctionDeclaration, Type, Schema
 from google.adk.tools.base_tool import BaseTool
 from google.adk.tools.tool_context import ToolContext
 from toolbox_core.tool import ToolboxTool as CoreToolboxTool
@@ -79,17 +80,57 @@ class ToolboxTool(BaseTool):
         self._post_hook = post_hook
         self._auth_config = auth_config
 
+
+    def _param_type_to_schema_type(self, param_type: str) -> Type:
+        type_map = {
+            "string": Type.STRING,
+            "integer": Type.INTEGER,
+            "number": Type.NUMBER,
+            "boolean": Type.BOOLEAN,
+            "array": Type.ARRAY,
+            "object": Type.OBJECT,
+        }
+        return type_map.get(param_type, Type.STRING)
+
+    @override
+    def _get_declaration(self) -> Optional[FunctionDeclaration]:
+        """Gets the function declaration for the tool."""
+        properties = {}
+        required = []
+        
+        # We do not use `google.genai.types.FunctionDeclaration.from_callable`
+        # here because it explicitly drops argument descriptions from the schema
+        # properties, lumping them all into the root description instead.
+        if hasattr(self._core_tool, '_params') and self._core_tool._params:
+            for param in self._core_tool._params:
+                properties[param.name] = Schema(
+                    type=self._param_type_to_schema_type(param.type),
+                    description=param.description or ""
+                )
+                if param.required:
+                    required.append(param.name)
+
+        parameters = Schema(
+            type=Type.OBJECT,
+            properties=properties,
+            required=required
+        ) if properties else None
+
+        return FunctionDeclaration(
+            name=self.name,
+            description=self.description,
+            parameters=parameters
+        )
+
     @override
     async def run_async(
         self,
         args: Dict[str, Any],
         tool_context: ToolContext,
     ) -> Any:
-        # 1. Pre-hook
         if self._pre_hook:
             await self._pre_hook(tool_context, args)
 
-        # 2. ADK Auth Integration (3LO)
         # Check if USER_IDENTITY is configured
         reset_token = None
 
