@@ -42,7 +42,7 @@ The primary entry point is the `ToolboxToolset`, which loads tools from a remote
 
 ```python
 from toolbox_adk import ToolboxToolset
-from google.adk.agents import Agent
+from google.adk import Agent
 
 # Create the Toolset
 toolset = ToolboxToolset(
@@ -267,10 +267,10 @@ You can attach `pre_hook` and `post_hook` functions to execute logic before and 
 > The `pre_hook` can modify `context.arguments` to dynamically alter the inputs passed to the tool.
 
 ```python
-from google.adk.tools.tool_context import ToolContext
-from typing import Any, Dict, Optional
+from google.adk.tools import ToolContext
+from typing import Optional
 
-async def log_start(context: ToolContext, args: Dict[str, Any]):
+async def log_start(context: ToolContext, args: dict[str, any]) -> None:
     print(f"Starting tool with args: {args}")
     # context is the ADK ToolContext
     # Example: Inject or modify arguments
