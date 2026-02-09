@@ -269,8 +269,9 @@ You can attach `pre_hook` and `post_hook` functions to execute logic before and 
 ```python
 from google.adk.tools.tool_context import ToolContext
 from typing import Any, Dict, Optional
+from toolbox_adk import ToolboxTool, ToolboxToolset
 
-async def log_start(context: ToolContext, args: Dict[str, Any]):
+async def log_start(tool: ToolboxTool,context: ToolContext, args: Dict[str, Any]):
     print(f"Starting tool with args: {args}")
     # context is the ADK ToolContext
     # Example: Inject or modify arguments
@@ -290,6 +291,8 @@ toolset = ToolboxToolset(
     post_hook=log_end
 )
 ```
+
+For more details on hooks see the [official ADK docs](https://google.github.io/adk-docs/callbacks/types-of-callbacks/).
 
 ## Contributing
 
