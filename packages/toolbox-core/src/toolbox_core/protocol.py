@@ -81,6 +81,7 @@ class ParameterSchema(BaseModel):
     authSources: Optional[list[str]] = None
     items: Optional["ParameterSchema"] = None
     additionalProperties: Optional[Union[bool, AdditionalPropertiesSchema]] = None
+    default: Optional[Any] = None
 
     def __get_type(self) -> Type:
         base_type: Type
@@ -103,11 +104,17 @@ class ParameterSchema(BaseModel):
         return base_type
 
     def to_param(self) -> Parameter:
+        default_value = Parameter.empty
+        if self.default is not None:
+            default_value = self.default
+        elif not self.required:
+            default_value = None
+
         return Parameter(
             self.name,
             Parameter.POSITIONAL_OR_KEYWORD,
             annotation=self.__get_type(),
-            default=Parameter.empty if self.required else None,
+            default=default_value,
         )
 
 

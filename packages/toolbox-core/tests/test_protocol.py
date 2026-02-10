@@ -289,3 +289,40 @@ def test_parameter_schema_map_unsupported_value_type_error():
     expected_error_msg = f"Unsupported schema type: {unsupported_type}"
     with pytest.raises(ValueError, match=expected_error_msg):
         schema._ParameterSchema__get_type()
+
+def test_parameter_schema_with_default():
+    """Tests ParameterSchema with a default value provided."""
+    schema = ParameterSchema(
+        name="limit",
+        type="integer",
+        description="Limit results",
+        required=False,
+        default=10,
+    )
+    expected_type = Optional[int]
+
+    assert schema._ParameterSchema__get_type() == expected_type
+
+    param = schema.to_param()
+    assert isinstance(param, Parameter)
+    assert param.name == "limit"
+    assert param.annotation == expected_type
+    assert param.default == 10
+
+
+def test_parameter_schema_required_with_default():
+    """Tests ParameterSchema with default value, ignoring required=True implies it is optional in python signature."""
+    # Although illogical in some schemas, if default is present, it should be used as default.
+    schema = ParameterSchema(
+        name="retry_count",
+        type="integer",
+        description="Retries",
+        required=True,
+        default=3,
+    )
+
+    # get_type still respects required=True for type hint
+    assert schema._ParameterSchema__get_type() == int
+
+    param = schema.to_param()
+    assert param.default == 3
