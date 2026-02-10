@@ -43,15 +43,6 @@ class ToolboxToolset(BaseToolset):
         auth_token_getters: Optional[
             Mapping[str, Union[Callable[[], str], Callable[[], Awaitable[str]]]]
         ] = None,
-        pre_hook: Optional[
-            Callable[[ToolContext, Dict[str, Any]], Awaitable[None]]
-        ] = None,
-        post_hook: Optional[
-            Callable[
-                [ToolContext, Dict[str, Any], Optional[Any], Optional[Exception]],
-                Awaitable[None],
-            ]
-        ] = None,
         **kwargs: Any,
     ):
         """
@@ -63,8 +54,6 @@ class ToolboxToolset(BaseToolset):
             additional_headers: Extra headers (static or dynamic).
             bound_params: Parameters to bind globally to loaded tools.
             auth_token_getters: Mapping of auth service names to token getters.
-            pre_hook: Hook to run before every tool execution.
-            post_hook: Hook to run after every tool execution.
         """
         super().__init__()
         self.__server_url = server_url
@@ -77,8 +66,6 @@ class ToolboxToolset(BaseToolset):
         self.__tool_names = tool_names
         self.__bound_params = bound_params
         self.__auth_token_getters = auth_token_getters
-        self.__pre_hook = pre_hook
-        self.__post_hook = post_hook
 
     @property
     def client(self) -> ToolboxClient:
@@ -131,8 +118,6 @@ class ToolboxToolset(BaseToolset):
         return [
             ToolboxTool(
                 core_tool=t,
-                pre_hook=self.__pre_hook,
-                post_hook=self.__post_hook,
                 auth_config=self.client.credential_config,
             )
             for t in tools

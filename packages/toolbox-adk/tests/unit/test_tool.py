@@ -41,79 +41,6 @@ class TestToolboxTool:
         mock_core.assert_awaited_with(arg=1)
 
     @pytest.mark.asyncio
-    async def test_hooks(self):
-        mock_core = AsyncMock(return_value="res")
-        mock_core.__name__ = "hooked_tool"
-        mock_core.__doc__ = "hooked description"
-
-        async def before(ctx, args):
-            args["arg"] += 1
-
-        async def after(ctx, args, result, error):
-            assert result == "res"
-            # Verify we can see the modified arg
-            assert args["arg"] == 2
-
-        tool = ToolboxTool(mock_core, pre_hook=before, post_hook=after)
-
-        result = await tool.run_async({"arg": 1}, MagicMock())
-
-        mock_core.assert_awaited_with(arg=2)
-        assert result == "res"
-
-    @pytest.mark.asyncio
-    async def test_error_in_hook(self):
-        mock_core = AsyncMock()
-        mock_core.__name__ = "mock"
-        mock_core.__doc__ = "mock"
-
-        async def failing_hook(ctx, args):
-            raise ValueError("Boom")
-
-        tool = ToolboxTool(mock_core, pre_hook=failing_hook)
-
-        with pytest.raises(ValueError, match="Boom"):
-            await tool.run_async({}, MagicMock())
-
-        mock_core.assert_not_called()
-
-    @pytest.mark.asyncio
-    async def test_run_async_exception_handling(self):
-        mock_core = AsyncMock(side_effect=ValueError("Execution failed"))
-        mock_core.__name__ = "mock"
-        mock_core.__doc__ = "mock"
-        tool = ToolboxTool(mock_core)
-
-        ctx = MagicMock()
-
-        # We expect the error to be re-raised
-        with pytest.raises(ValueError, match="Execution failed"):
-            await tool.run_async({}, ctx)
-
-        # ctx.error is set but local to run_async. Verified via post_hook in next test.
-
-    @pytest.mark.asyncio
-    async def test_run_async_exception_captured_in_hook(self):
-        # Allow verifying ctx.error via post_hook
-        mock_core = AsyncMock(side_effect=ValueError("Fail"))
-        mock_core.__name__ = "mock"
-        mock_core.__doc__ = "mock"
-
-        captured_error = None
-
-        async def after(ctx, args, result, error):
-            nonlocal captured_error
-            captured_error = error
-
-        tool = ToolboxTool(mock_core, post_hook=after)
-
-        with pytest.raises(ValueError, match="Fail"):
-            await tool.run_async({}, MagicMock())
-
-        assert isinstance(captured_error, ValueError)
-        assert str(captured_error) == "Fail"
-
-    @pytest.mark.asyncio
     async def test_auth_check_no_token(self):
         # Scenario: ADK context has no token initially
         mock_core = AsyncMock(return_value="ok")
@@ -141,7 +68,7 @@ class TestToolboxTool:
         new_core_mock.__doc__ = "bound mock"
         mock_core.bind_params.return_value = new_core_mock
 
-        tool = ToolboxTool(mock_core, pre_hook=None)
+        tool = ToolboxTool(mock_core)
         new_tool = tool.bind_params({"a": 1})
 
         assert isinstance(new_tool, ToolboxTool)
