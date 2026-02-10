@@ -81,21 +81,6 @@ class TestToolboxToolset:
 
     @patch("toolbox_adk.toolset.ToolboxClient")
     @pytest.mark.asyncio
-    async def test_hooks_propagation(self, mock_client_cls):
-        mock_client = mock_client_cls.return_value
-        t1 = MagicMock()
-        t1.__name__ = "tool1"
-        t1.__doc__ = "desc1"
-        mock_client.load_toolset = AsyncMock(return_value=[t1])
-
-        hook = AsyncMock()
-        toolset = ToolboxToolset("url", toolset_name="s", pre_hook=hook)
-
-        tools = await toolset.get_tools()
-        assert tools[0]._pre_hook == hook
-
-    @patch("toolbox_adk.toolset.ToolboxClient")
-    @pytest.mark.asyncio
     async def test_close(self, mock_client_cls):
         mock_instance = mock_client_cls.return_value
         mock_instance.close = AsyncMock()

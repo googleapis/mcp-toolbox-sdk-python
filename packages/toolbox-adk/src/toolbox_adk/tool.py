@@ -60,17 +60,11 @@ class ToolboxTool(BaseTool):
     def __init__(
         self,
         core_tool: CoreToolboxTool,
-        pre_hook: Optional[Callable[[ToolContext, Dict[str, Any]], Awaitable[None]]] = None,
-        post_hook: Optional[
-            Callable[[ToolContext, Dict[str, Any], Optional[Any], Optional[Exception]], Awaitable[None]]
-        ] = None,
         auth_config: Optional[CredentialConfig] = None,
     ):
         """
         Args:
             core_tool: The underlying toolbox_core.py tool instance.
-            pre_hook: Async function called before execution. Receives (tool_context, arguments).
-            post_hook: Async function called after execution. Receives (tool_context, arguments, result, error).
             auth_config: Credential configuration to handle interactive flows.
         """
         # We act as a proxy.
@@ -91,8 +85,6 @@ class ToolboxTool(BaseTool):
             custom_metadata={},
         )
         self._core_tool = core_tool
-        self._pre_hook = pre_hook
-        self._post_hook = post_hook
         self._auth_config = auth_config
 
 
@@ -143,9 +135,6 @@ class ToolboxTool(BaseTool):
         args: Dict[str, Any],
         tool_context: ToolContext,
     ) -> Any:
-        if self._pre_hook:
-            await self._pre_hook(tool_context, args)
-
         # Check if USER_IDENTITY is configured
         reset_token = None
 
@@ -257,8 +246,6 @@ class ToolboxTool(BaseTool):
         finally:
             if reset_token:
                 USER_TOKEN_CONTEXT_VAR.reset(reset_token)
-            if self._post_hook:
-                await self._post_hook(tool_context, args, result, error)
 
     def bind_params(self, bounded_params: Dict[str, Any]) -> "ToolboxTool":
         """Allows runtime binding of parameters, delegating to core tool."""
@@ -266,7 +253,5 @@ class ToolboxTool(BaseTool):
         # Return a new wrapper
         return ToolboxTool(
             core_tool=new_core_tool,
-            pre_hook=self._pre_hook,
-            post_hook=self._post_hook,
             auth_config=self._auth_config,
         )

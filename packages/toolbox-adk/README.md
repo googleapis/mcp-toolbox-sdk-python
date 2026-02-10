@@ -25,7 +25,6 @@ It provides a seamless bridge between the `toolbox-core` SDK and the ADK's `Base
 - [Advanced Configuration](#advanced-configuration)
     - [Additional Headers](#additional-headers)
     - [Global Parameter Binding](#global-parameter-binding)
-    - [Usage with Hooks](#usage-with-hooks)
 
 ## Installation
 
@@ -256,38 +255,6 @@ toolset = ToolboxToolset(
         "region": "us-central1",
         "api_key": lambda: get_api_key() # Can be a callable
     }
-)
-```
-
-### Usage with Hooks
-
-You can attach `pre_hook` and `post_hook` functions to execute logic before and after every tool invocation.
-
-> [!NOTE]
-> The `pre_hook` can modify `context.arguments` to dynamically alter the inputs passed to the tool.
-
-```python
-from google.adk.tools import ToolContext
-from typing import Optional
-
-async def log_start(context: ToolContext, args: dict[str, any]) -> None:
-    print(f"Starting tool with args: {args}")
-    # context is the ADK ToolContext
-    # Example: Inject or modify arguments
-    # args["user_id"] = "123"
-
-async def log_end(context: ToolContext, args: Dict[str, Any], result: Optional[Any], error: Optional[Exception]):
-    print("Finished tool execution")
-    # Inspect result or error
-    if error:
-        print(f"Tool failed: {error}")
-    else:
-        print(f"Tool succeeded with result: {result}")
-
-toolset = ToolboxToolset(
-    server_url="...",
-    pre_hook=log_start,
-    post_hook=log_end
 )
 ```
 
