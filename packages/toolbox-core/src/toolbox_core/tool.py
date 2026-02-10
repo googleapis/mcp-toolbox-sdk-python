@@ -15,7 +15,7 @@
 import copy
 import itertools
 from collections import OrderedDict
-from inspect import Signature
+from inspect import Parameter, Signature
 from types import MappingProxyType
 from typing import Any, Awaitable, Callable, Mapping, Optional, Sequence, Union
 
@@ -86,13 +86,17 @@ class ToolboxTool:
         self.__params = params
         self.__pydantic_model = params_to_pydantic_model(name, self.__params)
 
-        # Separate parameters into required (no default) and optional (with
-        # default) to prevent the "non-default argument follows default
+        # Separate parameters into those without a default and those with a
+        # default to prevent the "non-default argument follows default
         # argument" error when creating the function signature.
-        required_params = (p for p in self.__params if p.required)
-        optional_params = (p for p in self.__params if not p.required)
-        ordered_params = itertools.chain(required_params, optional_params)
-        inspect_type_params = [param.to_param() for param in ordered_params]
+        inspect_type_params = [param.to_param() for param in self.__params]
+        params_no_default = [
+            p for p in inspect_type_params if p.default is Parameter.empty
+        ]
+        params_with_default = [
+            p for p in inspect_type_params if p.default is not Parameter.empty
+        ]
+        inspect_type_params = params_no_default + params_with_default
 
         # the following properties are set to help anyone that might inspect it determine usage
         self.__name__ = name
