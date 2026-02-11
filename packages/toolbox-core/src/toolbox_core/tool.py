@@ -18,7 +18,6 @@ from collections import OrderedDict
 from inspect import Signature
 from types import MappingProxyType
 from typing import Any, Awaitable, Callable, Mapping, Optional, Sequence, Union
-from warnings import warn
 
 from .itransport import ITransport
 from .protocol import ParameterSchema
@@ -27,6 +26,7 @@ from .utils import (
     identify_auth_requirements,
     params_to_pydantic_model,
     resolve_value,
+    warn_if_http_and_headers,
 )
 
 
@@ -114,6 +114,11 @@ class ToolboxTool:
         self.__bound_parameters = bound_params
         # map of client headers to their value/callable/coroutine
         self.__client_headers = client_headers
+
+        warn_if_http_and_headers(
+            self.__transport.base_url,
+            {**(self.__auth_service_token_getters or {}), **(self.__client_headers or {})}
+        )
 
     @property
     def _name(self) -> str:

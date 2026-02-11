@@ -188,7 +188,7 @@ async def test_tool_invoke_http_warning(
         m.post(url, status=200, payload=response_payload)
 
         if should_warn:
-            with pytest.warns(UserWarning, match="Sending data token over HTTP"):
+            with pytest.warns(UserWarning, match="This connection is using HTTP. To prevent credential exposure, please ensure all communication is sent over HTTPS."):
                 await transport.tool_invoke(TEST_TOOL_NAME, args, headers)
         else:
             # By not using pytest.warns, we assert that no warnings are raised.

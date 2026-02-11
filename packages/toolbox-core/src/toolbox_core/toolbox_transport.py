@@ -13,12 +13,11 @@
 # limitations under the License.
 
 from typing import Mapping, Optional
-from warnings import warn
-
 from aiohttp import ClientSession
 
 from .itransport import ITransport
 from .protocol import ManifestSchema
+from .utils import warn_if_http_and_headers
 
 
 class ToolboxTransport(ITransport):
@@ -70,14 +69,7 @@ class ToolboxTransport(ITransport):
     async def tool_invoke(
         self, tool_name: str, arguments: dict, headers: Mapping[str, str]
     ) -> str:
-        # ID tokens contain sensitive user information (claims). Transmitting
-        # these over HTTP exposes the data to interception and unauthorized
-        # access. Always use HTTPS to ensure secure communication and protect
-        # user privacy.
-        if self.base_url.startswith("http://") and headers:
-            warn(
-                "Sending data token over HTTP. User data may be exposed. Use HTTPS for secure communication."
-            )
+        warn_if_http_and_headers(self.base_url, headers)
         url = f"{self.__base_url}/api/tool/{tool_name}/invoke"
         async with self.__session.post(
             url,

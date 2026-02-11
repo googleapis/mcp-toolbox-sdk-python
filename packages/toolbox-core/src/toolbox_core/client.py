@@ -30,7 +30,7 @@ from .mcp_transport import (
 from .protocol import Protocol, ToolSchema
 from .tool import ToolboxTool
 from .toolbox_transport import ToolboxTransport
-from .utils import identify_auth_requirements, resolve_value
+from .utils import identify_auth_requirements, resolve_value, warn_if_http_and_headers
 
 
 class ToolboxClient:
@@ -101,6 +101,7 @@ class ToolboxClient:
                 raise ValueError(f"Unsupported MCP protocol version: {protocol}")
 
         self.__client_headers = client_headers if client_headers is not None else {}
+        warn_if_http_and_headers(url, self.__client_headers)
 
     def __parse_tool(
         self,
@@ -224,6 +225,8 @@ class ToolboxClient:
             for name, val in self.__client_headers.items()
         }
 
+        warn_if_http_and_headers(self.__transport.base_url, auth_token_getters)
+
         manifest = await self.__transport.tool_get(name, resolved_headers)
 
         # parse the provided definition to a tool
@@ -298,6 +301,8 @@ class ToolboxClient:
             header_name: await resolve_value(original_headers[header_name])
             for header_name in original_headers
         }
+
+        warn_if_http_and_headers(self.__transport.base_url, auth_token_getters)
 
         manifest = await self.__transport.tools_list(name, resolved_headers)
 

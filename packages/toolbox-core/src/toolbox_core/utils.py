@@ -31,6 +31,8 @@ from pydantic import BaseModel, Field, create_model
 from toolbox_core.protocol import ParameterSchema
 
 
+import warnings
+
 def create_func_docstring(description: str, params: Sequence[ParameterSchema]) -> str:
     """Convert tool description and params into its function docstring"""
     docstring = description
@@ -41,6 +43,14 @@ def create_func_docstring(description: str, params: Sequence[ParameterSchema]) -
         annotation = p.to_param().annotation
         docstring += f"\n    {p.name} ({getattr(annotation, '__name__', str(annotation))}): {p.description}"
     return docstring
+
+
+def warn_if_http_and_headers(url: str, headers: Mapping[str, Any] | None) -> None:
+    """Logs a warning if the url uses HTTP and sensitive headers are present."""
+    if url.lower().startswith("http://") and headers:
+        warnings.warn(
+            "This connection is using HTTP. To prevent credential exposure, please ensure all communication is sent over HTTPS."
+        )
 
 
 def identify_auth_requirements(
