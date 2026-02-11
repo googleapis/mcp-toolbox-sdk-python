@@ -16,9 +16,9 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from google.auth import credentials as google_creds
 from google.adk.auth.auth_credential import AuthCredential, AuthCredentialTypes
 from google.adk.auth.auth_tool import AuthConfig, AuthScheme
+from google.auth import credentials as google_creds
 
 
 class CredentialType(Enum):

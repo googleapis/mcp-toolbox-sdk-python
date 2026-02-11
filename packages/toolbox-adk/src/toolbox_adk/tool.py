@@ -15,6 +15,8 @@
 import logging
 from typing import Any, Awaitable, Callable, Dict, Optional
 
+import google.adk.auth.exchanger.oauth2_credential_exchanger as oauth2_credential_exchanger
+import google.adk.auth.oauth2_credential_util as oauth2_credential_util
 import toolbox_core
 from fastapi.openapi.models import (
     OAuth2,
@@ -27,9 +29,9 @@ from google.adk.auth.auth_credential import (
     OAuth2Auth,
 )
 from google.adk.auth.auth_tool import AuthConfig
-from google.genai.types import FunctionDeclaration, Type, Schema
 from google.adk.tools.base_tool import BaseTool
 from google.adk.tools.tool_context import ToolContext
+from google.genai.types import FunctionDeclaration, Schema, Type
 from toolbox_core.tool import ToolboxTool as CoreToolboxTool
 from typing_extensions import override
 
@@ -39,9 +41,6 @@ from .credentials import CredentialConfig, CredentialType
 # --- Monkey Patch ADK OAuth2 Exchange to Retain ID Tokens ---
 # Google's ID Token is required by MCP Toolbox but ADK's `update_credential_with_tokens` natively drops the `id_token`.
 # TODO(id_token): Remove this monkey patch once the PR https://github.com/google/adk-python/pull/4402 is merged.
-import google.adk.auth.oauth2_credential_util as oauth2_credential_util
-import google.adk.auth.exchanger.oauth2_credential_exchanger as oauth2_credential_exchanger
-
 _orig_update_cred = oauth2_credential_util.update_credential_with_tokens
 
 
