@@ -685,3 +685,64 @@ async def test_bind_param_chaining(
             json={"count": 42, "message": "chained-call"},
             headers={},
         )
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "base_url, headers, should_warn",
+    [
+        (
+            "http://fake-toolbox-server.com",
+            {"Authorization": "Bearer token"},
+            True,
+        ),
+        (
+            "https://fake-toolbox-server.com",
+            {"Authorization": "Bearer token"},
+            False,
+        ),
+        ("http://fake-toolbox-server.com", {}, False),
+        ("http://fake-toolbox-server.com", None, False),
+    ],
+)
+async def test_tool_call_http_warning(
+    http_session: ClientSession,
+    base_url: str,
+    headers: Mapping[str, str] | None,
+    should_warn: bool,
+):
+    """Tests the HTTP security warning logic during tool invocation via __call__."""
+    url = f"{base_url}/api/tool/{TEST_TOOL_NAME}/invoke"
+    args = {"param1": "value1"}
+    response_payload = {"result": "success"}
+    transport = ToolboxTransport(base_url, http_session)
+
+    tool = ToolboxTool(
+        transport=transport,
+        name=TEST_TOOL_NAME,
+        description="A tool",
+        params=[ParameterSchema(name="param1", type="string", description="param1 desc")],
+        required_authn_params={},
+        required_authz_tokens=[],
+        auth_service_token_getters={},
+        bound_params={},
+        client_headers=headers if headers is not None else {},
+    )
+
+    with aioresponses() as m:
+        m.post(url, status=200, payload=response_payload)
+
+        if should_warn:
+            with pytest.warns(
+                UserWarning,
+                match="This connection is using HTTP. To prevent credential exposure, please ensure all communication is sent over HTTPS.",
+            ):
+                await tool(param1="value1")
+        else:
+            # Check no warnings fired
+            with catch_warnings(record=True) as record:
+                simplefilter("always")
+                await tool(param1="value1")
+            
+            warning_messages = [str(w.message) for w in record]
+            assert not any("This connection is using HTTP" in msg for msg in warning_messages)
+

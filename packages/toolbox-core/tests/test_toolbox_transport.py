@@ -154,49 +154,6 @@ async def test_tool_invoke_failure(http_session: ClientSession):
     assert str(exc_info.value) == "Invalid arguments"
 
 
-@pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "base_url, headers, should_warn",
-    [
-        (
-            "http://fake-toolbox-server.com",
-            {"Authorization": "Bearer token"},
-            True,
-        ),
-        (
-            "https://fake-toolbox-server.com",
-            {"Authorization": "Bearer token"},
-            False,
-        ),
-        ("http://fake-toolbox-server.com", {}, False),
-        ("http://fake-toolbox-server.com", None, False),
-    ],
-)
-async def test_tool_invoke_http_warning(
-    http_session: ClientSession,
-    base_url: str,
-    headers: Optional[Mapping[str, str]],
-    should_warn: bool,
-):
-    """Tests the HTTP security warning logic in tool_invoke."""
-    url = f"{base_url}/api/tool/{TEST_TOOL_NAME}/invoke"
-    args = {"param1": "value1"}
-    response_payload = {"result": "success"}
-    transport = ToolboxTransport(base_url, http_session)
-
-    with aioresponses() as m:
-        m.post(url, status=200, payload=response_payload)
-
-        if should_warn:
-            with pytest.warns(
-                UserWarning,
-                match="This connection is using HTTP. To prevent credential exposure, please ensure all communication is sent over HTTPS.",
-            ):
-                await transport.tool_invoke(TEST_TOOL_NAME, args, headers)
-        else:
-            # By not using pytest.warns, we assert that no warnings are raised.
-            # The test will fail if an unexpected UserWarning occurs.
-            await transport.tool_invoke(TEST_TOOL_NAME, args, headers)
 
 
 @pytest.mark.asyncio

@@ -115,13 +115,7 @@ class ToolboxTool:
         # map of client headers to their value/callable/coroutine
         self.__client_headers = client_headers
 
-        warn_if_http_and_headers(
-            self.__transport.base_url,
-            {
-                **(self.__auth_service_token_getters or {}),
-                **(self.__client_headers or {}),
-            },
-        )
+
 
     @property
     def _name(self) -> str:
@@ -279,6 +273,8 @@ class ToolboxTool:
             headers[self.__get_auth_header(auth_service)] = await resolve_value(
                 token_getter
             )
+
+        warn_if_http_and_headers(self.__transport.base_url, headers)
 
         return await self.__transport.tool_invoke(
             self.__name__,

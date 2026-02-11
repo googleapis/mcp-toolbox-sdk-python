@@ -70,7 +70,6 @@ class ToolboxTransport(ITransport):
     async def tool_invoke(
         self, tool_name: str, arguments: dict, headers: Mapping[str, str]
     ) -> str:
-        warn_if_http_and_headers(self.base_url, headers)
         url = f"{self.__base_url}/api/tool/{tool_name}/invoke"
         async with self.__session.post(
             url,
