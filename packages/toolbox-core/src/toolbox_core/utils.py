@@ -14,6 +14,7 @@
 
 
 import asyncio
+import warnings
 from typing import (
     Any,
     Awaitable,
@@ -30,8 +31,6 @@ from pydantic import BaseModel, Field, create_model
 
 from toolbox_core.protocol import ParameterSchema
 
-
-import warnings
 
 def create_func_docstring(description: str, params: Sequence[ParameterSchema]) -> str:
     """Convert tool description and params into its function docstring"""

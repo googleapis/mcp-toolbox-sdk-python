@@ -117,7 +117,10 @@ class ToolboxTool:
 
         warn_if_http_and_headers(
             self.__transport.base_url,
-            {**(self.__auth_service_token_getters or {}), **(self.__client_headers or {})}
+            {
+                **(self.__auth_service_token_getters or {}),
+                **(self.__client_headers or {}),
+            },
         )
 
     @property

@@ -14,9 +14,9 @@
 
 
 import asyncio
+import warnings
 from typing import Type
 from unittest.mock import Mock
-import warnings
 
 import pytest
 from pydantic import BaseModel, ValidationError
