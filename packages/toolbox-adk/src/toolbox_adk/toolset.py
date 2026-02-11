@@ -61,7 +61,7 @@ class ToolboxToolset(BaseToolset):
         self.__additional_headers = additional_headers
         self.__kwargs = kwargs
         self.__client: Optional[ToolboxClient] = None
-        
+
         self.__toolset_name = toolset_name
         self.__tool_names = tool_names
         self.__bound_params = bound_params
@@ -70,7 +70,7 @@ class ToolboxToolset(BaseToolset):
     @property
     def client(self) -> ToolboxClient:
         if self.__client is None:
-             self.__client = ToolboxClient(
+            self.__client = ToolboxClient(
                 server_url=self.__server_url,
                 credentials=self.__credentials,
                 additional_headers=self.__additional_headers,

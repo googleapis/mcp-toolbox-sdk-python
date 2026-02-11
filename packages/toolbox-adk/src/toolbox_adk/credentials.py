@@ -192,28 +192,28 @@ class CredentialStrategy:
                 return CredentialStrategy.manual_token(
                     token=auth_credential.http.credentials.token, scheme="Bearer"
                 )
-            
-            raise ValueError(
-                f"Unsupported HTTP authentication scheme: {scheme_type}"
-            )
+
+            raise ValueError(f"Unsupported HTTP authentication scheme: {scheme_type}")
 
         if (
             auth_credential.auth_type == AuthCredentialTypes.API_KEY
             and auth_credential.api_key
         ):
             if not auth_scheme:
-                raise ValueError("API Key credentials require the auth_scheme definition.")
-            
+                raise ValueError(
+                    "API Key credentials require the auth_scheme definition."
+                )
+
             header_name = getattr(auth_scheme, "name", None)
             if not header_name:
                 raise ValueError("API Key scheme must define the header name.")
-            
+
             location = getattr(auth_scheme, "in_", "header") or "header"
             # Handle Enum (APIKeyIn.header) or string values
             location_str = str(location)
             if "." in location_str:
                 location_str = location_str.split(".")[-1]
-            
+
             if location_str.lower() != "header":
                 raise ValueError(
                     f"Unsupported API Key location: {location}. Only 'header' is supported."
