@@ -115,8 +115,6 @@ class ToolboxTool:
         # map of client headers to their value/callable/coroutine
         self.__client_headers = client_headers
 
-
-
     @property
     def _name(self) -> str:
         return self.__name__

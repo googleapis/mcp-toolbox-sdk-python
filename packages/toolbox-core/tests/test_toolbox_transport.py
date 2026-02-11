@@ -154,8 +154,6 @@ async def test_tool_invoke_failure(http_session: ClientSession):
     assert str(exc_info.value) == "Invalid arguments"
 
 
-
-
 @pytest.mark.asyncio
 async def test_close_does_not_close_unmanaged_session():
     """

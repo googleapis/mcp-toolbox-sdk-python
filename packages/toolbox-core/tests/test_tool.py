@@ -686,6 +686,7 @@ async def test_bind_param_chaining(
             headers={},
         )
 
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "base_url, headers, should_warn",
@@ -720,7 +721,9 @@ async def test_tool_call_http_warning(
         transport=transport,
         name=TEST_TOOL_NAME,
         description="A tool",
-        params=[ParameterSchema(name="param1", type="string", description="param1 desc")],
+        params=[
+            ParameterSchema(name="param1", type="string", description="param1 desc")
+        ],
         required_authn_params={},
         required_authz_tokens=[],
         auth_service_token_getters={},
@@ -742,7 +745,8 @@ async def test_tool_call_http_warning(
             with catch_warnings(record=True) as record:
                 simplefilter("always")
                 await tool(param1="value1")
-            
-            warning_messages = [str(w.message) for w in record]
-            assert not any("This connection is using HTTP" in msg for msg in warning_messages)
 
+            warning_messages = [str(w.message) for w in record]
+            assert not any(
+                "This connection is using HTTP" in msg for msg in warning_messages
+            )
