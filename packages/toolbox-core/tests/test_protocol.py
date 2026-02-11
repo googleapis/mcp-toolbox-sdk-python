@@ -290,6 +290,7 @@ def test_parameter_schema_map_unsupported_value_type_error():
     with pytest.raises(ValueError, match=expected_error_msg):
         schema._ParameterSchema__get_type()
 
+
 def test_parameter_schema_with_default():
     """Tests ParameterSchema with a default value provided."""
     schema = ParameterSchema(
@@ -326,3 +327,17 @@ def test_parameter_schema_required_with_default():
 
     param = schema.to_param()
     assert param.default == 3
+
+
+def test_parameter_schema_required_with_explicit_none_default():
+    """Tests explicit default=None is treated as a provided default."""
+    schema = ParameterSchema(
+        name="opt_in",
+        type="boolean",
+        description="Optional flag",
+        required=True,
+        default=None,
+    )
+
+    param = schema.to_param()
+    assert param.default is None

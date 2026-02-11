@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import copy
-import itertools
 from collections import OrderedDict
 from inspect import Parameter, Signature
 from types import MappingProxyType

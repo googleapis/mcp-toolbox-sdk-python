@@ -124,7 +124,7 @@ def params_to_pydantic_model(
         # '...' (Ellipsis) signifies a required field in Pydantic.
         # If a default value is provided in the schema, it should be used.
         default_value = ... if field.required else None
-        if field.default is not None:
+        if field.has_default:
             default_value = field.default
 
         field_definitions[field.name] = cast(
