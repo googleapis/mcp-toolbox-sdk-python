@@ -175,7 +175,7 @@ class CredentialStrategy:
             return CredentialStrategy.user_identity(
                 client_id=auth_credential.oauth2.client_id or "",
                 client_secret=auth_credential.oauth2.client_secret or "",
-                scopes=getattr(auth_credential.oauth2, "scopes", [])
+                scopes=getattr(auth_credential.oauth2, "scopes", []),
             )
 
         # Handle HTTP Bearer
