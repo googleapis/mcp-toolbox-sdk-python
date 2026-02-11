@@ -18,7 +18,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from toolbox_adk import CredentialStrategy, ToolboxClient
-from toolbox_adk.client import CredentialType, CredentialConfig
+from toolbox_adk.client import CredentialConfig, CredentialType
 
 
 @pytest.mark.asyncio
@@ -129,7 +129,7 @@ class TestToolboxClientAuth:
         # Simulate absence of tokens
         mock_creds.id_token = None
         mock_creds.token = None
-        
+
         mock_default.return_value = (mock_creds, "proj")
 
         creds = CredentialStrategy.application_default_credentials(
@@ -199,11 +199,11 @@ class TestToolboxClientAuth:
             USER_TOKEN_CONTEXT_VAR.reset(token)
 
     async def test_validation_errors(self):
-        with pytest.raises(ValueError, match="target_audience is required for WORKLOAD_IDENTITY"):
+        with pytest.raises(
+            ValueError, match="target_audience is required for WORKLOAD_IDENTITY"
+        ):
             # WORKLOAD_IDENTITY requires audience
-            creds = CredentialStrategy.workload_identity(
-                target_audience=""
-            )
+            creds = CredentialStrategy.workload_identity(target_audience="")
             ToolboxClient("http://test", credentials=creds)
 
         with pytest.raises(ValueError):
@@ -214,9 +214,13 @@ class TestToolboxClientAuth:
             creds = CredentialStrategy.manual_credentials(credentials=None)
             ToolboxClient("http://test", credentials=creds)
 
-        with pytest.raises(ValueError, match="api_key and header_name are required for API_KEY"):
+        with pytest.raises(
+            ValueError, match="api_key and header_name are required for API_KEY"
+        ):
             # Manually constructing invalid config since factory enforces signature
-            creds = CredentialConfig(type=CredentialType.API_KEY, api_key=None, header_name=None)
+            creds = CredentialConfig(
+                type=CredentialType.API_KEY, api_key=None, header_name=None
+            )
             ToolboxClient("http://test", credentials=creds)
 
     @patch("toolbox_adk.client.toolbox_core.ToolboxClient")

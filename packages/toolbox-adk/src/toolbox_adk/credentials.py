@@ -16,9 +16,9 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from google.auth import credentials as google_creds
 from google.adk.auth.auth_credential import AuthCredential, AuthCredentialTypes
 from google.adk.auth.auth_tool import AuthConfig, AuthScheme
+from google.auth import credentials as google_creds
 
 
 class CredentialType(Enum):
@@ -173,9 +173,9 @@ class CredentialStrategy:
         ):
             # Extract client_id, client_secret, and scopes from the credential object.
             return CredentialStrategy.user_identity(
-                client_id=auth_credential.oauth2.client_id,
-                client_secret=auth_credential.oauth2.client_secret,
-                scopes=auth_credential.oauth2.scopes,
+                client_id=auth_credential.oauth2.client_id or "",
+                client_secret=auth_credential.oauth2.client_secret or "",
+                scopes=getattr(auth_credential.oauth2, "scopes", []),
             )
 
         # Handle HTTP Bearer
@@ -192,28 +192,28 @@ class CredentialStrategy:
                 return CredentialStrategy.manual_token(
                     token=auth_credential.http.credentials.token, scheme="Bearer"
                 )
-            
-            raise ValueError(
-                f"Unsupported HTTP authentication scheme: {scheme_type}"
-            )
+
+            raise ValueError(f"Unsupported HTTP authentication scheme: {scheme_type}")
 
         if (
             auth_credential.auth_type == AuthCredentialTypes.API_KEY
             and auth_credential.api_key
         ):
             if not auth_scheme:
-                raise ValueError("API Key credentials require the auth_scheme definition.")
-            
+                raise ValueError(
+                    "API Key credentials require the auth_scheme definition."
+                )
+
             header_name = getattr(auth_scheme, "name", None)
             if not header_name:
                 raise ValueError("API Key scheme must define the header name.")
-            
+
             location = getattr(auth_scheme, "in_", "header") or "header"
             # Handle Enum (APIKeyIn.header) or string values
             location_str = str(location)
             if "." in location_str:
                 location_str = location_str.split(".")[-1]
-            
+
             if location_str.lower() != "header":
                 raise ValueError(
                     f"Unsupported API Key location: {location}. Only 'header' is supported."

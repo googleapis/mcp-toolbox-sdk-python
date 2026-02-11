@@ -15,10 +15,10 @@
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from google.genai.types import Type
 
 from toolbox_adk.credentials import CredentialConfig, CredentialType
 from toolbox_adk.tool import ToolboxTool
-from google.genai.types import Type
 
 
 class TestToolboxTool:
@@ -61,7 +61,7 @@ class TestToolboxTool:
         mock_core = MagicMock()
         mock_core.__name__ = "mock"
         mock_core.__doc__ = "mock"
-        
+
         # return_value must be an object with metadata
         new_core_mock = MagicMock()
         new_core_mock.__name__ = "bound_mock"
@@ -132,7 +132,10 @@ class TestToolboxTool:
         core_tool.__name__ = "mock_tool"
         core_tool.__doc__ = "mock doc"
         # Setup overlapping needed services to test deduplication
-        core_tool._required_authn_params = {"mock_param": "mock_service", "another_param": "mock_service"}
+        core_tool._required_authn_params = {
+            "mock_param": "mock_service",
+            "another_param": "mock_service",
+        }
         core_tool._required_authz_tokens = ["mock_service"]
         core_tool.add_auth_token_getter = MagicMock(return_value=core_tool)
 
@@ -164,7 +167,7 @@ class TestToolboxTool:
         ctx.request_credential.assert_not_called()
         # Verify core tool WAS called
         core_tool.assert_called_once()
-        
+
         # Verify deduplication: add_auth_token_getter should only be called ONCE for "mock_service"
         core_tool.add_auth_token_getter.assert_called_once()
         call_args_getter = core_tool.add_auth_token_getter.call_args[0]
@@ -177,9 +180,13 @@ class TestToolboxTool:
         mock_cred_service.save_credential.assert_called_once()
         call_args = mock_cred_service.save_credential.call_args[1]
         assert call_args["auth_config"].exchanged_auth_credential == mock_creds
-        
+
         # Verify safe scope fallback to ["openid", "profile", "email"] when scopes is None
-        assert call_args["auth_config"].auth_scheme.flows.authorizationCode.scopes == {"openid": "", "profile": "", "email": ""}
+        assert call_args["auth_config"].auth_scheme.flows.authorizationCode.scopes == {
+            "openid": "",
+            "profile": "",
+            "email": "",
+        }
 
     @pytest.mark.asyncio
     async def test_3lo_exception_reraise(self):
@@ -232,13 +239,13 @@ class TestToolboxTool:
         # Should catch RuntimeError, call request_credential, and return error map
         assert isinstance(result, dict) and "error" in result
         ctx.request_credential.assert_called_once()
-        
+
     def test_param_type_to_schema_type(self):
         core_tool = MagicMock()
         core_tool.__name__ = "mock_tool"
         core_tool.__doc__ = "mock doc"
         tool = ToolboxTool(core_tool)
-        
+
         assert tool._param_type_to_schema_type("string") == Type.STRING
         assert tool._param_type_to_schema_type("integer") == Type.INTEGER
         assert tool._param_type_to_schema_type("boolean") == Type.BOOLEAN
@@ -261,38 +268,38 @@ class TestToolboxTool:
         core_tool.__doc__ = "mock doc"
         core_tool._params = [
             MockParam("city", "string", "The city name", True),
-            MockParam("count", "integer", "Number of results", False)
+            MockParam("count", "integer", "Number of results", False),
         ]
-        
+
         tool = ToolboxTool(core_tool)
         declaration = tool._get_declaration()
-        
+
         assert declaration.name == "mock_tool"
         assert declaration.description == "mock doc"
-        
+
         parameters = declaration.parameters
         assert parameters is not None
         assert parameters.type == Type.OBJECT
         assert "city" in parameters.properties
         assert "count" in parameters.properties
-        
+
         assert parameters.properties["city"].type == Type.STRING
         assert parameters.properties["city"].description == "The city name"
-        
+
         assert parameters.properties["count"].type == Type.INTEGER
         assert parameters.properties["count"].description == "Number of results"
-        
+
         assert parameters.required == ["city"]
-        
+
     def test_get_declaration_no_params(self):
         core_tool = MagicMock()
         core_tool.__name__ = "mock_tool"
         core_tool.__doc__ = "mock doc"
         core_tool._params = []
-        
+
         tool = ToolboxTool(core_tool)
         declaration = tool._get_declaration()
-        
+
         assert declaration.name == "mock_tool"
         assert declaration.description == "mock doc"
         assert getattr(declaration, "parameters", None) is None

@@ -79,9 +79,7 @@ class ToolboxClient:
 
         elif creds.type == CredentialType.WORKLOAD_IDENTITY:
             if not creds.target_audience:
-                raise ValueError(
-                    "target_audience is required for WORKLOAD_IDENTITY"
-                )
+                raise ValueError("target_audience is required for WORKLOAD_IDENTITY")
 
             # Create an async capable token getter
             self._core_client_headers["Authorization"] = self._create_adc_token_getter(
@@ -112,13 +110,15 @@ class ToolboxClient:
                     return ""
                 return f"Bearer {token}"
 
-            header_name = getattr(creds, "header_name", "Authorization") or "Authorization"
+            header_name = (
+                getattr(creds, "header_name", "Authorization") or "Authorization"
+            )
             self._core_client_headers[header_name] = get_user_token
 
         elif creds.type == CredentialType.API_KEY:
             if not creds.api_key or not creds.header_name:
                 raise ValueError("api_key and header_name are required for API_KEY")
-            
+
             self._core_client_headers[creds.header_name] = creds.api_key
 
     def _create_adc_token_getter(self, audience: str) -> Callable[[], str]:
@@ -157,7 +157,9 @@ class ToolboxClient:
     def credential_config(self) -> Optional[CredentialConfig]:
         return self._credentials
 
-    async def load_toolset(self, toolset_name: str, **kwargs: Any) -> Any:
+    async def load_toolset(
+        self, toolset_name: Optional[str] = None, **kwargs: Any
+    ) -> Any:
         return await self._client.load_toolset(toolset_name, **kwargs)
 
     async def load_tool(self, tool_name: str, **kwargs: Any) -> Any:
