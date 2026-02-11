@@ -14,18 +14,18 @@
 
 
 import os
+from inspect import Parameter, signature
 from typing import Any, Optional
-from inspect import signature, Parameter
-from unittest.mock import MagicMock, AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from pydantic import ValidationError
 from google.adk.auth.auth_credential import (
     AuthCredential,
     AuthCredentialTypes,
     OAuth2Auth,
 )
 from google.adk.tools.base_tool import BaseTool
+from pydantic import ValidationError
 from toolbox_core.protocol import Protocol
 
 from toolbox_adk import CredentialStrategy, ToolboxTool, ToolboxToolset
@@ -60,13 +60,13 @@ class TestToolboxAdkIntegration:
             tool = next((t for t in tools if t.name == "get-row-by-id"), None)
             assert tool is not None
             assert isinstance(tool, ToolboxTool)
-            
+
             # Verify the function declaration schema builds correctly end-to-end
             declaration = tool._get_declaration()
             assert declaration is not None
             assert declaration.name == "get-row-by-id"
             assert declaration.parameters is not None
-            assert hasattr(declaration.parameters, 'properties')
+            assert hasattr(declaration.parameters, "properties")
             assert "id" in declaration.parameters.properties
 
             # Run it
@@ -89,11 +89,11 @@ class TestToolboxAdkIntegration:
         try:
             tools = await toolset.get_tools()
             assert len(tools) > 0
-            
+
             # Find 'get-row-by-id'
             tool = next((t for t in tools if t.name == "get-row-by-id"), None)
             assert tool is not None
-            
+
             # Run it to ensure it actually works without the protocol
             ctx = MagicMock()
             result = await tool.run_async({"id": "1"}, ctx)
@@ -114,11 +114,11 @@ class TestToolboxAdkIntegration:
         try:
             tools = await toolset.get_tools()
             assert len(tools) > 0
-            
+
             # Find 'get-row-by-id'
             tool = next((t for t in tools if t.name == "get-row-by-id"), None)
             assert tool is not None
-            
+
             # Run it to ensure it actually works with the protocol
             ctx = MagicMock()
             result = await tool.run_async({"id": "1"}, ctx)
@@ -181,7 +181,7 @@ class TestToolboxAdkIntegration:
             tool = tools[0]
             assert isinstance(tool, ToolboxTool)
             assert tool.name == "get-n-rows"
-            
+
             # Verify the function declaration schema builds correctly end-to-end
             declaration = tool._get_declaration()
             assert declaration is not None
@@ -199,27 +199,37 @@ class TestToolboxAdkIntegration:
             mock_cred_service_first = AsyncMock()
             mock_cred_service_first.load_credential.return_value = None
             mock_ctx_first._invocation_context = MagicMock()
-            mock_ctx_first._invocation_context.credential_service = mock_cred_service_first
+            mock_ctx_first._invocation_context.credential_service = (
+                mock_cred_service_first
+            )
 
             print("Running tool first time (expecting auth request)...")
             result_first = await tool.run_async({"num_rows": "1"}, mock_ctx_first)
 
             # The wrapper should catch the missing creds and request them.
-            assert isinstance(result_first, dict) and "error" in result_first, "Tool should return error sig for auth requirement"
+            assert (
+                isinstance(result_first, dict) and "error" in result_first
+            ), "Tool should return error sig for auth requirement"
             mock_ctx_first.request_credential.assert_called_once()
-            
+
             # Inspect the requested config
             auth_config = mock_ctx_first.request_credential.call_args[0][0]
             assert auth_config.raw_auth_credential.oauth2.client_id == "test-client-id"
             # Verify the default fallback scopes were assigned correctly to avoid upstream crashes
-            assert auth_config.auth_scheme.flows.authorizationCode.scopes == {"openid": "", "profile": "", "email": ""}
+            assert auth_config.auth_scheme.flows.authorizationCode.scopes == {
+                "openid": "",
+                "profile": "",
+                "email": "",
+            }
 
             mock_ctx_second = MagicMock()
 
             # Simulate "Auth Response Found"
             mock_creds = AuthCredential(
                 auth_type=AuthCredentialTypes.OAUTH2,
-                oauth2=OAuth2Auth(access_token="fake-access-token", id_token="fake-id-token"),
+                oauth2=OAuth2Auth(
+                    access_token="fake-access-token", id_token="fake-id-token"
+                ),
             )
             mock_ctx_second.get_auth_response.return_value = mock_creds
 
@@ -239,7 +249,9 @@ class TestToolboxAdkIntegration:
             except Exception as e:
                 mock_ctx_second.request_credential.assert_not_called()
                 err_msg = str(e).lower()
-                assert any(x in err_msg for x in ["401", "403", "unauthorized", "forbidden"]), f"Caught UNEXPECTED exception: {type(e).__name__}: {e}"
+                assert any(
+                    x in err_msg for x in ["401", "403", "unauthorized", "forbidden"]
+                ), f"Caught UNEXPECTED exception: {type(e).__name__}: {e}"
                 print(f"Caught expected server exception with fake token: {e}")
                 # Verify that the tool AT LEAST triggered save_credential before failing via core_tool inner HTTP req
                 mock_cred_service.save_credential.assert_called_once()
@@ -290,7 +302,7 @@ class TestToolboxAdkIntegration:
             # Check configured headers locally
             headers = toolset.client._core_client_headers
             assert headers["x-foo"] == "my-key"
-            
+
             await toolset.get_tools()
         finally:
             await toolset.close()
@@ -300,8 +312,8 @@ class TestToolboxAdkIntegration:
         from google.adk.auth.auth_credential import (
             AuthCredential,
             AuthCredentialTypes,
-            HttpCredentials,
             HttpAuth,
+            HttpCredentials,
         )
 
         # 1. Create ADK credential (HTTP Bearer)
@@ -309,8 +321,8 @@ class TestToolboxAdkIntegration:
             auth_type=AuthCredentialTypes.HTTP,
             http=HttpAuth(
                 scheme="Bearer",
-                credentials=HttpCredentials(token="fake-integration-token")
-            )
+                credentials=HttpCredentials(token="fake-integration-token"),
+            ),
         )
 
         # 2. Convert using ONLY credential (optional scheme)
@@ -325,10 +337,12 @@ class TestToolboxAdkIntegration:
 
         try:
             # 4. Verify initialization
-            assert toolset.client._core_client_headers.get("Authorization") == "Bearer fake-integration-token"
+            assert (
+                toolset.client._core_client_headers.get("Authorization")
+                == "Bearer fake-integration-token"
+            )
         finally:
             await toolset.close()
-
 
     async def test_header_collision(self):
         """Test that CredentialStrategy overwrites passed Authorization headers."""
@@ -349,7 +363,9 @@ class TestToolboxAdkIntegration:
         # Accessing private member for verification
         auth_header = toolset.client._core_client_headers.get("Authorization")
 
-        assert auth_header == creds_token, "CredentialStrategy MUST overwrite additional_headers['Authorization']"
+        assert (
+            auth_header == creds_token
+        ), "CredentialStrategy MUST overwrite additional_headers['Authorization']"
 
         await toolset.close()
 
@@ -441,8 +457,10 @@ class TestBasicE2E:
             tool = tools[0]
 
             ctx = MagicMock()
-            with pytest.raises(TypeError, match="missing a required argument: 'num_rows'"):
-                 await tool.run_async({}, ctx)
+            with pytest.raises(
+                TypeError, match="missing a required argument: 'num_rows'"
+            ):
+                await tool.run_async({}, ctx)
         finally:
             await toolset.close()
 
@@ -597,6 +615,7 @@ class TestAuth:
 
     async def test_run_tool_async_auth(self, auth_token1: str):
         """Tests running a tool with correct auth using an async token getter."""
+
         async def get_token_asynchronously():
             return auth_token1
 
@@ -655,7 +674,9 @@ class TestOptionalParams:
             tool = tools[0]
             ctx = MagicMock()
 
-            response = await tool.run_async({"email": "twishabansal@google.com", "id": 3, "data": "row3"}, ctx)
+            response = await tool.run_async(
+                {"email": "twishabansal@google.com", "id": 3, "data": "row3"}, ctx
+            )
             assert '"email":"twishabansal@google.com"' in response
             assert "row3" in response
         finally:
@@ -699,14 +720,19 @@ class TestMapParams:
             ctx = MagicMock()
 
             # ToolboxTool.run_async takes dicts directly
-            response = await tool.run_async({
-                "execution_context": {"env": "prod", "id": 1234, "user": 1234.5},
-                "user_scores": {"user1": 100, "user2": 200},
-                "feature_flags": {"new_feature": True},
-            }, ctx)
+            response = await tool.run_async(
+                {
+                    "execution_context": {"env": "prod", "id": 1234, "user": 1234.5},
+                    "user_scores": {"user1": 100, "user2": 200},
+                    "feature_flags": {"new_feature": True},
+                },
+                ctx,
+            )
 
             assert isinstance(response, str)
-            assert '"execution_context":{"env":"prod","id":1234,"user":1234.5}' in response
+            assert (
+                '"execution_context":{"env":"prod","id":1234,"user":1234.5}' in response
+            )
             assert '"user_scores":{"user1":100,"user2":200}' in response
             assert '"feature_flags":{"new_feature":true}' in response
         finally:
@@ -725,9 +751,12 @@ class TestMapParams:
             ctx = MagicMock()
 
             with pytest.raises(ValidationError):
-                await tool.run_async({
-                    "execution_context": {"env": "staging"},
-                    "user_scores": {"user4": "not-an-integer"},
-                }, ctx)
+                await tool.run_async(
+                    {
+                        "execution_context": {"env": "staging"},
+                        "user_scores": {"user4": "not-an-integer"},
+                    },
+                    ctx,
+                )
         finally:
             await toolset.close()

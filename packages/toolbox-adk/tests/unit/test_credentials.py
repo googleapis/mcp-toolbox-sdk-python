@@ -64,18 +64,16 @@ class TestCredentialStrategy:
         assert config.header_name == "x-custom"
 
     def test_from_adk_credentials_oauth2(self):
+        from fastapi.openapi.models import OAuth2, OAuthFlows
         from google.adk.auth.auth_credential import (
             AuthCredential,
             AuthCredentialTypes,
             OAuth2Auth,
         )
-        from fastapi.openapi.models import OAuth2, OAuthFlows
 
         auth_credential = AuthCredential(
             auth_type=AuthCredentialTypes.OAUTH2,
-            oauth2=OAuth2Auth(
-                client_id="cid", client_secret="csec", scopes=["scope"]
-            ),
+            oauth2=OAuth2Auth(client_id="cid", client_secret="csec", scopes=["scope"]),
         )
         # Call without auth_scheme
         config = CredentialStrategy.from_adk_credentials(
@@ -87,13 +85,13 @@ class TestCredentialStrategy:
         assert config.scopes == ["scope"]
 
     def test_from_adk_credentials_http_bearer(self):
+        from fastapi.openapi.models import HTTPBearer
         from google.adk.auth.auth_credential import (
             AuthCredential,
             AuthCredentialTypes,
             HttpAuth,
             HttpCredentials,
         )
-        from fastapi.openapi.models import HTTPBearer
 
         auth_credential = AuthCredential(
             auth_type=AuthCredentialTypes.HTTP,
@@ -110,18 +108,18 @@ class TestCredentialStrategy:
         assert config.scheme == "Bearer"
 
     def test_from_adk_credentials_api_key(self):
+        from fastapi.openapi.models import APIKey, APIKeyIn
         from google.adk.auth.auth_credential import (
             AuthCredential,
             AuthCredentialTypes,
         )
-        from fastapi.openapi.models import APIKey, APIKeyIn
-        
+
         auth_credential = AuthCredential(
             auth_type=AuthCredentialTypes.API_KEY, api_key="abc"
         )
         # Pass 'in' directly via dict unpacking to avoid alias issues
         auth_scheme = APIKey(type="apiKey", name="x-api-key", **{"in": APIKeyIn.header})
-        
+
         config = CredentialStrategy.from_adk_credentials(
             auth_credential=auth_credential, auth_scheme=auth_scheme
         )
@@ -130,23 +128,25 @@ class TestCredentialStrategy:
         assert config.header_name == "x-api-key"
 
     def test_from_adk_credentials_api_key_default_location(self):
+        from fastapi.openapi.models import APIKey
         from google.adk.auth.auth_credential import (
             AuthCredential,
             AuthCredentialTypes,
         )
-        from fastapi.openapi.models import APIKey
-        
+
         auth_credential = AuthCredential(
             auth_type=AuthCredentialTypes.API_KEY, api_key="abc"
         )
         # Omit 'in' / 'in_' to test default location (header)
-        auth_scheme = APIKey(type="apiKey", name="x-api-key", **{"in": "header"}) # This is explicit.
+        auth_scheme = APIKey(
+            type="apiKey", name="x-api-key", **{"in": "header"}
+        )  # This is explicit.
         # To test DEFAULT, we need an object that returns None for .in_
-        
+
         class MockScheme:
             name = "x-api-key"
             in_ = None
-            
+
         config = CredentialStrategy.from_adk_credentials(
             auth_credential=auth_credential, auth_scheme=MockScheme()
         )
@@ -156,17 +156,19 @@ class TestCredentialStrategy:
 
     def test_from_adk_credentials_api_key_query_fail(self):
         import pytest
+        from fastapi.openapi.models import APIKey, APIKeyIn
         from google.adk.auth.auth_credential import (
             AuthCredential,
             AuthCredentialTypes,
         )
-        from fastapi.openapi.models import APIKey, APIKeyIn
-    
+
         cred = AuthCredential(auth_type=AuthCredentialTypes.API_KEY, api_key="abc")
         scheme = APIKey(type="apiKey", name="key", **{"in": APIKeyIn.query})
-    
+
         with pytest.raises(ValueError, match="Unsupported API Key location"):
-            CredentialStrategy.from_adk_credentials(auth_credential=cred, auth_scheme=scheme)
+            CredentialStrategy.from_adk_credentials(
+                auth_credential=cred, auth_scheme=scheme
+            )
 
     def test_from_adk_credentials_api_key_no_scheme_raises(self):
         import pytest
@@ -174,10 +176,13 @@ class TestCredentialStrategy:
             AuthCredential,
             AuthCredentialTypes,
         )
+
         auth_credential = AuthCredential(
             auth_type=AuthCredentialTypes.API_KEY, api_key="my-key"
         )
-        with pytest.raises(ValueError, match="API Key credentials require the auth_scheme definition"):
+        with pytest.raises(
+            ValueError, match="API Key credentials require the auth_scheme definition"
+        ):
             CredentialStrategy.from_adk_credentials(auth_credential=auth_credential)
 
     def test_from_adk_credentials_unsupported(self):
@@ -186,6 +191,7 @@ class TestCredentialStrategy:
             AuthCredential,
             AuthCredentialTypes,
         )
+
         auth_credential = AuthCredential(
             auth_type=AuthCredentialTypes.OAUTH2
         )  # No oauth2 data
@@ -194,20 +200,16 @@ class TestCredentialStrategy:
             CredentialStrategy.from_adk_credentials(auth_credential=auth_credential)
 
     def test_from_adk_auth_config(self):
-        from google.adk.auth.auth_tool import AuthConfig
+        from fastapi.openapi.models import OAuth2, OAuthFlows
         from google.adk.auth.auth_credential import (
             AuthCredential,
             AuthCredentialTypes,
             OAuth2Auth,
         )
-        from fastapi.openapi.models import OAuth2, OAuthFlows
+        from google.adk.auth.auth_tool import AuthConfig
 
-        oauth2_auth = OAuth2Auth(
-            client_id="cid2", client_secret="csec2", scopes=["s2"]
-        )
-        cred = AuthCredential(
-            auth_type=AuthCredentialTypes.OAUTH2, oauth2=oauth2_auth
-        )
+        oauth2_auth = OAuth2Auth(client_id="cid2", client_secret="csec2", scopes=["s2"])
+        cred = AuthCredential(auth_type=AuthCredentialTypes.OAUTH2, oauth2=oauth2_auth)
         scheme = OAuth2(flows=OAuthFlows())
         auth_config = AuthConfig(auth_scheme=scheme, raw_auth_credential=cred)
 

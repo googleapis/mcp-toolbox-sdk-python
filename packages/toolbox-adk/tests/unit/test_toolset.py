@@ -97,8 +97,7 @@ class TestToolboxToolset:
         toolset = ToolboxToolset("url", protocol=Protocol.MCP)
         # Access client to trigger init
         _ = toolset.client
-        
+
         mock_client_cls.assert_called_once()
         call_kwargs = mock_client_cls.call_args[1]
         assert call_kwargs["protocol"] == Protocol.MCP
-
