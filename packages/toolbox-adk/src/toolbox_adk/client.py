@@ -157,7 +157,9 @@ class ToolboxClient:
     def credential_config(self) -> Optional[CredentialConfig]:
         return self._credentials
 
-    async def load_toolset(self, toolset_name: str, **kwargs: Any) -> Any:
+    async def load_toolset(
+        self, toolset_name: Optional[str] = None, **kwargs: Any
+    ) -> Any:
         return await self._client.load_toolset(toolset_name, **kwargs)
 
     async def load_tool(self, tool_name: str, **kwargs: Any) -> Any:
