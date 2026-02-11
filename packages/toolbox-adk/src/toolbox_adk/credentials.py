@@ -173,9 +173,9 @@ class CredentialStrategy:
         ):
             # Extract client_id, client_secret, and scopes from the credential object.
             return CredentialStrategy.user_identity(
-                client_id=auth_credential.oauth2.client_id,
-                client_secret=auth_credential.oauth2.client_secret,
-                scopes=auth_credential.oauth2.scopes,
+                client_id=auth_credential.oauth2.client_id or "",
+                client_secret=auth_credential.oauth2.client_secret or "",
+                scopes=getattr(auth_credential.oauth2, "scopes", [])
             )
 
         # Handle HTTP Bearer
