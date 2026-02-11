@@ -83,6 +83,11 @@ class ParameterSchema(BaseModel):
     additionalProperties: Optional[Union[bool, AdditionalPropertiesSchema]] = None
     default: Optional[Any] = None
 
+    @property
+    def has_default(self) -> bool:
+        """Returns True if `default` was explicitly provided in schema input."""
+        return "default" in self.model_fields_set
+
     def __get_type(self) -> Type:
         base_type: Type
         if self.type == "array":
@@ -105,7 +110,7 @@ class ParameterSchema(BaseModel):
 
     def to_param(self) -> Parameter:
         default_value = Parameter.empty
-        if self.default is not None:
+        if self.has_default:
             default_value = self.default
         elif not self.required:
             default_value = None
