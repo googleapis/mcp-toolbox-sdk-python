@@ -109,7 +109,7 @@ class ParameterSchema(BaseModel):
         return base_type
 
     def to_param(self) -> Parameter:
-        default_value = Parameter.empty
+        default_value: Any = Parameter.empty
         if self.has_default:
             default_value = self.default
         elif not self.required:
