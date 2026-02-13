@@ -14,6 +14,7 @@
 
 
 import asyncio
+import warnings
 from typing import Type
 from unittest.mock import Mock
 
@@ -26,6 +27,7 @@ from toolbox_core.utils import (
     identify_auth_requirements,
     params_to_pydantic_model,
     resolve_value,
+    warn_if_http_and_headers,
 )
 
 
@@ -458,3 +460,31 @@ async def test_resolve_value_async_callable():
         return {"key": "value"}
 
     assert await resolve_value(another_async_func) == {"key": "value"}
+
+
+def test_warn_if_http_and_headers_triggers():
+    """Test that a warning is emitted for HTTP URLs with headers."""
+    url = "http://example.com"
+    headers = {"Authorization": "Bearer token"}
+    with pytest.warns(UserWarning, match="This connection is using HTTP"):
+        warn_if_http_and_headers(url, headers)
+
+
+def test_warn_if_http_and_headers_no_headers():
+    """Test that no warning is emitted for HTTP URLs without headers."""
+    url = "http://example.com"
+    headers = {}
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        warn_if_http_and_headers(url, headers)
+        assert len(w) == 0
+
+
+def test_warn_if_http_and_headers_https():
+    """Test that no warning is emitted for HTTPS URLs."""
+    url = "https://example.com"
+    headers = {"Authorization": "Bearer token"}
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        warn_if_http_and_headers(url, headers)
+        assert len(w) == 0

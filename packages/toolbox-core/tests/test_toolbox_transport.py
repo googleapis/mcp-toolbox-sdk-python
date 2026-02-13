@@ -155,48 +155,6 @@ async def test_tool_invoke_failure(http_session: ClientSession):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "base_url, headers, should_warn",
-    [
-        (
-            "http://fake-toolbox-server.com",
-            {"Authorization": "Bearer token"},
-            True,
-        ),
-        (
-            "https://fake-toolbox-server.com",
-            {"Authorization": "Bearer token"},
-            False,
-        ),
-        ("http://fake-toolbox-server.com", {}, False),
-        ("http://fake-toolbox-server.com", None, False),
-    ],
-)
-async def test_tool_invoke_http_warning(
-    http_session: ClientSession,
-    base_url: str,
-    headers: Optional[Mapping[str, str]],
-    should_warn: bool,
-):
-    """Tests the HTTP security warning logic in tool_invoke."""
-    url = f"{base_url}/api/tool/{TEST_TOOL_NAME}/invoke"
-    args = {"param1": "value1"}
-    response_payload = {"result": "success"}
-    transport = ToolboxTransport(base_url, http_session)
-
-    with aioresponses() as m:
-        m.post(url, status=200, payload=response_payload)
-
-        if should_warn:
-            with pytest.warns(UserWarning, match="Sending data token over HTTP"):
-                await transport.tool_invoke(TEST_TOOL_NAME, args, headers)
-        else:
-            # By not using pytest.warns, we assert that no warnings are raised.
-            # The test will fail if an unexpected UserWarning occurs.
-            await transport.tool_invoke(TEST_TOOL_NAME, args, headers)
-
-
-@pytest.mark.asyncio
 async def test_close_does_not_close_unmanaged_session():
     """
     Tests that close() does NOT affect a session that was provided externally
