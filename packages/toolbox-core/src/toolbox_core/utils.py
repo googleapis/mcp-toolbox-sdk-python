@@ -120,10 +120,12 @@ def params_to_pydantic_model(
     field_definitions = {}
     for field in params:
 
-        # Determine the default value based on the 'required' flag.
+        # Determine the default value based on the 'required' flag and the 'default' field.
         # '...' (Ellipsis) signifies a required field in Pydantic.
-        # 'None' makes the field optional with a default value of None.
+        # If a default value is provided in the schema, it should be used.
         default_value = ... if field.required else None
+        if field.has_default:
+            default_value = field.default
 
         field_definitions[field.name] = cast(
             Any,
