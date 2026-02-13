@@ -13,7 +13,7 @@
 # limitations under the License.
 
 steps:
-  - id: Install library requirements
+  - id: Install requirements
     name: 'python:${_VERSION}'
     dir: 'packages/toolbox-llamaindex'
     env:
@@ -24,17 +24,7 @@ steps:
         uv venv /workspace/venv
         source /workspace/venv/bin/activate
         uv pip install uv
-        uv pip install -r requirements.txt
-    entrypoint: /bin/bash
-  - id: Install test requirements
-    name: 'python:${_VERSION}'
-    dir: 'packages/toolbox-llamaindex'
-    env:
-    args:
-      - '-c'
-      - |
-        source /workspace/venv/bin/activate
-        uv pip install -e '.[test]'
+        uv pip install -r requirements.txt -e '.[test]'
     entrypoint: /bin/bash
   - id: Run integration tests
     name: 'python:${_VERSION}'
