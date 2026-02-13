@@ -110,10 +110,12 @@ class ParameterSchema(BaseModel):
 
     def to_param(self) -> Parameter:
         default_value: Any = Parameter.empty
-        if self.has_default:
-            default_value = self.default
-        elif not self.required:
+        if not self.required:
+            # Keep optional function signatures stable: optional inputs default to None,
+            # even when schema includes a backend-side default.
             default_value = None
+        elif self.has_default:
+            default_value = self.default
 
         return Parameter(
             self.name,
