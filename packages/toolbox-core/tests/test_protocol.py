@@ -291,8 +291,8 @@ def test_parameter_schema_map_unsupported_value_type_error():
         schema._ParameterSchema__get_type()
 
 
-def test_parameter_schema_with_default():
-    """Tests ParameterSchema with a default value provided."""
+def test_parameter_schema_optional_with_default_uses_none_signature_default():
+    """Tests optional params keep a None python signature default even with schema defaults."""
     schema = ParameterSchema(
         name="limit",
         type="integer",
@@ -308,7 +308,7 @@ def test_parameter_schema_with_default():
     assert isinstance(param, Parameter)
     assert param.name == "limit"
     assert param.annotation == expected_type
-    assert param.default == 10
+    assert param.default is None
 
 
 def test_parameter_schema_required_with_default():
