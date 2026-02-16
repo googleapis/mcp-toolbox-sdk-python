@@ -9,14 +9,6 @@
 * Enable package-specific client identification for MCP ([#525](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/525)) ([7ac0d3f](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/7ac0d3f167af1e47c26a3f43bdb48f3fc0a92109))
 
 
-### Miscellaneous Chores
-
-* decouple toolbox-core dependency versioning ([#550](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/550)) ([b8163fe](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/b8163feab0d35aa915213e640200da07c101127a))
-* **deps:** bump langchain-core in /packages/toolbox-langchain ([#542](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/542)) ([2654414](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/2654414838cda7c03eaac306e655188600c4635e))
-* **deps:** update mcp toolbox server version in integration tests to v0.27.0 to v0.27.0 ([#545](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/545)) ([851c7b5](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/851c7b542a18cd634b943d47b5b5331ac19dcd5b))
-* Fix issue with release PR presubmits not picking latest changes from orch packages ([#548](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/548)) ([8b0db22](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/8b0db22d55453c963ba726b639922085ef77db20))
-* optimize CI dependency resolution to prevent PyPI version conflicts ([#546](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/546)) ([7c4a608](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/7c4a608734042e0d501bbe351ad0c0e295cfe909))
-
 ## [0.5.8](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-langchain-v0.5.7...toolbox-langchain-v0.5.8) (2026-01-28)
 
 
