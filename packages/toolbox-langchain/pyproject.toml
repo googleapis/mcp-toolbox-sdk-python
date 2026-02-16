@@ -9,7 +9,7 @@ authors = [
     {name = "Google LLC", email = "googleapis-packages@google.com"}
 ]
 dependencies = [
-    "toolbox-core==0.5.8",
+    "toolbox-core==0.5.9",
     "langchain-core>=0.2.23,<2.0.0",
     "PyYAML>=6.0.1,<7.0.0",
     "pydantic>=2.7.0,<3.0.0",
