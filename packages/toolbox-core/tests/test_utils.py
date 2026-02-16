@@ -37,6 +37,8 @@ def create_param_mock(name: str, description: str, annotation: Type) -> Mock:
     param_mock.name = name
     param_mock.description = description
     param_mock.required = True
+    param_mock.default = None
+    param_mock.has_default = False
 
     mock_param_info = Mock()
     mock_param_info.annotation = annotation
@@ -422,6 +424,24 @@ def test_params_to_pydantic_model_with_params():
 
     with pytest.raises(ValidationError):
         Model(name="Bob", age="thirty", is_active=True)
+
+
+def test_params_to_pydantic_model_uses_explicit_default_none():
+    """Test that explicit default=None is honored for required schema fields."""
+    tool_name = "MyToolWithExplicitNoneDefault"
+    params = [
+        ParameterSchema(
+            name="message",
+            type="string",
+            description="Message value",
+            required=True,
+            default=None,
+        )
+    ]
+    Model = params_to_pydantic_model(tool_name, params)
+
+    assert "message" in Model.model_fields
+    assert Model.model_fields["message"].default is None
 
 
 @pytest.mark.asyncio

@@ -81,6 +81,12 @@ class ParameterSchema(BaseModel):
     authSources: Optional[list[str]] = None
     items: Optional["ParameterSchema"] = None
     additionalProperties: Optional[Union[bool, AdditionalPropertiesSchema]] = None
+    default: Optional[Any] = None
+
+    @property
+    def has_default(self) -> bool:
+        """Returns True if `default` was explicitly provided in schema input."""
+        return "default" in self.model_fields_set
 
     def __get_type(self) -> Type:
         base_type: Type
@@ -103,11 +109,19 @@ class ParameterSchema(BaseModel):
         return base_type
 
     def to_param(self) -> Parameter:
+        default_value: Any = Parameter.empty
+        if not self.required:
+            # Keep optional function signatures stable: optional inputs default to None,
+            # even when schema includes a backend-side default.
+            default_value = None
+        elif self.has_default:
+            default_value = self.default
+
         return Parameter(
             self.name,
             Parameter.POSITIONAL_OR_KEYWORD,
             annotation=self.__get_type(),
-            default=Parameter.empty if self.required else None,
+            default=default_value,
         )
 
 
