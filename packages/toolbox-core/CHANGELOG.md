@@ -7,18 +7,12 @@
 
 * Deprecate Protocol.TOOLBOX (Native HTTP Protocol) ([#547](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/547)) ([b99ec50](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/b99ec503bb5d85e6bdf84f72343d90ac00ab8d88))
 * Enable package-specific client identification for MCP ([#525](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/525)) ([7ac0d3f](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/7ac0d3f167af1e47c26a3f43bdb48f3fc0a92109))
-
+* Introduce warning when headers are sent over insecure HTTP connections ([#544](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/544)) ([832d4e7](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/832d4e7d035ee72fd1932bae830468f20cb80ed7))
 
 ### Bug Fixes
 
-* **core:** parse parameter default value from tool schema ([#538](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/538)) ([f832fd6](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/f832fd6619c81f5a9172af9cdb0b38b8b75fe0b1))
+* parse parameter default value from tool schema ([#538](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/538)) ([f832fd6](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/f832fd6619c81f5a9172af9cdb0b38b8b75fe0b1))
 
-
-### Miscellaneous Chores
-
-* **core:** Introduce warning when headers are sent over insecure HTTP connections ([#544](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/544)) ([832d4e7](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/832d4e7d035ee72fd1932bae830468f20cb80ed7))
-* **deps:** update mcp toolbox server version in integration tests to v0.27.0 to v0.27.0 ([#545](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/545)) ([851c7b5](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/851c7b542a18cd634b943d47b5b5331ac19dcd5b))
-* optimize CI dependency resolution to prevent PyPI version conflicts ([#546](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/546)) ([7c4a608](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/7c4a608734042e0d501bbe351ad0c0e295cfe909))
 
 ## [0.5.8](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v0.5.7...toolbox-core-v0.5.8) (2026-01-28)
 
