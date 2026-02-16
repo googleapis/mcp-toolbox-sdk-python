@@ -24,6 +24,10 @@ steps:
         uv venv /workspace/venv
         source /workspace/venv/bin/activate
         uv pip install uv
+        # Dynamically pin toolbox-core to the local version using Python exec to avoid importing missing dependencies
+        # Use $$ to escape shell variable for Cloud Build
+        CORE_VERSION=$$(python -c "v={}; exec(open('../toolbox-core/src/toolbox_core/version.py').read(), v); print(v['__version__'])")
+        sed -i "s/toolbox-core==[0-9.]*/toolbox-core==$$CORE_VERSION/g" pyproject.toml
         uv pip install -r requirements.txt -e '.[test]'
     entrypoint: /bin/bash
   - id: Run integration tests
