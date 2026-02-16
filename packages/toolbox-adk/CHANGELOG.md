@@ -1,5 +1,38 @@
 # Changelog
 
+## [0.6.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-adk-v0.5.8...toolbox-adk-v0.6.0) (2026-02-16)
+
+
+### ⚠ BREAKING CHANGES
+
+* **adk:** remove pre/post processing functionality ([#539](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/539))
+
+### Features
+
+* **adk:** remove pre/post processing functionality ([#539](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/539)) ([36953cf](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/36953cff75ce2e11c8f69f4ad9139eec8ef2fc44))
+* Deprecate Protocol.TOOLBOX (Native HTTP Protocol) ([#547](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/547)) ([b99ec50](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/b99ec503bb5d85e6bdf84f72343d90ac00ab8d88))
+* Enable package-specific client identification for MCP ([#525](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/525)) ([7ac0d3f](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/7ac0d3f167af1e47c26a3f43bdb48f3fc0a92109))
+
+
+### Bug Fixes
+
+* **adk:** Add float type parsing and required field None handling ([#549](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/549)) ([4302b80](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/4302b804bc5ea9faa25c58badb0197b2b2153d43))
+* **adk:** implement `_get_declaration` to natively support ADK schema builder ([#534](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/534)) ([4f11229](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/4f112293becf3dc7c0e2f44cb7754a1eb8e45def))
+* **adk:** resolve OAuth persistence, ID token extraction, and auth flow crashes ([#535](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/535)) ([663a4e1](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/663a4e144b039207ef66b512d6287f9e520435de))
+
+
+### Miscellaneous Chores
+
+* decouple toolbox-core dependency versioning ([#550](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/550)) ([b8163fe](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/b8163feab0d35aa915213e640200da07c101127a))
+* **deps:** update mcp toolbox server version in integration tests to v0.27.0 to v0.27.0 ([#545](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/545)) ([851c7b5](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/851c7b542a18cd634b943d47b5b5331ac19dcd5b))
+* Fix issue with release PR presubmits not picking latest changes from orch packages ([#548](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/548)) ([8b0db22](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/8b0db22d55453c963ba726b639922085ef77db20))
+* optimize CI dependency resolution to prevent PyPI version conflicts ([#546](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/546)) ([7c4a608](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/7c4a608734042e0d501bbe351ad0c0e295cfe909))
+
+
+### Documentation
+
+* Update README with simplified ADK import paths and modernized type hints in code examples ([#537](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/537)) ([8e7ea07](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/8e7ea0745de565729d6bfcb5708b7a8473a54f9e))
+
 ## [0.5.8](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-adk-v0.5.7...toolbox-adk-v0.5.8) (2026-01-29)
 
 ### Features
