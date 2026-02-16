@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.5.9](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-langchain-v0.5.8...toolbox-langchain-v0.5.9) (2026-02-16)
+
+
+### Features
+
+* Deprecate Protocol.TOOLBOX (Native HTTP Protocol) ([#547](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/547)) ([b99ec50](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/b99ec503bb5d85e6bdf84f72343d90ac00ab8d88))
+* Enable package-specific client identification for MCP ([#525](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/525)) ([7ac0d3f](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/7ac0d3f167af1e47c26a3f43bdb48f3fc0a92109))
+
+
 ## [0.5.8](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-langchain-v0.5.7...toolbox-langchain-v0.5.8) (2026-01-28)
 
 
