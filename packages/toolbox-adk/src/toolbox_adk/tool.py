@@ -100,6 +100,7 @@ class ToolboxTool(BaseTool):
         type_map = {
             "string": Type.STRING,
             "integer": Type.INTEGER,
+            "float": Type.NUMBER,
             "number": Type.NUMBER,
             "boolean": Type.BOOLEAN,
             "array": Type.ARRAY,
@@ -126,7 +127,11 @@ class ToolboxTool(BaseTool):
                     required.append(param.name)
 
         parameters = (
-            Schema(type=Type.OBJECT, properties=properties, required=required)
+            Schema(
+                type=Type.OBJECT,
+                properties=properties,
+                required=required if required else None,
+            )
             if properties
             else None
         )
