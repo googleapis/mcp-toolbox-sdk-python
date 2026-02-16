@@ -14,6 +14,7 @@
 
 
 import logging
+import warnings
 from types import MappingProxyType
 from typing import Any, Awaitable, Callable, Mapping, Optional, Union
 
@@ -80,6 +81,12 @@ class ToolboxClient:
 
         match protocol:
             case Protocol.TOOLBOX:
+                warnings.warn(
+                    "The native Toolbox protocol is deprecated and will be removed on March 4, 2026. "
+                    "Please use Protocol.MCP or specific MCP versions.",
+                    DeprecationWarning,
+                    stacklevel=2,
+                )
                 self.__transport = ToolboxTransport(url, session)
             case Protocol.MCP_v20251125:
                 self.__transport = McpHttpTransportV20251125(
