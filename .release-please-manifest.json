@@ -2,5 +2,5 @@
   "packages/toolbox-langchain": "0.5.8",
   "packages/toolbox-core": "0.5.9",
   "packages/toolbox-llamaindex": "0.5.8",
-  "packages/toolbox-adk": "0.5.8"
+  "packages/toolbox-adk": "0.6.0"
 }
