@@ -130,7 +130,7 @@ class ToolboxTool(BaseTool):
             Schema(
                 type=Type.OBJECT,
                 properties=properties,
-                required=required if required else None,
+                required=required or None,
             )
             if properties
             else None
