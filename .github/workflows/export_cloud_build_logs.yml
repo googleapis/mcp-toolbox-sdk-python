@@ -46,8 +46,9 @@ jobs:
         id: detect_pr_number
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_EVENT_CHECK_SUITE_HEAD_SHA: ${{ github.event.check_suite.head_sha }}
         run: |
-          PR_NUMBER=$(gh pr list --search "${{ github.event.check_suite.head_sha }}" --state open --json number --jq '.[0].number')
+          PR_NUMBER=$(gh pr list --search "${GITHUB_EVENT_CHECK_SUITE_HEAD_SHA}" --state open --json number --jq '.[0].number')
           if [ -z "$PR_NUMBER" ]; then
             echo "No associated PR found."
             echo "failure_detected=false" >> $GITHUB_OUTPUT
@@ -107,7 +108,7 @@ jobs:
         run: |
           details_url="${{ matrix.details_url }}"
           build_id=$(echo "$details_url" | sed -n 's#.*/builds/\([^?]*\).*#\1#p')
-          project_id=$(echo '${{ env.GCLOUD_SERVICE_KEY }}' | jq -r '.project_id')
+          project_id=$(echo '${GCLOUD_SERVICE_KEY}' | jq -r '.project_id')
           echo "Build ID: $build_id"
           echo "build_id=$build_id" >> $GITHUB_OUTPUT
           echo "project_id=$project_id" >> $GITHUB_OUTPUT
@@ -119,7 +120,7 @@ jobs:
         id: fetch_cloud_build_logs
         run: |
           LOG_FILE="cloudbuild_error_logs.txt"
-          GCLOUD_OUTPUT=$(gcloud builds log "${{ steps.parse_build_info.outputs.build_id }}" --project="${{ steps.parse_build_info.outputs.project_id }}" 2>&1)
+          GCLOUD_OUTPUT=$(gcloud builds log "${STEPS_PARSE_BUILD_INFO_OUTPUTS_BUILD_ID}" --project="${STEPS_PARSE_BUILD_INFO_OUTPUTS_PROJECT_ID}" 2>&1)
           
           if echo "$GCLOUD_OUTPUT" | grep -q "ERROR"; then
             echo "Failed to fetch logs from gcloud builds log." > "${LOG_FILE}"
@@ -134,6 +135,9 @@ jobs:
             echo "$GCLOUD_OUTPUT" > "${LOG_FILE}"
           fi
           echo "log_file_name=${LOG_FILE}" >> $GITHUB_OUTPUT
+        env:
+          STEPS_PARSE_BUILD_INFO_OUTPUTS_BUILD_ID: ${{ steps.parse_build_info.outputs.build_id }}
+          STEPS_PARSE_BUILD_INFO_OUTPUTS_PROJECT_ID: ${{ steps.parse_build_info.outputs.project_id }}
       - name: Upload Logs as Artifact
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
