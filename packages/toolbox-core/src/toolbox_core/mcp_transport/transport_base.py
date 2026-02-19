@@ -81,6 +81,45 @@ class _McpHttpTransportBase(ITransport, ABC):
 
         return "".join(texts) or "null"
 
+    def _convert_parameter_schema(
+        self, name: str, schema: dict, required_fields: list[str]
+    ) -> ParameterSchema:
+        """Recursively converts a JSON Schema node to a ParameterSchema."""
+        param_type = schema.get("type", "string")
+        description = schema.get("description", "")
+
+        # Handle Array Recursion
+        items_schema = None
+        if param_type == "array" and "items" in schema:
+            items_data = schema["items"]
+            if isinstance(items_data, dict):
+                # Recursive call for items (items don't have separate required fields usually in this context)
+                items_schema = self._convert_parameter_schema("", items_data, [])
+
+        # Handle Object (Map) AdditionalProperties
+        additional_properties = None
+        if param_type == "object":
+            add_props = schema.get("additionalProperties")
+            if isinstance(add_props, dict) and "type" in add_props:
+                # If it has a type, it's a typed map
+                additional_properties = AdditionalPropertiesSchema(
+                    type=add_props["type"]
+                )
+            elif isinstance(add_props, bool):
+                # If boolean (e.g. True), it allows anything
+                additional_properties = add_props
+            # If None, it technically allows anything (Any) by default in our protocol
+
+        return ParameterSchema(
+            name=name,
+            type=param_type,
+            description=description,
+            required=name in required_fields if name else True,
+            items=items_schema,
+            additionalProperties=additional_properties,
+            # Auth is handled by _convert_tool_schema
+        )
+
     def _convert_tool_schema(self, tool_data: dict) -> ToolSchema:
         """
         Safely converts the raw tool dictionary from the server into a ToolSchema object,
@@ -106,28 +145,14 @@ class _McpHttpTransportBase(ITransport, ABC):
         required = input_schema.get("required", [])
 
         for name, schema in properties.items():
-            additional_props = schema.get("additionalProperties")
-            if isinstance(additional_props, dict):
-                additional_props = AdditionalPropertiesSchema(
-                    type=additional_props["type"]
-                )
-            else:
-                additional_props = True
-
+            # Convert basic schema recursively
+            param_schema = self._convert_parameter_schema(name, schema, required)
+            
+            # Apply top-level auth metadata (not recursive for now as per protocol)
             if param_auth and name in param_auth:
-                auth_sources = param_auth[name]
-            else:
-                auth_sources = None
-            parameters.append(
-                ParameterSchema(
-                    name=name,
-                    type=schema["type"],
-                    description=schema.get("description", ""),
-                    required=name in required,
-                    additionalProperties=additional_props,
-                    authSources=auth_sources,
-                )
-            )
+                param_schema.authSources = param_auth[name]
+            
+            parameters.append(param_schema)
 
         return ToolSchema(
             description=tool_data.get("description") or "",
