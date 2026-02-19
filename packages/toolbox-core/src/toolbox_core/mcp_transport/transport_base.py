@@ -88,27 +88,20 @@ class _McpHttpTransportBase(ITransport, ABC):
         param_type = schema.get("type", "string")
         description = schema.get("description", "")
 
-        # Handle Array Recursion
-        items_schema = None
         if param_type == "array" and "items" in schema:
             items_data = schema["items"]
             if isinstance(items_data, dict):
-                # Recursive call for items (items don't have separate required fields usually in this context)
                 items_schema = self._convert_parameter_schema("", items_data, [])
 
-        # Handle Object (Map) AdditionalProperties
         additional_properties: Optional[Union[AdditionalPropertiesSchema, bool]] = None
         if param_type == "object":
             add_props = schema.get("additionalProperties")
             if isinstance(add_props, dict) and "type" in add_props:
-                # If it has a type, it's a typed map
                 additional_properties = AdditionalPropertiesSchema(
                     type=add_props["type"]
                 )
             elif isinstance(add_props, bool):
-                # If boolean (e.g. True), it allows anything
                 additional_properties = add_props
-            # If None, it technically allows anything (Any) by default in our protocol
 
         return ParameterSchema(
             name=name,
@@ -145,10 +138,8 @@ class _McpHttpTransportBase(ITransport, ABC):
         required = input_schema.get("required", [])
 
         for name, schema in properties.items():
-            # Convert basic schema recursively
             param_schema = self._convert_parameter_schema(name, schema, required)
 
-            # Apply top-level auth metadata (not recursive for now as per protocol)
             if param_auth and name in param_auth:
                 param_schema.authSources = param_auth[name]
 
