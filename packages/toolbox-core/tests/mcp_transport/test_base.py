@@ -245,3 +245,60 @@ class TestMcpHttpTransportBase:
             SimpleNamespace(type="text", text="kept"),
         ]
         assert transport._process_tool_result_content(c6) == "kept"
+
+    def test_convert_tool_schema_recursive(self, transport):
+        """Test converting schema with recursive types (nested arrays, arrays of maps)."""
+        raw_tool = {
+            "name": "recursive_tool",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    # List[List[str]]
+                    "nested_array": {
+                        "type": "array",
+                        "items": {
+                            "type": "array",
+                            "items": {"type": "string"}
+                        }
+                    },
+                    # List[Dict[str, int]]
+                    "array_of_maps": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": {"type": "integer"}
+                        }
+                    },
+                    # Dict[str, List[int]]
+                    "map_of_arrays": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "array",
+                            "items": {"type": "integer"}
+                        }
+                    }
+                }
+            }
+        }
+
+        schema = transport._convert_tool_schema(raw_tool)
+        
+        # 1. Nested Array
+        p_nested = next(p for p in schema.parameters if p.name == "nested_array")
+        assert p_nested.type == "array"
+        assert p_nested.items is not None
+        assert p_nested.items.type == "array"
+        assert p_nested.items.items is not None
+        assert p_nested.items.items.type == "string"
+
+        # 2. Array of Maps
+        p_arr_map = next(p for p in schema.parameters if p.name == "array_of_maps")
+        assert p_arr_map.type == "array"
+        assert p_arr_map.items is not None
+        assert p_arr_map.items.type == "object"
+        assert p_arr_map.items.additionalProperties.type == "integer"
+
+        # 3. Map of Arrays
+        p_map_arr = next(p for p in schema.parameters if p.name == "map_of_arrays")
+        assert p_map_arr.type == "object"
+        assert p_map_arr.additionalProperties.type == "array"
