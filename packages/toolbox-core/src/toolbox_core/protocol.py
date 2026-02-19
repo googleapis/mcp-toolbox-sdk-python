@@ -92,8 +92,9 @@ class ParameterSchema(BaseModel):
         base_type: Type
         if self.type == "array":
             if self.items is None:
-                raise ValueError("Unexpected value: type is 'array' but items is None")
-            base_type = list[self.items.__get_type()]  # type: ignore
+                base_type = list[Any]
+            else:
+                base_type = list[self.items.__get_type()]  # type: ignore
         elif self.type == "object":
             if isinstance(self.additionalProperties, AdditionalPropertiesSchema):
                 value_type = self.additionalProperties.get_value_type()

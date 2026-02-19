@@ -93,18 +93,20 @@ def test_parameter_schema_array_integer():
     assert param.kind == Parameter.POSITIONAL_OR_KEYWORD
 
 
-def test_parameter_schema_array_no_items_error():
-    """Tests that 'array' type raises error if 'items' is None."""
+def test_parameter_schema_array_no_items_defaults_to_any():
+    """Tests that 'array' type defaults to list[Any] if 'items' is None."""
     schema = ParameterSchema(
-        name="bad_list", type="array", description="List without item type"
+        name="any_list", type="array", description="List without item type"
     )
 
-    expected_error_msg = "Unexpected value: type is 'array' but items is None"
-    with pytest.raises(ValueError, match=expected_error_msg):
-        schema._ParameterSchema__get_type()
+    expected_type = list[Any]
+    assert schema._ParameterSchema__get_type() == expected_type
 
-    with pytest.raises(ValueError, match=expected_error_msg):
-        schema.to_param()
+    param = schema.to_param()
+    assert isinstance(param, Parameter)
+    assert param.name == "any_list"
+    assert param.annotation == expected_type
+    assert param.kind == Parameter.POSITIONAL_OR_KEYWORD
 
 
 def test_parameter_schema_unsupported_type_error():
