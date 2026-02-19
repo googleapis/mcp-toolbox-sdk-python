@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.10](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v0.5.9...toolbox-core-v0.5.10) (2026-02-19)
+
+
+### Miscellaneous Chores
+
+* updated gemini models in docs ([#556](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/556)) ([03dc7e6](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/03dc7e6226abe935f634c720519850af9a2a019f))
+
 ## [0.5.9](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v0.5.8...toolbox-core-v0.5.9) (2026-02-16)
 
 
