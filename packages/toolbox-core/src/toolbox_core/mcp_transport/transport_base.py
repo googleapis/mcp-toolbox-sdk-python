@@ -97,7 +97,7 @@ class _McpHttpTransportBase(ITransport, ABC):
                 items_schema = self._convert_parameter_schema("", items_data, [])
 
         # Handle Object (Map) AdditionalProperties
-        additional_properties = None
+        additional_properties: Optional[Union[AdditionalPropertiesSchema, bool]] = None
         if param_type == "object":
             add_props = schema.get("additionalProperties")
             if isinstance(add_props, dict) and "type" in add_props:
