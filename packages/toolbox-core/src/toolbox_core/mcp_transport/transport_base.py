@@ -147,11 +147,11 @@ class _McpHttpTransportBase(ITransport, ABC):
         for name, schema in properties.items():
             # Convert basic schema recursively
             param_schema = self._convert_parameter_schema(name, schema, required)
-            
+
             # Apply top-level auth metadata (not recursive for now as per protocol)
             if param_auth and name in param_auth:
                 param_schema.authSources = param_auth[name]
-            
+
             parameters.append(param_schema)
 
         return ToolSchema(

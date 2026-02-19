@@ -256,33 +256,30 @@ class TestMcpHttpTransportBase:
                     # List[List[str]]
                     "nested_array": {
                         "type": "array",
-                        "items": {
-                            "type": "array",
-                            "items": {"type": "string"}
-                        }
+                        "items": {"type": "array", "items": {"type": "string"}},
                     },
                     # List[Dict[str, int]]
                     "array_of_maps": {
                         "type": "array",
                         "items": {
                             "type": "object",
-                            "additionalProperties": {"type": "integer"}
-                        }
+                            "additionalProperties": {"type": "integer"},
+                        },
                     },
                     # Dict[str, List[int]]
                     "map_of_arrays": {
                         "type": "object",
                         "additionalProperties": {
                             "type": "array",
-                            "items": {"type": "integer"}
-                        }
-                    }
-                }
-            }
+                            "items": {"type": "integer"},
+                        },
+                    },
+                },
+            },
         }
 
         schema = transport._convert_tool_schema(raw_tool)
-        
+
         # 1. Nested Array
         p_nested = next(p for p in schema.parameters if p.name == "nested_array")
         assert p_nested.type == "array"

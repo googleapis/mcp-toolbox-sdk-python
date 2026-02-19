@@ -93,7 +93,6 @@ def test_parameter_schema_array_integer():
     assert param.kind == Parameter.POSITIONAL_OR_KEYWORD
 
 
-
 def test_parameter_schema_array_no_items_defaults_to_any():
     """Tests that 'array' type defaults to list[Any] if 'items' is None."""
     schema = ParameterSchema(
@@ -108,7 +107,6 @@ def test_parameter_schema_array_no_items_defaults_to_any():
     assert param.name == "any_list"
     assert param.annotation == expected_type
     assert param.kind == Parameter.POSITIONAL_OR_KEYWORD
-
 
 
 def test_parameter_schema_unsupported_type_error():
