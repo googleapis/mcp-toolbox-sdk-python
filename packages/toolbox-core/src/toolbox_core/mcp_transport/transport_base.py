@@ -88,6 +88,7 @@ class _McpHttpTransportBase(ITransport, ABC):
         param_type = schema.get("type", "string")
         description = schema.get("description", "")
 
+        items_schema: Optional[ParameterSchema] = None
         if param_type == "array" and "items" in schema:
             items_data = schema["items"]
             if isinstance(items_data, dict):
