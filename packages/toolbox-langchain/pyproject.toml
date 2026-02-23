@@ -45,7 +45,7 @@ Changelog = "https://github.com/googleapis/mcp-toolbox-sdk-python/blob/main/pack
 [project.optional-dependencies]
 test = [
     "black[jupyter]==26.1.0",
-    "isort==7.0.0",
+    "isort==8.0.0",
     "mypy==1.19.1",
     "pytest-asyncio==1.3.0",
     "pytest==9.0.2",
