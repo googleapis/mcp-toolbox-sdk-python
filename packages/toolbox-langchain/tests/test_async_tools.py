@@ -18,9 +18,10 @@ from unittest.mock import AsyncMock, patch
 import pytest
 import pytest_asyncio
 from pydantic import ValidationError
+from toolbox_core.itransport import ITransport
 from toolbox_core.protocol import ParameterSchema as CoreParameterSchema
 from toolbox_core.tool import ToolboxTool as ToolboxCoreTool
-from toolbox_core.itransport import ITransport
+
 
 class MockTransport(ITransport):
     def __init__(self, base_url, session=None):
@@ -29,12 +30,23 @@ class MockTransport(ITransport):
         self.tool_get_mock = AsyncMock()
         self.tools_list_mock = AsyncMock()
         self.close_mock = AsyncMock()
+
     @property
-    def base_url(self): return self._base_url
-    async def tool_invoke(self, *args, **kwargs): return await self.tool_invoke_mock(*args, **kwargs)
-    async def tool_get(self, *args, **kwargs): return await self.tool_get_mock(*args, **kwargs)
-    async def tools_list(self, *args, **kwargs): return await self.tools_list_mock(*args, **kwargs)
-    async def close(self, *args, **kwargs): return await self.close_mock(*args, **kwargs)
+    def base_url(self):
+        return self._base_url
+
+    async def tool_invoke(self, *args, **kwargs):
+        return await self.tool_invoke_mock(*args, **kwargs)
+
+    async def tool_get(self, *args, **kwargs):
+        return await self.tool_get_mock(*args, **kwargs)
+
+    async def tools_list(self, *args, **kwargs):
+        return await self.tools_list_mock(*args, **kwargs)
+
+    async def close(self, *args, **kwargs):
+        return await self.close_mock(*args, **kwargs)
+
 
 from toolbox_langchain.async_tools import AsyncToolboxTool
 
@@ -105,7 +117,9 @@ class TestAsyncToolboxTool:
             schema_dict=tool_schema_dict,
             url="http://test_url",
         )
-        core_tool_instance._ToolboxTool__transport.tool_invoke_mock.return_value = "test-result"
+        core_tool_instance._ToolboxTool__transport.tool_invoke_mock.return_value = (
+            "test-result"
+        )
         tool = AsyncToolboxTool(core_tool=core_tool_instance)
         return tool
 
@@ -117,7 +131,9 @@ class TestAsyncToolboxTool:
             schema_dict=auth_tool_schema_dict,
             url="https://test-url",
         )
-        core_tool_instance._ToolboxTool__transport.tool_invoke_mock.return_value = "test-result"
+        core_tool_instance._ToolboxTool__transport.tool_invoke_mock.return_value = (
+            "test-result"
+        )
         tool = AsyncToolboxTool(core_tool=core_tool_instance)
         return tool
 
@@ -128,7 +144,9 @@ class TestAsyncToolboxTool:
             schema_dict=tool_schema_dict,
             url="https://test-url",
         )
-        core_tool_instance._ToolboxTool__transport.tool_invoke_mock.return_value = "test-result"
+        core_tool_instance._ToolboxTool__transport.tool_invoke_mock.return_value = (
+            "test-result"
+        )
         tool = AsyncToolboxTool(core_tool=core_tool_instance)
         assert tool.name == "test_tool"
         assert tool.description == core_tool_instance.__doc__
