@@ -713,7 +713,6 @@ async def test_client_init_with_client_info():
         assert call_args[4] == client_version
 
 
-
 def test_toolbox_client_no_warning_on_mcp():
     """Test that initializing ToolboxClient with Protocol.MCP issues NO DeprecationWarning."""
     # Mock the transport to avoid actual connection attempts or MCP version warnings

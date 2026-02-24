@@ -25,14 +25,15 @@ from aiohttp import ClientSession
 from aioresponses import aioresponses
 from pydantic import ValidationError
 
+from toolbox_core.itransport import ITransport
 from toolbox_core.protocol import ParameterSchema
 from toolbox_core.tool import ToolboxTool
-from toolbox_core.itransport import ITransport
 from toolbox_core.utils import create_func_docstring, resolve_value
 
 TEST_BASE_URL = "http://toolbox.example.com"
 HTTPS_BASE_URL = "https://toolbox.example.com"
 TEST_TOOL_NAME = "sample_tool"
+
 
 class MockTransport(ITransport):
     def __init__(self, base_url, session=None):
@@ -41,15 +42,22 @@ class MockTransport(ITransport):
         self.tool_get_mock = AsyncMock()
         self.tools_list_mock = AsyncMock()
         self.close_mock = AsyncMock()
-    
-    @property
-    def base_url(self): return self._base_url
-    
-    async def tool_invoke(self, *args, **kwargs): return await self.tool_invoke_mock(*args, **kwargs)
-    async def tool_get(self, *args, **kwargs): return await self.tool_get_mock(*args, **kwargs)
-    async def tools_list(self, *args, **kwargs): return await self.tools_list_mock(*args, **kwargs)
-    async def close(self, *args, **kwargs): return await self.close_mock(*args, **kwargs)
 
+    @property
+    def base_url(self):
+        return self._base_url
+
+    async def tool_invoke(self, *args, **kwargs):
+        return await self.tool_invoke_mock(*args, **kwargs)
+
+    async def tool_get(self, *args, **kwargs):
+        return await self.tool_get_mock(*args, **kwargs)
+
+    async def tools_list(self, *args, **kwargs):
+        return await self.tools_list_mock(*args, **kwargs)
+
+    async def close(self, *args, **kwargs):
+        return await self.close_mock(*args, **kwargs)
 
 
 @pytest.fixture
@@ -247,7 +255,7 @@ async def test_tool_creation_callable_and_run(
     expected_tool_result = mock_server_response_body["result"]
 
     transport = MockTransport(base_url)
-    transport.tool_invoke_mock.return_value = mock_server_response_body['result']
+    transport.tool_invoke_mock.return_value = mock_server_response_body["result"]
 
     tool_instance = ToolboxTool(
         transport=transport,
@@ -272,7 +280,9 @@ async def test_tool_creation_callable_and_run(
 
     assert actual_result == expected_tool_result
 
-    transport.tool_invoke_mock.assert_awaited_once_with(TEST_TOOL_NAME, expected_payload, {})
+    transport.tool_invoke_mock.assert_awaited_once_with(
+        TEST_TOOL_NAME, expected_payload, {}
+    )
 
 
 @pytest.mark.asyncio
@@ -290,7 +300,7 @@ async def test_tool_run_with_pydantic_validation_error(
     invoke_url = f"{base_url}/api/tool/{tool_name}/invoke"
 
     transport = MockTransport(base_url)
-    transport.tool_invoke_mock.side_effect = Exception('Should not be called')
+    transport.tool_invoke_mock.side_effect = Exception("Should not be called")
 
     tool_instance = ToolboxTool(
         transport=transport,
@@ -493,10 +503,17 @@ async def test_auth_token_overrides_client_header(
     input_args = {"message": "test", "count": 1}
     mock_server_response = {"result": "Success"}
 
-    tool_instance._ToolboxTool__transport.tool_invoke_mock.return_value = 'Success'
+    tool_instance._ToolboxTool__transport.tool_invoke_mock.return_value = "Success"
     await tool_instance(**input_args)
 
-    tool_instance._ToolboxTool__transport.tool_invoke_mock.assert_awaited_once_with(tool_name, input_args, {'test-auth_token': 'value-from-auth-getter-123', 'X-Another-Header': 'another-value'})
+    tool_instance._ToolboxTool__transport.tool_invoke_mock.assert_awaited_once_with(
+        tool_name,
+        input_args,
+        {
+            "test-auth_token": "value-from-auth-getter-123",
+            "X-Another-Header": "another-value",
+        },
+    )
 
 
 def test_add_auth_token_getter_unused_token(
@@ -569,12 +586,14 @@ async def test_bind_param_success(
 
     # Test invocation of the new tool
     invoke_url = f"{HTTPS_BASE_URL}/api/tool/{TEST_TOOL_NAME}/invoke"
-    original_tool._ToolboxTool__transport.tool_invoke_mock.return_value = 'Success'
-    await bound_tool(message='hello')
+    original_tool._ToolboxTool__transport.tool_invoke_mock.return_value = "Success"
+    await bound_tool(message="hello")
 
     # Verify the payload includes both the argument and the bound parameter
     expected_payload = {"message": "hello", "count": 100}
-    transport.tool_invoke_mock.assert_awaited_once_with(TEST_TOOL_NAME, expected_payload, {})
+    transport.tool_invoke_mock.assert_awaited_once_with(
+        TEST_TOOL_NAME, expected_payload, {}
+    )
 
 
 @pytest.mark.asyncio
@@ -608,11 +627,13 @@ async def test_bind_params_success_with_callable(
 
     # Test invocation
     invoke_url = f"{HTTPS_BASE_URL}/api/tool/{TEST_TOOL_NAME}/invoke"
-    tool._ToolboxTool__transport.tool_invoke_mock.return_value = 'Success'
+    tool._ToolboxTool__transport.tool_invoke_mock.return_value = "Success"
     await bound_tool()
 
     expected_payload = {"message": "from-callable", "count": 99}
-    transport.tool_invoke_mock.assert_awaited_once_with(TEST_TOOL_NAME, expected_payload, {})
+    transport.tool_invoke_mock.assert_awaited_once_with(
+        TEST_TOOL_NAME, expected_payload, {}
+    )
 
 
 def test_bind_param_invalid_parameter_name(toolbox_tool: ToolboxTool):
@@ -672,10 +693,12 @@ async def test_bind_param_chaining(
 
     # Test invocation
     invoke_url = f"{HTTPS_BASE_URL}/api/tool/{TEST_TOOL_NAME}/invoke"
-    tool._ToolboxTool__transport.tool_invoke_mock.return_value = 'Success'
+    tool._ToolboxTool__transport.tool_invoke_mock.return_value = "Success"
     await fully_bound_tool()
 
-    tool._ToolboxTool__transport.tool_invoke_mock.assert_awaited_once_with(TEST_TOOL_NAME, {'count': 42, 'message': 'chained-call'}, {})
+    tool._ToolboxTool__transport.tool_invoke_mock.assert_awaited_once_with(
+        TEST_TOOL_NAME, {"count": 42, "message": "chained-call"}, {}
+    )
 
 
 @pytest.mark.asyncio
@@ -722,7 +745,7 @@ async def test_tool_call_http_warning(
         client_headers=headers if headers is not None else {},
     )
 
-    transport.tool_invoke_mock.return_value = 'success'
+    transport.tool_invoke_mock.return_value = "success"
     if should_warn:
         with pytest.warns(
             UserWarning,
