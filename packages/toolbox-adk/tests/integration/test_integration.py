@@ -22,7 +22,6 @@ from google.adk.auth.auth_credential import (
     AuthCredentialTypes,
     OAuth2Auth,
 )
-
 from google.adk.tools.base_tool import BaseTool
 from pydantic import ValidationError
 from toolbox_core.protocol import Protocol
