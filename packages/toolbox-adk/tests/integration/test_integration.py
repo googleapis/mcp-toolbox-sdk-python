@@ -14,16 +14,13 @@
 
 
 import os
-from inspect import Parameter, signature
-from typing import Any, Optional
-from unittest.mock import AsyncMock, MagicMock
-
 import pytest
 from google.adk.auth.auth_credential import (
     AuthCredential,
     AuthCredentialTypes,
     OAuth2Auth,
 )
+
 from google.adk.tools.base_tool import BaseTool
 from pydantic import ValidationError
 from toolbox_core.protocol import Protocol
@@ -103,12 +100,12 @@ class TestToolboxAdkIntegration:
             await toolset.close()
 
     async def test_load_toolset_with_explicit_protocol(self):
-        """Test initializing toolset with specific protocol (TOOLBOX)."""
+        """Test initializing toolset with specific protocol (MCP_v20251125)."""
         toolset = ToolboxToolset(
             server_url="http://localhost:5000",
             toolset_name="my-toolset",
             credentials=CredentialStrategy.toolbox_identity(),
-            protocol=Protocol.TOOLBOX,
+            protocol=Protocol.MCP_v20251125,
         )
 
         try:

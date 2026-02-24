@@ -30,7 +30,6 @@ from .mcp_transport import (
 )
 from .protocol import Protocol, ToolSchema
 from .tool import ToolboxTool
-from .toolbox_transport import ToolboxTransport
 from .utils import identify_auth_requirements, resolve_value, warn_if_http_and_headers
 
 
@@ -80,14 +79,6 @@ class ToolboxClient:
             )
 
         match protocol:
-            case Protocol.TOOLBOX:
-                warnings.warn(
-                    "The native Toolbox protocol is deprecated and will be removed on March 4, 2026. "
-                    "Please use Protocol.MCP or specific MCP versions.",
-                    DeprecationWarning,
-                    stacklevel=2,
-                )
-                self.__transport = ToolboxTransport(url, session)
             case Protocol.MCP_v20251125:
                 self.__transport = McpHttpTransportV20251125(
                     url, session, protocol, client_name, client_version

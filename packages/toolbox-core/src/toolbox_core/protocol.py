@@ -21,7 +21,6 @@ from pydantic import BaseModel
 class Protocol(str, Enum):
     """Defines how the client should choose between communication protocols."""
 
-    TOOLBOX = "toolbox"
     MCP_v20250618 = "2025-06-18"
     MCP_v20250326 = "2025-03-26"
     MCP_v20241105 = "2024-11-05"
