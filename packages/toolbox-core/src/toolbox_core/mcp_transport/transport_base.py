@@ -91,6 +91,12 @@ class _McpHttpTransportBase(ITransport, ABC):
         items_schema: Optional[ParameterSchema] = None
         if param_type == "array" and "items" in schema:
             items_data = schema["items"]
+
+            # To maintain compatibility with third-party MCP servers, we gracefully
+            # skip strict typing if 'items' is a list (tuple validation in JSON
+            # Schema Draft 7) rather than a dictionary. Arrays missing the 'items'
+            # key entirely are also supported natively as generic lists (list[Any]).
+            # See: https://json-schema.org/understanding-json-schema/reference/array#items
             if isinstance(items_data, dict):
                 items_schema = self._convert_parameter_schema("", items_data, [])
 
