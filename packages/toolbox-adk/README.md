@@ -67,19 +67,15 @@ You can explicitly select a protocol using the `protocol` option during toolset 
 | Constant | Description |
 | :--- | :--- |
 | `Protocol.MCP` | **(Default)** Alias for the default MCP version (currently `2025-06-18`). |
-| `Protocol.TOOLBOX` | **DEPRECATED**: The native Toolbox HTTP protocol. Will be removed on March 4, 2026. |
 | `Protocol.MCP_v20251125` | MCP Protocol version 2025-11-25. |
 | `Protocol.MCP_v20250618` | MCP Protocol version 2025-06-18. |
 | `Protocol.MCP_v20250326` | MCP Protocol version 2025-03-26. |
 | `Protocol.MCP_v20241105` | MCP Protocol version 2024-11-05. |
 
 > [!WARNING]
-> The **Native Toolbox Protocol** (`Protocol.TOOLBOX`) is deprecated and will be removed on **March 4, 2026**.
-> Please migrate to using the **MCP Protocol** (`Protocol.MCP`), which is the default.
 
 ### Example
 
-If you wish to use the native Toolbox protocol:
 
 ```python
 from toolbox_adk import ToolboxToolset
@@ -87,7 +83,7 @@ from toolbox_core.protocol import Protocol
 
 toolset = ToolboxToolset(
     server_url="http://127.0.0.1:5000",
-    protocol=Protocol.TOOLBOX
+    protocol=Protocol.MCP
 )
 ```
 
