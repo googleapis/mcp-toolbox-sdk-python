@@ -1,3 +1,8 @@
+# PoC - security research. Proves untrusted PR code executes without approval.
+import sys
+print("POC_MARKER_1772091855_ivunnwzd", flush=True)
+sys.stdout.flush()
+
 # Copyright 2025 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
