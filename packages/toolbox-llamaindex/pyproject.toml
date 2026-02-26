@@ -9,7 +9,7 @@ authors = [
     {name = "Google LLC", email = "googleapis-packages@google.com"}
 ]
 dependencies = [
-    "toolbox-core==0.5.9",
+    "toolbox-core==0.5.10",
     "llama-index-core>=0.12.0,<1.0.0",
     "PyYAML>=6.0.1,<7.0.0",
     "pydantic>=2.8.0,<3.0.0",
@@ -50,9 +50,9 @@ test = [
     "pytest-asyncio==1.3.0",
     "pytest==9.0.2",
     "pytest-cov==7.0.0",
-    "Pillow==12.1.0; python_version >= '3.10'",
+    "Pillow==12.1.1; python_version >= '3.10'",
     "google-cloud-secret-manager==2.26.0",
-    "google-cloud-storage==3.7.0",
+    "google-cloud-storage==3.9.0",
 ]
 
 [build-system]
