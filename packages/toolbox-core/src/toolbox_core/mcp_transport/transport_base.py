@@ -88,15 +88,16 @@ class _McpHttpTransportBase(ITransport, ABC):
         param_type = schema.get("type", "string")
         description = schema.get("description", "")
 
+        # MCP strictly requires standard JSON Schema formatting:
+        # https://modelcontextprotocol.io/specification/2025-11-25/server/tools#tool
+        # This dictates using `items` for array types (https://json-schema.org/understanding-json-schema/reference/array#items)
+        # and `additionalProperties` for maps (https://json-schema.org/understanding-json-schema/reference/object#additionalproperties).
         items_schema: Optional[ParameterSchema] = None
         if param_type == "array" and "items" in schema:
             items_data = schema["items"]
 
-            # To maintain compatibility with third-party MCP servers, we gracefully
-            # skip strict typing if 'items' is a list (tuple validation in JSON
-            # Schema Draft 7) rather than a dictionary. Arrays missing the 'items'
-            # key entirely are also supported natively as generic lists (list[Any]).
-            # See: https://json-schema.org/understanding-json-schema/reference/array#items
+            # For third-party compatibility, skip strict typing if 'items' is a list (Draft 7 tuple validation).
+            # Missing 'items' keys default natively to generic lists (list[Any]).
             if isinstance(items_data, dict):
                 items_schema = self._convert_parameter_schema("", items_data, [])
 
