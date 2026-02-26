@@ -139,7 +139,7 @@ jobs:
           STEPS_PARSE_BUILD_INFO_OUTPUTS_BUILD_ID: ${{ steps.parse_build_info.outputs.build_id }}
           STEPS_PARSE_BUILD_INFO_OUTPUTS_PROJECT_ID: ${{ steps.parse_build_info.outputs.project_id }}
       - name: Upload Logs as Artifact
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         with:
           name: logs-${{ matrix.name }}-${{ steps.parse_build_info.outputs.build_id }}
           path: ${{ steps.fetch_cloud_build_logs.outputs.log_file_name }}
