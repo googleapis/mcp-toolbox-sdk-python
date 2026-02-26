@@ -15,7 +15,7 @@
 import asyncio
 import json
 from abc import ABC, abstractmethod
-from typing import Mapping, Optional
+from typing import Mapping, Optional, Union
 
 from aiohttp import ClientSession
 
@@ -81,6 +81,46 @@ class _McpHttpTransportBase(ITransport, ABC):
 
         return "".join(texts) or "null"
 
+    def _convert_parameter_schema(
+        self, name: str, schema: dict, required_fields: list[str]
+    ) -> ParameterSchema:
+        """Recursively converts a JSON Schema node to a ParameterSchema."""
+        param_type = schema.get("type", "string")
+        description = schema.get("description", "")
+
+        # MCP strictly requires standard JSON Schema formatting:
+        # https://modelcontextprotocol.io/specification/2025-11-25/server/tools#tool
+        # This dictates using `items` for array types (https://json-schema.org/understanding-json-schema/reference/array#items)
+        # and `additionalProperties` for maps (https://json-schema.org/understanding-json-schema/reference/object#additionalproperties).
+        items_schema: Optional[ParameterSchema] = None
+        if param_type == "array" and "items" in schema:
+            items_data = schema["items"]
+
+            # For third-party compatibility, skip strict typing if 'items' is a list (Draft 7 tuple validation).
+            # Missing 'items' keys default natively to generic lists (list[Any]).
+            if isinstance(items_data, dict):
+                items_schema = self._convert_parameter_schema("", items_data, [])
+
+        additional_properties: Optional[Union[AdditionalPropertiesSchema, bool]] = None
+        if param_type == "object":
+            add_props = schema.get("additionalProperties")
+            if isinstance(add_props, dict) and "type" in add_props:
+                additional_properties = AdditionalPropertiesSchema(
+                    type=add_props["type"]
+                )
+            elif isinstance(add_props, bool):
+                additional_properties = add_props
+
+        return ParameterSchema(
+            name=name,
+            type=param_type,
+            description=description,
+            required=name in required_fields if name else True,
+            items=items_schema,
+            additionalProperties=additional_properties,
+            # Auth is handled by _convert_tool_schema
+        )
+
     def _convert_tool_schema(self, tool_data: dict) -> ToolSchema:
         """
         Safely converts the raw tool dictionary from the server into a ToolSchema object,
@@ -106,28 +146,12 @@ class _McpHttpTransportBase(ITransport, ABC):
         required = input_schema.get("required", [])
 
         for name, schema in properties.items():
-            additional_props = schema.get("additionalProperties")
-            if isinstance(additional_props, dict):
-                additional_props = AdditionalPropertiesSchema(
-                    type=additional_props["type"]
-                )
-            else:
-                additional_props = True
+            param_schema = self._convert_parameter_schema(name, schema, required)
 
             if param_auth and name in param_auth:
-                auth_sources = param_auth[name]
-            else:
-                auth_sources = None
-            parameters.append(
-                ParameterSchema(
-                    name=name,
-                    type=schema["type"],
-                    description=schema.get("description", ""),
-                    required=name in required,
-                    additionalProperties=additional_props,
-                    authSources=auth_sources,
-                )
-            )
+                param_schema.authSources = param_auth[name]
+
+            parameters.append(param_schema)
 
         return ToolSchema(
             description=tool_data.get("description") or "",
