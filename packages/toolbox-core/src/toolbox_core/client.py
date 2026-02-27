@@ -68,14 +68,10 @@ class ToolboxClient:
             client.
             protocol: The communication protocol to use.
         """
-        if protocol in [
-            Protocol.MCP_v20250618,
-            Protocol.MCP_v20250326,
-            Protocol.MCP_v20241105,
-        ]:
+        if protocol != Protocol.MCP_LATEST:
             logging.warning(
-                f"A newer version of MCP ({Protocol.MCP_v20251125.value}) is available. "
-                "Please use Protocol.MCP_v20251125 to use the latest features."
+                f"A newer version of MCP ({Protocol.MCP_LATEST.value}) is available. "
+                "Please use Protocol.MCP_LATEST to use the latest features."
             )
 
         match protocol:
