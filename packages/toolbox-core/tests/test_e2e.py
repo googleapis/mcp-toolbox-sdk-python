@@ -28,7 +28,7 @@ from toolbox_core.tool import ToolboxTool
 @pytest_asyncio.fixture(scope="function")
 async def toolbox():
     """Creates a ToolboxClient instance shared by all tests in this module."""
-    toolbox = ToolboxClient("http://localhost:5000", protocol=Protocol.TOOLBOX)
+    toolbox = ToolboxClient("http://localhost:5000", protocol=Protocol.MCP)
     try:
         yield toolbox
     finally:
@@ -166,7 +166,7 @@ class TestAuth:
         auth_tool = tool.add_auth_token_getters({"my-test-auth": lambda: auth_token2})
         with pytest.raises(
             Exception,
-            match="tool invocation not authorized",
+            match=r"unauthorized Tool call: Please make sure you specify correct auth headers",
         ):
             await auth_tool(id="2")
 

@@ -19,9 +19,35 @@ import pytest
 import pytest_asyncio
 from llama_index.core.tools.types import ToolOutput
 from pydantic import ValidationError
+from toolbox_core.itransport import ITransport
 from toolbox_core.protocol import ParameterSchema as CoreParameterSchema
 from toolbox_core.tool import ToolboxTool as ToolboxCoreTool
-from toolbox_core.toolbox_transport import ToolboxTransport
+
+
+class MockTransport(ITransport):
+    def __init__(self, base_url, session=None):
+        self._base_url = base_url
+        self.tool_invoke_mock = AsyncMock()
+        self.tool_get_mock = AsyncMock()
+        self.tools_list_mock = AsyncMock()
+        self.close_mock = AsyncMock()
+
+    @property
+    def base_url(self):
+        return self._base_url
+
+    async def tool_invoke(self, *args, **kwargs):
+        return await self.tool_invoke_mock(*args, **kwargs)
+
+    async def tool_get(self, *args, **kwargs):
+        return await self.tool_get_mock(*args, **kwargs)
+
+    async def tools_list(self, *args, **kwargs):
+        return await self.tools_list_mock(*args, **kwargs)
+
+    async def close(self, *args, **kwargs):
+        return await self.close_mock(*args, **kwargs)
+
 
 from toolbox_llamaindex.async_tools import AsyncToolboxTool
 
@@ -69,7 +95,7 @@ class TestAsyncToolboxTool:
             else:
                 tool_constructor_params.append(p_schema)
 
-        transport = ToolboxTransport(base_url=url, session=session)
+        transport = MockTransport(base_url=url, session=session)
         return ToolboxCoreTool(
             transport=transport,
             name=name,
@@ -85,48 +111,42 @@ class TestAsyncToolboxTool:
         )
 
     @pytest_asyncio.fixture
-    @patch("aiohttp.ClientSession")
-    async def toolbox_tool(self, MockClientSession, tool_schema_dict):
-        mock_session = MockClientSession.return_value
-        mock_session.post.return_value.__aenter__.return_value.json = AsyncMock(
-            return_value={"result": "test-result"}
-        )
-        mock_session.post.return_value.__aenter__.return_value.ok = True
-
+    async def toolbox_tool(self, tool_schema_dict):
         core_tool_instance = self._create_core_tool_from_dict(
-            session=mock_session,
+            session=None,
             name="test_tool",
             schema_dict=tool_schema_dict,
             url="http://test_url",
+        )
+        core_tool_instance._ToolboxTool__transport.tool_invoke_mock.return_value = (
+            "test-result"
         )
         tool = AsyncToolboxTool(core_tool=core_tool_instance)
         return tool
 
     @pytest_asyncio.fixture
-    @patch("aiohttp.ClientSession")
-    async def auth_toolbox_tool(self, MockClientSession, auth_tool_schema_dict):
-        mock_session = MockClientSession.return_value
-        mock_session.post.return_value.__aenter__.return_value.json = AsyncMock(
-            return_value={"result": "test-result"}
-        )
-        mock_session.post.return_value.__aenter__.return_value.ok = True
+    async def auth_toolbox_tool(self, auth_tool_schema_dict):
         core_tool_instance = self._create_core_tool_from_dict(
-            session=mock_session,
+            session=None,
             name="test_tool",
             schema_dict=auth_tool_schema_dict,
             url="https://test-url",
         )
+        core_tool_instance._ToolboxTool__transport.tool_invoke_mock.return_value = (
+            "test-result"
+        )
         tool = AsyncToolboxTool(core_tool=core_tool_instance)
         return tool
 
-    @patch("aiohttp.ClientSession")
-    async def test_toolbox_tool_init(self, MockClientSession, tool_schema_dict):
-        mock_session = MockClientSession.return_value
+    async def test_toolbox_tool_init(self, tool_schema_dict):
         core_tool_instance = self._create_core_tool_from_dict(
-            session=mock_session,
+            session=None,
             name="test_tool",
             schema_dict=tool_schema_dict,
             url="https://test-url",
+        )
+        core_tool_instance._ToolboxTool__transport.tool_invoke_mock.return_value = (
+            "test-result"
         )
         tool = AsyncToolboxTool(core_tool=core_tool_instance)
         assert tool.metadata.name == "test_tool"
@@ -253,11 +273,9 @@ class TestAsyncToolboxTool:
         )
 
         core_tool = toolbox_tool._AsyncToolboxTool__core_tool
-        session = core_tool._ToolboxTool__transport._ToolboxTransport__session
-        session.post.assert_called_once_with(
-            "http://test_url/api/tool/test_tool/invoke",
-            json={"param1": "test-value", "param2": 123},
-            headers={},
+        transport = core_tool._ToolboxTool__transport
+        transport.tool_invoke_mock.assert_awaited_once_with(
+            "test_tool", {"param1": "test-value", "param2": 123}, {}
         )
 
     @pytest.mark.parametrize(
@@ -279,11 +297,9 @@ class TestAsyncToolboxTool:
             raw_output="test-result",
         )
         core_tool = tool._AsyncToolboxTool__core_tool
-        session = core_tool._ToolboxTool__transport._ToolboxTransport__session
-        session.post.assert_called_once_with(
-            "http://test_url/api/tool/test_tool/invoke",
-            json={"param1": expected_value, "param2": 123},
-            headers={},
+        transport = core_tool._ToolboxTool__transport
+        transport.tool_invoke_mock.assert_awaited_once_with(
+            "test_tool", {"param1": expected_value, "param2": 123}, {}
         )
 
     async def test_toolbox_tool_call_with_auth_tokens(self, auth_toolbox_tool):
@@ -299,11 +315,9 @@ class TestAsyncToolboxTool:
         )
 
         core_tool = tool._AsyncToolboxTool__core_tool
-        session = core_tool._ToolboxTool__transport._ToolboxTransport__session
-        session.post.assert_called_once_with(
-            "https://test-url/api/tool/test_tool/invoke",
-            json={"param2": 123},
-            headers={"test-auth-source_token": "test-token"},
+        transport = core_tool._ToolboxTool__transport
+        transport.tool_invoke_mock.assert_awaited_once_with(
+            "test_tool", {"param2": 123}, {"test-auth-source_token": "test-token"}
         )
 
     async def test_toolbox_tool_call_with_empty_input(self, toolbox_tool):

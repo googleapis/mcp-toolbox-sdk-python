@@ -25,14 +25,39 @@ from aiohttp import ClientSession
 from aioresponses import aioresponses
 from pydantic import ValidationError
 
+from toolbox_core.itransport import ITransport
 from toolbox_core.protocol import ParameterSchema
 from toolbox_core.tool import ToolboxTool
-from toolbox_core.toolbox_transport import ToolboxTransport
 from toolbox_core.utils import create_func_docstring, resolve_value
 
 TEST_BASE_URL = "http://toolbox.example.com"
 HTTPS_BASE_URL = "https://toolbox.example.com"
 TEST_TOOL_NAME = "sample_tool"
+
+
+class MockTransport(ITransport):
+    def __init__(self, base_url, session=None):
+        self._base_url = base_url
+        self.tool_invoke_mock = AsyncMock()
+        self.tool_get_mock = AsyncMock()
+        self.tools_list_mock = AsyncMock()
+        self.close_mock = AsyncMock()
+
+    @property
+    def base_url(self):
+        return self._base_url
+
+    async def tool_invoke(self, *args, **kwargs):
+        return await self.tool_invoke_mock(*args, **kwargs)
+
+    async def tool_get(self, *args, **kwargs):
+        return await self.tool_get_mock(*args, **kwargs)
+
+    async def tools_list(self, *args, **kwargs):
+        return await self.tools_list_mock(*args, **kwargs)
+
+    async def close(self, *args, **kwargs):
+        return await self.close_mock(*args, **kwargs)
 
 
 @pytest.fixture
@@ -112,7 +137,7 @@ def toolbox_tool(
     sample_tool_description: str,
 ) -> ToolboxTool:
     """Fixture for a ToolboxTool instance with common test setup."""
-    transport = ToolboxTransport(TEST_BASE_URL, http_session)
+    transport = MockTransport(TEST_BASE_URL)
     return ToolboxTool(
         transport=transport,
         name=TEST_TOOL_NAME,
@@ -229,36 +254,35 @@ async def test_tool_creation_callable_and_run(
     mock_server_response_body = {"result": "Processed: hello world (5 times)"}
     expected_tool_result = mock_server_response_body["result"]
 
-    with aioresponses() as m:
-        m.post(invoke_url, status=200, payload=mock_server_response_body)
-        transport = ToolboxTransport(base_url, http_session)
+    transport = MockTransport(base_url)
+    transport.tool_invoke_mock.return_value = mock_server_response_body["result"]
 
-        tool_instance = ToolboxTool(
-            transport=transport,
-            name=tool_name,
-            description=sample_tool_description,
-            params=sample_tool_params,
-            required_authn_params={},
-            required_authz_tokens=[],
-            auth_service_token_getters={},
-            bound_params={},
-            client_headers={},
-        )
+    tool_instance = ToolboxTool(
+        transport=transport,
+        name=tool_name,
+        description=sample_tool_description,
+        params=sample_tool_params,
+        required_authn_params={},
+        required_authz_tokens=[],
+        auth_service_token_getters={},
+        bound_params={},
+        client_headers={},
+    )
 
-        assert callable(tool_instance), "ToolboxTool instance should be callable"
+    assert callable(tool_instance), "ToolboxTool instance should be callable"
 
-        assert "message" in tool_instance.__signature__.parameters
-        assert "count" in tool_instance.__signature__.parameters
-        assert tool_instance.__signature__.parameters["message"].annotation == str
-        assert tool_instance.__signature__.parameters["count"].annotation == int
+    assert "message" in tool_instance.__signature__.parameters
+    assert "count" in tool_instance.__signature__.parameters
+    assert tool_instance.__signature__.parameters["message"].annotation == str
+    assert tool_instance.__signature__.parameters["count"].annotation == int
 
-        actual_result = await tool_instance("hello world", 5)
+    actual_result = await tool_instance("hello world", 5)
 
-        assert actual_result == expected_tool_result
+    assert actual_result == expected_tool_result
 
-        m.assert_called_once_with(
-            invoke_url, method="POST", json=expected_payload, headers={}
-        )
+    transport.tool_invoke_mock.assert_awaited_once_with(
+        TEST_TOOL_NAME, expected_payload, {}
+    )
 
 
 @pytest.mark.asyncio
@@ -275,29 +299,28 @@ async def test_tool_run_with_pydantic_validation_error(
     base_url = HTTPS_BASE_URL
     invoke_url = f"{base_url}/api/tool/{tool_name}/invoke"
 
-    with aioresponses() as m:
-        m.post(invoke_url, status=200, payload={"result": "Should not be called"})
-        transport = ToolboxTransport(base_url, http_session)
+    transport = MockTransport(base_url)
+    transport.tool_invoke_mock.side_effect = Exception("Should not be called")
 
-        tool_instance = ToolboxTool(
-            transport=transport,
-            name=tool_name,
-            description=sample_tool_description,
-            params=sample_tool_params,
-            required_authn_params={},
-            required_authz_tokens=[],
-            auth_service_token_getters={},
-            bound_params={},
-            client_headers={},
-        )
+    tool_instance = ToolboxTool(
+        transport=transport,
+        name=tool_name,
+        description=sample_tool_description,
+        params=sample_tool_params,
+        required_authn_params={},
+        required_authz_tokens=[],
+        auth_service_token_getters={},
+        bound_params={},
+        client_headers={},
+    )
 
-        assert callable(tool_instance)
+    assert callable(tool_instance)
 
-        expected_pattern = r"1 validation error for sample_tool\ncount\n  Input should be a valid integer, unable to parse string as an integer \[\s*type=int_parsing,\s*input_value='not-a-number',\s*input_type=str\s*\]*"
-        with pytest.raises(ValidationError, match=expected_pattern):
-            await tool_instance(message="hello", count="not-a-number")
+    expected_pattern = r"1 validation error for sample_tool\ncount\n  Input should be a valid integer, unable to parse string as an integer \[\s*type=int_parsing,\s*input_value='not-a-number',\s*input_type=str\s*\]*"
+    with pytest.raises(ValidationError, match=expected_pattern):
+        await tool_instance(message="hello", count="not-a-number")
 
-        m.assert_not_called()
+    transport.tool_invoke_mock.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -368,7 +391,7 @@ def test_tool_init_basic(http_session, sample_tool_params, sample_tool_descripti
     """Tests basic tool initialization without headers or auth."""
     with catch_warnings(record=True) as record:
         simplefilter("always")
-        transport = ToolboxTransport(HTTPS_BASE_URL, http_session)
+        transport = MockTransport(HTTPS_BASE_URL)
 
         tool_instance = ToolboxTool(
             transport=transport,
@@ -398,7 +421,7 @@ def test_tool_init_with_client_headers(
     http_session, sample_tool_params, sample_tool_description, static_client_header
 ):
     """Tests tool initialization *with* client headers."""
-    transport = ToolboxTransport(HTTPS_BASE_URL, http_session)
+    transport = MockTransport(HTTPS_BASE_URL)
     tool_instance = ToolboxTool(
         transport=transport,
         name=TEST_TOOL_NAME,
@@ -422,7 +445,7 @@ def test_tool_add_auth_token_getters_conflict_with_existing_client_header(
     Tests ValueError when add_auth_token_getters introduces an auth service
     whose token name conflicts with an existing client header.
     """
-    transport = ToolboxTransport(HTTPS_BASE_URL, http_session)
+    transport = MockTransport(HTTPS_BASE_URL)
     tool_instance = ToolboxTool(
         transport=transport,
         name="tool_with_client_header",
@@ -458,7 +481,7 @@ async def test_auth_token_overrides_client_header(
     Tests that an auth token getter's value overrides a client header
     with the same name during the actual tool call.
     """
-    transport = ToolboxTransport(HTTPS_BASE_URL, http_session)
+    transport = MockTransport(HTTPS_BASE_URL)
     tool_instance = ToolboxTool(
         transport=transport,
         name=TEST_TOOL_NAME,
@@ -480,20 +503,17 @@ async def test_auth_token_overrides_client_header(
     input_args = {"message": "test", "count": 1}
     mock_server_response = {"result": "Success"}
 
-    with aioresponses() as m:
-        m.post(invoke_url, status=200, payload=mock_server_response)
-        # Call the tool
-        await tool_instance(**input_args)
+    tool_instance._ToolboxTool__transport.tool_invoke_mock.return_value = "Success"
+    await tool_instance(**input_args)
 
-        m.assert_called_once_with(
-            invoke_url,
-            method="POST",
-            json=input_args,
-            headers={
-                "test-auth_token": "value-from-auth-getter-123",
-                "X-Another-Header": "another-value",
-            },
-        )
+    tool_instance._ToolboxTool__transport.tool_invoke_mock.assert_awaited_once_with(
+        tool_name,
+        input_args,
+        {
+            "test-auth_token": "value-from-auth-getter-123",
+            "X-Another-Header": "another-value",
+        },
+    )
 
 
 def test_add_auth_token_getter_unused_token(
@@ -506,7 +526,7 @@ def test_add_auth_token_getter_unused_token(
     Tests ValueError when add_auth_token_getters is called with a getter for
     an unused authentication service.
     """
-    transport = ToolboxTransport(HTTPS_BASE_URL, http_session)
+    transport = MockTransport(HTTPS_BASE_URL)
     tool_instance = ToolboxTool(
         transport=transport,
         name=TEST_TOOL_NAME,
@@ -540,7 +560,7 @@ async def test_bind_param_success(
     """
     Tests successfully binding a single parameter with a static value using bind_param.
     """
-    transport = ToolboxTransport(HTTPS_BASE_URL, http_session)
+    transport = MockTransport(HTTPS_BASE_URL)
     original_tool = ToolboxTool(
         transport=transport,
         name=TEST_TOOL_NAME,
@@ -566,15 +586,14 @@ async def test_bind_param_success(
 
     # Test invocation of the new tool
     invoke_url = f"{HTTPS_BASE_URL}/api/tool/{TEST_TOOL_NAME}/invoke"
-    with aioresponses() as m:
-        m.post(invoke_url, status=200, payload={"result": "Success"})
-        await bound_tool(message="hello")
+    original_tool._ToolboxTool__transport.tool_invoke_mock.return_value = "Success"
+    await bound_tool(message="hello")
 
-        # Verify the payload includes both the argument and the bound parameter
-        expected_payload = {"message": "hello", "count": 100}
-        m.assert_called_once_with(
-            invoke_url, method="POST", json=expected_payload, headers={}
-        )
+    # Verify the payload includes both the argument and the bound parameter
+    expected_payload = {"message": "hello", "count": 100}
+    transport.tool_invoke_mock.assert_awaited_once_with(
+        TEST_TOOL_NAME, expected_payload, {}
+    )
 
 
 @pytest.mark.asyncio
@@ -586,7 +605,7 @@ async def test_bind_params_success_with_callable(
     """
     Tests successfully binding multiple parameters, including one with a callable.
     """
-    transport = ToolboxTransport(HTTPS_BASE_URL, http_session)
+    transport = MockTransport(HTTPS_BASE_URL)
     tool = ToolboxTool(
         transport=transport,
         name=TEST_TOOL_NAME,
@@ -608,14 +627,13 @@ async def test_bind_params_success_with_callable(
 
     # Test invocation
     invoke_url = f"{HTTPS_BASE_URL}/api/tool/{TEST_TOOL_NAME}/invoke"
-    with aioresponses() as m:
-        m.post(invoke_url, status=200, payload={"result": "Success"})
-        await bound_tool()  # Call with no arguments
+    tool._ToolboxTool__transport.tool_invoke_mock.return_value = "Success"
+    await bound_tool()
 
-        expected_payload = {"message": "from-callable", "count": 99}
-        m.assert_called_once_with(
-            invoke_url, method="POST", json=expected_payload, headers={}
-        )
+    expected_payload = {"message": "from-callable", "count": 99}
+    transport.tool_invoke_mock.assert_awaited_once_with(
+        TEST_TOOL_NAME, expected_payload, {}
+    )
 
 
 def test_bind_param_invalid_parameter_name(toolbox_tool: ToolboxTool):
@@ -649,7 +667,7 @@ async def test_bind_param_chaining(
     """
     Tests that bind_param calls can be chained to bind multiple parameters sequentially.
     """
-    transport = ToolboxTransport(HTTPS_BASE_URL, http_session)
+    transport = MockTransport(HTTPS_BASE_URL)
     tool = ToolboxTool(
         transport=transport,
         name=TEST_TOOL_NAME,
@@ -675,16 +693,12 @@ async def test_bind_param_chaining(
 
     # Test invocation
     invoke_url = f"{HTTPS_BASE_URL}/api/tool/{TEST_TOOL_NAME}/invoke"
-    with aioresponses() as m:
-        m.post(invoke_url, status=200, payload={"result": "Success"})
-        await fully_bound_tool()
+    tool._ToolboxTool__transport.tool_invoke_mock.return_value = "Success"
+    await fully_bound_tool()
 
-        m.assert_called_once_with(
-            invoke_url,
-            method="POST",
-            json={"count": 42, "message": "chained-call"},
-            headers={},
-        )
+    tool._ToolboxTool__transport.tool_invoke_mock.assert_awaited_once_with(
+        TEST_TOOL_NAME, {"count": 42, "message": "chained-call"}, {}
+    )
 
 
 @pytest.mark.asyncio
@@ -715,7 +729,7 @@ async def test_tool_call_http_warning(
     url = f"{base_url}/api/tool/{TEST_TOOL_NAME}/invoke"
     args = {"param1": "value1"}
     response_payload = {"result": "success"}
-    transport = ToolboxTransport(base_url, http_session)
+    transport = MockTransport(base_url)
 
     tool = ToolboxTool(
         transport=transport,
@@ -731,22 +745,20 @@ async def test_tool_call_http_warning(
         client_headers=headers if headers is not None else {},
     )
 
-    with aioresponses() as m:
-        m.post(url, status=200, payload=response_payload)
+    transport.tool_invoke_mock.return_value = "success"
+    if should_warn:
+        with pytest.warns(
+            UserWarning,
+            match="This connection is using HTTP. To prevent credential exposure, please ensure all communication is sent over HTTPS.",
+        ):
+            await tool(param1="value1")
+    else:
+        # Check no warnings fired
+        with catch_warnings(record=True) as record:
+            simplefilter("always")
+            await tool(param1="value1")
 
-        if should_warn:
-            with pytest.warns(
-                UserWarning,
-                match="This connection is using HTTP. To prevent credential exposure, please ensure all communication is sent over HTTPS.",
-            ):
-                await tool(param1="value1")
-        else:
-            # Check no warnings fired
-            with catch_warnings(record=True) as record:
-                simplefilter("always")
-                await tool(param1="value1")
-
-            warning_messages = [str(w.message) for w in record]
-            assert not any(
-                "This connection is using HTTP" in msg for msg in warning_messages
-            )
+        warning_messages = [str(w.message) for w in record]
+        assert not any(
+            "This connection is using HTTP" in msg for msg in warning_messages
+        )

@@ -14,8 +14,6 @@
 
 
 import os
-from inspect import Parameter, signature
-from typing import Any, Optional
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -103,12 +101,12 @@ class TestToolboxAdkIntegration:
             await toolset.close()
 
     async def test_load_toolset_with_explicit_protocol(self):
-        """Test initializing toolset with specific protocol (TOOLBOX)."""
+        """Test initializing toolset with specific protocol (MCP_v20251125)."""
         toolset = ToolboxToolset(
             server_url="http://localhost:5000",
             toolset_name="my-toolset",
             credentials=CredentialStrategy.toolbox_identity(),
-            protocol=Protocol.TOOLBOX,
+            protocol=Protocol.MCP_v20251125,
         )
 
         try:

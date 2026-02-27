@@ -21,12 +21,12 @@ from pydantic import BaseModel
 class Protocol(str, Enum):
     """Defines how the client should choose between communication protocols."""
 
-    TOOLBOX = "toolbox"
     MCP_v20250618 = "2025-06-18"
     MCP_v20250326 = "2025-03-26"
     MCP_v20241105 = "2024-11-05"
     MCP_v20251125 = "2025-11-25"
     MCP = MCP_v20250618
+    MCP_LATEST = MCP_v20251125
 
     @staticmethod
     def get_supported_mcp_versions() -> list[str]:
