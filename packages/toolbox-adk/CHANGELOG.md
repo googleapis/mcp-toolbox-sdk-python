@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.7.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-adk-v0.6.1...toolbox-adk-v0.7.0) (2026-02-27)
+
+
+### ⚠ BREAKING CHANGES
+
+* remove legacy Native Toolbox HTTP transport ([#566](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/566))
+
+### Features
+
+* remove legacy Native Toolbox HTTP transport ([#566](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/566)) ([6a55554](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/6a55554a1c53030fd25b6a6de44ea9603b5201a3))
+
 ## [0.6.1](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-adk-v0.6.0...toolbox-adk-v0.6.1) (2026-02-27)
 
 
