@@ -2,11 +2,13 @@
 
 ## [0.5.10](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-langchain-v0.5.9...toolbox-langchain-v0.5.10) (2026-02-27)
 
+### Bug Fixes
 
-### Miscellaneous Chores
+* **core:** Recursive schema parsing for array items with MCP transport ([#561](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/561)) ([09eb555](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/09eb5554cf265a608e55b559b185b686c88c34aa))
 
-* **deps:** update dependency isort to v8 ([#562](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/562)) ([985cff3](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/985cff3a519408619aa104c616eb30bbd225f595))
-* **deps:** update dependency toolbox-core to v0.5.10 ([#573](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/573)) ([ab3344a](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/ab3344a22bd83fa1ccd5fdfcf02e17ec6be8322c))
+
+### Dcoumentation
+
 * updated gemini models in docs ([#556](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/556)) ([03dc7e6](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/03dc7e6226abe935f634c720519850af9a2a019f))
 
 ## [0.5.9](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-langchain-v0.5.8...toolbox-langchain-v0.5.9) (2026-02-16)
