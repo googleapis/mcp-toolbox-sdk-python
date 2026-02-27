@@ -7,7 +7,7 @@
 * **core:** Recursive schema parsing for array items with MCP transport ([#561](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/561)) ([09eb555](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/09eb5554cf265a608e55b559b185b686c88c34aa))
 
 
-### Dcoumentation
+### Documentation
 
 * updated gemini models in docs ([#556](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/556)) ([03dc7e6](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/03dc7e6226abe935f634c720519850af9a2a019f))
 
