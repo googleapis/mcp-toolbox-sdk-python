@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.1](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-adk-v0.6.0...toolbox-adk-v0.6.1) (2026-02-27)
+
+
+### Bug Fixes
+
+* **core:** Recursive schema parsing for array items with MCP transport ([#561](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/561)) ([09eb555](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/09eb5554cf265a608e55b559b185b686c88c34aa))
+
 ## [0.6.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-adk-v0.5.8...toolbox-adk-v0.6.0) (2026-02-16)
 
 
