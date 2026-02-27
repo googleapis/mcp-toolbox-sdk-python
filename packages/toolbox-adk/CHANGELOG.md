@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.1](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-adk-v0.6.0...toolbox-adk-v0.6.1) (2026-02-27)
+
+
+### Miscellaneous Chores
+
+* **deps:** update dependency isort to v8 ([#562](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/562)) ([985cff3](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/985cff3a519408619aa104c616eb30bbd225f595))
+* **deps:** update dependency toolbox-core to v0.5.10 ([#573](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/573)) ([ab3344a](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/ab3344a22bd83fa1ccd5fdfcf02e17ec6be8322c))
+
 ## [0.6.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-adk-v0.5.8...toolbox-adk-v0.6.0) (2026-02-16)
 
 
