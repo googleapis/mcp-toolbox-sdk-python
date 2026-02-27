@@ -60,6 +60,31 @@ class MockTransport(ITransport):
         return await self.close_mock(*args, **kwargs)
 
 
+class MockTransport(ITransport):
+    def __init__(self, base_url, session=None):
+        self._base_url = base_url
+        self.tool_invoke_mock = AsyncMock()
+        self.tool_get_mock = AsyncMock()
+        self.tools_list_mock = AsyncMock()
+        self.close_mock = AsyncMock()
+
+    @property
+    def base_url(self):
+        return self._base_url
+
+    async def tool_invoke(self, *args, **kwargs):
+        return await self.tool_invoke_mock(*args, **kwargs)
+
+    async def tool_get(self, *args, **kwargs):
+        return await self.tool_get_mock(*args, **kwargs)
+
+    async def tools_list(self, *args, **kwargs):
+        return await self.tools_list_mock(*args, **kwargs)
+
+    async def close(self, *args, **kwargs):
+        return await self.close_mock(*args, **kwargs)
+
+
 @pytest.fixture
 def sample_tool_params() -> list[ParameterSchema]:
     """Parameters for the sample tool."""
