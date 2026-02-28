@@ -45,7 +45,7 @@ Changelog = "https://github.com/googleapis/mcp-toolbox-sdk-python/blob/main/pack
 [project.optional-dependencies]
 test = [
     "black[jupyter]==26.1.0",
-    "isort==8.0.0",
+    "isort==8.0.1",
     "mypy==1.19.1",
     "pytest==9.0.2",
     "pytest-aioresponses==0.3.0",
@@ -53,7 +53,7 @@ test = [
     "pytest-cov==7.0.0",
     "pytest-mock==3.15.1",
     "google-cloud-secret-manager==2.26.0",
-    "google-cloud-storage==3.7.0",
+    "google-cloud-storage==3.9.0",
     "aioresponses==0.7.8"
 ]
 [build-system]
