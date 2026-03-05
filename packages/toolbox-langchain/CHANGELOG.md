@@ -12,10 +12,6 @@
 * remove legacy Native Toolbox HTTP transport ([#566](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/566)) ([6a55554](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/6a55554a1c53030fd25b6a6de44ea9603b5201a3))
 
 
-### Miscellaneous Chores
-
-* **deps:** update mcp toolbox server version in integration tests to v0.28.0 to v0.28.0 ([#578](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/578)) ([01196ad](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/01196ad59c49b6416e95af2e5359a7edf174d83b))
-
 ## [0.5.10](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-langchain-v0.5.9...toolbox-langchain-v0.5.10) (2026-02-27)
 
 ### Bug Fixes
