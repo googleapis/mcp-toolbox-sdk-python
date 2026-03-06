@@ -296,6 +296,8 @@ class ToolboxTool(BaseTool):
                     }
 
         if self._adk_token_getters:
+            # Pre-filter toolset getters to avoid unused-token errors from the core tool.
+            # This deferred loop also enables dynamic 1-arity `tool_context` injection.
             needed_services = set(
                 list(self._core_tool._required_authn_params.values())
                 + list(self._core_tool._required_authz_tokens)
