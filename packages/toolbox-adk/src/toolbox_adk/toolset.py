@@ -23,6 +23,7 @@ from typing_extensions import override
 from .client import ToolboxClient
 from .credentials import CredentialConfig
 from .tool import ToolboxTool
+from toolbox_core.utils import validate_unused_requirements
 
 
 class ToolboxToolset(BaseToolset):
@@ -118,6 +119,29 @@ class ToolboxToolset(BaseToolset):
                 bound_params=self.__bound_params or {},
             )
             tools.extend(core_tools)
+
+        # 4. Strictly validate unused toolset auth token getters using core logic
+        if self.__auth_token_getters:
+            overall_used_auth_keys = set()
+            for t in tools:
+                for reqs in t._required_authn_params.values():
+                    overall_used_auth_keys.update(reqs)
+                overall_used_auth_keys.update(t._required_authz_tokens)
+
+            # Generate intuitive name for the error string if a specific toolset wasn't used
+            validation_name = self.__toolset_name
+            if not validation_name:
+                validation_name = ", ".join(self.__tool_names) if self.__tool_names else "default"
+
+            validate_unused_requirements(
+                provided_auth_keys=set(self.__auth_token_getters.keys()),
+                provided_bound_keys=set(),
+                used_auth_keys=overall_used_auth_keys,
+                used_bound_keys=set(),
+                name=validation_name,
+                is_toolset=True,
+                target_type="list of tools" if not self.__toolset_name else None,
+            )
 
         # Wrap all core tools in ToolboxTool
         return [
