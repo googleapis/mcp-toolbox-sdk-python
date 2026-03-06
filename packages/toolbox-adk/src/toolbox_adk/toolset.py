@@ -41,7 +41,15 @@ class ToolboxToolset(BaseToolset):
         ] = None,
         bound_params: Optional[Mapping[str, Union[Callable[[], Any], Any]]] = None,
         auth_token_getters: Optional[
-            Mapping[str, Union[Callable[[], str], Callable[[], Awaitable[str]]]]
+            Mapping[
+                str,
+                Union[
+                    Callable[[], str],
+                    Callable[[], Awaitable[str]],
+                    Callable[[ToolContext], str],
+                    Callable[[ToolContext], Awaitable[str]],
+                ],
+            ]
         ] = None,
         **kwargs: Any,
     ):
@@ -91,7 +99,6 @@ class ToolboxToolset(BaseToolset):
             core_tools = await self.client.load_toolset(
                 self.__toolset_name,
                 bound_params=self.__bound_params or {},
-                auth_token_getters=self.__auth_token_getters or {},
             )
             tools.extend(core_tools)
 
@@ -101,7 +108,6 @@ class ToolboxToolset(BaseToolset):
                 core_tool = await self.client.load_tool(
                     name,
                     bound_params=self.__bound_params or {},
-                    auth_token_getters=self.__auth_token_getters or {},
                 )
                 tools.append(core_tool)
 
@@ -110,7 +116,6 @@ class ToolboxToolset(BaseToolset):
             core_tools = await self.client.load_toolset(
                 None,
                 bound_params=self.__bound_params or {},
-                auth_token_getters=self.__auth_token_getters or {},
             )
             tools.extend(core_tools)
 
@@ -119,6 +124,7 @@ class ToolboxToolset(BaseToolset):
             ToolboxTool(
                 core_tool=t,
                 auth_config=self.client.credential_config,
+                adk_token_getters=self.__auth_token_getters,
             )
             for t in tools
         ]

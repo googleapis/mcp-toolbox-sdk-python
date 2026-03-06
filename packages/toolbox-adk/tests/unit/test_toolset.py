@@ -49,12 +49,8 @@ class TestToolboxToolset:
         assert isinstance(tools[0], ToolboxTool)
         assert isinstance(tools[1], ToolboxTool)
 
-        mock_client.load_toolset.assert_awaited_with(
-            "set1", bound_params={"p": 1}, auth_token_getters={}
-        )
-        mock_client.load_tool.assert_awaited_with(
-            "toolA", bound_params={"p": 1}, auth_token_getters={}
-        )
+        mock_client.load_toolset.assert_awaited_with("set1", bound_params={"p": 1})
+        mock_client.load_tool.assert_awaited_with("toolA", bound_params={"p": 1})
 
     @patch("toolbox_adk.toolset.ToolboxClient")
     @pytest.mark.asyncio
@@ -75,9 +71,8 @@ class TestToolboxToolset:
         tools = await toolset.get_tools()
 
         assert len(tools) == 1
-        mock_client.load_tool.assert_awaited_with(
-            "toolA", bound_params={}, auth_token_getters=auth_getters
-        )
+        mock_client.load_tool.assert_awaited_with("toolA", bound_params={})
+        assert tools[0]._adk_token_getters == auth_getters
 
     @patch("toolbox_adk.toolset.ToolboxClient")
     @pytest.mark.asyncio

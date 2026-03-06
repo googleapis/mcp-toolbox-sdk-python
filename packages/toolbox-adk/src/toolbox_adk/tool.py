@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import inspect
 import logging
 from typing import Any, Awaitable, Callable, Dict, Optional
 
@@ -69,11 +70,13 @@ class ToolboxTool(BaseTool):
         self,
         core_tool: CoreToolboxTool,
         auth_config: Optional[CredentialConfig] = None,
+        adk_token_getters: Optional[Mapping[str, Any]] = None,
     ):
         """
         Args:
             core_tool: The underlying toolbox_core.py tool instance.
             auth_config: Credential configuration to handle interactive flows.
+            adk_token_getters: Tool-specific auth token getters.
         """
         # We act as a proxy.
         # We need to extract metadata from the core tool to satisfy BaseTool's contract.
@@ -96,6 +99,7 @@ class ToolboxTool(BaseTool):
         )
         self._core_tool = core_tool
         self._auth_config = auth_config
+        self._adk_token_getters = adk_token_getters or {}
 
     def _param_type_to_schema_type(self, param_type: str) -> Type:
         type_map = {
@@ -286,11 +290,29 @@ class ToolboxTool(BaseTool):
                         "Falling back to request_credential.",
                         exc_info=True,
                     )
-                    # Fallback to request logic
                     tool_context.request_credential(auth_config_adk)
                     return {
                         "error": f"OAuth2 Credentials required for {self.name}. A consent link has been generated for the user. Do NOT attempt to run this tool again until the user confirms they have logged in."
                     }
+
+        if self._adk_token_getters:
+            needed_services = set(
+                list(self._core_tool._required_authn_params.values())
+                + list(self._core_tool._required_authz_tokens)
+            )
+
+            for service, getter in self._adk_token_getters.items():
+                if service in needed_services:
+                    sig = inspect.signature(getter)
+
+                    if len(sig.parameters) == 1:
+                        bound_getter = lambda t=getter, ctx=tool_context: t(ctx)
+                    else:
+                        bound_getter = getter
+
+                    self._core_tool = self._core_tool.add_auth_token_getter(
+                        service, bound_getter
+                    )
 
         result: Optional[Any] = None
         error: Optional[Exception] = None
@@ -314,4 +336,5 @@ class ToolboxTool(BaseTool):
         return ToolboxTool(
             core_tool=new_core_tool,
             auth_config=self._auth_config,
+            adk_token_getters=self._adk_token_getters,
         )

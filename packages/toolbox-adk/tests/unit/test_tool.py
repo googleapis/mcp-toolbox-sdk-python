@@ -77,6 +77,48 @@ class TestToolboxTool:
         mock_core.bind_params.assert_called_with({"a": 1})
 
     @pytest.mark.asyncio
+    async def test_dynamic_adk_token_getters(self):
+        core_tool = AsyncMock()
+        core_tool.__name__ = "mock"
+        core_tool.__doc__ = "mock doc"
+        core_tool._required_authn_params = {"param1": "service1"}
+        core_tool._required_authz_tokens = ["service2"]
+        core_tool.add_auth_token_getter = MagicMock(return_value=core_tool)
+
+        def getter1():
+            return "token1"
+
+        def getter2(ctx):
+            return ctx.state.get("token2")
+
+        adk_getters = {
+            "service1": getter1,
+            "service2": getter2,
+        }
+
+        tool = ToolboxTool(core_tool, adk_token_getters=adk_getters)
+
+        ctx = MagicMock()
+        ctx.state = {"token2": "dynamic_token2"}
+
+        await tool.run_async({}, ctx)
+
+        assert core_tool.add_auth_token_getter.call_count == 2
+
+        args1 = core_tool.add_auth_token_getter.call_args_list[0][0]
+        args2 = core_tool.add_auth_token_getter.call_args_list[1][0]
+
+        # Because we iterate over items(), order might be dependent.
+        # Check that both services were processed and bound correctly
+        bound_getters = {args1[0]: args1[1], args2[0]: args2[1]}
+
+        assert "service1" in bound_getters
+        assert bound_getters["service1"]() == "token1"
+
+        assert "service2" in bound_getters
+        assert bound_getters["service2"]() == "dynamic_token2"
+
+    @pytest.mark.asyncio
     async def test_3lo_missing_client_secret(self):
         # Test ValueError when client_id/secret missing
         core_tool = AsyncMock()
