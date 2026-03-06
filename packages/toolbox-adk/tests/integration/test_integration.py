@@ -577,10 +577,13 @@ class TestAuth:
         """Tests that when some tokens are used and some aren't across diverse tools, only the truly unused tokens appear in the error."""
         toolset = ToolboxToolset(
             server_url="http://localhost:5000",
-            tool_names=["get-row-by-id-auth", "search-rows"], # first requires 'my-test-auth', second requires nothing
+            tool_names=[
+                "get-row-by-id-auth",
+                "search-rows",
+            ],  # first requires 'my-test-auth', second requires nothing
             auth_token_getters={
-                "my-test-auth": lambda: auth_token2, 
-                "extra-token": lambda: "fake"
+                "my-test-auth": lambda: auth_token2,
+                "extra-token": lambda: "fake",
             },
             credentials=CredentialStrategy.toolbox_identity(),
         )

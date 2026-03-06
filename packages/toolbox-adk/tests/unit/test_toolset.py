@@ -84,9 +84,21 @@ class TestToolboxToolset:
             ({}, [], True),  # No requirements, token is completely unused
             ({"param1": ["service"]}, [], False),  # authn natively consumes it
             ({}, ["service"], False),  # authz natively consumes it
-            ({"param1": ["other"]}, ["service"], False),  # unused by authn, but authz consumes it
-            ({"param1": ["service"]}, ["other"], False),  # authn consumes it, authz doesn't
-            ({"param1": ["other"]}, ["other"], True),  # Requirements exist, but token is unused by both
+            (
+                {"param1": ["other"]},
+                ["service"],
+                False,
+            ),  # unused by authn, but authz consumes it
+            (
+                {"param1": ["service"]},
+                ["other"],
+                False,
+            ),  # authn consumes it, authz doesn't
+            (
+                {"param1": ["other"]},
+                ["other"],
+                True,
+            ),  # Requirements exist, but token is unused by both
         ],
     )
     async def test_get_tools_auth_validation(
@@ -107,7 +119,8 @@ class TestToolboxToolset:
 
         if should_raise:
             with pytest.raises(
-                ValueError, match="unused auth tokens could not be applied to any tool: service"
+                ValueError,
+                match="unused auth tokens could not be applied to any tool: service",
             ):
                 await toolset.get_tools()
         else:

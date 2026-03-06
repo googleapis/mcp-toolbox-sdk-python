@@ -201,7 +201,9 @@ def validate_unused_requirements(
                     f"unused bound parameters: {', '.join(unused_bound)}"
                 )
 
-        final_target_type = target_type if target_type else ("toolset" if is_toolset else "tool")
+        final_target_type = (
+            target_type if target_type else ("toolset" if is_toolset else "tool")
+        )
         raise ValueError(
             f"Validation failed for {final_target_type} '{name}': {'; '.join(error_messages)}."
         )
