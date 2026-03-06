@@ -18,12 +18,12 @@ from google.adk.agents.readonly_context import ReadonlyContext
 from google.adk.tools.base_tool import BaseTool
 from google.adk.tools.base_toolset import BaseToolset
 from google.adk.tools.tool_context import ToolContext
+from toolbox_core.utils import validate_unused_requirements
 from typing_extensions import override
 
 from .client import ToolboxClient
 from .credentials import CredentialConfig
 from .tool import ToolboxTool
-from toolbox_core.utils import validate_unused_requirements
 
 
 class ToolboxToolset(BaseToolset):
@@ -131,7 +131,9 @@ class ToolboxToolset(BaseToolset):
             # Generate intuitive name for the error string if a specific toolset wasn't used
             validation_name = self.__toolset_name
             if not validation_name:
-                validation_name = ", ".join(self.__tool_names) if self.__tool_names else "default"
+                validation_name = (
+                    ", ".join(self.__tool_names) if self.__tool_names else "default"
+                )
 
             validate_unused_requirements(
                 provided_auth_keys=set(self.__auth_token_getters.keys()),
