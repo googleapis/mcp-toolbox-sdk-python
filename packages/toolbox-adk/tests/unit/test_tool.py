@@ -81,7 +81,7 @@ class TestToolboxTool:
         core_tool = AsyncMock()
         core_tool.__name__ = "mock"
         core_tool.__doc__ = "mock doc"
-        core_tool._required_authn_params = {"param1": "service1"}
+        core_tool._required_authn_params = {"param1": ["service1"]}
         core_tool._required_authz_tokens = ["service2"]
         core_tool.add_auth_token_getter = MagicMock(return_value=core_tool)
 
