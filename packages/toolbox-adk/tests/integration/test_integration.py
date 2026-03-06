@@ -545,7 +545,48 @@ class TestAuth:
         try:
             with pytest.raises(
                 ValueError,
-                match=rf"Validation failed for tool 'get-row-by-id': unused auth tokens: my-test-auth",
+                match=rf"Validation failed for list of tools 'get-row-by-id': unused auth tokens could not be applied to any tool: my-test-auth",
+            ):
+                await toolset.get_tools()
+        finally:
+            await toolset.close()
+
+    async def test_run_multiple_tools_unauth_with_auth(self, auth_token2: str):
+        """Tests running multiple tools that don't require auth, verifying formatting of tool lists."""
+        toolset = ToolboxToolset(
+            server_url="http://localhost:5000",
+            tool_names=["get-row-by-id", "search-rows"],
+            auth_token_getters={"my-test-auth": lambda: auth_token2},
+            credentials=CredentialStrategy.toolbox_identity(),
+        )
+        try:
+            with pytest.raises(
+                ValueError,
+                match=rf"Validation failed for list of tools 'get-row-by-id, search-rows': unused auth tokens could not be applied to any tool: my-test-auth",
+            ):
+                await toolset.get_tools()
+        finally:
+            await toolset.close()
+
+    async def test_run_multiple_tools_partial_auth_usage(self, auth_token2: str):
+        """Tests that when some tokens are used and some aren't across diverse tools, only the truly unused tokens appear in the error."""
+        toolset = ToolboxToolset(
+            server_url="http://localhost:5000",
+            tool_names=[
+                "get-row-by-id-auth",
+                "search-rows",
+            ],  # first requires 'my-test-auth', second requires nothing
+            auth_token_getters={
+                "my-test-auth": lambda: auth_token2,
+                "extra-token": lambda: "fake",
+            },
+            credentials=CredentialStrategy.toolbox_identity(),
+        )
+        try:
+            with pytest.raises(
+                ValueError,
+                # 'my-test-auth' should be cleanly consumed and absent from the final error string.
+                match=r"Validation failed for list of tools 'get-row-by-id-auth, search-rows': unused auth tokens could not be applied to any tool: extra-token",
             ):
                 await toolset.get_tools()
         finally:

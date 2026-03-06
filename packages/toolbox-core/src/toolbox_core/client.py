@@ -30,7 +30,12 @@ from .mcp_transport import (
 )
 from .protocol import Protocol, ToolSchema
 from .tool import ToolboxTool
-from .utils import identify_auth_requirements, resolve_value, warn_if_http_and_headers
+from .utils import (
+    identify_auth_requirements,
+    resolve_value,
+    validate_unused_requirements,
+    warn_if_http_and_headers,
+)
 
 
 class ToolboxClient:
@@ -238,20 +243,14 @@ class ToolboxClient:
         provided_auth_keys = set(auth_token_getters.keys())
         provided_bound_keys = set(bound_params.keys())
 
-        unused_auth = provided_auth_keys - used_auth_keys
-        unused_bound = provided_bound_keys - used_bound_keys
-
-        if unused_auth or unused_bound:
-            error_messages = []
-            if unused_auth:
-                error_messages.append(f"unused auth tokens: {', '.join(unused_auth)}")
-            if unused_bound:
-                error_messages.append(
-                    f"unused bound parameters: {', '.join(unused_bound)}"
-                )
-            raise ValueError(
-                f"Validation failed for tool '{name}': { '; '.join(error_messages) }."
-            )
+        validate_unused_requirements(
+            provided_auth_keys,
+            provided_bound_keys,
+            used_auth_keys,
+            used_bound_keys,
+            name,
+            is_toolset=False,
+        )
 
         return tool
 
@@ -318,41 +317,26 @@ class ToolboxClient:
             tools.append(tool)
 
             if strict:
-                unused_auth = provided_auth_keys - used_auth_keys
-                unused_bound = provided_bound_keys - used_bound_keys
-                if unused_auth or unused_bound:
-                    error_messages = []
-                    if unused_auth:
-                        error_messages.append(
-                            f"unused auth tokens: {', '.join(unused_auth)}"
-                        )
-                    if unused_bound:
-                        error_messages.append(
-                            f"unused bound parameters: {', '.join(unused_bound)}"
-                        )
-                    raise ValueError(
-                        f"Validation failed for tool '{tool_name}': { '; '.join(error_messages) }."
-                    )
+                validate_unused_requirements(
+                    provided_auth_keys,
+                    provided_bound_keys,
+                    used_auth_keys,
+                    used_bound_keys,
+                    tool_name,
+                    is_toolset=False,
+                )
             else:
                 overall_used_auth_keys.update(used_auth_keys)
                 overall_used_bound_params.update(used_bound_keys)
 
-        unused_auth = provided_auth_keys - overall_used_auth_keys
-        unused_bound = provided_bound_keys - overall_used_bound_params
-
-        if unused_auth or unused_bound:
-            error_messages = []
-            if unused_auth:
-                error_messages.append(
-                    f"unused auth tokens could not be applied to any tool: {', '.join(unused_auth)}"
-                )
-            if unused_bound:
-                error_messages.append(
-                    f"unused bound parameters could not be applied to any tool: {', '.join(unused_bound)}"
-                )
-            raise ValueError(
-                f"Validation failed for toolset '{name or 'default'}': { '; '.join(error_messages) }."
-            )
+        validate_unused_requirements(
+            provided_auth_keys,
+            provided_bound_keys,
+            overall_used_auth_keys,
+            overall_used_bound_params,
+            name or "default",
+            is_toolset=True,
+        )
 
         return tools
 

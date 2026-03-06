@@ -210,6 +210,9 @@ creds = CredentialStrategy.from_adk_credentials(auth_credential, scheme)
 
 Some tools may define their own authentication requirements (e.g., Salesforce OAuth, GitHub PAT) via `authSources` in their schema. You can provide a mapping of getters to resolve these tokens at runtime.
 
+> [!TIP]
+> Getters can optionally accept the ADK `ToolContext` as a single argument. This enables seamless integration of dynamic, end-user tokens that are tied to the current agent execution state.
+
 ```python
 async def get_salesforce_token():
     # Fetch token from secret manager or reliable source
@@ -218,8 +221,9 @@ async def get_salesforce_token():
 toolset = ToolboxToolset(
     server_url="...",
     auth_token_getters={
-        "salesforce-auth": get_salesforce_token,   # Async callable
-        "github-pat": lambda: "my-pat-token"       # Sync callable or static lambda
+        "salesforce-auth": get_salesforce_token,                # Async callable
+        "github-pat": lambda: "my-pat-token",                   # Sync callable or static lambda
+        "oauth-user": lambda ctx: ctx.state.get("auth_token")   # Dynamic context-aware callable
     }
 )
 ```
