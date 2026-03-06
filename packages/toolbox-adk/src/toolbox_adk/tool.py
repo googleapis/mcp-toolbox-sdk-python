@@ -14,7 +14,7 @@
 
 import inspect
 import logging
-from typing import Any, Awaitable, Callable, Dict, Optional
+from typing import Any, Awaitable, Callable, Dict, Mapping, Optional
 
 import google.adk.auth.exchanger.oauth2_credential_exchanger as oauth2_credential_exchanger
 import google.adk.auth.oauth2_credential_util as oauth2_credential_util
