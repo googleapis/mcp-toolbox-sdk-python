@@ -14,83 +14,33 @@ applications. These SDKs allow you to load tools defined in Toolbox and use them
 as standard Python functions or objects within popular orchestration frameworks
 or your custom code.
 
-This simplifies the process of incorporating external functionalities (like
-Databases or APIs) managed by Toolbox into your GenAI applications.
+For comprehensive guides and advanced configuration, visit the [Main Documentation Site](https://googleapis.github.io/genai-toolbox/).
+
 
 <!-- TOC -->
-- [Overview](#overview)
-- [Which Package Should I Use?](#which-package-should-i-use)
 - [Available Packages](#available-packages)
-- [Getting Started](#getting-started)
+- [Quick Start](#quick-start)
 - [Contributing](#contributing)
 - [License](#license)
 - [Support](#support)
 
 <!-- /TOC -->
 
-## Overview
-
-The MCP Toolbox service provides a centralized way to manage and expose tools
-(like API connectors, database query tools, etc.) for use by GenAI applications.
-
-These Python SDKs act as clients for that service. They handle the communication needed to:
-
-* Fetch tool definitions from your running Toolbox instance.
-* Provide convenient Python objects or functions representing those tools.
-* Invoke the tools (calling the underlying APIs/services configured in Toolbox).
-* Handle authentication and parameter binding as needed.
-
-By using these SDKs, you can easily leverage your Toolbox-managed tools directly
-within your Python applications or AI orchestration frameworks.
-
-## Which Package Should I Use?
-
-Choosing the right package depends on how you are building your application:
-
-* [`toolbox-adk`](https://github.com/googleapis/mcp-toolbox-sdk-python/tree/main/packages/toolbox-adk):
-  Use this package if you are building your application using Google ADK (Agent Development Kit).
-  It provides tools that are directly compatible with the
-  Google ADK ecosystem (`BaseTool` / `BaseToolset` interface) handling authentication propagation, header management, and tool wrapping automatically.
-* [`toolbox-core`](https://github.com/googleapis/mcp-toolbox-sdk-python/tree/main/packages/toolbox-core):
-  Use this package if you are not using LangChain/LangGraph or any other
-  orchestration framework, or if you need a framework-agnostic way to interact
-  with Toolbox tools (e.g., for custom orchestration logic or direct use in
-  Python scripts).
-* [`toolbox-langchain`](https://github.com/googleapis/mcp-toolbox-sdk-python/tree/main/packages/toolbox-langchain):
-  Use this package if you are building your application using the LangChain or
-  LangGraph frameworks. It provides tools that are directly compatible with the
-  LangChain ecosystem (`BaseTool` interface), simplifying integration.
-* [`toolbox-llamaindex`](https://github.com/googleapis/mcp-toolbox-sdk-python/tree/main/packages/toolbox-llamaindex):
-  Use this package if you are building your application using the LlamaIndex framework. 
-  It provides tools that are directly compatible with the
-  LlamaIndex ecosystem (`BaseTool` interface), simplifying integration.
-
 ## Available Packages
 
-This repository hosts the following Python packages. See the package-specific
-README for detailed installation and usage instructions:
+This repository hosts the following Python packages. See the package-specific READMEs or the docsite for detailed usage:
 
-| Package | Target Use Case | Integration | Path | Details (README) | PyPI Status |
-| :------ | :---------- | :---------- | :---------------------- | :---------- | :--------- 
-| `toolbox-adk` | Google ADK applications | Google ADK | `packages/toolbox-adk/` | 📄 [View README](https://github.com/googleapis/mcp-toolbox-sdk-python/blob/main/packages/toolbox-adk/README.md) | ![pypi version](https://img.shields.io/pypi/v/toolbox-adk.svg) |
-| `toolbox-core` | Framework-agnostic / Custom applications | Use directly / Custom | `packages/toolbox-core/` | 📄 [View README](https://github.com/googleapis/mcp-toolbox-sdk-python/blob/main/packages/toolbox-core/README.md) | ![pypi version](https://img.shields.io/pypi/v/toolbox-core.svg) |
-| `toolbox-langchain` | LangChain / LangGraph applications | LangChain / LangGraph | `packages/toolbox-langchain/` | 📄 [View README](https://github.com/googleapis/mcp-toolbox-sdk-python/blob/main/packages/toolbox-langchain/README.md) | ![pypi version](https://img.shields.io/pypi/v/toolbox-langchain.svg) |
-| `toolbox-llamaindex` | LlamaIndex  applications                 | LlamaIndex            | `packages/toolbox-llamaindex/` | 📄 [View README](https://github.com/googleapis/mcp-toolbox-sdk-python/blob/main/packages/toolbox-llamaindex/README.md) | ![pypi version](https://img.shields.io/pypi/v/toolbox-llamaindex.svg) |
+| Package | Target Use Case | Path | Documentation |
+| :------ | :---------- | :--- | :---------- |
+| `toolbox-core` | Framework-agnostic / Custom apps | `packages/toolbox-core/` | [Python Core Guide](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/core/) |
+| `toolbox-adk` | Google ADK Integration | `packages/toolbox-adk/` | [ADK Package Guide](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/adk/) |
+| `toolbox-langchain` | LangChain / LangGraph Integration | `packages/toolbox-langchain/` | [LangChain Guide](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/langchain/) |
+| `toolbox-llamaindex` | LlamaIndex Integration | `packages/toolbox-llamaindex/` | [LlamaIndex Guide](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/llamaindex/) |
 
+## Quick Start
 
-## Getting Started
-
-To get started using Toolbox tools with an application, follow these general steps:
-
-1.  **Set up and Run the Toolbox Service:**
-
-    Before using the SDKs, you need the main MCP Toolbox service running. Follow
-    the instructions here: [**Toolbox Getting Started
-    Guide**](https://github.com/googleapis/genai-toolbox?tab=readme-ov-file#getting-started)
-
+1.  **Set up the Toolbox Service**: Ensure you have a running MCP Toolbox server. Follow the [Toolbox Server Getting Started Guide](https://github.com/googleapis/genai-toolbox?tab=readme-ov-file#getting-started).
 2.  **Install the Appropriate SDK:**
-    
-    Choose the package based on your needs (see "[Which Package Should I Use?](#which-package-should-i-use)" above) and install it:
 
     ```bash
     # For the Google ADK
@@ -109,19 +59,7 @@ To get started using Toolbox tools with an application, follow these general ste
     # For the LlamaIndex integration
     pip install toolbox-llamaindex
     ```
-
-3.  **Use the SDK:**
-
-    Consult the README for your chosen package (linked in the "[Available
-    Packages](#available-packages)" section above) for detailed instructions on
-    how to connect the client, load tool definitions, invoke tools, configure
-    authentication/binding, and integrate them into your application or
-    framework.
-
-> [!TIP]
-> For a complete, end-to-end example including setting up the service and using
-> an SDK, see the full tutorial: [**Toolbox Quickstart
-> Tutorial**](https://googleapis.github.io/genai-toolbox/getting-started/local_quickstart)
+3.  **Explore Tutorials**: Check out the [Python Quickstart Tutorial](https://googleapis.github.io/genai-toolbox/getting-started/local_quickstart/) for a full walkthrough.
 
 ## Contributing
 
