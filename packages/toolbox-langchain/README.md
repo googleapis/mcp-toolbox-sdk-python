@@ -5,6 +5,8 @@ This SDK allows you to seamlessly integrate the functionalities of
 [MCP Toolbox](https://github.com/googleapis/genai-toolbox) into your LangChain LLM
 applications, enabling advanced orchestration and interaction with GenAI models.
 
+For detailed guides, authentication examples, and advanced configuration, visit the [Python SDK Langchain Guide](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/langchain/).
+
 <!-- TOC ignore:true -->
 ## Table of Contents
 <!-- TOC -->
