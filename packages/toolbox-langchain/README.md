@@ -12,6 +12,9 @@ applications, enabling advanced orchestration and interaction with GenAI models.
 - [Installation](#installation)
 - [Quickstart](#quickstart)
 - [Usage](#usage)
+- [Contributing](#contributing)
+- [License](#license)
+- [Support](#support)
 
 <!-- /TOC -->
 
