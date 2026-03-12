@@ -4,7 +4,7 @@
 
 This package allows Google ADK (Agent Development Kit) agents to natively use tools from the [MCP Toolbox](https://github.com/googleapis/genai-toolbox).
 
-It provides a seamless bridge between the `toolbox-core` SDK and the ADK's `BaseTool` / `BaseToolset` interfaces, handling authentication propagation, header management, and tool wrapping automatically.
+For detailed guides, authentication examples, and advanced configuration, visit the [Python SDK ADK Guide](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/adk/).
 
 ## Table of Contents
 
