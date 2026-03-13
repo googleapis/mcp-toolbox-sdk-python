@@ -25,23 +25,14 @@ on:
 permissions: read-all
 
 jobs:
-  lint:
-    if: "${{ github.event.action != 'labeled' || github.event.label.name == 'tests: run' }}"
-    name: lint
+  remove-label:
+    if: "${{ github.event.action == 'labeled' && github.event.label.name == 'tests: run' }}"
     runs-on: ubuntu-latest
-    concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}
-      cancel-in-progress: true
-    defaults:
-      run:
-        working-directory: ./packages/toolbox-langchain
     permissions:
-      contents: 'read'
       issues: 'write'
       pull-requests: 'write'
     steps:
       - name: Remove PR Label
-        if: "${{ github.event.action == 'labeled' && github.event.label.name == 'tests: run' }}"
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -56,12 +47,26 @@ jobs:
             } catch (e) {
               console.log('Failed to remove label. Another job may have already removed it!');
             }
+
+  lint:
+    if: "${{ github.event.action != 'labeled' || github.event.label.name == 'tests: run' }}"
+    name: lint
+    runs-on: ubuntu-latest
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
+    defaults:
+      run:
+        working-directory: ./packages/toolbox-langchain
+    permissions:
+      contents: 'read'
+    steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: false
       - name: Setup Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
