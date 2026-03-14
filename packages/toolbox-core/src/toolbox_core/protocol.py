@@ -83,6 +83,32 @@ class ParameterSchema(BaseModel):
     additionalProperties: Optional[Union[bool, AdditionalPropertiesSchema]] = None
     default: Optional[Any] = None
 
+    def get_python_safe_field_name(self) -> str:
+        """
+        Returns a Python-safe identifier for this parameter name.
+
+        Some parameter names (for example HTTP header names like "X-Application-ID")
+        are not valid Python identifiers and cannot be used directly in function
+        signatures or introspection utilities. This helper converts such names into
+        a safe form by:
+        - Replacing non-alphanumeric characters with underscores.
+        - Prefixing with 'param_' if the result starts with a digit or is empty.
+        """
+        name = self.name
+        if name.isidentifier():
+            return name
+
+        # Replace any non-alphanumeric/underscore character with underscore.
+        sanitized = "".join(
+            ch if (ch.isalnum() or ch == "_") else "_" for ch in name
+        )
+
+        # Ensure the identifier does not start with a digit and is non-empty.
+        if not sanitized or sanitized[0].isdigit():
+            sanitized = f"param_{sanitized}" if sanitized else "param_"
+
+        return sanitized
+
     @property
     def has_default(self) -> bool:
         """Returns True if `default` was explicitly provided in schema input."""
@@ -119,7 +145,7 @@ class ParameterSchema(BaseModel):
             default_value = self.default
 
         return Parameter(
-            self.name,
+            self.get_python_safe_field_name(),
             Parameter.POSITIONAL_OR_KEYWORD,
             annotation=self.__get_type(),
             default=default_value,

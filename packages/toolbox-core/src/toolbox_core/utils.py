@@ -131,7 +131,9 @@ def params_to_pydantic_model(
         if field.has_default:
             default_value = field.default
 
-        field_definitions[field.name] = cast(
+        python_safe_name = field.get_python_safe_field_name()
+
+        field_definitions[python_safe_name] = cast(
             Any,
             (
                 field.to_param().annotation,
