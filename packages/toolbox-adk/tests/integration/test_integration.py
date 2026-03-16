@@ -14,6 +14,11 @@
 
 
 import os
+from google import genai
+from google.genai import types
+from google.adk import Agent
+from google.adk.runners import Runner
+from google.adk.sessions.in_memory_session_service import InMemorySessionService
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -758,3 +763,77 @@ class TestMapParams:
                 )
         finally:
             await toolset.close()
+
+@pytest.mark.skipif(not os.environ.get("GEMINI_API_KEY"), reason="GEMINI_API_KEY not set")
+@pytest.mark.asyncio
+class TestAgentIntegration:
+    async def test_complex_params_e2e(self):
+        class MockParam:
+            def __init__(self, name, param_type, description, required):
+                self.name = name
+                self.type = param_type
+                self.description = description
+                self.required = required
+
+        # Array param
+        array_param = MockParam("my_array", "array", "An array", True)
+        array_param.items = MockParam("item", "string", "An item", True)
+
+        # Object param (nested)
+        object_param = MockParam("my_object", "object", "An object", True)
+        object_param.properties = {
+            "nested_str": MockParam("nested_str", "string", "A nested string", True)
+        }
+
+        class MyTool:
+            def __init__(self):
+                self.__name__ = "my_tool"
+                self.__doc__ = "my tool doc"
+                self._params = [array_param, object_param]
+                self._required_authn_params = {}
+                self._required_authz_tokens = []
+                
+            async def __call__(self, my_array=None, my_object=None, **kwargs):
+                print(f"MyTool called with my_array={my_array}, my_object={my_object}")
+                return "success"
+
+        core_tool = MyTool()
+        tool = ToolboxTool(core_tool)
+
+        agent = Agent(
+            model="gemini-2.5-flash",
+            name="test_agent",
+            description="Test agent",
+            instruction="Use tools",
+            tools=[tool],
+        )
+
+        session_service = InMemorySessionService()
+        runner = Runner(
+            app_name="test_app",
+            agent=agent,
+            session_service=session_service,
+            auto_create_session=True,
+        )
+
+        print("Running runner...")
+        event_count = 0
+        success = False
+        async for event in runner.run_async(
+            user_id="test_user",
+            session_id="test_session",
+            new_message=types.Content(role="user", parts=[types.Part(text="Use my_tool with array ['a'] and object {'nested_str': 'b'}")]),
+        ):
+            event_count += 1
+            print(f"Event: {event}")
+            if event.get_function_calls():
+                 print("Tool call detected!")
+                 success = True
+            elif event.content and event.content.parts:
+                 for part in event.content.parts:
+                     if part.text and "success" in part.text.lower():
+                         print("Success text detected!")
+                         success = True
+
+        assert event_count > 0
+        assert success, "Agent failed to use the tool successfully"

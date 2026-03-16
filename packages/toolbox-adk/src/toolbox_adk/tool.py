@@ -17,6 +17,7 @@ from typing import Any, Awaitable, Callable, Dict, Optional
 
 import google.adk.auth.exchanger.oauth2_credential_exchanger as oauth2_credential_exchanger
 import google.adk.auth.oauth2_credential_util as oauth2_credential_util
+from toolbox_core.protocol import ParameterSchema, AdditionalPropertiesSchema
 import toolbox_core
 from fastapi.openapi.models import (
     OAuth2,
@@ -108,6 +109,34 @@ class ToolboxTool(BaseTool):
         }
         return type_map.get(param_type, Type.STRING)
 
+    def _build_schema(self, param: Any) -> Schema:
+        """Builds a Schema from a parameter."""
+        param_type = getattr(param, 'type', 'string')
+        schema_type = self._param_type_to_schema_type(param_type)
+        
+        properties = {}
+        required = []
+        schema_items = None
+        schema_additional_properties = None
+
+        if schema_type == Type.ARRAY:
+            if hasattr(param, 'items') and param.items:
+                schema_items = self._build_schema(param.items)
+        elif schema_type == Type.OBJECT:
+            nested_properties = getattr(param, 'properties', None)
+            if nested_properties:
+                for k, v in nested_properties.items():
+                    properties[k] = self._build_schema(v)
+                    if getattr(v, 'required', False):
+                        required.append(k)
+        return Schema(
+            type=schema_type,
+            description=getattr(param, 'description', '') or "",
+            properties=properties or None,
+            required=required or None,
+            items=schema_items,
+        )
+
     @override
     def _get_declaration(self) -> Optional[FunctionDeclaration]:
         """Gets the function declaration for the tool."""
@@ -119,10 +148,7 @@ class ToolboxTool(BaseTool):
         # properties, lumping them all into the root description instead.
         if hasattr(self._core_tool, "_params") and self._core_tool._params:
             for param in self._core_tool._params:
-                properties[param.name] = Schema(
-                    type=self._param_type_to_schema_type(param.type),
-                    description=param.description or "",
-                )
+                properties[param.name] = self._build_schema(param)
                 if param.required:
                     required.append(param.name)
 

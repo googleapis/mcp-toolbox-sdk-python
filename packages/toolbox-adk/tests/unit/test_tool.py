@@ -291,6 +291,57 @@ class TestToolboxTool:
 
         assert parameters.required == ["city"]
 
+    def test_get_declaration_complex_params(self):
+        # Create a mock for core tool parameters
+        class MockParam:
+            def __init__(self, name, param_type, description, required):
+                self.name = name
+                self.type = param_type
+                self.description = description
+                self.required = required
+
+        core_tool = MagicMock()
+        core_tool.__name__ = "mock_tool"
+        core_tool.__doc__ = "mock doc"
+        
+        # Array param
+        array_param = MockParam("my_array", "array", "An array", True)
+        array_param.items = MockParam("item", "string", "An item", True)
+        
+        # Object param (nested)
+        object_param = MockParam("my_object", "object", "An object", True)
+        object_param.properties = {
+            "nested_str": MockParam("nested_str", "string", "A nested string", True)
+        }
+
+        core_tool._params = [array_param, object_param]
+
+        tool = ToolboxTool(core_tool)
+        declaration = tool._get_declaration()
+
+        assert declaration.name == "mock_tool"
+        assert declaration.description == "mock doc"
+
+        parameters = declaration.parameters
+        assert parameters is not None
+        assert parameters.type == Type.OBJECT
+        assert "my_array" in parameters.properties
+        assert "my_object" in parameters.properties
+
+        # Verify Array
+        array_schema = parameters.properties["my_array"]
+        assert array_schema.type == Type.ARRAY
+        assert array_schema.items is not None
+        assert array_schema.items.type == Type.STRING
+
+        # Verify Object
+        object_schema = parameters.properties["my_object"]
+        assert object_schema.type == Type.OBJECT
+        assert object_schema.properties is not None
+        assert "nested_str" in object_schema.properties
+        assert object_schema.properties["nested_str"].type == Type.STRING
+        assert object_schema.required == ["nested_str"]
+
     def test_get_declaration_no_params(self):
         core_tool = MagicMock()
         core_tool.__name__ = "mock_tool"
