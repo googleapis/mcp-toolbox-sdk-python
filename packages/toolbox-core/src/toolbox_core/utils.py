@@ -34,13 +34,19 @@ from toolbox_core.protocol import ParameterSchema
 
 def create_func_docstring(description: str, params: Sequence[ParameterSchema]) -> str:
     """Convert tool description and params into its function docstring"""
-    docstring = description
+    docstring = description.rstrip()
+    
     if not params:
         return docstring
+    
     docstring += "\n\nArgs:"
+    
     for p in params:
         annotation = p.to_param().annotation
-        docstring += f"\n    {p.name} ({getattr(annotation, '__name__', str(annotation))}): {p.description}"
+
+        param_desc = p.description.strip() if p.description else ""
+        
+        docstring += f"\n    {p.name} ({getattr(annotation, '__name__', str(annotation))}): {param_desc}"
     return docstring
 
 
