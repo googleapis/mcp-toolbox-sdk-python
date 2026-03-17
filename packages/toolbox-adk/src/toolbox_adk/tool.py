@@ -273,7 +273,7 @@ class ToolboxTool(BaseTool):
             logging.warning(
                 "Toolbox tool '%s' execution failed: %s", self.name, e, exc_info=True
             )
-            return {"error": f"{type(e).__name__}: {e}"}
+            return {"error": f"{type(e).__name__}: {e}", "is_error": True}
         finally:
             if reset_token:
                 USER_TOKEN_CONTEXT_VAR.reset(reset_token)

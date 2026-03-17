@@ -68,6 +68,7 @@ class TestToolboxTool:
         result = await tool.run_async({"arg": 1}, ctx)
 
         assert isinstance(result, dict) and "error" in result
+        assert result.get("is_error") is True
         assert "RuntimeError" in result["error"]
 
     @pytest.mark.asyncio
