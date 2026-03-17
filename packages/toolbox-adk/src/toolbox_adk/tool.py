@@ -266,17 +266,14 @@ class ToolboxTool(BaseTool):
                         "error": f"OAuth2 Credentials required for {self.name}. A consent link has been generated for the user. Do NOT attempt to run this tool again until the user confirms they have logged in."
                     }
 
-        result: Optional[Any] = None
-        error: Optional[Exception] = None
-
         try:
             # Execute the core tool
-            result = await self._core_tool(**args)
-            return result
-
+            return await self._core_tool(**args)
         except Exception as e:
-            error = e
-            raise e
+            logging.warning(
+                "Toolbox tool '%s' execution failed: %s", self.name, e, exc_info=True
+            )
+            return {"error": f"{type(e).__name__}: {e}"}
         finally:
             if reset_token:
                 USER_TOKEN_CONTEXT_VAR.reset(reset_token)

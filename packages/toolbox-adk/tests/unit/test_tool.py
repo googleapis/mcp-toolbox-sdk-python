@@ -57,6 +57,20 @@ class TestToolboxTool:
         mock_core.assert_awaited()
 
     @pytest.mark.asyncio
+    async def test_run_async_returns_error_on_exception(self):
+        mock_core = AsyncMock(side_effect=RuntimeError("boom"))
+        mock_core.__name__ = "my_tool"
+        mock_core.__doc__ = "my description"
+
+        tool = ToolboxTool(mock_core)
+        ctx = MagicMock()
+
+        result = await tool.run_async({"arg": 1}, ctx)
+
+        assert isinstance(result, dict) and "error" in result
+        assert "RuntimeError" in result["error"]
+
+    @pytest.mark.asyncio
     async def test_bind_params(self):
         mock_core = MagicMock()
         mock_core.__name__ = "mock"
