@@ -100,10 +100,9 @@ async with ToolboxClient("http://127.0.0.1:5000") as toolbox:
 
 The SDK supports multiple transport protocols for communicating with the Toolbox server. By default, the client uses the latest supported version of the **Model Context Protocol (MCP)**.
 
-You can explicitly select a protocol using the `protocol` option during client initialization. This is useful if you need to use the native Toolbox HTTP protocol or pin the client to a specific legacy version of MCP.
+You can explicitly select a protocol using the `protocol` option during client initialization. This is useful if you need to pin the client to a specific legacy version of MCP.
 
 > [!NOTE]
-> * **Native Toolbox Transport**: This uses the service's native **REST over HTTP** API.
 > * **MCP Transports**: These options use the **Model Context Protocol over HTTP**.
 
 ### Supported Protocols
@@ -116,10 +115,7 @@ You can explicitly select a protocol using the `protocol` option during client i
 | `Protocol.MCP_v20250326` | MCP Protocol version 2025-03-26. |
 | `Protocol.MCP_v20241105` | MCP Protocol version 2024-11-05. |
 
-> [!WARNING]
-
 ### Example
-
 
 ```py
 from toolbox_llamaindex import ToolboxClient
