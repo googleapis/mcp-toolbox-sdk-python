@@ -14,7 +14,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Fetch all tags explicitly
+        run: git fetch --tags --force
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -27,19 +32,6 @@ jobs:
           chmod +x scripts/generate-docs.sh
 
           bash scripts/generate-docs.sh
-
-      - name: Debug build output
-        run: |
-          echo "==== FILES IN build/api-docs ===="
-          ls -R build/api-docs
-
-          echo "==== CHECK versions.json ===="
-          if [ -f build/api-docs/versions.json ]; then
-            echo "versions.json exists"
-            cat build/api-docs/versions.json
-          else
-            echo "ERROR: versions.json NOT FOUND"
-          fi
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3

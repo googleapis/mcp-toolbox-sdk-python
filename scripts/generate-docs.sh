@@ -81,7 +81,7 @@ build_latest() {
 build_tags() {
     echo "Building documentation for tags..."
     local TAGS
-    TAGS=$(git tag)
+    TAGS=$(git tag --sort=-v:refname)
     
     for TAG in $TAGS; do
         echo "Processing tag: $TAG"
@@ -109,7 +109,23 @@ build_tags() {
 
 generate_registry() {
     echo "Generating versions.json..."
-    python3 -c "import json, subprocess; tags = subprocess.check_output(['git', 'tag', '--sort=-creatordate']).decode().split(); print(json.dumps(['latest'] + tags))" > "$OUTPUT_DIR/versions.json"
+
+    python3 <<EOF > "$OUTPUT_DIR/versions.json"
+import json
+import subprocess
+
+try:
+    tags = subprocess.check_output(
+        ['git', 'tag', '--sort=-v:refname']
+    ).decode().split()
+except:
+    tags = []
+
+print(json.dumps(['latest'] + tags))
+EOF
+
+    echo "Generated versions.json:"
+    cat "$OUTPUT_DIR/versions.json"
 }
 
 copy_assets() {
