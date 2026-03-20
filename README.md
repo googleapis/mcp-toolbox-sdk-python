@@ -19,7 +19,7 @@ For comprehensive guides and advanced configuration, visit the [Main Documentati
 
 <!-- TOC -->
 - [Available Packages](#available-packages)
-- [Quick Start](#quick-start)
+- [Quickstart](#quickstart)
 - [Contributing](#contributing)
 - [License](#license)
 - [Support](#support)
@@ -37,7 +37,7 @@ This repository hosts the following Python packages. See the package-specific RE
 | `toolbox-langchain` | LangChain / LangGraph Integration | `packages/toolbox-langchain/` | [LangChain Guide](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/langchain/) |
 | `toolbox-llamaindex` | LlamaIndex Integration | `packages/toolbox-llamaindex/` | [LlamaIndex Guide](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/llamaindex/) |
 
-## Quick Start
+## Quickstart
 
 1.  **Set up the Toolbox Service**: Ensure you have a running MCP Toolbox server. Follow the [Toolbox Server Getting Started Guide](https://github.com/googleapis/genai-toolbox?tab=readme-ov-file#getting-started).
 2.  **Install the Appropriate SDK:**

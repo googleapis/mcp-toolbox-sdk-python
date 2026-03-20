@@ -60,7 +60,7 @@ asyncio.run(run_agent())
 
 ## Usage
 
-The `toolbox-llamaindex` package provides a dedicated integration to seamlessly load and use MCP Toolbox tools within the LlamaIndex orchestration framework ( source). For detailed guides and advanced configuration, please visit the following sections on our [Documentation Site](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/llamaindex/):
+The `toolbox-llamaindex` package provides a dedicated integration to seamlessly load and use MCP Toolbox tools within the LlamaIndex orchestration framework. For detailed guides and advanced configuration, please visit the following sections on our [Documentation Site](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/llamaindex/):
 
 
 - [Transport Protocols](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/llamaindex/#transport-protocols)
@@ -74,8 +74,7 @@ The `toolbox-llamaindex` package provides a dedicated integration to seamlessly 
 
 # Contributing 
 
-Contributions are welcome! Please refer to the [`DEVELOPER.md`](./DEVELOPER.md)
-file for guidelines on how to set up a development environment and run tests.
+Contributions are welcome! Please refer to the [`DEVELOPER.md`](https://github.com/googleapis/mcp-toolbox-sdk-python/blob/main/packages/toolbox-llamaindex/DEVELOPER.md) file for guidelines on how to set up a development environment and run tests.
 
 # License
 

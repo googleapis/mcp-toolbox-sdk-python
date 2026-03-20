@@ -27,7 +27,7 @@ The `toolbox-adk` package provides a seamless bridge to natively use MCP Toolbox
 
 ## Contributing
 
-Contributions are welcome! Please refer to the `toolbox-core` [DEVELOPER.md](../toolbox-core/DEVELOPER.md) for general guidelines.
+Contributions are welcome! Please refer to the `toolbox-core` [DEVELOPER.md](https://github.com/googleapis/mcp-toolbox-sdk-python/blob/main/packages/toolbox-core/DEVELOPER.md) for general guidelines.
 
 ## License
 

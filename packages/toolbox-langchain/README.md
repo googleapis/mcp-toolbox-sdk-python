@@ -68,8 +68,7 @@ The toolbox-langchain package provids a dedicated integration to seamlessly load
 
 # Contributing
 
-Contributions are welcome! Please refer to the [DEVELOPER.md](./DEVELOPER.md)
-file for guidelines on how to set up a development environment and run tests.
+Contributions are welcome! Please refer to the [`DEVELOPER.md`](https://github.com/googleapis/mcp-toolbox-sdk-python/blob/main/packages/toolbox-langchain/DEVELOPER.md) file for guidelines on how to set up a development environment and run tests.
 
 # License
 
