@@ -19,7 +19,7 @@ pip install toolbox-adk
 
 ## Usage
 
-The toolbox-adk package provides a seamless bridge to natively use MCP Toolbox tools within ADK agents. For detailed guides and advanced configuration, please visit the following sections on our [Documentation Site](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/adk/): 
+The `toolbox-adk` package provides a seamless bridge to natively use MCP Toolbox tools within ADK agents. For detailed guides and advanced configuration, please visit the following sections on our [Documentation Site](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/adk/): 
 
 - [Transport Protocols](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/adk/#transport-protocols)
 - [Authentication](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/adk/#authentication)
