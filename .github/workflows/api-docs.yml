@@ -4,19 +4,22 @@ on:
       - main
       - api-docs
     tags: ['v*']
-  workflow_dispatch: # Allows maintainers to manually trigger
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with: { python-version: '3.10' }
+
       - name: Build
         run: |
           pip install sphinx sphinx-rtd-theme
@@ -24,8 +27,23 @@ jobs:
           chmod +x scripts/generate-docs.sh
 
           bash scripts/generate-docs.sh
+
+      - name: Debug build output
+        run: |
+          echo "==== FILES IN build/api-docs ===="
+          ls -R build/api-docs
+
+          echo "==== CHECK versions.json ===="
+          if [ -f build/api-docs/versions.json ]; then
+            echo "versions.json exists"
+            cat build/api-docs/versions.json
+          else
+            echo "ERROR: versions.json NOT FOUND"
+          fi
+
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./build/api-docs
+          publish_dir: build/api-docs
+          force_orphan: true
