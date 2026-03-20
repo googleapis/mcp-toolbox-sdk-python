@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MCP Toolbox Python SDK API Reference</title>
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 30px; height: 30px; animation: spin 2s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+<script>
+        fetch('versions.json')
+            .then(r => r.json())
+            .then(versions => {
+                const latest = versions[0];
+                if (latest) {
+                    let currentPath = window.location.pathname;
+
+                    if (!currentPath.endsWith('/')) {
+                        currentPath += '/';
+                    }
+
+                    window.location.replace(currentPath + latest + '/');
+                } else {
+                    document.body.innerHTML = "<h1>No documentation versions found.</h1>";
+                }
+            })
+            .catch((err) => { 
+                console.error(err);
+                document.body.innerHTML = "<h1>Error loading version registry.</h1>"; 
+            });
+    </script>
+</head>
+<body>
+    <div class="loader"></div>
+    <p>Redirecting to the latest API reference...</p>
+</body>
+</html>
