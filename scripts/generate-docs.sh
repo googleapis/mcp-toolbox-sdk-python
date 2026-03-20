@@ -35,5 +35,6 @@ for TAG in $(git tag); do
 done 
 
 
-# 3. Copy the Portal UI
-cp docs/templates/index.html $OUTPUT_DIR/index.html
+# 3. Copy the Portal UI and .nojekyll
+cp docs/templates/index.html "$OUTPUT_DIR/index.html"
+touch "$OUTPUT_DIR/.nojekyll"
