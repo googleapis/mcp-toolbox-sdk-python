@@ -38,7 +38,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   console.log(`Version: ${currentVersion}, Package: ${currentPackage}, Root: ${rootPath}`);
 
-  fetch(rootPath + "versions.json")
+  fetch(rootPath + "./versions.json")
     .then((r) => r.json())
     .then((versions) => {
       injectVersionMenu(versions, currentVersion, currentPackage, rootPath);

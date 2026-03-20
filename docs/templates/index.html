@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <base href="./">
     <title>MCP Toolbox Python SDK API Reference</title>
     <style>
         body {
@@ -94,7 +95,7 @@
     <script>
         const PACKAGES = ["adk", "core", "langchain", "llamaindex"];
 
-        fetch('versions.json')
+        fetch('./versions.json')
             .then(r => r.json())
             .then(versions => {
                 const content = document.getElementById('content');
@@ -116,7 +117,7 @@
                     PACKAGES.forEach(pkg => {
                         html += `
                             <div class="package-item">
-                                <a href="${version}/${pkg}/index.html">${pkg}</a>
+                                <a href="./${version}/${pkg}/index.html">${pkg}</a>
                             </div>
                         `;
                     });
