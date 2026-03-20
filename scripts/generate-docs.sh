@@ -9,12 +9,15 @@ setup_build_env() {
     for pkg_dir in packages/*; do
         if [ -d "$pkg_dir" ]; then
             echo "Processing $pkg_dir..."
-            if [ -f "$pkg_dir/requirements.txt" ]; then
+            # Use pushd/popd to ensure relative paths in requirements.txt (like -e ../toolbox-core) resolve correctly
+            pushd "$pkg_dir" >/dev/null
+            if [ -f "requirements.txt" ]; then
                 echo "  Installing requirements from $pkg_dir/requirements.txt..."
-                pip install -r "$pkg_dir/requirements.txt"
+                pip install -r "requirements.txt"
             fi
             echo "  Installing $pkg_dir in editable mode..."
-            pip install -e "$pkg_dir"
+            pip install -e .
+            popd >/dev/null
         fi
     done
     echo "Environment setup complete!"
@@ -136,9 +139,9 @@ copy_assets() {
 
 # --- Main Execution ---
 
-# Optional: setup_build_env
 mkdir -p "$OUTPUT_DIR"
 
+setup_build_env
 build_latest
 build_tags
 generate_registry

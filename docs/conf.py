@@ -1,9 +1,15 @@
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../packages/toolbox-adk/src'))
-sys.path.insert(0, os.path.abspath('../packages/toolbox-core/src'))
-sys.path.insert(0, os.path.abspath('../packages/toolbox-langchain/src'))
-sys.path.insert(0, os.path.abspath('../packages/toolbox-llamaindex/src'))
+import glob
+
+for path in glob.glob('../packages/*/src'):
+    sys.path.insert(0, os.path.abspath(path))
+
+autodoc_default_options = {
+    'members': True,
+    'undoc-members': True,
+    'show-inheritance': True,
+}
 
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.napoleon', 'sphinx.ext.viewcode']
 html_theme = 'sphinx_rtd_theme'
