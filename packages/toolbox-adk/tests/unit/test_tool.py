@@ -303,11 +303,11 @@ class TestToolboxTool:
         core_tool = MagicMock()
         core_tool.__name__ = "mock_tool"
         core_tool.__doc__ = "mock doc"
-        
+
         # Array param
         array_param = MockParam("my_array", "array", "An array", True)
         array_param.items = MockParam("item", "string", "An item", True)
-        
+
         # Object param (nested)
         object_param = MockParam("my_object", "object", "An object", True)
         object_param.properties = {

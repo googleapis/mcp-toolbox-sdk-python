@@ -17,7 +17,6 @@ from typing import Any, Awaitable, Callable, Dict, Optional
 
 import google.adk.auth.exchanger.oauth2_credential_exchanger as oauth2_credential_exchanger
 import google.adk.auth.oauth2_credential_util as oauth2_credential_util
-from toolbox_core.protocol import ParameterSchema, AdditionalPropertiesSchema
 import toolbox_core
 from fastapi.openapi.models import (
     OAuth2,
@@ -33,6 +32,7 @@ from google.adk.auth.auth_tool import AuthConfig
 from google.adk.tools.base_tool import BaseTool
 from google.adk.tools.tool_context import ToolContext
 from google.genai.types import FunctionDeclaration, Schema, Type
+from toolbox_core.protocol import AdditionalPropertiesSchema, ParameterSchema
 from toolbox_core.tool import ToolboxTool as CoreToolboxTool
 from typing_extensions import override
 
@@ -111,27 +111,27 @@ class ToolboxTool(BaseTool):
 
     def _build_schema(self, param: Any) -> Schema:
         """Builds a Schema from a parameter."""
-        param_type = getattr(param, 'type', 'string')
+        param_type = getattr(param, "type", "string")
         schema_type = self._param_type_to_schema_type(param_type)
-        
+
         properties = {}
         required = []
         schema_items = None
         schema_additional_properties = None
 
         if schema_type == Type.ARRAY:
-            if hasattr(param, 'items') and param.items:
+            if hasattr(param, "items") and param.items:
                 schema_items = self._build_schema(param.items)
         elif schema_type == Type.OBJECT:
-            nested_properties = getattr(param, 'properties', None)
+            nested_properties = getattr(param, "properties", None)
             if nested_properties:
                 for k, v in nested_properties.items():
                     properties[k] = self._build_schema(v)
-                    if getattr(v, 'required', False):
+                    if getattr(v, "required", False):
                         required.append(k)
         return Schema(
             type=schema_type,
-            description=getattr(param, 'description', '') or "",
+            description=getattr(param, "description", "") or "",
             properties=properties or None,
             required=required or None,
             items=schema_items,
