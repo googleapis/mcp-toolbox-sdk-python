@@ -358,3 +358,17 @@ class TestAsyncToolboxClient:
         assert call_kwargs["protocol"] in Protocol.get_supported_mcp_versions()
         assert call_kwargs["client_name"] == "toolbox-llamaindex-python"
         assert call_kwargs["client_version"] is not None
+
+    @pytest.mark.parametrize(
+        "telemetry_enabled",
+        [False, True],
+        ids=["telemetry_disabled", "telemetry_enabled"],
+    )
+    @patch("toolbox_llamaindex.async_client.ToolboxCoreClient")
+    async def test_telemetry_enabled_forwarded(
+        self, mock_core_client_constructor, mock_session, telemetry_enabled
+    ):
+        """Verifies that telemetry_enabled is forwarded to the core client."""
+        AsyncToolboxClient(URL, session=mock_session, telemetry_enabled=telemetry_enabled)
+        call_kwargs = mock_core_client_constructor.call_args[1]
+        assert call_kwargs["telemetry_enabled"] == telemetry_enabled

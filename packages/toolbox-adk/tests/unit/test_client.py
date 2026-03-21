@@ -247,3 +247,15 @@ class TestToolboxClientAuth:
 
         # Test property
         assert client.credential_config is not None
+
+    @pytest.mark.parametrize(
+        "telemetry_enabled",
+        [False, True],
+        ids=["telemetry_disabled", "telemetry_enabled"],
+    )
+    @patch("toolbox_adk.client.toolbox_core.ToolboxClient")
+    async def test_telemetry_enabled_forwarded(self, mock_core_client, telemetry_enabled):
+        """Verifies that telemetry_enabled is forwarded to the core client."""
+        ToolboxClient(server_url="http://test", telemetry_enabled=telemetry_enabled)
+        call_kwargs = mock_core_client.call_args[1]
+        assert call_kwargs["telemetry_enabled"] == telemetry_enabled
