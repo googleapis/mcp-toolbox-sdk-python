@@ -369,6 +369,8 @@ class TestAsyncToolboxClient:
         self, mock_core_client_constructor, mock_session, telemetry_enabled
     ):
         """Verifies that telemetry_enabled is forwarded to the core client."""
-        AsyncToolboxClient(URL, session=mock_session, telemetry_enabled=telemetry_enabled)
+        AsyncToolboxClient(
+            URL, session=mock_session, telemetry_enabled=telemetry_enabled
+        )
         call_kwargs = mock_core_client_constructor.call_args[1]
         assert call_kwargs["telemetry_enabled"] == telemetry_enabled

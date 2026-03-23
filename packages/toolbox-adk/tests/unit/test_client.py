@@ -254,7 +254,9 @@ class TestToolboxClientAuth:
         ids=["telemetry_disabled", "telemetry_enabled"],
     )
     @patch("toolbox_adk.client.toolbox_core.ToolboxClient")
-    async def test_telemetry_enabled_forwarded(self, mock_core_client, telemetry_enabled):
+    async def test_telemetry_enabled_forwarded(
+        self, mock_core_client, telemetry_enabled
+    ):
         """Verifies that telemetry_enabled is forwarded to the core client."""
         ToolboxClient(server_url="http://test", telemetry_enabled=telemetry_enabled)
         call_kwargs = mock_core_client.call_args[1]
