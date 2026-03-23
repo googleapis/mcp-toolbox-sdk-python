@@ -18,6 +18,7 @@ from google.adk.agents.readonly_context import ReadonlyContext
 from google.adk.tools.base_tool import BaseTool
 from google.adk.tools.base_toolset import BaseToolset
 from google.adk.tools.tool_context import ToolContext
+from toolbox_core.utils import validate_unused_requirements
 from typing_extensions import override
 
 from .client import ToolboxClient
@@ -41,7 +42,15 @@ class ToolboxToolset(BaseToolset):
         ] = None,
         bound_params: Optional[Mapping[str, Union[Callable[[], Any], Any]]] = None,
         auth_token_getters: Optional[
-            Mapping[str, Union[Callable[[], str], Callable[[], Awaitable[str]]]]
+            Mapping[
+                str,
+                Union[
+                    Callable[[], str],
+                    Callable[[], Awaitable[str]],
+                    Callable[[ToolContext], str],
+                    Callable[[ToolContext], Awaitable[str]],
+                ],
+            ]
         ] = None,
         **kwargs: Any,
     ):
@@ -91,7 +100,6 @@ class ToolboxToolset(BaseToolset):
             core_tools = await self.client.load_toolset(
                 self.__toolset_name,
                 bound_params=self.__bound_params or {},
-                auth_token_getters=self.__auth_token_getters or {},
             )
             tools.extend(core_tools)
 
@@ -101,7 +109,6 @@ class ToolboxToolset(BaseToolset):
                 core_tool = await self.client.load_tool(
                     name,
                     bound_params=self.__bound_params or {},
-                    auth_token_getters=self.__auth_token_getters or {},
                 )
                 tools.append(core_tool)
 
@@ -110,15 +117,40 @@ class ToolboxToolset(BaseToolset):
             core_tools = await self.client.load_toolset(
                 None,
                 bound_params=self.__bound_params or {},
-                auth_token_getters=self.__auth_token_getters or {},
             )
             tools.extend(core_tools)
+
+        # 4. Strictly validate unused toolset auth token getters using core logic
+        if self.__auth_token_getters:
+            overall_used_auth_keys = set()
+            for t in tools:
+                for reqs in t._required_authn_params.values():
+                    overall_used_auth_keys.update(reqs)
+                overall_used_auth_keys.update(t._required_authz_tokens)
+
+            # Generate intuitive name for the error string if a specific toolset wasn't used
+            validation_name = self.__toolset_name
+            if not validation_name:
+                validation_name = (
+                    ", ".join(self.__tool_names) if self.__tool_names else "default"
+                )
+
+            validate_unused_requirements(
+                provided_auth_keys=set(self.__auth_token_getters.keys()),
+                provided_bound_keys=set(),
+                used_auth_keys=overall_used_auth_keys,
+                used_bound_keys=set(),
+                name=validation_name,
+                is_toolset=True,
+                target_type="list of tools" if not self.__toolset_name else None,
+            )
 
         # Wrap all core tools in ToolboxTool
         return [
             ToolboxTool(
                 core_tool=t,
                 auth_config=self.client.credential_config,
+                adk_token_getters=self.__auth_token_getters,
             )
             for t in tools
         ]
