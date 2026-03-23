@@ -39,7 +39,7 @@ This repository hosts the following Python packages. See the package-specific RE
 
 ## Quickstart
 
-1.  **Set up the Toolbox Service**: Ensure you have a running MCP Toolbox server. Follow the [Toolbox Server Getting Started Guide](https://github.com/googleapis/genai-toolbox?tab=readme-ov-file#getting-started).
+1.  **Set up the Toolbox Service**: Ensure you have a running MCP Toolbox server. Follow the [MCP Toolbox Server Getting Started Guide](https://github.com/googleapis/genai-toolbox?tab=readme-ov-file#getting-started).
 2.  **Install the Appropriate SDK:**
 
     ```bash
