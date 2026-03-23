@@ -16,8 +16,6 @@ import inspect
 import logging
 from typing import Any, Awaitable, Callable, Dict, Mapping, Optional
 
-import google.adk.auth.exchanger.oauth2_credential_exchanger as oauth2_credential_exchanger
-import google.adk.auth.oauth2_credential_util as oauth2_credential_util
 import toolbox_core
 from fastapi.openapi.models import (
     OAuth2,
@@ -39,26 +37,6 @@ from typing_extensions import override
 
 from .client import USER_TOKEN_CONTEXT_VAR
 from .credentials import CredentialConfig, CredentialType
-
-# --- Monkey Patch ADK OAuth2 Exchange to Retain ID Tokens ---
-# Google's ID Token is required by MCP Toolbox but ADK's `update_credential_with_tokens` natively drops the `id_token`.
-# TODO(id_token): Remove this monkey patch once the PR https://github.com/google/adk-python/pull/4402 is merged.
-_orig_update_cred = oauth2_credential_util.update_credential_with_tokens
-
-
-def _patched_update_credential_with_tokens(auth_credential, tokens):
-    _orig_update_cred(auth_credential, tokens)
-    if tokens and "id_token" in tokens and auth_credential and auth_credential.oauth2:
-        setattr(auth_credential.oauth2, "id_token", tokens["id_token"])
-
-
-oauth2_credential_util.update_credential_with_tokens = (
-    _patched_update_credential_with_tokens
-)
-oauth2_credential_exchanger.update_credential_with_tokens = (
-    _patched_update_credential_with_tokens
-)
-# -------------------------------------------------------------
 
 
 class ToolboxTool(BaseTool):
@@ -256,15 +234,9 @@ class ToolboxTool(BaseTool):
                                 not hasattr(self._core_tool, "_auth_token_getters")
                                 or s not in self._core_tool._auth_token_getters
                             ):
-                                # TODO(id_token): Uncomment this line and remove the `getattr` fallback below once PR https://github.com/google/adk-python/pull/4402 is merged.
-                                # self._core_tool = self._core_tool.add_auth_token_getter(s, lambda t=creds.oauth2.id_token or creds.oauth2.access_token: t)
                                 self._core_tool = self._core_tool.add_auth_token_getter(
                                     s,
-                                    lambda t=getattr(
-                                        creds.oauth2,
-                                        "id_token",
-                                        creds.oauth2.access_token,
-                                    ): t,
+                                    lambda t=creds.oauth2.id_token or creds.oauth2.access_token: t,
                                 )
                         # Once we use it from get_auth_response, save it to the auth service for future use
                         try:
