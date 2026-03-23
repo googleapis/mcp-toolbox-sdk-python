@@ -111,15 +111,20 @@ class _McpHttpTransportBase(ITransport, ABC):
             elif isinstance(add_props, bool):
                 additional_properties = add_props
 
-        return ParameterSchema(
-            name=name,
-            type=param_type,
-            description=description,
-            required=name in required_fields if name else True,
-            items=items_schema,
-            additionalProperties=additional_properties,
+        kwargs = {
+            "name": name,
+            "type": param_type,
+            "description": description,
+            "required": name in required_fields if name else True,
+            "items": items_schema,
+            "additionalProperties": additional_properties,
             # Auth is handled by _convert_tool_schema
-        )
+        }
+
+        if "default" in schema:
+            kwargs["default"] = schema["default"]
+
+        return ParameterSchema(**kwargs)
 
     def _convert_tool_schema(self, tool_data: dict) -> ToolSchema:
         """
