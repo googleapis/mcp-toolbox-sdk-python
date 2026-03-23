@@ -67,11 +67,11 @@ jobs:
         with:
           python-version: "3.13"
 
+      - name: Install test requirements
+        run: pip install -e .[test]
+
       - name: Install library requirements
         run: pip install -r requirements.txt
-
-      - name: Install test requirements
-        run: pip install .[test]
 
       - name: Run linters
         run: |
