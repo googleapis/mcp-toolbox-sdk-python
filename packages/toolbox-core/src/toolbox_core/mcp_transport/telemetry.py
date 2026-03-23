@@ -79,9 +79,7 @@ METRIC_CLIENT_SESSION_DURATION = "mcp.client.session.duration"
 MCP_DURATION_BUCKETS = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60, 120, 300]
 
 
-def get_tracer(
-    name: str = "toolbox.mcp.client", version: Optional[str] = None
-) -> Tracer:
+def get_tracer(name: str = "toolbox.mcp.sdk", version: Optional[str] = None) -> Tracer:
     """Get a tracer from the global TracerProvider.
 
     This function retrieves a tracer from the globally configured TracerProvider.
@@ -89,7 +87,7 @@ def get_tracer(
     no-op tracer (zero overhead, no data collected).
 
     Args:
-        name: The instrumentation scope name (default: "toolbox.mcp.client")
+        name: The instrumentation scope name (default: "toolbox.mcp.sdk")
         version: The instrumentation scope version
 
     Returns:
@@ -107,7 +105,7 @@ def get_tracer(
     return trace.get_tracer(name, version)
 
 
-def get_meter(name: str = "toolbox.mcp.client", version: Optional[str] = None) -> Meter:
+def get_meter(name: str = "toolbox.mcp.sdk", version: Optional[str] = None) -> Meter:
     """Get a meter from the global MeterProvider.
 
     This function retrieves a meter from the globally configured MeterProvider.
@@ -115,7 +113,7 @@ def get_meter(name: str = "toolbox.mcp.client", version: Optional[str] = None) -
     no-op meter (zero overhead, no data collected).
 
     Args:
-        name: The instrumentation scope name (default: "toolbox.mcp.client")
+        name: The instrumentation scope name (default: "toolbox.mcp.sdk")
         version: The instrumentation scope version
 
     Returns:
@@ -149,7 +147,7 @@ def create_operation_duration_histogram(meter: Meter) -> Optional[Histogram]:
         return meter.create_histogram(
             name=METRIC_CLIENT_OPERATION_DURATION,
             unit="s",
-            description="Duration of MCP client operations (requests/notifications)",
+            description="Duration of MCP client operations (requests/notifications) from the time it was sent until the response or ack is received.",
             explicit_bucket_boundaries_advisory=MCP_DURATION_BUCKETS,
         )
     except Exception:
@@ -251,6 +249,7 @@ def start_span(
     """
     if tracer is None:
         return None, "", ""
+    span = None
     try:
         span_name = f"{method_name} {tool_name}" if tool_name else method_name
         span = tracer.start_span(span_name, kind=SpanKind.CLIENT)
@@ -284,7 +283,9 @@ def start_span(
 
         return span, traceparent, tracestate
     except Exception:
-        # Telemetry failed - continue without it
+        # Telemetry failed - clean up span if it was created to prevent memory leaks
+        if span is not None:
+            span.end()
         return None, "", ""
 
 

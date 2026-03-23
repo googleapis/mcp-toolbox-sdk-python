@@ -49,8 +49,8 @@ class _McpHttpTransportBase(ITransport, ABC):
         self._operation_duration_histogram: Optional[telemetry.Histogram] = None
         self._session_duration_histogram: Optional[telemetry.Histogram] = None
         if self._telemetry_enabled:
-            self._tracer = telemetry.get_tracer("toolbox", version.__version__)
-            meter = telemetry.get_meter("toolbox", version.__version__)
+            self._tracer = telemetry.get_tracer("toolbox.mcp.sdk", version.__version__)
+            meter = telemetry.get_meter("toolbox.mcp.sdk", version.__version__)
             self._operation_duration_histogram = (
                 telemetry.create_operation_duration_histogram(meter)
             )

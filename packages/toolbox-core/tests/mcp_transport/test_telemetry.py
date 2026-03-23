@@ -49,9 +49,7 @@ class TestGetTracer:
             with patch.object(telemetry_module, "trace") as mock_trace:
                 mock_trace.get_tracer.return_value = mock_tracer
                 result = get_tracer()
-                mock_trace.get_tracer.assert_called_once_with(
-                    "toolbox.mcp.client", None
-                )
+                mock_trace.get_tracer.assert_called_once_with("toolbox.mcp.sdk", None)
                 assert result == mock_tracer
 
     def test_returns_tracer_with_custom_name_and_version(self):
@@ -73,7 +71,7 @@ class TestGetMeter:
             with patch.object(telemetry_module, "metrics") as mock_metrics:
                 mock_metrics.get_meter.return_value = mock_meter
                 result = get_meter()
-                mock_metrics.get_meter.assert_called_once_with("toolbox.mcp.client", "")
+                mock_metrics.get_meter.assert_called_once_with("toolbox.mcp.sdk", "")
                 assert result == mock_meter
 
     def test_returns_meter_with_custom_name_and_version(self):
