@@ -299,3 +299,26 @@ class TestMcpHttpTransportBase:
         p_map_arr = next(p for p in schema.parameters if p.name == "map_of_arrays")
         assert p_map_arr.type == "object"
         assert p_map_arr.additionalProperties.type == "array"
+
+    def test_convert_tool_schema_default_value(self, transport):
+        """Test converting schema with a default parameter value."""
+        raw_tool = {
+            "name": "default_tool",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "count": {"type": "integer", "default": 10},
+                    "text": {"type": "string", "default": "hello"},
+                },
+            },
+        }
+
+        schema = transport._convert_tool_schema(raw_tool)
+
+        p_count = next(p for p in schema.parameters if p.name == "count")
+        assert p_count.has_default is True
+        assert p_count.default == 10
+
+        p_text = next(p for p in schema.parameters if p.name == "text")
+        assert p_text.has_default is True
+        assert p_text.default == "hello"
