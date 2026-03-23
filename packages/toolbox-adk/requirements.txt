@@ -1,5 +1,5 @@
 -e ../toolbox-core
-google-adk==1.20.0
+google-adk==1.27.2
 google-auth==2.45.0
 google-auth-oauthlib==1.2.1
 typing-extensions==4.14.1
