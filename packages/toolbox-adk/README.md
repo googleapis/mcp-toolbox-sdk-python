@@ -25,6 +25,7 @@ It provides a seamless bridge between the `toolbox-core` SDK and the ADK's `Base
 - [Advanced Configuration](#advanced-configuration)
     - [Additional Headers](#additional-headers)
     - [Global Parameter Binding](#global-parameter-binding)
+- [OpenTelemetry](#opentelemetry)
 
 ## Installation
 
@@ -261,6 +262,29 @@ toolset = ToolboxToolset(
     }
 )
 ```
+
+## OpenTelemetry
+
+The SDK supports OpenTelemetry tracing and metrics via the `toolbox-core` layer, following the [MCP Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/gen-ai/mcp).
+
+First install the telemetry extra from `toolbox-core`:
+
+```bash
+pip install toolbox-core[telemetry]
+```
+
+Then pass `telemetry_enabled=True` when creating your `ToolboxClient` or `ToolboxToolset`:
+
+```python
+from toolbox_adk import ToolboxToolset
+
+toolset = ToolboxToolset(
+    server_url="http://127.0.0.1:5000",
+    telemetry_enabled=True,
+)
+```
+
+Configure your OpenTelemetry `TracerProvider` and `MeterProvider` before creating the client. See the [toolbox-core OpenTelemetry documentation](../toolbox-core/README.md#opentelemetry) for a full setup example.
 
 ## Contributing
 

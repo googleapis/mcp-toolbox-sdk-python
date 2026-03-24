@@ -40,6 +40,7 @@ class ToolboxClient:
         additional_headers: Optional[
             Dict[str, Union[str, Callable[[], str], Callable[[], Awaitable[str]]]]
         ] = None,
+        telemetry_enabled: bool = False,
         **kwargs: Any,
     ):
         """
@@ -47,6 +48,7 @@ class ToolboxClient:
             server_url: The URL of the Toolbox server.
             credentials: The CredentialConfig object (from CredentialStrategy).
             additional_headers: Dictionary of headers (static or dynamic callables).
+            telemetry_enabled: Whether to enable OpenTelemetry tracing and metrics. (Default: False)
             **kwargs: Additional arguments passed to toolbox_core.ToolboxClient.
         """
         self._core_client_headers: Dict[
@@ -69,6 +71,7 @@ class ToolboxClient:
             client_headers=self._core_client_headers,
             client_name="toolbox-adk-python",
             client_version=__version__,
+            telemetry_enabled=telemetry_enabled,
             **kwargs,
         )
 
