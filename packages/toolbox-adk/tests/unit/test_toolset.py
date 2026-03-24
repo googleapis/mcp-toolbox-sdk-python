@@ -49,12 +49,8 @@ class TestToolboxToolset:
         assert isinstance(tools[0], ToolboxTool)
         assert isinstance(tools[1], ToolboxTool)
 
-        mock_client.load_toolset.assert_awaited_with(
-            "set1", bound_params={"p": 1}, auth_token_getters={}
-        )
-        mock_client.load_tool.assert_awaited_with(
-            "toolA", bound_params={"p": 1}, auth_token_getters={}
-        )
+        mock_client.load_toolset.assert_awaited_with("set1", bound_params={"p": 1})
+        mock_client.load_tool.assert_awaited_with("toolA", bound_params={"p": 1})
 
     @patch("toolbox_adk.toolset.ToolboxClient")
     @pytest.mark.asyncio
@@ -65,6 +61,8 @@ class TestToolboxToolset:
         t1 = MagicMock()
         t1.__name__ = "tool1"
         t1.__doc__ = "desc1"
+        t1._required_authn_params = {"param1": ["service"]}
+        t1._required_authz_tokens = []
         mock_client.load_tool = AsyncMock(return_value=t1)
 
         auth_getters = {"service": lambda: "token"}
@@ -75,9 +73,59 @@ class TestToolboxToolset:
         tools = await toolset.get_tools()
 
         assert len(tools) == 1
-        mock_client.load_tool.assert_awaited_with(
-            "toolA", bound_params={}, auth_token_getters=auth_getters
+        mock_client.load_tool.assert_awaited_with("toolA", bound_params={})
+        assert tools[0]._adk_token_getters == auth_getters
+
+    @patch("toolbox_adk.toolset.ToolboxClient")
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "authn,authz,should_raise",
+        [
+            ({}, [], True),  # No requirements, token is completely unused
+            ({"param1": ["service"]}, [], False),  # authn natively consumes it
+            ({}, ["service"], False),  # authz natively consumes it
+            (
+                {"param1": ["other"]},
+                ["service"],
+                False,
+            ),  # unused by authn, but authz consumes it
+            (
+                {"param1": ["service"]},
+                ["other"],
+                False,
+            ),  # authn consumes it, authz doesn't
+            (
+                {"param1": ["other"]},
+                ["other"],
+                True,
+            ),  # Requirements exist, but token is unused by both
+        ],
+    )
+    async def test_get_tools_auth_validation(
+        self, mock_client_cls, authn, authz, should_raise
+    ):
+        mock_client = mock_client_cls.return_value
+
+        t1 = MagicMock()
+        t1.__name__ = "tool1"
+        t1._required_authn_params = authn
+        t1._required_authz_tokens = authz
+        mock_client.load_tool = AsyncMock(return_value=t1)
+
+        auth_getters = {"service": lambda: "token"}
+        toolset = ToolboxToolset(
+            "url", tool_names=["toolA"], auth_token_getters=auth_getters
         )
+
+        if should_raise:
+            with pytest.raises(
+                ValueError,
+                match="unused auth tokens could not be applied to any tool: service",
+            ):
+                await toolset.get_tools()
+        else:
+            tools = await toolset.get_tools()
+            assert len(tools) == 1
 
     @patch("toolbox_adk.toolset.ToolboxClient")
     @pytest.mark.asyncio

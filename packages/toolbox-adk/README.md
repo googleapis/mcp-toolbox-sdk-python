@@ -25,6 +25,7 @@ It provides a seamless bridge between the `toolbox-core` SDK and the ADK's `Base
 - [Advanced Configuration](#advanced-configuration)
     - [Additional Headers](#additional-headers)
     - [Global Parameter Binding](#global-parameter-binding)
+- [OpenTelemetry](#opentelemetry)
 
 ## Installation
 
@@ -210,6 +211,9 @@ creds = CredentialStrategy.from_adk_credentials(auth_credential, scheme)
 
 Some tools may define their own authentication requirements (e.g., Salesforce OAuth, GitHub PAT) via `authSources` in their schema. You can provide a mapping of getters to resolve these tokens at runtime.
 
+> [!TIP]
+> Getters can optionally accept the ADK `ToolContext` as a single argument. This enables seamless integration of dynamic, end-user tokens that are tied to the current agent execution state.
+
 ```python
 async def get_salesforce_token():
     # Fetch token from secret manager or reliable source
@@ -218,8 +222,9 @@ async def get_salesforce_token():
 toolset = ToolboxToolset(
     server_url="...",
     auth_token_getters={
-        "salesforce-auth": get_salesforce_token,   # Async callable
-        "github-pat": lambda: "my-pat-token"       # Sync callable or static lambda
+        "salesforce-auth": get_salesforce_token,                # Async callable
+        "github-pat": lambda: "my-pat-token",                   # Sync callable or static lambda
+        "oauth-user": lambda ctx: ctx.state.get("auth_token")   # Dynamic context-aware callable
     }
 )
 ```
@@ -257,6 +262,29 @@ toolset = ToolboxToolset(
     }
 )
 ```
+
+## OpenTelemetry
+
+The SDK supports OpenTelemetry tracing and metrics via the `toolbox-core` layer, following the [MCP Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/gen-ai/mcp).
+
+First install the telemetry extra from `toolbox-core`:
+
+```bash
+pip install toolbox-core[telemetry]
+```
+
+Then pass `telemetry_enabled=True` when creating your `ToolboxClient` or `ToolboxToolset`:
+
+```python
+from toolbox_adk import ToolboxToolset
+
+toolset = ToolboxToolset(
+    server_url="http://127.0.0.1:5000",
+    telemetry_enabled=True,
+)
+```
+
+Configure your OpenTelemetry `TracerProvider` and `MeterProvider` before creating the client. See the [toolbox-core OpenTelemetry documentation](../toolbox-core/README.md#opentelemetry) for a full setup example.
 
 ## Contributing
 
