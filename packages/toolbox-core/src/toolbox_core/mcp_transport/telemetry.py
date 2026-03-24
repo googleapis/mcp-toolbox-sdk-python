@@ -24,6 +24,7 @@ Note: OpenTelemetry is an optional dependency. Install with:
     pip install toolbox-core[telemetry]
 """
 
+import logging
 from typing import Any, Optional
 from urllib.parse import urlparse
 
@@ -282,7 +283,8 @@ def start_span(
             tracestate = create_tracestate_from_context()
 
         return span, traceparent, tracestate
-    except Exception:
+    except Exception as e:
+        logging.warning("start_span failed due to %s", e)
         # Telemetry failed - clean up span if it was created to prevent memory leaks
         if span is not None:
             span.end()
@@ -303,9 +305,8 @@ def end_span(span: Optional[Span], error: Optional[Exception] = None) -> None:
             span.set_status(Status(StatusCode.ERROR, str(error)))
             span.set_attribute(ATTR_ERROR_TYPE, type(error).__name__)
         span.end()
-    except Exception:
-        # Ignore telemetry errors
-        pass
+    except Exception as e:
+        logging.warning("end_span failed due to %s", e)
 
 
 def record_error_from_jsonrpc(span: Span, error_code: int, error_message: str) -> None:
@@ -374,9 +375,8 @@ def record_operation_duration(
             attributes[ATTR_ERROR_TYPE] = type(error).__name__
 
         histogram.record(duration_seconds, attributes)
-    except Exception:
-        # Ignore metrics recording errors
-        pass
+    except Exception as e:
+        logging.warning("record_operation_duration failed due to %s", e)
 
 
 def record_session_duration(
@@ -422,6 +422,5 @@ def record_session_duration(
             attributes[ATTR_ERROR_TYPE] = type(error).__name__
 
         histogram.record(duration_seconds, attributes)
-    except Exception:
-        # Ignore metrics recording errors
-        pass
+    except Exception as e:
+        logging.warning("record_session_duration failed due to %s", e)
