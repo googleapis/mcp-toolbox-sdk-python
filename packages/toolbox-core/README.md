@@ -49,6 +49,10 @@ involving Large Language Models (LLMs).
     - [Option A: Binding Parameters to a Loaded Tool](#option-a-binding-parameters-to-a-loaded-tool)
     - [Option B: Binding Parameters While Loading Tools](#option-b-binding-parameters-while-loading-tools)
     - [Binding Dynamic Values](#binding-dynamic-values)
+- [OpenTelemetry](#opentelemetry)
+    - [Installation](#installation-1)
+    - [Usage](#usage-1)
+    - [Configuring an OpenTelemetry Provider](#configuring-an-opentelemetry-provider)
 - [Contributing](#contributing)
 - [License](#license)
 - [Support](#support)
@@ -617,6 +621,64 @@ dynamic_bound_tool = tool.bind_param("param", get_dynamic_value)
 
 > [!IMPORTANT]
 > You don't need to modify tool configurations to bind parameter values.
+
+## OpenTelemetry
+
+The SDK supports OpenTelemetry tracing and metrics following the [MCP Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/gen-ai/mcp). When enabled, each `tools/list` and `tools/call` operation produces a client span and records an operation-duration histogram, and W3C `traceparent`/`tracestate` headers are propagated to the Toolbox server for distributed tracing.
+
+### Installation
+
+Install the `telemetry` extra to include the OpenTelemetry dependencies:
+
+```bash
+pip install toolbox-core[telemetry]
+```
+
+### Usage
+
+Pass `telemetry_enabled=True` when creating a `ToolboxClient` or `ToolboxSyncClient`:
+
+```py
+from toolbox_core import ToolboxClient
+
+async with ToolboxClient("http://127.0.0.1:5000", telemetry_enabled=True) as toolbox:
+    tool = await toolbox.load_tool("my-tool")
+    result = await tool(param="value")
+```
+
+### Configuring an OpenTelemetry Provider
+
+The SDK reads the globally configured `TracerProvider` and `MeterProvider`. Set these up in your application before creating the client:
+
+```py
+from opentelemetry import trace, metrics
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.sdk.metrics import MeterProvider
+from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import OTLPMetricExporter
+from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
+
+# Configure tracing
+tracer_provider = TracerProvider()
+tracer_provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter()))
+trace.set_tracer_provider(tracer_provider)
+
+# Configure metrics
+metric_reader = PeriodicExportingMetricReader(OTLPMetricExporter())
+meter_provider = MeterProvider(metric_readers=[metric_reader])
+metrics.set_meter_provider(meter_provider)
+
+# Now create the client with telemetry enabled
+async with ToolboxClient("http://127.0.0.1:5000", telemetry_enabled=True) as toolbox:
+    ...
+```
+
+> [!NOTE]
+> If `telemetry_enabled=True` but no provider is configured, OpenTelemetry's no-op
+> implementation is used — no data is exported and there is zero overhead. The
+> optional `[telemetry]` extra must be installed for `telemetry_enabled=True` to
+> have any effect; if it is not installed the flag is silently ignored.
 
 # Contributing
 

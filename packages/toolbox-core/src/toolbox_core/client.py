@@ -21,6 +21,7 @@ from typing import Any, Awaitable, Callable, Mapping, Optional, Union
 from aiohttp import ClientSession
 from deprecated import deprecated
 
+from . import version
 from .itransport import ITransport
 from .mcp_transport import (
     McpHttpTransportV20241105,
@@ -59,6 +60,7 @@ class ToolboxClient:
         protocol: Protocol = Protocol.MCP,
         client_name: Optional[str] = None,
         client_version: Optional[str] = None,
+        telemetry_enabled: bool = False,
     ):
         """
         Initializes the ToolboxClient.
@@ -72,7 +74,11 @@ class ToolboxClient:
             client_headers: Headers to include in each request sent through this
             client.
             protocol: The communication protocol to use.
+            client_name: Optional client name for identification.
+            client_version: Optional client version for identification.
+            telemetry_enabled: Whether to enable OpenTelemetry tracing and metrics. (Default: False)
         """
+
         if protocol != Protocol.MCP_LATEST:
             logging.warning(
                 f"A newer version of MCP ({Protocol.MCP_LATEST.value}) is available. "
@@ -82,19 +88,39 @@ class ToolboxClient:
         match protocol:
             case Protocol.MCP_v20251125:
                 self.__transport = McpHttpTransportV20251125(
-                    url, session, protocol, client_name, client_version
+                    url,
+                    session,
+                    protocol,
+                    client_name,
+                    client_version,
+                    telemetry_enabled=telemetry_enabled,
                 )
             case Protocol.MCP_v20250618:
                 self.__transport = McpHttpTransportV20250618(
-                    url, session, protocol, client_name, client_version
+                    url,
+                    session,
+                    protocol,
+                    client_name,
+                    client_version,
+                    telemetry_enabled=telemetry_enabled,
                 )
             case Protocol.MCP_v20250326:
                 self.__transport = McpHttpTransportV20250326(
-                    url, session, protocol, client_name, client_version
+                    url,
+                    session,
+                    protocol,
+                    client_name,
+                    client_version,
+                    telemetry_enabled=telemetry_enabled,
                 )
             case Protocol.MCP_v20241105:
                 self.__transport = McpHttpTransportV20241105(
-                    url, session, protocol, client_name, client_version
+                    url,
+                    session,
+                    protocol,
+                    client_name,
+                    client_version,
+                    telemetry_enabled=telemetry_enabled,
                 )
             case _:
                 raise ValueError(f"Unsupported MCP protocol version: {protocol}")
