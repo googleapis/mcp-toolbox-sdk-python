@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
 import pytest_asyncio
@@ -39,11 +39,39 @@ def create_fake_tools_list_result():
     )
 
 
-@pytest_asyncio.fixture
-async def transport():
+@pytest_asyncio.fixture(
+    params=[False, True], ids=["telemetry_disabled", "telemetry_enabled"]
+)
+async def transport(request, mocker):
+    if request.param:
+        mocker.patch("toolbox_core.mcp_transport.telemetry.TELEMETRY_AVAILABLE", True)
+        mocker.patch(
+            "toolbox_core.mcp_transport.telemetry.get_tracer", return_value=MagicMock()
+        )
+        mocker.patch(
+            "toolbox_core.mcp_transport.telemetry.get_meter", return_value=MagicMock()
+        )
+        mocker.patch(
+            "toolbox_core.mcp_transport.telemetry.create_operation_duration_histogram",
+            return_value=MagicMock(),
+        )
+        mocker.patch(
+            "toolbox_core.mcp_transport.telemetry.create_session_duration_histogram",
+            return_value=MagicMock(),
+        )
+        mocker.patch(
+            "toolbox_core.mcp_transport.telemetry.start_span",
+            return_value=(MagicMock(), "00-traceparent", ""),
+        )
+        mocker.patch("toolbox_core.mcp_transport.telemetry.end_span")
+        mocker.patch("toolbox_core.mcp_transport.telemetry.record_operation_duration")
+        mocker.patch("toolbox_core.mcp_transport.telemetry.record_session_duration")
     mock_session = AsyncMock(spec=ClientSession)
     transport = McpHttpTransportV20250326(
-        "http://fake-server.com", session=mock_session, protocol=Protocol.MCP_v20250326
+        "http://fake-server.com",
+        session=mock_session,
+        protocol=Protocol.MCP_v20250326,
+        telemetry_enabled=request.param,
     )
     yield transport
     await transport.close()
