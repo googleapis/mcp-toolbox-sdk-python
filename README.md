@@ -57,7 +57,7 @@ This repository hosts the following Python packages. See the package-specific RE
     pip install toolbox-langchain
     
     # For the LlamaIndex integration
-pip install toolbox-langchain
+    pip install toolbox-llamaindex
 
 # OR
 
