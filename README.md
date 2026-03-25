@@ -56,7 +56,7 @@ This repository hosts the following Python packages. See the package-specific RE
     # For LangChain/LangGraph integration
     pip install toolbox-langchain
 
-    #OR
+    # OR
     
     # For the LlamaIndex integration
     pip install toolbox-llamaindex
