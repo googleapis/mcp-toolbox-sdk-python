@@ -61,11 +61,6 @@ This repository hosts the following Python packages. See the package-specific RE
     # For the LlamaIndex integration
     pip install toolbox-llamaindex
 
-# OR
-
-# For the LlamaIndex integration
-pip install toolbox-llamaindex
-    ```
 3.  **Explore Tutorials**: Check out the [Python Quickstart Tutorial](https://googleapis.github.io/genai-toolbox/getting-started/local_quickstart/) for a full walkthrough.
 
 ## Contributing
