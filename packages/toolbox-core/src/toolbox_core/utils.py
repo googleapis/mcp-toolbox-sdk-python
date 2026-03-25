@@ -34,13 +34,19 @@ from toolbox_core.protocol import ParameterSchema
 
 def create_func_docstring(description: str, params: Sequence[ParameterSchema]) -> str:
     """Convert tool description and params into its function docstring"""
-    docstring = description
+    docstring = description.rstrip()
+
     if not params:
         return docstring
+
     docstring += "\n\nArgs:"
+
     for p in params:
         annotation = p.to_param().annotation
-        docstring += f"\n    {p.name} ({getattr(annotation, '__name__', str(annotation))}): {p.description}"
+
+        param_desc = p.description.strip() if p.description else ""
+
+        docstring += f"\n    {p.name} ({getattr(annotation, '__name__', str(annotation))}): {param_desc}"
     return docstring
 
 
@@ -88,7 +94,6 @@ def identify_auth_requirements(
 
     # find which of the required authn params are covered by available services.
     for param, services in req_authn_params.items():
-
         # if we don't have a token_getter for any of the services required by the param,
         # the param is still required
         matched_authn_services = [s for s in services if s in auth_service_names]
@@ -119,7 +124,6 @@ def params_to_pydantic_model(
     """Converts the given parameters to a Pydantic BaseModel class."""
     field_definitions = {}
     for field in params:
-
         # Determine the default value based on the 'required' flag and the 'default' field.
         # '...' (Ellipsis) signifies a required field in Pydantic.
         # If a default value is provided in the schema, it should be used.
