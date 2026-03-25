@@ -65,6 +65,7 @@ The toolbox-langchain package provids a dedicated integration to seamlessly load
 - [Authenticating Tools](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/langchain/#authenticating-tools)
 - [Binding Parameter Values](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/langchain/#parameter-binding)
 - [Asynchronous Usage](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/langchain/#asynchronous-usage)
+- [OpenTelemetry](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/langchain/#opentelemetry)
 
 # Contributing
 

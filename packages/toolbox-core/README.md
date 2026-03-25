@@ -62,6 +62,7 @@ The core package provides a framework-agnostic way to interact with your Toolbox
 - [Client to Server Authentication](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/core/#client-to-server-authentication)
 - [Authenticating Tools](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/core/#authenticating-tools)
 - [Binding Parameter Values](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/core/#parameter-binding)
+- [OpenTelemetry](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/core/#opentelemetry)
 
 
 # Contributing

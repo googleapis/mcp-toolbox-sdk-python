@@ -24,6 +24,7 @@ The `toolbox-adk` package provides a seamless bridge to natively use MCP Toolbox
 - [Transport Protocols](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/adk/#transport-protocols)
 - [Authentication](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/adk/#authentication)
 - [Advanced Configuration](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/adk/#advanced-configuration)
+- [OpenTelemetry](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/adk/#opentelemetry)
 
 ## Contributing
 

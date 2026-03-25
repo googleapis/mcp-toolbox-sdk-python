@@ -71,6 +71,7 @@ The `toolbox-llamaindex` package provides a dedicated integration to seamlessly 
 - [Authenticating Tools](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/llamaindex/#authenticating-tools)
 - [Binding Parameter Values](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/llamaindex/#parameter-binding)
 - [Asynchronous Usage](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/llamaindex/#asynchronous-usage)
+- [OpenTelemetry](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/llamaindex/#opentelemetry)
 
 # Contributing 
 
