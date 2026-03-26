@@ -36,6 +36,7 @@ class AsyncToolboxClient:
             Mapping[str, Union[Callable[[], str], Callable[[], Awaitable[str]], str]]
         ] = None,
         protocol: Protocol = Protocol.MCP,
+        telemetry_enabled: bool = False,
     ):
         """
         Initializes the AsyncToolboxClient for the Toolbox service at the given URL.
@@ -43,6 +44,7 @@ class AsyncToolboxClient:
         Args:
             url: The base URL of the Toolbox service.
             session: An HTTP client session.
+            telemetry_enabled: Whether to enable OpenTelemetry tracing and metrics. (Default: False)
         """
         self.__core_client = ToolboxCoreClient(
             url=url,
@@ -51,6 +53,7 @@ class AsyncToolboxClient:
             protocol=protocol,
             client_name="toolbox-llamaindex-python",
             client_version=__version__,
+            telemetry_enabled=telemetry_enabled,
         )
 
     async def aload_tool(

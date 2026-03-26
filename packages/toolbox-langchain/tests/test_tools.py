@@ -67,6 +67,9 @@ def assert_pydantic_models_equivalent(
         assert (
             is_required1 == is_required2
         ), f"Field '{field_name}': Required status mismatch ({is_required1} != {is_required2})"
+        assert (
+            field_info1.default == field_info2.default
+        ), f"Field '{field_name}': Default value mismatch ({field_info1.default} != {field_info2.default})"
 
 
 class TestToolboxTool:
@@ -76,7 +79,12 @@ class TestToolboxTool:
             "description": "Test Tool Description",
             "parameters": [
                 {"name": "param1", "type": "string", "description": "Param 1"},
-                {"name": "param2", "type": "integer", "description": "Param 2"},
+                {
+                    "name": "param2",
+                    "type": "integer",
+                    "description": "Param 2",
+                    "default": 42,
+                },
             ],
         }
 
@@ -189,6 +197,9 @@ class TestToolboxTool:
         assert_pydantic_models_equivalent(
             tool.args_schema, expected_args_schema, mock_core_tool._name
         )
+
+        # Verify defaults actually persisted from the schema correctly
+        assert tool.args_schema.model_fields["param2"].default == 42
 
     @pytest.mark.parametrize(
         "params",

@@ -28,7 +28,8 @@ steps:
         # Use $$ to escape shell variable for Cloud Build
         CORE_VERSION=$$(python -c "v={}; exec(open('../toolbox-core/src/toolbox_core/version.py').read(), v); print(v['__version__'])")
         sed -i "s/toolbox-core==[0-9.]*/toolbox-core==$$CORE_VERSION/g" pyproject.toml
-        uv pip install -r requirements.txt -e '.[test]'
+        uv pip install -r requirements.txt
+        uv pip install -e '.[test]'
     entrypoint: /bin/bash
   - id: Run integration tests
     name: 'python:${_VERSION}'
@@ -48,5 +49,5 @@ options:
   logging: CLOUD_LOGGING_ONLY
 substitutions:
   _VERSION: '3.13'
-  _TOOLBOX_VERSION: '0.27.0'
+  _TOOLBOX_VERSION: '0.30.0'
   _TOOLBOX_MANIFEST_VERSION: '34'

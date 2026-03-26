@@ -104,6 +104,24 @@ class TestBasicE2E:
         ):
             await get_n_rows_tool(num_rows=2)
 
+    @pytest.mark.parametrize(
+        "telemetry_enabled",
+        [False, True],
+        ids=["telemetry_disabled", "telemetry_enabled"],
+    )
+    async def test_load_and_run_tool_with_telemetry(self, telemetry_enabled: bool):
+        """Load and invoke a tool with telemetry_enabled=True/False."""
+        async with ToolboxClient(
+            "http://localhost:5000",
+            protocol=Protocol.MCP,
+            telemetry_enabled=telemetry_enabled,
+        ) as toolbox:
+            tool = await toolbox.load_tool("get-n-rows")
+            assert tool.__name__ == "get-n-rows"
+            response = await tool(num_rows="1")
+            assert isinstance(response, str)
+            assert "row1" in response
+
 
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("toolbox_server")
