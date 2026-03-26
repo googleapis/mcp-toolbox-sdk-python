@@ -444,3 +444,41 @@ class TestMapParams:
                 execution_context={"env": "staging"},
                 user_scores={"user4": "not-an-integer"},
             )
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("toolbox_server")
+class TestComplexParamsNativeE2E:
+    """Tests all 4 tools using the Native Async protocol."""
+
+    async def test_process_list_array(self, toolbox: ToolboxClient):
+        tool = await toolbox.load_tool("process-list")
+        response = await tool(
+            email="twishabansal@google.com",
+            tags=["urgent", "row1", "verified"]
+        )
+        assert "twishabansal" in response
+
+    async def test_handle_nested_config_map(self, toolbox: ToolboxClient):
+        tool = await toolbox.load_tool("handle-nested-config")
+        response = await tool(
+            filter={"status": "active"},
+            metadata={"source": "e2e-test", "row_ref": "row2"}
+        )
+        assert "active" in response
+
+    async def test_manage_data_batches_mixed(self, toolbox: ToolboxClient):
+        tool = await toolbox.load_tool("manage-data-batches")
+        response = await tool(
+            email="twishabansal@google.com",
+            batches={"primary": [1, 2], "secondary": [3]}
+        )
+        assert "primary" in response
+
+    async def test_lookup_by_profile_deep(self, toolbox: ToolboxClient):
+        tool = await toolbox.load_tool("lookup-by-profile")
+        profile_data = {
+            "identity": {"email": "twishabansal@google.com"},
+            "schedule": {"cron": "0 9 * * 1", "timezone": "PST"}
+        }
+        response = await tool(profile=profile_data)
+        assert "twishabansal" in response
