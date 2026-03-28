@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.0.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v0.6.0...toolbox-core-v1.0.0) (2026-03-25)
+
+
+### Features
+
+* **adk:** Support `ToolContext` for `auth_token_getters` in `toolbox-adk` ([#579](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/579)) ([05e5f2c](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/05e5f2cba0a123c14594508eeee6bd228274b138))
+* **core:** add observability with OpenTelemetry ([#583](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/583)) ([d479385](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/d479385cccf31a7cb1dffcc4634ddb6fe7ef932a))
+
+
+### Bug Fixes
+
+* **core:** resolve dropped default parameter values in MCP transport parsing ([#601](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/601)) ([08c4af4](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/08c4af4217feab19fdf8cb4fb328d1bb5e10a4e3))
+* improve tool docstrings ([#593](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/593)) ([90a2b33](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/90a2b33937f396eb554e222762e7732829f7f1c1))
+
+
+### Documentation
+
+* Documentation migrated to the MCP Toolbox official docsite ([#581](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/581)) ([da12899](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/da1289944d8d401c0d2b958ae47da42da729848e))
+
 ## [0.6.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v0.5.10...toolbox-core-v0.6.0) (2026-03-03)
 
 

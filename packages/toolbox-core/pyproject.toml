@@ -43,6 +43,11 @@ Repository = "https://github.com/googleapis/mcp-toolbox-sdk-python.git"
 Changelog = "https://github.com/googleapis/mcp-toolbox-sdk-python/blob/main/packages/toolbox-core/CHANGELOG.md"
 
 [project.optional-dependencies]
+telemetry = [
+    "opentelemetry-api>=1.20.0,<2.0.0",
+    "opentelemetry-sdk>=1.20.0,<2.0.0",
+    "opentelemetry-exporter-otlp>=1.20.0,<2.0.0"
+]
 test = [
     "black[jupyter]==26.1.0",
     "isort==8.0.0",
@@ -54,7 +59,8 @@ test = [
     "pytest-mock==3.15.1",
     "google-cloud-secret-manager==2.26.0",
     "google-cloud-storage==3.7.0",
-    "aioresponses==0.7.8"
+    "aioresponses==0.7.8",
+    "toolbox-core[telemetry]"
 ]
 [build-system]
 requires = ["setuptools"]

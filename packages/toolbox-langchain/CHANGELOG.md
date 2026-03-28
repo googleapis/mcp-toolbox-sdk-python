@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.0.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-langchain-v0.6.0...toolbox-langchain-v1.0.0) (2026-03-25)
+
+
+### Features
+
+* **core:** add observability with OpenTelemetry ([#583](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/583)) ([d479385](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/d479385cccf31a7cb1dffcc4634ddb6fe7ef932a))
+
+
+### Bug Fixes
+
+* **core:** resolve dropped default parameter values in MCP transport parsing ([#601](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/601)) ([08c4af4](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/08c4af4217feab19fdf8cb4fb328d1bb5e10a4e3))
+
+
+### Documentation
+
+* Migrate documentation to MCP Toolbox official docsite ([#581](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/581)) ([da12899](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/da1289944d8d401c0d2b958ae47da42da729848e))
+
 ## [0.6.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-langchain-v0.5.10...toolbox-langchain-v0.6.0) (2026-03-05)
 
 

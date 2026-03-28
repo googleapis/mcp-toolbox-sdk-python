@@ -73,10 +73,20 @@ class ClientCapabilities(_BaseMCPModel):
     pass
 
 
+class MCPMeta(_BaseMCPModel):
+    """Metadata for MCP requests including OpenTelemetry trace context."""
+
+    traceparent: str | None = None
+    tracestate: str | None = None
+
+
 class InitializeRequestParams(RequestParams):
     protocolVersion: str
     capabilities: ClientCapabilities
     clientInfo: Implementation
+    # OpenTelemetry trace context propagation
+    # See: https://opentelemetry.io/docs/specs/semconv/gen-ai/mcp/#context-propagation
+    field_meta: MCPMeta | None = Field(default=None, serialization_alias="_meta")
 
 
 class ServerCapabilities(_BaseMCPModel):
@@ -98,6 +108,12 @@ class Tool(BaseMetadata):
 
 class ListToolsResult(_BaseMCPModel):
     tools: list[Tool]
+
+
+class ListToolsRequestParams(_BaseMCPModel):
+    # OpenTelemetry trace context propagation
+    # See: https://opentelemetry.io/docs/specs/semconv/gen-ai/mcp/#context-propagation
+    field_meta: MCPMeta | None = Field(default=None, serialization_alias="_meta")
 
 
 class TextContent(_BaseMCPModel):
@@ -141,7 +157,7 @@ class InitializedNotification(MCPNotification):
 
 class ListToolsRequest(MCPRequest[ListToolsResult]):
     method: Literal["tools/list"] = "tools/list"
-    params: dict[str, Any] = {}
+    params: ListToolsRequestParams = Field(default_factory=ListToolsRequestParams)
 
     def get_result_model(self) -> Type[ListToolsResult]:
         return ListToolsResult
@@ -150,6 +166,9 @@ class ListToolsRequest(MCPRequest[ListToolsResult]):
 class CallToolRequestParams(_BaseMCPModel):
     name: str
     arguments: dict[str, Any]
+    # OpenTelemetry trace context propagation
+    # See: https://opentelemetry.io/docs/specs/semconv/gen-ai/mcp/#context-propagation
+    field_meta: MCPMeta | None = Field(default=None, serialization_alias="_meta")
 
 
 class CallToolRequest(MCPRequest[CallToolResult]):

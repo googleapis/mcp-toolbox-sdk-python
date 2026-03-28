@@ -463,6 +463,20 @@ class TestToolboxClient:
         client.close()
         mock_core_client_constructor.return_value.close.assert_called_once()
 
+    @pytest.mark.parametrize(
+        "telemetry_enabled",
+        [False, True],
+        ids=["telemetry_disabled", "telemetry_enabled"],
+    )
+    @patch("toolbox_llamaindex.client.ToolboxCoreSyncClient")
+    def test_telemetry_enabled_forwarded(
+        self, mock_core_client_constructor, telemetry_enabled
+    ):
+        """Verifies that telemetry_enabled is forwarded to the core client."""
+        ToolboxClient(URL, telemetry_enabled=telemetry_enabled)
+        call_kwargs = mock_core_client_constructor.call_args[1]
+        assert call_kwargs["telemetry_enabled"] == telemetry_enabled
+
     @patch("toolbox_core.sync_client.ToolboxSyncClient.load_toolset")
     def test_load_toolset_with_deprecated_args(
         self, mock_core_load_toolset, toolbox_client
