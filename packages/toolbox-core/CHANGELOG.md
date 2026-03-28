@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.1](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v1.0.0...toolbox-core-v1.0.1) (2026-03-28)
+
+
+### Miscellaneous Chores
+
+* **deps:** update dependency requests to v2.33.0 [security] ([#607](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/607)) ([33cae27](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/33cae278e4edcd562219e9160e998ef19b819122))
+* **deps:** update mcp toolbox server version in integration tests to v0.31.0 to v0.31.0 ([#609](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/609)) ([0883de3](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/0883de368379f9c62bd915ff1b0e7acecced4ff3))
+
 ## [1.0.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v0.6.0...toolbox-core-v1.0.0) (2026-03-25)
 
 
