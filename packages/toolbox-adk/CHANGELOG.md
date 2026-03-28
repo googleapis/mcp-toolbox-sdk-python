@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.0.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-adk-v0.7.0...toolbox-adk-v1.0.0) (2026-03-25)
+
+
+### Features
+
+* **adk:** Enable support for ADK 2.0 ([#584](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/584)) ([7effeb5](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/7effeb518e88329b32fa32bbacc08bf9e6de5de4))
+* **adk:** Support `ToolContext` for `auth_token_getters` in `toolbox-adk` ([#579](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/579)) ([05e5f2c](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/05e5f2cba0a123c14594508eeee6bd228274b138))
+* **core:** add observability with OpenTelemetry ([#583](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/583)) ([d479385](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/d479385cccf31a7cb1dffcc4634ddb6fe7ef932a))
+
+
+### Bug Fixes
+
+* **adk:** Preserve complex schema types (arrays/objects) in `FunctionDeclaration` mapping ([#594](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/594)) ([c91e7d5](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/c91e7d50383c10f4c4e9ee682c6da3912b574612))
+* **adk:** remove id_token monkey patch following upstream ADK fix ([#602](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/602)) ([d9cd9aa](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/d9cd9aa5a0fd80349be78e9b6a5242af469e463a))
+
+
+### Documentation
+
+* Documentation migrated to MCP Toolbox official docsite. ([#581](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/581)) ([da12899](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/da1289944d8d401c0d2b958ae47da42da729848e))
+
 ## [0.7.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-adk-v0.6.1...toolbox-adk-v0.7.0) (2026-03-05)
 
 
