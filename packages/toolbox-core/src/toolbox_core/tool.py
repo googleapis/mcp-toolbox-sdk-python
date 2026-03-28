@@ -83,6 +83,12 @@ class ToolboxTool:
         self.__transport = transport
         self.__description = description
         self.__params = params
+        # Map from Python-safe field names back to the original schema names.
+        # This allows us to expose valid Python identifiers in function signatures
+        # while still sending the original parameter names to the Toolbox server.
+        self.__param_name_map: dict[str, str] = {
+            p.get_python_safe_field_name(): p.name for p in self.__params
+        }
         self.__pydantic_model = params_to_pydantic_model(name, self.__params)
 
         # Separate parameters into those without a default and those with a
@@ -250,7 +256,12 @@ class ToolboxTool:
 
         # The payload will only contain arguments explicitly provided by the user.
         # Optional arguments not provided by the user will not be in the payload.
-        payload = all_args.arguments
+        # At this point, keys are Python-safe field names. Map them back to the
+        # original schema names expected by the Toolbox server.
+        payload = OrderedDict()
+        for safe_name, value in all_args.arguments.items():
+            original_name = self.__param_name_map.get(safe_name, safe_name)
+            payload[original_name] = value
 
         # Perform argument type validations using pydantic
         self.__pydantic_model.model_validate(payload)
