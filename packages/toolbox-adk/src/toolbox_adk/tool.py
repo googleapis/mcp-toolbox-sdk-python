@@ -15,6 +15,7 @@
 import inspect
 import logging
 from typing import Any, Dict, Mapping, Optional
+from pydantic import ValidationError
 
 import toolbox_core
 from fastapi.openapi.models import (
@@ -269,7 +270,12 @@ class ToolboxTool(BaseTool):
 
         try:
             return await self._core_tool(**args)
+        except (TypeError, PermissionError, ValueError, ValidationError) as e:
+            # Propagate framework-level errors to ensure compatibility with existing tests
+            raise e
         except Exception as e:
+            # Catch unexpected tool execution errors and return as a structured dictionary
+            # This handles cases like remote tool crashes or server errors gracefully for LLMs
             logging.warning(
                 "Toolbox tool '%s' execution failed: %s", self.name, e, exc_info=True
             )
