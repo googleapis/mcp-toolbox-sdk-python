@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.1](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-adk-v1.0.0...toolbox-adk-v1.0.1) (2026-04-02)
+
+
+### Miscellaneous Chores
+
+* **deps:** bump langchain-core in /packages/toolbox-langchain ([#615](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/615)) ([154c8ef](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/154c8ef55be79d7d3c4b75602c9c887a5ade4d90))
+* **deps:** update mcp toolbox server version in integration tests to v0.31.0 to v0.31.0 ([#609](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/609)) ([0883de3](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/0883de368379f9c62bd915ff1b0e7acecced4ff3))
+
 ## [1.0.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-adk-v0.7.0...toolbox-adk-v1.0.0) (2026-03-25)
 
 
