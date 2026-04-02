@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.1](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v1.0.0...toolbox-core-v1.0.1) (2026-04-02)
+
+
+### Miscellaneous Chores
+
+* **deps:** bump aiohttp in /packages/toolbox-core ([#621](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/621)) ([6678055](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/6678055365363171960e5326f6e8c07ec640afd9))
+* **deps:** bump langchain-core in /packages/toolbox-langchain ([#615](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/615)) ([154c8ef](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/154c8ef55be79d7d3c4b75602c9c887a5ade4d90))
+* **deps:** update dependency requests to v2.33.0 [security] ([#607](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/607)) ([33cae27](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/33cae278e4edcd562219e9160e998ef19b819122))
+* **deps:** update mcp toolbox server version in integration tests to v0.31.0 to v0.31.0 ([#609](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/609)) ([0883de3](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/0883de368379f9c62bd915ff1b0e7acecced4ff3))
+
 ## [1.0.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v0.6.0...toolbox-core-v1.0.0) (2026-03-25)
 
 
