@@ -5,7 +5,7 @@ This SDK allows you to seamlessly integrate the functionalities of
 [MCP Toolbox](https://github.com/googleapis/genai-toolbox) into your LangChain GenAI
 applications, enabling advanced orchestration and interaction with LLMs.
 
-For detailed guides, authentication examples, and advanced configuration, visit the [Python SDK Langchain Guide](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/langchain/).
+For detailed guides, authentication examples, and advanced configuration, visit the [Python SDK Langchain Guide](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/langchain/).
 
 <!-- TOC ignore:true -->
 ## Table of Contents
@@ -54,18 +54,18 @@ async with ToolboxClient("http://127.0.0.1:5000") as toolbox:
 
 ## Usage
 
-The toolbox-langchain package provids a dedicated integration to seamlessly load and use MCP Toolbox tools within the LangChain orchestration framework. For detailed guides and advanced configuration, please visit the following sections on our [Documentation Site](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/langchain):
+The toolbox-langchain package provids a dedicated integration to seamlessly load and use MCP Toolbox tools within the LangChain orchestration framework. For detailed guides and advanced configuration, please visit the following sections on our [Documentation Site](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/langchain/):
 
-- [Transport Protocols](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/langchain/#transport-protocols)
-- [Loading Tools](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/langchain/#loading-tools)
-- [Use with Langchain](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/langchain/#use-with-langchain)
-- [Use with Langraph](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/langchain/#use-with-langgraph)
-- [Manual Usage](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/langchain/#manual-usage)
-- [Client to Server Authentication](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/langchain/#client-to-server-authentication)
-- [Authenticating Tools](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/langchain/#authenticating-tools)
-- [Binding Parameter Values](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/langchain/#parameter-binding)
-- [Asynchronous Usage](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/langchain/#asynchronous-usage)
-- [OpenTelemetry](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/langchain/#opentelemetry)
+- [Transport Protocols](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/langchain/#transport-protocols)
+- [Loading Tools](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/langchain/#loading-tools)
+- [Use with Langchain](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/langchain/#use-with-langchain)
+- [Use with Langraph](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/langchain/#use-with-langgraph)
+- [Manual Usage](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/langchain/#manual-usage)
+- [Client to Server Authentication](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/langchain/#client-to-server-authentication)
+- [Authenticating Tools](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/langchain/#authenticating-tools)
+- [Binding Parameter Values](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/langchain/#parameter-binding)
+- [Asynchronous Usage](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/langchain/#asynchronous-usage)
+- [OpenTelemetry](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/langchain/#opentelemetry)
 
 # Contributing
 

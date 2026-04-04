@@ -10,7 +10,7 @@ This SDK allows you to seamlessly integrate the functionalities of
 use tools defined in the service as standard Python functions within your GenAI
 applications.
 
-For detailed guides, authentication examples, and advanced configuration, visit the [Python SDK Core Guide](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/core/).
+For detailed guides, authentication examples, and advanced configuration, visit the [Python SDK Core Guide](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/core/).
 
 <!-- TOC ignore:true -->
 <!-- TOC -->
@@ -52,17 +52,17 @@ if __name__ == "__main__":
 
 ## Usage
 
-The core package provides a framework-agnostic way to interact with your Toolbox server. For detailed guides and advanced configuration, please visit the following sections on our [Documentation Site](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/core/):
+The core package provides a framework-agnostic way to interact with your Toolbox server. For detailed guides and advanced configuration, please visit the following sections on our [Documentation Site](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/core/):
 
-- [Transport Protocols](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/core/#transport-protocols)
-- [Loading Tools](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/core/#loading-tools)
-- [Invoking Tools](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/core/#invoking-tools)
-- [Synchronous Usage](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/core/#synchronous-usage)
-- [Use With Langraph](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/core/#use-with-langgraph)
-- [Client to Server Authentication](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/core/#client-to-server-authentication)
-- [Authenticating Tools](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/core/#authenticating-tools)
-- [Binding Parameter Values](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/core/#parameter-binding)
-- [OpenTelemetry](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/core/#opentelemetry)
+- [Transport Protocols](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/core/#transport-protocols)
+- [Loading Tools](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/core/#loading-tools)
+- [Invoking Tools](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/core/#invoking-tools)
+- [Synchronous Usage](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/core/#synchronous-usage)
+- [Use With Langraph](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/core/#use-with-langgraph)
+- [Client to Server Authentication](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/core/#client-to-server-authentication)
+- [Authenticating Tools](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/core/#authenticating-tools)
+- [Binding Parameter Values](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/core/#parameter-binding)
+- [OpenTelemetry](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/core/#opentelemetry)
 
 
 # Contributing
