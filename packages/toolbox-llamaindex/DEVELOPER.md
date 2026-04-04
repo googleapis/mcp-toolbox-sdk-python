@@ -54,7 +54,7 @@ Toolbox service.
     pip install -e .[test]
     ```
 1. Ensure your [Toolbox
-   service](https://github.com/googleapis/genai-toolbox?tab=readme-ov-file#getting-started)
+   service](https://mcp-toolbox.dev/documentation/introduction/#getting-started)
    is running and accessible (e.g., at `http://localhost:5000`).
 1. Run tests and/or contribute to the SDK's development.
 
