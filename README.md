@@ -14,7 +14,7 @@ applications. These SDKs allow you to load tools defined in Toolbox and use them
 as standard Python functions or objects within popular orchestration frameworks
 or your custom code.
 
-For comprehensive guides and advanced configuration, visit the [Main Documentation Site](https://googleapis.github.io/genai-toolbox/).
+For comprehensive guides and advanced configuration, visit the [Main Documentation Site](https://mcp-toolbox.dev/documentation/).
 
 
 <!-- TOC -->
@@ -32,14 +32,14 @@ This repository hosts the following Python packages. See the package-specific RE
 
 | Package | Target Use Case | Path | Documentation |
 | :------ | :---------- | :--- | :---------- |
-| `toolbox-core` | Framework-agnostic / Custom apps | `packages/toolbox-core/` | [Python Core Guide](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/core/) |
-| `toolbox-adk` | Google ADK Integration | `packages/toolbox-adk/` | [ADK Package Guide](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/adk/) |
-| `toolbox-langchain` | LangChain / LangGraph Integration | `packages/toolbox-langchain/` | [LangChain Guide](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/langchain/) |
-| `toolbox-llamaindex` | LlamaIndex Integration | `packages/toolbox-llamaindex/` | [LlamaIndex Guide](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/llamaindex/) |
+| `toolbox-core` | Framework-agnostic / Custom apps | `packages/toolbox-core/` | [Python Core Guide](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/core/) |
+| `toolbox-adk` | Google ADK Integration | `packages/toolbox-adk/` | [ADK Package Guide](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/adk/) |
+| `toolbox-langchain` | LangChain / LangGraph Integration | `packages/toolbox-langchain/` | [LangChain Guide](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/langchain/) |
+| `toolbox-llamaindex` | LlamaIndex Integration | `packages/toolbox-llamaindex/` | [LlamaIndex Guide](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/llamaindex/) |
 
 ## Quickstart
 
-1.  **Set up the Toolbox Service**: Ensure you have a running MCP Toolbox server. Follow the [MCP Toolbox Server Getting Started Guide](https://github.com/googleapis/genai-toolbox?tab=readme-ov-file#getting-started).
+1.  **Set up the Toolbox Service**: Ensure you have a running MCP Toolbox server. Follow the [MCP Toolbox Server Getting Started Guide](https://mcp-toolbox.dev/documentation/introduction/#getting-started).
 2.  **Install the Appropriate SDK:**
 
     ```bash
@@ -61,7 +61,7 @@ This repository hosts the following Python packages. See the package-specific RE
     # For the LlamaIndex integration
     pip install toolbox-llamaindex
 
-3.  **Explore Tutorials**: Check out the [Python Quickstart Tutorial](https://googleapis.github.io/genai-toolbox/getting-started/local_quickstart/) for a full walkthrough.
+3.  **Explore Tutorials**: Check out the [Python Quickstart Tutorial](https://mcp-toolbox.dev/documentation/getting-started/local_quickstart/) for a full walkthrough.
 
 ## Contributing
 

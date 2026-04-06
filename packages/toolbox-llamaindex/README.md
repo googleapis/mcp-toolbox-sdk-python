@@ -5,7 +5,7 @@ This SDK allows you to seamlessly integrate the functionalities of
 [MCP Toolbox](https://github.com/googleapis/genai-toolbox) into your LlamaIndex LLM
 applications, enabling advanced orchestration and interaction with GenAI models.
 
-For detailed guides, authentication examples, and advanced configuration, visit the [Python SDK LlamaIndex Guide](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/llamaindex/).
+For detailed guides, authentication examples, and advanced configuration, visit the [Python SDK LlamaIndex Guide](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/llamaindex/).
 
 <!-- TOC ignore:true -->
 ## Table of Contents
@@ -60,18 +60,18 @@ asyncio.run(run_agent())
 
 ## Usage
 
-The `toolbox-llamaindex` package provides a dedicated integration to seamlessly load and use MCP Toolbox tools within the LlamaIndex orchestration framework. For detailed guides and advanced configuration, please visit the following sections on our [Documentation Site](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/llamaindex/):
+The `toolbox-llamaindex` package provides a dedicated integration to seamlessly load and use MCP Toolbox tools within the LlamaIndex orchestration framework. For detailed guides and advanced configuration, please visit the following sections on our [Documentation Site](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/llamaindex/):
 
 
-- [Transport Protocols](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/llamaindex/#transport-protocols)
-- [Loading Tools](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/llamaindex/#loading-tools)
-- [Use with LlamaIndex](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/llamaindex/#use-with-llamaindex)
-- [Manual Usage](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/llamaindex/#manual-usage)
-- [Client to Server Authentication](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/llamaindex/#client-to-server-authentication)
-- [Authenticating Tools](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/llamaindex/#authenticating-tools)
-- [Binding Parameter Values](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/llamaindex/#parameter-binding)
-- [Asynchronous Usage](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/llamaindex/#asynchronous-usage)
-- [OpenTelemetry](https://googleapis.github.io/genai-toolbox/sdks/python-sdk/llamaindex/#opentelemetry)
+- [Transport Protocols](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/llamaindex/#transport-protocols)
+- [Loading Tools](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/llamaindex/#loading-tools)
+- [Use with LlamaIndex](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/llamaindex/#use-with-llamaindex)
+- [Manual Usage](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/llamaindex/#manual-usage)
+- [Client to Server Authentication](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/llamaindex/#client-to-server-authentication)
+- [Authenticating Tools](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/llamaindex/#authenticating-tools)
+- [Binding Parameter Values](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/llamaindex/#parameter-binding)
+- [Asynchronous Usage](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/llamaindex/#asynchronous-usage)
+- [OpenTelemetry](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/llamaindex/#opentelemetry)
 
 # Contributing 
 
