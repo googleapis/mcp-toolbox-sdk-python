@@ -45,6 +45,7 @@ class ToolboxSyncClient:
         protocol: Protocol = Protocol.MCP,
         client_name: Optional[str] = None,
         client_version: Optional[str] = None,
+        telemetry_enabled: bool = False,
     ):
         """
         Initializes the ToolboxSyncClient.
@@ -52,6 +53,10 @@ class ToolboxSyncClient:
         Args:
             url: The base URL for the Toolbox service API (e.g., "http://localhost:5000").
             client_headers: Headers to include in each request sent through this client.
+            protocol: The communication protocol to use.
+            client_name: Optional client name for identification.
+            client_version: Optional client version for identification.
+            telemetry_enabled: Whether to enable OpenTelemetry tracing and metrics. (Default: False)
         """
         # Running a loop in a background thread allows us to support async
         # methods from non-async environments.
@@ -71,6 +76,7 @@ class ToolboxSyncClient:
                 protocol=protocol,
                 client_name=client_name,
                 client_version=client_version,
+                telemetry_enabled=telemetry_enabled,
             )
 
         self.__async_client = run_coroutine_threadsafe(

@@ -12,11 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import inspect
 import logging
-from typing import Any, Awaitable, Callable, Dict, Optional
+from typing import Any, Awaitable, Callable, Dict, Mapping, Optional
 
-import google.adk.auth.exchanger.oauth2_credential_exchanger as oauth2_credential_exchanger
-import google.adk.auth.oauth2_credential_util as oauth2_credential_util
 import toolbox_core
 from fastapi.openapi.models import (
     OAuth2,
@@ -32,31 +31,12 @@ from google.adk.auth.auth_tool import AuthConfig
 from google.adk.tools.base_tool import BaseTool
 from google.adk.tools.tool_context import ToolContext
 from google.genai.types import FunctionDeclaration, Schema, Type
+from toolbox_core.protocol import AdditionalPropertiesSchema, ParameterSchema
 from toolbox_core.tool import ToolboxTool as CoreToolboxTool
 from typing_extensions import override
 
 from .client import USER_TOKEN_CONTEXT_VAR
 from .credentials import CredentialConfig, CredentialType
-
-# --- Monkey Patch ADK OAuth2 Exchange to Retain ID Tokens ---
-# Google's ID Token is required by MCP Toolbox but ADK's `update_credential_with_tokens` natively drops the `id_token`.
-# TODO(id_token): Remove this monkey patch once the PR https://github.com/google/adk-python/pull/4402 is merged.
-_orig_update_cred = oauth2_credential_util.update_credential_with_tokens
-
-
-def _patched_update_credential_with_tokens(auth_credential, tokens):
-    _orig_update_cred(auth_credential, tokens)
-    if tokens and "id_token" in tokens and auth_credential and auth_credential.oauth2:
-        setattr(auth_credential.oauth2, "id_token", tokens["id_token"])
-
-
-oauth2_credential_util.update_credential_with_tokens = (
-    _patched_update_credential_with_tokens
-)
-oauth2_credential_exchanger.update_credential_with_tokens = (
-    _patched_update_credential_with_tokens
-)
-# -------------------------------------------------------------
 
 
 class ToolboxTool(BaseTool):
@@ -68,11 +48,13 @@ class ToolboxTool(BaseTool):
         self,
         core_tool: CoreToolboxTool,
         auth_config: Optional[CredentialConfig] = None,
+        adk_token_getters: Optional[Mapping[str, Any]] = None,
     ):
         """
         Args:
             core_tool: The underlying toolbox_core.py tool instance.
             auth_config: Credential configuration to handle interactive flows.
+            adk_token_getters: Tool-specific auth token getters.
         """
         # We act as a proxy.
         # We need to extract metadata from the core tool to satisfy BaseTool's contract.
@@ -95,6 +77,7 @@ class ToolboxTool(BaseTool):
         )
         self._core_tool = core_tool
         self._auth_config = auth_config
+        self._adk_token_getters = adk_token_getters or {}
 
     def _param_type_to_schema_type(self, param_type: str) -> Type:
         type_map = {
@@ -108,6 +91,34 @@ class ToolboxTool(BaseTool):
         }
         return type_map.get(param_type, Type.STRING)
 
+    def _build_schema(self, param: Any) -> Schema:
+        """Builds a Schema from a parameter."""
+        param_type = getattr(param, "type", "string")
+        schema_type = self._param_type_to_schema_type(param_type)
+
+        properties = {}
+        required = []
+        schema_items = None
+        schema_additional_properties = None
+
+        if schema_type == Type.ARRAY:
+            if hasattr(param, "items") and param.items:
+                schema_items = self._build_schema(param.items)
+        elif schema_type == Type.OBJECT:
+            nested_properties = getattr(param, "properties", None)
+            if nested_properties:
+                for k, v in nested_properties.items():
+                    properties[k] = self._build_schema(v)
+                    if getattr(v, "required", False):
+                        required.append(k)
+        return Schema(
+            type=schema_type,
+            description=getattr(param, "description", "") or "",
+            properties=properties or None,
+            required=required or None,
+            items=schema_items,
+        )
+
     @override
     def _get_declaration(self) -> Optional[FunctionDeclaration]:
         """Gets the function declaration for the tool."""
@@ -119,10 +130,7 @@ class ToolboxTool(BaseTool):
         # properties, lumping them all into the root description instead.
         if hasattr(self._core_tool, "_params") and self._core_tool._params:
             for param in self._core_tool._params:
-                properties[param.name] = Schema(
-                    type=self._param_type_to_schema_type(param.type),
-                    description=param.description or "",
-                )
+                properties[param.name] = self._build_schema(param)
                 if param.required:
                     required.append(param.name)
 
@@ -226,15 +234,9 @@ class ToolboxTool(BaseTool):
                                 not hasattr(self._core_tool, "_auth_token_getters")
                                 or s not in self._core_tool._auth_token_getters
                             ):
-                                # TODO(id_token): Uncomment this line and remove the `getattr` fallback below once PR https://github.com/google/adk-python/pull/4402 is merged.
-                                # self._core_tool = self._core_tool.add_auth_token_getter(s, lambda t=creds.oauth2.id_token or creds.oauth2.access_token: t)
                                 self._core_tool = self._core_tool.add_auth_token_getter(
                                     s,
-                                    lambda t=getattr(
-                                        creds.oauth2,
-                                        "id_token",
-                                        creds.oauth2.access_token,
-                                    ): t,
+                                    lambda t=creds.oauth2.id_token or creds.oauth2.access_token: t,
                                 )
                         # Once we use it from get_auth_response, save it to the auth service for future use
                         try:
@@ -260,11 +262,31 @@ class ToolboxTool(BaseTool):
                         "Falling back to request_credential.",
                         exc_info=True,
                     )
-                    # Fallback to request logic
                     tool_context.request_credential(auth_config_adk)
                     return {
                         "error": f"OAuth2 Credentials required for {self.name}. A consent link has been generated for the user. Do NOT attempt to run this tool again until the user confirms they have logged in."
                     }
+
+        if self._adk_token_getters:
+            # Pre-filter toolset getters to avoid unused-token errors from the core tool.
+            # This deferred loop also enables dynamic 1-arity `tool_context` injection.
+            needed_services = set()
+            for reqs in self._core_tool._required_authn_params.values():
+                needed_services.update(reqs)
+            needed_services.update(self._core_tool._required_authz_tokens)
+
+            for service, getter in self._adk_token_getters.items():
+                if service in needed_services:
+                    sig = inspect.signature(getter)
+
+                    if len(sig.parameters) == 1:
+                        bound_getter = lambda t=getter, ctx=tool_context: t(ctx)
+                    else:
+                        bound_getter = getter
+
+                    self._core_tool = self._core_tool.add_auth_token_getter(
+                        service, bound_getter
+                    )
 
         result: Optional[Any] = None
         error: Optional[Exception] = None
@@ -288,4 +310,5 @@ class ToolboxTool(BaseTool):
         return ToolboxTool(
             core_tool=new_core_tool,
             auth_config=self._auth_config,
+            adk_token_getters=self._adk_token_getters,
         )

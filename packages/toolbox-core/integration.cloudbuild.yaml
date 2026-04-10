@@ -24,7 +24,8 @@ steps:
         uv venv /workspace/venv
         source /workspace/venv/bin/activate
         uv pip install uv
-        uv pip install -r requirements.txt -e '.[test]'
+        uv pip install -e '.[test]'
+        uv pip install -r requirements.txt
     entrypoint: /bin/bash
   - id: Run integration tests
     name: 'python:${_VERSION}'
@@ -44,5 +45,5 @@ options:
   logging: CLOUD_LOGGING_ONLY
 substitutions:
   _VERSION: '3.13'
-  _TOOLBOX_VERSION: '0.29.0'
+  _TOOLBOX_VERSION: '0.32.0'
   _TOOLBOX_MANIFEST_VERSION: '34'

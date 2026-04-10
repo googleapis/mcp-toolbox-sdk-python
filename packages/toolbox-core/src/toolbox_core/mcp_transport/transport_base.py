@@ -19,13 +19,10 @@ from typing import Mapping, Optional, Union
 
 from aiohttp import ClientSession
 
+from .. import version
 from ..itransport import ITransport
-from ..protocol import (
-    AdditionalPropertiesSchema,
-    ParameterSchema,
-    Protocol,
-    ToolSchema,
-)
+from ..protocol import AdditionalPropertiesSchema, ParameterSchema, Protocol, ToolSchema
+from . import telemetry
 
 
 class _McpHttpTransportBase(ITransport, ABC):
@@ -38,6 +35,7 @@ class _McpHttpTransportBase(ITransport, ABC):
         protocol: Protocol = Protocol.MCP,
         client_name: Optional[str] = None,
         client_version: Optional[str] = None,
+        telemetry_enabled: bool = False,
     ):
         self._mcp_base_url = f"{base_url}/mcp/"
         self._protocol_version = protocol.value
@@ -45,6 +43,21 @@ class _McpHttpTransportBase(ITransport, ABC):
 
         self._client_name = client_name
         self._client_version = client_version
+        self._telemetry_enabled = telemetry.resolve_telemetry_enabled(telemetry_enabled)
+
+        self._tracer: Optional[telemetry.Tracer] = None
+        self._operation_duration_histogram: Optional[telemetry.Histogram] = None
+        self._session_duration_histogram: Optional[telemetry.Histogram] = None
+        if self._telemetry_enabled:
+            self._tracer = telemetry.get_tracer("toolbox.mcp.sdk", version.__version__)
+            meter = telemetry.get_meter("toolbox.mcp.sdk", version.__version__)
+            self._operation_duration_histogram = (
+                telemetry.create_operation_duration_histogram(meter)
+            )
+            self._session_duration_histogram = (
+                telemetry.create_session_duration_histogram(meter)
+            )
+        self._session_start_time: Optional[float] = None
 
         self._manage_session = session is None
         self._session = session or ClientSession()
@@ -111,15 +124,20 @@ class _McpHttpTransportBase(ITransport, ABC):
             elif isinstance(add_props, bool):
                 additional_properties = add_props
 
-        return ParameterSchema(
-            name=name,
-            type=param_type,
-            description=description,
-            required=name in required_fields if name else True,
-            items=items_schema,
-            additionalProperties=additional_properties,
+        kwargs = {
+            "name": name,
+            "type": param_type,
+            "description": description,
+            "required": name in required_fields if name else True,
+            "items": items_schema,
+            "additionalProperties": additional_properties,
             # Auth is handled by _convert_tool_schema
-        )
+        }
+
+        if "default" in schema:
+            kwargs["default"] = schema["default"]
+
+        return ParameterSchema(**kwargs)
 
     def _convert_tool_schema(self, tool_data: dict) -> ToolSchema:
         """
