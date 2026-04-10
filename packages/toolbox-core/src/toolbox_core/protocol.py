@@ -99,9 +99,7 @@ class ParameterSchema(BaseModel):
             return name
 
         # Replace any non-alphanumeric/underscore character with underscore.
-        sanitized = "".join(
-            ch if (ch.isalnum() or ch == "_") else "_" for ch in name
-        )
+        sanitized = "".join(ch if (ch.isalnum() or ch == "_") else "_" for ch in name)
 
         # Ensure the identifier does not start with a digit and is non-empty.
         if not sanitized or sanitized[0].isdigit():
