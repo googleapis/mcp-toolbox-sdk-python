@@ -16,6 +16,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from google.genai.types import Type
+from pydantic import ValidationError
 
 from toolbox_adk.credentials import CredentialConfig, CredentialType
 from toolbox_adk.tool import ToolboxTool
@@ -55,6 +56,51 @@ class TestToolboxTool:
 
         # Should proceed to execute (auth not forced)
         mock_core.assert_awaited()
+
+    @pytest.mark.asyncio
+    async def test_run_async_returns_error_on_exception(self):
+        mock_core = AsyncMock(side_effect=RuntimeError("boom"))
+        mock_core.__name__ = "my_tool"
+        mock_core.__doc__ = "my description"
+
+        tool = ToolboxTool(mock_core)
+        ctx = MagicMock()
+
+        result = await tool.run_async({"arg": 1}, ctx)
+
+        assert isinstance(result, dict) and "error" in result
+        assert result.get("is_error") is True
+        assert "RuntimeError" in result["error"]
+
+    @pytest.mark.asyncio
+    async def test_run_async_returns_error_on_validation_error(self):
+        # Setup mock to raise a ValidationError
+        mock_core = AsyncMock()
+        mock_core.__name__ = "my_tool"
+        mock_core.__doc__ = "my description"
+
+        # We simulate a ValidationError by raising it from the mock
+        mock_core.side_effect = ValidationError.from_exception_data(
+            "MyModel",
+            [
+                {
+                    "type": "missing",
+                    "loc": ("param",),
+                    "msg": "field required",
+                    "input": {},
+                }
+            ],
+        )
+
+        tool = ToolboxTool(mock_core)
+        ctx = MagicMock()
+
+        result = await tool.run_async({"arg": 1}, ctx)
+
+        assert isinstance(result, dict) and "error" in result
+        assert result.get("is_error") is True
+        assert "ValidationError" in result["error"]
+        assert "Field required" in result["error"]
 
     @pytest.mark.asyncio
     async def test_bind_params(self):
