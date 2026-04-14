@@ -104,7 +104,11 @@ def toolbox_version() -> str:
 
 @pytest_asyncio.fixture(scope="session")
 def tools_file_path(project_id: str) -> Generator[str]:
-    """Provides a temporary file path containing the tools manifest."""
+    if os.path.exists("tools.yaml"):
+        print("Using local tools.yaml at root")
+        yield os.path.abspath("tools.yaml")
+        return
+
     if os.environ.get("TEST_MOCK_GCP"):
         content = "tools: []"  # Dummy manifest
         path = create_tmpfile(content)
@@ -144,16 +148,18 @@ def auth_token2(project_id: str) -> str:
 
 @pytest_asyncio.fixture(scope="session")
 def toolbox_server(toolbox_version: str, tools_file_path: str) -> Generator[None]:
-    """Starts the toolbox server as a subprocess."""
-    if os.environ.get("TEST_MOCK_GCP"):
+    # Still allow mocked runs if no binary is found, but if it exists, let's use it
+    if os.environ.get("TEST_MOCK_GCP") and not os.path.exists("./toolbox"):
         yield
         return
 
-    print("Downloading toolbox binary from gcs bucket...")
-    source_blob_name = get_toolbox_binary_url(toolbox_version)
-    download_blob("mcp-toolbox-for-databases", source_blob_name, "toolbox")
-
-    print("Toolbox binary downloaded successfully.")
+    if os.path.exists("./toolbox"):
+        print("Using existing toolbox binary.")
+    else:
+        print("Downloading toolbox binary from gcs bucket...")
+        source_blob_name = get_toolbox_binary_url(toolbox_version)
+        download_blob("mcp-toolbox-for-databases", source_blob_name, "toolbox")
+        print("Toolbox binary downloaded successfully.")
     try:
         print("Opening toolbox server process...")
         # Make toolbox executable
