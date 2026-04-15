@@ -151,7 +151,7 @@ def toolbox_server(toolbox_version: str, tools_file_path: str) -> Generator[None
 
     print("Downloading toolbox binary from gcs bucket...")
     source_blob_name = get_toolbox_binary_url(toolbox_version)
-    download_blob("genai-toolbox", source_blob_name, "toolbox")
+    download_blob("mcp-toolbox", source_blob_name, "toolbox")
 
     print("Toolbox binary downloaded successfully.")
     try:

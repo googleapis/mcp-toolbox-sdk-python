@@ -24,9 +24,9 @@
       pinDigests: true,
     },
     {
-      description: 'Auto-update genai-toolbox server version',
+      description: 'Auto-update mcp-toolbox server version',
       matchPackageNames: [
-        'googleapis/genai-toolbox',
+        'googleapis/mcp-toolbox',
       ],
       matchManagers: [
         'custom.regex',
@@ -74,9 +74,9 @@
         '_TOOLBOX_VERSION: [\'|"]?(?<currentValue>v?\\d+\\.\\d+\\.\\d+)[\'|"]?',
       ],
       datasourceTemplate: 'github-releases',
-      depNameTemplate: 'googleapis/genai-toolbox',
+      depNameTemplate: 'googleapis/mcp-toolbox',
       versioningTemplate: 'semver',
-      packageNameTemplate: 'googleapis/genai-toolbox',
+      packageNameTemplate: 'googleapis/mcp-toolbox',
     },
   ],
 }
