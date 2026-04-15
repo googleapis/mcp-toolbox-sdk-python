@@ -268,7 +268,10 @@ class TestAsyncToolboxTool:
         core_tool = toolbox_tool._AsyncToolboxTool__core_tool
         transport = core_tool._ToolboxTool__transport
         transport.tool_invoke_mock.assert_awaited_once_with(
-            "test_tool", {"param1": "test-value", "param2": 123}, {}
+            "test_tool",
+            {"param1": "test-value", "param2": 123},
+            {},
+            telemetry_attributes=None,
         )
 
     @pytest.mark.parametrize(
@@ -287,7 +290,10 @@ class TestAsyncToolboxTool:
         core_tool = tool._AsyncToolboxTool__core_tool
         transport = core_tool._ToolboxTool__transport
         transport.tool_invoke_mock.assert_awaited_once_with(
-            "test_tool", {"param1": expected_value, "param2": 123}, {}
+            "test_tool",
+            {"param1": expected_value, "param2": 123},
+            {},
+            telemetry_attributes=None,
         )
 
     async def test_toolbox_tool_call_with_auth_tokens(self, auth_toolbox_tool):
@@ -299,7 +305,10 @@ class TestAsyncToolboxTool:
         core_tool = tool._AsyncToolboxTool__core_tool
         transport = core_tool._ToolboxTool__transport
         transport.tool_invoke_mock.assert_awaited_once_with(
-            "test_tool", {"param2": 123}, {"test-auth-source_token": "test-token"}
+            "test_tool",
+            {"param2": 123},
+            {"test-auth-source_token": "test-token"},
+            telemetry_attributes=None,
         )
 
     async def test_toolbox_tool_call_with_invalid_input(self, toolbox_tool):
