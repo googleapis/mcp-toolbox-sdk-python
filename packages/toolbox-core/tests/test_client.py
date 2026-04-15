@@ -55,7 +55,7 @@ class MockTransport(ITransport):
         return await self.tools_list_mock(toolset_name, headers)
 
     async def tool_invoke(
-        self, tool_name: str, arguments: dict, headers: Mapping[str, str]
+        self, tool_name: str, arguments: dict, headers: Mapping[str, str], **kwargs
     ) -> str:
         return await self.tool_invoke_mock(tool_name, arguments, headers)
 
