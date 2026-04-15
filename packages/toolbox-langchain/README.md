@@ -1,8 +1,8 @@
-![MCP Toolbox Logo](https://raw.githubusercontent.com/googleapis/genai-toolbox/main/logo.png)
+![MCP Toolbox Logo](https://raw.githubusercontent.com/googleapis/mcp-toolbox/main/logo.png)
 # MCP Toolbox LangChain SDK
 
 This SDK allows you to seamlessly integrate the functionalities of
-[MCP Toolbox](https://github.com/googleapis/genai-toolbox) into your LangChain GenAI
+[MCP Toolbox](https://github.com/googleapis/mcp-toolbox) into your LangChain GenAI
 applications, enabling advanced orchestration and interaction with LLMs.
 
 For detailed guides, authentication examples, and advanced configuration, visit the [Python SDK Langchain Guide](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/langchain/).
@@ -74,8 +74,8 @@ Contributions are welcome! Please refer to the [`DEVELOPER.md`](https://github.c
 # License
 
 This project is licensed under the Apache License 2.0. See the
-[LICENSE](https://github.com/googleapis/genai-toolbox/blob/main/LICENSE) file for details.
+[LICENSE](https://github.com/googleapis/mcp-toolbox/blob/main/LICENSE) file for details.
 
 # Support
 
-If you encounter issues or have questions, check the existing [GitHub Issues](https://github.com/googleapis/genai-toolbox/issues) for the main Toolbox project.
+If you encounter issues or have questions, check the existing [GitHub Issues](https://github.com/googleapis/mcp-toolbox/issues) for the main Toolbox project.

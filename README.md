@@ -1,5 +1,5 @@
 ![MCP Toolbox
-Logo](https://raw.githubusercontent.com/googleapis/genai-toolbox/main/logo.png)
+Logo](https://raw.githubusercontent.com/googleapis/mcp-toolbox/main/logo.png)
 # MCP Toolbox SDKs for Python
 
 [![License: Apache
@@ -9,7 +9,7 @@ Version](https://img.shields.io/pypi/pyversions/toolbox-core)](https://pypi.org/
 
 This repository contains Python SDKs designed to seamlessly integrate the
 functionalities of the [MCP
-Toolbox](https://github.com/googleapis/genai-toolbox) into your Gen AI
+Toolbox](https://github.com/googleapis/mcp-toolbox) into your Gen AI
 applications. These SDKs allow you to load tools defined in Toolbox and use them
 as standard Python functions or objects within popular orchestration frameworks
 or your custom code.
@@ -72,13 +72,13 @@ to get started.
 ## License
 
 This project is licensed under the Apache License 2.0. See the
-[LICENSE](https://github.com/googleapis/genai-toolbox/blob/main/LICENSE) file
+[LICENSE](https://github.com/googleapis/mcp-toolbox/blob/main/LICENSE) file
 for details.
 
 ## Support
 
 If you encounter issues or have questions, please check the existing [GitHub
-Issues](https://github.com/googleapis/genai-toolbox/issues) for the main Toolbox
+Issues](https://github.com/googleapis/mcp-toolbox/issues) for the main Toolbox
 project. If your issue is specific to one of the SDKs, please look for existing
 issues [here](https://github.com/googleapis/mcp-toolbox-sdk-python/issues) or
 open a new issue in this repository.

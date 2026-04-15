@@ -1,8 +1,8 @@
-![MCP Toolbox Logo](https://raw.githubusercontent.com/googleapis/genai-toolbox/main/logo.png)
+![MCP Toolbox Logo](https://raw.githubusercontent.com/googleapis/mcp-toolbox/main/logo.png)
 # MCP Toolbox LlamaIndex SDK
 
 This SDK allows you to seamlessly integrate the functionalities of
-[MCP Toolbox](https://github.com/googleapis/genai-toolbox) into your LlamaIndex LLM
+[MCP Toolbox](https://github.com/googleapis/mcp-toolbox) into your LlamaIndex LLM
 applications, enabling advanced orchestration and interaction with GenAI models.
 
 For detailed guides, authentication examples, and advanced configuration, visit the [Python SDK LlamaIndex Guide](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/llamaindex/).
@@ -80,8 +80,8 @@ Contributions are welcome! Please refer to the [`DEVELOPER.md`](https://github.c
 # License
 
 This project is licensed under the Apache License 2.0. See the
-[LICENSE](https://github.com/googleapis/genai-toolbox/blob/main/LICENSE) file for details.
+[LICENSE](https://github.com/googleapis/mcp-toolbox/blob/main/LICENSE) file for details.
 
 # Support
 
-If you encounter issues or have questions, check the existing [GitHub Issues](https://github.com/googleapis/genai-toolbox/issues) for the main Toolbox project.
+If you encounter issues or have questions, check the existing [GitHub Issues](https://github.com/googleapis/mcp-toolbox/issues) for the main Toolbox project.

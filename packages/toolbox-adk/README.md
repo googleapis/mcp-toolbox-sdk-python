@@ -1,8 +1,8 @@
-![MCP Toolbox Logo](https://raw.githubusercontent.com/googleapis/genai-toolbox/main/logo.png)
+![MCP Toolbox Logo](https://raw.githubusercontent.com/googleapis/mcp-toolbox/main/logo.png)
 
 # MCP Toolbox SDK for ADK
 
-This package allows Google ADK (Agent Development Kit) agents to natively use tools from the [MCP Toolbox](https://github.com/googleapis/genai-toolbox).
+This package allows Google ADK (Agent Development Kit) agents to natively use tools from the [MCP Toolbox](https://github.com/googleapis/mcp-toolbox).
 
 For detailed guides, authentication examples, and advanced configuration, visit the [Python SDK ADK Guide](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/adk/).
 

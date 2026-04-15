@@ -1,12 +1,12 @@
-![MCP Toolbox Logo](https://raw.githubusercontent.com/googleapis/genai-toolbox/main/logo.png)
+![MCP Toolbox Logo](https://raw.githubusercontent.com/googleapis/mcp-toolbox/main/logo.png)
 
 # MCP Toolbox Core SDK
 
-[![PyPI version](https://badge.fury.io/py/toolbox-core.svg)](https://badge.fury.io/py/toolbox-core) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/toolbox-core)](https://pypi.org/project/toolbox-core/) [![Coverage Status](https://coveralls.io/repos/github/googleapis/genai-toolbox/badge.svg?branch=main)](https://coveralls.io/github/googleapis/genai-toolbox?branch=main)
+[![PyPI version](https://badge.fury.io/py/toolbox-core.svg)](https://badge.fury.io/py/toolbox-core) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/toolbox-core)](https://pypi.org/project/toolbox-core/) [![Coverage Status](https://coveralls.io/repos/github/googleapis/mcp-toolbox/badge.svg?branch=main)](https://coveralls.io/github/googleapis/mcp-toolbox?branch=main)
  [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 This SDK allows you to seamlessly integrate the functionalities of
-[MCP Toolbox](https://github.com/googleapis/genai-toolbox) allowing you to load and
+[MCP Toolbox](https://github.com/googleapis/mcp-toolbox) allowing you to load and
 use tools defined in the service as standard Python functions within your GenAI
 applications.
 
@@ -72,8 +72,8 @@ Contributions are welcome! Please refer to the [`DEVELOPER.md`](https://github.c
 # License
 
 This project is licensed under the Apache License 2.0. See the
-[LICENSE](https://github.com/googleapis/genai-toolbox/blob/main/LICENSE) file for details.
+[LICENSE](https://github.com/googleapis/mcp-toolbox/blob/main/LICENSE) file for details.
 
 # Support
 
-If you encounter issues or have questions, check the existing [GitHub Issues](https://github.com/googleapis/genai-toolbox/issues) for the main Toolbox project.
+If you encounter issues or have questions, check the existing [GitHub Issues](https://github.com/googleapis/mcp-toolbox/issues) for the main Toolbox project.
