@@ -31,7 +31,11 @@ from google.adk.auth.auth_tool import AuthConfig
 from google.adk.tools.base_tool import BaseTool
 from google.adk.tools.tool_context import ToolContext
 from google.genai.types import FunctionDeclaration, Schema, Type
-from toolbox_core.protocol import AdditionalPropertiesSchema, ParameterSchema, TelemetryAttributes
+from toolbox_core.protocol import (
+    AdditionalPropertiesSchema,
+    ParameterSchema,
+    TelemetryAttributes,
+)
 from toolbox_core.tool import ToolboxTool as CoreToolboxTool
 from typing_extensions import override
 
