@@ -18,6 +18,7 @@ from google.adk.agents.readonly_context import ReadonlyContext
 from google.adk.tools.base_tool import BaseTool
 from google.adk.tools.base_toolset import BaseToolset
 from google.adk.tools.tool_context import ToolContext
+from toolbox_core.protocol import TelemetryAttributes
 from toolbox_core.utils import validate_unused_requirements
 from typing_extensions import override
 
@@ -52,6 +53,7 @@ class ToolboxToolset(BaseToolset):
                 ],
             ]
         ] = None,
+        telemetry_attributes: Optional[TelemetryAttributes] = None,
         **kwargs: Any,
     ):
         """
@@ -63,6 +65,7 @@ class ToolboxToolset(BaseToolset):
             additional_headers: Extra headers (static or dynamic).
             bound_params: Parameters to bind globally to loaded tools.
             auth_token_getters: Mapping of auth service names to token getters.
+            telemetry_attributes: Optional telemetry attributes (agent_id, user_id, model) injected into each tool invocation.
         """
         super().__init__()
         self.__server_url = server_url
@@ -75,6 +78,7 @@ class ToolboxToolset(BaseToolset):
         self.__tool_names = tool_names
         self.__bound_params = bound_params
         self.__auth_token_getters = auth_token_getters
+        self.__telemetry_attributes = telemetry_attributes
 
     @property
     def client(self) -> ToolboxClient:
@@ -151,6 +155,7 @@ class ToolboxToolset(BaseToolset):
                 core_tool=t,
                 auth_config=self.client.credential_config,
                 adk_token_getters=self.__auth_token_getters,
+                telemetry_attributes=self.__telemetry_attributes,
             )
             for t in tools
         ]

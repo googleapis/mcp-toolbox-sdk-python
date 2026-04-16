@@ -18,7 +18,7 @@ from typing import Mapping, Optional, TypeVar
 from pydantic import BaseModel
 
 from ... import version
-from ...protocol import ManifestSchema
+from ...protocol import ManifestSchema, TelemetryAttributes
 from .. import telemetry
 from ..transport_base import _McpHttpTransportBase
 from . import types
@@ -292,12 +292,19 @@ class McpHttpTransportV20250326(_McpHttpTransportBase):
         await super().close()
 
     async def tool_invoke(
-        self, tool_name: str, arguments: dict, headers: Optional[Mapping[str, str]]
+        self,
+        tool_name: str,
+        arguments: dict,
+        headers: Optional[Mapping[str, str]],
+        telemetry_attributes: Optional[TelemetryAttributes] = None,
     ) -> str:
         """Invokes a specific tool on the server using the MCP protocol."""
         await self._ensure_initialized(headers=headers)
 
+        telemetry_payload = self._build_telemetry_payload(telemetry_attributes)
         meta: Optional[types.MCPMeta] = None
+        if telemetry_payload:
+            meta = types.MCPMeta(telemetry_attributes=telemetry_payload)
 
         if self._telemetry_enabled:
             operation_start = time.time()
@@ -310,10 +317,12 @@ class McpHttpTransportV20250326(_McpHttpTransportBase):
                 network_transport="tcp",
             )
             if span is not None:
-                meta = types.MCPMeta(
-                    traceparent=traceparent or None,
-                    tracestate=tracestate or None,
-                )
+                if meta is None:
+                    meta = types.MCPMeta()
+                meta.traceparent = traceparent or None
+                meta.tracestate = tracestate or None
+                for key, value in (telemetry_payload or {}).items():
+                    span.set_attribute(key, value)
 
         error: Optional[Exception] = None
         try:

@@ -19,7 +19,7 @@ from types import MappingProxyType
 from typing import Any, Awaitable, Callable, Mapping, Optional, Sequence, Union
 
 from .itransport import ITransport
-from .protocol import ParameterSchema
+from .protocol import ParameterSchema, TelemetryAttributes
 from .utils import (
     create_func_docstring,
     identify_auth_requirements,
@@ -230,6 +230,9 @@ class ToolboxTool:
             The string result returned by the remote tool execution.
         """
 
+        # Extract telemetry_attributes before signature validation
+        telemetry_attributes = kwargs.pop("telemetry_attributes", None)
+
         # check if any auth services need to be specified yet
         if (
             len(self.__required_authn_params) > 0
@@ -281,6 +284,7 @@ class ToolboxTool:
             self.__name__,
             payload,
             headers,
+            telemetry_attributes=telemetry_attributes,
         )
 
     def add_auth_token_getters(

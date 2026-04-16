@@ -11,11 +11,21 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from dataclasses import dataclass
 from enum import Enum
 from inspect import Parameter
 from typing import Any, Optional, Type, Union
 
 from pydantic import BaseModel
+
+
+@dataclass
+class TelemetryAttributes:
+    """Attributes passed to the server via _meta and exported on client spans."""
+
+    model: Optional[str] = None
+    user_id: Optional[str] = None
+    agent_id: Optional[str] = None
 
 
 class Protocol(str, Enum):

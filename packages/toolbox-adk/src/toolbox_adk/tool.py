@@ -31,7 +31,11 @@ from google.adk.auth.auth_tool import AuthConfig
 from google.adk.tools.base_tool import BaseTool
 from google.adk.tools.tool_context import ToolContext
 from google.genai.types import FunctionDeclaration, Schema, Type
-from toolbox_core.protocol import AdditionalPropertiesSchema, ParameterSchema
+from toolbox_core.protocol import (
+    AdditionalPropertiesSchema,
+    ParameterSchema,
+    TelemetryAttributes,
+)
 from toolbox_core.tool import ToolboxTool as CoreToolboxTool
 from typing_extensions import override
 
@@ -49,12 +53,14 @@ class ToolboxTool(BaseTool):
         core_tool: CoreToolboxTool,
         auth_config: Optional[CredentialConfig] = None,
         adk_token_getters: Optional[Mapping[str, Any]] = None,
+        telemetry_attributes: Optional[TelemetryAttributes] = None,
     ):
         """
         Args:
             core_tool: The underlying toolbox_core.py tool instance.
             auth_config: Credential configuration to handle interactive flows.
             adk_token_getters: Tool-specific auth token getters.
+            telemetry_attributes: Optional telemetry attributes (agent_id, user_id, model) injected into each tool invocation.
         """
         # We act as a proxy.
         # We need to extract metadata from the core tool to satisfy BaseTool's contract.
@@ -78,6 +84,7 @@ class ToolboxTool(BaseTool):
         self._core_tool = core_tool
         self._auth_config = auth_config
         self._adk_token_getters = adk_token_getters or {}
+        self._telemetry_attributes = telemetry_attributes
 
     def _param_type_to_schema_type(self, param_type: str) -> Type:
         type_map = {
@@ -292,7 +299,9 @@ class ToolboxTool(BaseTool):
         error: Optional[Exception] = None
 
         try:
-            # Execute the core tool
+            # Execute the core tool, injecting telemetry_attributes if configured
+            if self._telemetry_attributes:
+                args["telemetry_attributes"] = self._telemetry_attributes
             result = await self._core_tool(**args)
             return result
 
@@ -311,4 +320,5 @@ class ToolboxTool(BaseTool):
             core_tool=new_core_tool,
             auth_config=self._auth_config,
             adk_token_getters=self._adk_token_getters,
+            telemetry_attributes=self._telemetry_attributes,
         )

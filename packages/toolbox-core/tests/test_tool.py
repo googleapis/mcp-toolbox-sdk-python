@@ -306,7 +306,7 @@ async def test_tool_creation_callable_and_run(
     assert actual_result == expected_tool_result
 
     transport.tool_invoke_mock.assert_awaited_once_with(
-        TEST_TOOL_NAME, expected_payload, {}
+        TEST_TOOL_NAME, expected_payload, {}, telemetry_attributes=None
     )
 
 
@@ -538,6 +538,7 @@ async def test_auth_token_overrides_client_header(
             "test-auth_token": "value-from-auth-getter-123",
             "X-Another-Header": "another-value",
         },
+        telemetry_attributes=None,
     )
 
 
@@ -617,7 +618,7 @@ async def test_bind_param_success(
     # Verify the payload includes both the argument and the bound parameter
     expected_payload = {"message": "hello", "count": 100}
     transport.tool_invoke_mock.assert_awaited_once_with(
-        TEST_TOOL_NAME, expected_payload, {}
+        TEST_TOOL_NAME, expected_payload, {}, telemetry_attributes=None
     )
 
 
@@ -657,7 +658,7 @@ async def test_bind_params_success_with_callable(
 
     expected_payload = {"message": "from-callable", "count": 99}
     transport.tool_invoke_mock.assert_awaited_once_with(
-        TEST_TOOL_NAME, expected_payload, {}
+        TEST_TOOL_NAME, expected_payload, {}, telemetry_attributes=None
     )
 
 
@@ -722,7 +723,10 @@ async def test_bind_param_chaining(
     await fully_bound_tool()
 
     tool._ToolboxTool__transport.tool_invoke_mock.assert_awaited_once_with(
-        TEST_TOOL_NAME, {"count": 42, "message": "chained-call"}, {}
+        TEST_TOOL_NAME,
+        {"count": 42, "message": "chained-call"},
+        {},
+        telemetry_attributes=None,
     )
 
 

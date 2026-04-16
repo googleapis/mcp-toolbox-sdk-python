@@ -21,7 +21,13 @@ from aiohttp import ClientSession
 
 from .. import version
 from ..itransport import ITransport
-from ..protocol import AdditionalPropertiesSchema, ParameterSchema, Protocol, ToolSchema
+from ..protocol import (
+    AdditionalPropertiesSchema,
+    ParameterSchema,
+    Protocol,
+    TelemetryAttributes,
+    ToolSchema,
+)
 from . import telemetry
 
 
@@ -176,6 +182,29 @@ class _McpHttpTransportBase(ITransport, ABC):
             parameters=parameters,
             authRequired=invoke_auth,
         )
+
+    def _build_telemetry_payload(
+        self,
+        telemetry_attributes: Optional[TelemetryAttributes] = None,
+    ) -> Optional[dict[str, str]]:
+        """Builds the telemetry payload dict from TelemetryAttributes.
+
+        Returns None if no telemetry_attributes are provided. When telemetry
+        is enabled, callers should also set these as span attributes.
+        """
+        if not telemetry_attributes:
+            return None
+        payload: dict[str, str] = {
+            "client.name": self._client_name or "toolbox-core-python",
+            "client.version": self._client_version or version.__version__,
+        }
+        if telemetry_attributes.model:
+            payload["client.model"] = telemetry_attributes.model
+        if telemetry_attributes.user_id:
+            payload["client.user.id"] = telemetry_attributes.user_id
+        if telemetry_attributes.agent_id:
+            payload["client.agent.id"] = telemetry_attributes.agent_id
+        return payload
 
     async def close(self):
         async with self._init_lock:

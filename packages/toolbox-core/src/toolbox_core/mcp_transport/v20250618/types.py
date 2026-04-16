@@ -74,10 +74,13 @@ class ClientCapabilities(_BaseMCPModel):
 
 
 class MCPMeta(_BaseMCPModel):
-    """Metadata for MCP requests including OpenTelemetry trace context."""
+    """Metadata for MCP requests including OpenTelemetry trace context and telemetry attributes."""
 
     traceparent: str | None = None
     tracestate: str | None = None
+    telemetry_attributes: dict[str, Any] | None = Field(
+        default=None, serialization_alias="dev.mcp-toolbox/telemetry"
+    )
 
 
 class InitializeRequestParams(RequestParams):
