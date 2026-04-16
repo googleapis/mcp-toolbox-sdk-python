@@ -87,13 +87,17 @@ The repository enforces code style and type adherence using `black`, `isort`, an
 > [!NOTE]
 > Replace `<PACKAGE_MODULE_NAME>` with the Python module name, e.g., `toolbox_core`, `toolbox_adk` or `toolbox_langchain`).
 
-### CI and GitHub Actions
+### CI and Validation Pipelines
 
-This repository uses GitHub Actions for CI. Linting, type-checking, Cloud Build triggers, and integration tests are run automatically on pull requests.
+This repository splits CI responsibilities between GitHub Actions and Google Cloud Build.
 
-* **Linting and Type Checking:** Configured in `.github/workflows/lint-*.yaml`.
-* **Integration Tests:** Executed via Cloud Build, defined in `integration.cloudbuild.yaml` within each package.
-**Triggering Tests:** Tests can be triggered manually by commenting `/gcbrun` on a pull request. The `tests: run` label can also be used.
+* **GitHub Actions:** These are linting and type checks that run when a pull request is opened or synchronized.
+* **Cloud Build:** These are live integration tests, that run upon PR creation, and interact with live GCP instances.
+
+### Triggering Validations
+Different triggers must be applied depending on the target pipeline:
+* **Cloud Build (Integration Tests):** To authorize external test builds against GCP environments, a repository maintainer must add a comment containing `/gcbrun` directly on the pull request thread.
+* **GitHub Actions (Linting/Types):** While these run natively for trusted contributors, testing them against external fork contexts specifically requires a repository maintainer to apply the `tests: run` metadata label on the pull request.
 
 ## Contribution Process
 
