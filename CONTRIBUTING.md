@@ -27,7 +27,11 @@ This project follows
 
 ### Code reviews
 
-All submissions, including submissions by project members, require review. We
-use GitHub pull requests for this purpose. Consult
-[GitHub Help](https://help.github.com/articles/about-pull-requests/) for more
-information on using pull requests.
+All submissions, including submissions by project members, require review. We use GitHub pull requests for this purpose. Consult [GitHub Help](https://help.github.com/articles/about-pull-requests/) for more information on using pull requests.
+
+* Ensure your pull request clearly describes the changes you are making.
+* A reviewer from the `@googleapis/senseai-eco` team will typically review your PR within 2-5 days.
+
+### Development Environment
+
+For technical instructions on how to set up your local environment, run integration tests, linting, and type-checking, please review our [DEVELOPER.md](DEVELOPER.md).
