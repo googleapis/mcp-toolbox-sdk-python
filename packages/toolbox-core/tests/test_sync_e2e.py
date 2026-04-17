@@ -185,3 +185,20 @@ class TestAuth:
             match="no field named row_data in claims",
         ):
             tool()
+
+@pytest.mark.usefixtures("toolbox_server")
+class TestComplexParamsSyncE2E:
+    """Verifies all 4 tools using the Synchronous client."""
+
+    def test_all_sync_complex_tools(self, toolbox: ToolboxSyncClient):
+        t1 = toolbox.load_tool("process-list")
+        assert "twishabansal" in t1(email="twishabansal@google.com", tags=["sync-tag"])
+
+        t2 = toolbox.load_tool("handle-nested-config")
+        assert "sync-meta" in t2(filter={}, metadata={"info": "sync-meta"})
+
+        t3 = toolbox.load_tool("manage-data-batches")
+        assert "sync_batch" in t3(email="twishabansal@google.com", batches={"sync_batch": [5]})
+
+        t4 = toolbox.load_tool("lookup-by-profile")
+        assert "twishabansal" in t4(profile={"identity": {"email": "twishabansal@google.com"}})
