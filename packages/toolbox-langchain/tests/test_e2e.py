@@ -57,6 +57,42 @@ class TestE2EClientAsync:
         return tool
 
     #### Basic e2e tests
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "tool_name, params, expected_keys",
+        [
+            (
+                "process-list",
+                {"emails": ["user1@example.com", "user2@example.com"]},
+                ["id", "email", "data"],
+            ),
+            (
+                "handle-nested-config",
+                {"filter": {"email": "user1@example.com"}},
+                ["id", "email", "data", "metadata"],
+            ),
+            (
+                "manage-data-batches",
+                {"batches": {"group_a": [1, 2], "group_b": [3]}},
+                ["id", "email", "data"],
+            ),
+            (
+                "lookup-by-profile",
+                {"profile": {"identity": {"email": "user1@example.com"}, "display": {"label": "User One", "source": "crm"}}},
+                ["id", "email", "data", "contact", "display_info"],
+            ),
+        ],
+    )
+    async def test_async_complex_param_tools(self, toolbox, tool_name, params, expected_keys):
+        tool = await toolbox.aload_tool(tool_name)
+        response = await tool.ainvoke(params)
+        if isinstance(response, list):
+            assert all(any(key in row for key in response) for row in expected_keys)
+        elif isinstance(response, dict):
+            assert any(key in response for key in expected_keys)
+        else:
+            assert response is not None
+
     @pytest.mark.parametrize(
         "toolset_name, expected_length, expected_tools",
         [
@@ -204,6 +240,42 @@ class TestE2EClientSync:
         return tool
 
     #### Basic e2e tests
+    @pytest.mark.parametrize(
+        "tool_name, params, expected_keys",
+        [
+            (
+                "process-list",
+                {"emails": ["user1@example.com", "user2@example.com"]},
+                ["id", "email", "data"],
+            ),
+            (
+                "handle-nested-config",
+                {"filter": {"email": "user1@example.com"}},
+                ["id", "email", "data", "metadata"],
+            ),
+            (
+                "manage-data-batches",
+                {"batches": {"group_a": [1, 2], "group_b": [3]}},
+                ["id", "email", "data"],
+            ),
+            (
+                "lookup-by-profile",
+                {"profile": {"identity": {"email": "user1@example.com"}, "display": {"label": "User One", "source": "crm"}}},
+                ["id", "email", "data", "contact", "display_info"],
+            ),
+        ],
+    )
+    
+    def test_sync_complex_param_tools(self, toolbox, tool_name, params, expected_keys):
+        tool = toolbox.load_tool(tool_name)
+        response = tool.invoke(params)
+        if isinstance(response, list):
+            assert all(any(key in row for key in expected_keys) for row in response)
+        elif isinstance(response, dict):
+            assert any(key in response for key in expected_keys)
+        else:
+            assert response is not None
+
     @pytest.mark.parametrize(
         "toolset_name, expected_length, expected_tools",
         [
