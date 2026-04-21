@@ -78,4 +78,4 @@ jobs:
           mode: client
           command: 'python packages/toolbox-core/tests/conformance/client.py'
           suite: core
-          expected-failures: packages/toolbox-core/conformance-baseline.yml
+          expected-failures: packages/toolbox-core/tests/conformance-baseline.yml
