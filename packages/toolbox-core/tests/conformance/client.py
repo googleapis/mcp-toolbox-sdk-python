@@ -43,38 +43,26 @@ async def main():
 
     async with ToolboxClient(server_url, client_headers=client_headers) as client:
         if scenario == "initialize":
-            print(
-                "Client initialized, loading toolset to trigger tools/list",
-                file=sys.stderr,
-            )
-            try:
-                await client.load_toolset()
-                print("Client initialization test completed", file=sys.stderr)
-            except Exception as e:
-                print(f"Failed to load toolset: {e}", file=sys.stderr)
+            await client.load_toolset()
+            print("Client initialization test completed", file=sys.stderr)
 
         elif scenario == "tools_call":
-            print("Loading tool 'add_numbers'", file=sys.stderr)
-            try:
-                add_numbers = await client.load_tool("add_numbers")
-                print("Invoking add_numbers(a=1, b=2)", file=sys.stderr)
-                result = await add_numbers(a=1, b=2)
-                print(f"Result: {result}", file=sys.stderr)
-            except Exception as e:
-                print(f"Failed to call tool: {e}", file=sys.stderr)
+            add_numbers = await client.load_tool("add_numbers")
+            await add_numbers(a=1, b=2)
+            print("Invoked add_numbers(a=1, b=2)", file=sys.stderr)
 
         else:
-            print(f"Unknown or unsupported scenario: {scenario}", file=sys.stderr)
-            # Default behavior: load default toolset
-            try:
-                await client.load_toolset()
-            except Exception as e:
-                print(f"Default interaction failed: {e}", file=sys.stderr)
-
+            # Default behavior: load default toolset to trigger standard interactions
+            await client.load_toolset()
 
 if __name__ == "__main__":
+    import os
+    import traceback
+    log_file_path = os.path.join(os.path.dirname(__file__), "client_errors.log")
     try:
         asyncio.run(main())
     except Exception as e:
-        print(f"Fatal error in client: {e}", file=sys.stderr)
+        with open(log_file_path, "a") as f:
+            f.write(f"\n=== ERROR FOR SCENARIO: {os.environ.get('MCP_CONFORMANCE_SCENARIO', 'unknown')} ===\n")
+            traceback.print_exc(file=f)
         sys.exit(1)
