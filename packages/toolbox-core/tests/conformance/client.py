@@ -55,14 +55,18 @@ async def main():
             # Default behavior: load default toolset to trigger standard interactions
             await client.load_toolset()
 
+
 if __name__ == "__main__":
     import os
     import traceback
+
     log_file_path = os.path.join(os.path.dirname(__file__), "client_errors.log")
     try:
         asyncio.run(main())
     except Exception as e:
         with open(log_file_path, "a") as f:
-            f.write(f"\n=== ERROR FOR SCENARIO: {os.environ.get('MCP_CONFORMANCE_SCENARIO', 'unknown')} ===\n")
+            f.write(
+                f"\n=== ERROR FOR SCENARIO: {os.environ.get('MCP_CONFORMANCE_SCENARIO', 'unknown')} ===\n"
+            )
             traceback.print_exc(file=f)
         sys.exit(1)
