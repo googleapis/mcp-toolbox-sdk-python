@@ -63,16 +63,14 @@ jobs:
           script: |
             const fs = require('fs');
             const report = fs.readFileSync('tier_report.txt', 'utf8');
-            const title = 'Nightly SDK Tier Assessment Failure';
-            const periodicLabel = 'periodic-failure';
+            const title = '[Dashboard: Conformance] Nightly SDK Tier Assessment Failure';
             
             const prevIssues = await github.rest.issues.listForRepo({
               ...context.repo,
-              state: 'open',
-              creator: 'github-actions[bot]',
-              labels: [periodicLabel]
+              state: 'open'
             });
             
+            // Find any open issue matching the exact dashboard title
             let existingIssue = prevIssues.data.find(issue => issue.title === title);
             
             if (report.includes('Tier Assessment: Tier 1')) {
@@ -106,7 +104,6 @@ jobs:
               await github.rest.issues.create({
                 ...context.repo,
                 title: title,
-                body: body,
-                labels: [periodicLabel]
+                body: body
               });
             }
