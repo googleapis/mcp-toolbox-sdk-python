@@ -845,7 +845,7 @@ class TestAgentIntegration:
         tool = ToolboxTool(core_tool)
 
         agent = Agent(
-            model="gemini-2.5-flash",
+            model="gemini-3-flash-preview",
             name="test_agent",
             description="Test agent",
             instruction="Use tools",
