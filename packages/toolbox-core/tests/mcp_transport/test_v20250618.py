@@ -20,7 +20,7 @@ from aiohttp import ClientSession
 
 from toolbox_core.mcp_transport.v20250618 import types
 from toolbox_core.mcp_transport.v20250618.mcp import McpHttpTransportV20250618
-from toolbox_core.protocol import ManifestSchema, Protocol
+from toolbox_core.protocol import ManifestSchema, Protocol, TelemetryAttributes
 
 
 def create_fake_tools_list_result():
@@ -432,3 +432,36 @@ class TestMcpHttpTransportV20250618:
 
         result = await transport.tool_invoke("tool", {}, {})
         assert result == '{"a": 1}'
+
+    async def test_tool_invoke_emits_telemetry_alias_on_wire(self, transport, mocker):
+        """Contract test: telemetry_attributes must serialize on the wire as
+        ``_meta.dev.mcp-toolbox/telemetry`` with the OTel-style aliased keys
+        (client.model, client.user.id, client.agent.id) and the transport-
+        supplied client.name and client.version. A typo in any of those
+        strings would silently break the agreement with the toolbox server
+        defined in issue #632; this test locks the wire format."""
+        mocker.patch.object(transport, "_ensure_initialized", new_callable=AsyncMock)
+        send_mock = AsyncMock(
+            return_value=types.CallToolResult(
+                content=[types.TextContent(type="text", text="ok")]
+            )
+        )
+        mocker.patch.object(transport, "_send_request", new=send_mock)
+
+        attrs = TelemetryAttributes(llm_model="gpt-4", user_id="u1", agent_id="a1")
+        await transport.tool_invoke("tool", {"x": 1}, {}, telemetry_attributes=attrs)
+
+        sent_request = send_mock.call_args.kwargs["request"]
+        # Serialize the same way the transport does on the wire.
+        params_wire = sent_request.params.model_dump(
+            mode="json", exclude_none=True, by_alias=True
+        )
+        assert "_meta" in params_wire
+        telemetry_block = params_wire["_meta"]["dev.mcp-toolbox/telemetry"]
+        assert telemetry_block["client.model"] == "gpt-4"
+        assert telemetry_block["client.user.id"] == "u1"
+        assert telemetry_block["client.agent.id"] == "a1"
+        assert "client.name" in telemetry_block
+        assert "client.version" in telemetry_block
+        assert telemetry_block["client.name"]  # non-empty
+        assert telemetry_block["client.version"]  # non-empty

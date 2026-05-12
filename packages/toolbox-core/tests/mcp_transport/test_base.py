@@ -21,7 +21,7 @@ import pytest_asyncio
 from aiohttp import ClientSession
 
 from toolbox_core.mcp_transport.transport_base import _McpHttpTransportBase
-from toolbox_core.protocol import ToolSchema
+from toolbox_core.protocol import TelemetryAttributes, ToolSchema
 
 
 class ConcreteTransport(_McpHttpTransportBase):
@@ -322,3 +322,69 @@ class TestMcpHttpTransportBase:
         p_text = next(p for p in schema.parameters if p.name == "text")
         assert p_text.has_default is True
         assert p_text.default == "hello"
+
+
+class TestBuildTelemetryPayload:
+    """payload helper merges TelemetryAttributes with transport identity."""
+
+    def test_returns_none_when_no_attrs(self, transport):
+        assert transport._build_telemetry_payload(None) is None
+
+    def test_returns_none_when_attrs_is_empty(self, transport):
+        """An all-None TelemetryAttributes is a no-op on the wire.
+
+        Pydantic BaseModel instances are always truthy, so callers that
+        construct ``TelemetryAttributes()`` without setting any field
+        must not cause client identity to be sent. This locks the
+        documented contract."""
+        empty = TelemetryAttributes()
+        assert transport._build_telemetry_payload(empty) is None
+        # And the same path when all fields are empty strings (the
+        # field_validator coerces "" to None).
+        empty_via_strings = TelemetryAttributes(llm_model="", user_id="", agent_id="")
+        assert transport._build_telemetry_payload(empty_via_strings) is None
+
+    def test_full_attrs_merged_with_client_identity(self, transport):
+        attrs = TelemetryAttributes(llm_model="gpt-4", user_id="u1", agent_id="a1")
+        payload = transport._build_telemetry_payload(attrs)
+        assert payload is not None
+        assert payload["client.model"] == "gpt-4"
+        assert payload["client.user.id"] == "u1"
+        assert payload["client.agent.id"] == "a1"
+        # client.name and client.version are merged from transport state.
+        assert "client.name" in payload
+        assert "client.version" in payload
+
+    def test_partial_attrs_only_dumps_set_fields(self, transport):
+        """Unset fields must not pollute the wire payload."""
+        attrs = TelemetryAttributes(user_id="u1")
+        payload = transport._build_telemetry_payload(attrs)
+        assert payload is not None
+        assert payload["client.user.id"] == "u1"
+        assert "client.model" not in payload
+        assert "client.agent.id" not in payload
+
+    @pytest.mark.asyncio
+    async def test_custom_client_name_overrides_default(self):
+        """When the transport is built with client_name, it appears in the payload."""
+        mock_session = AsyncMock(spec=ClientSession)
+        t = ConcreteTransport(
+            "http://fake-server.com",
+            session=mock_session,
+            client_name="my-app",
+            client_version="9.9.9",
+        )
+        try:
+            payload = t._build_telemetry_payload(TelemetryAttributes(user_id="u"))
+            assert payload["client.name"] == "my-app"
+            assert payload["client.version"] == "9.9.9"
+        finally:
+            await t.close()
+
+    def test_default_client_identity_when_unset(self, transport):
+        attrs = TelemetryAttributes(user_id="u")
+        payload = transport._build_telemetry_payload(attrs)
+        # Defaults: from version module + literal "toolbox-core-python".
+        assert payload["client.name"] == "toolbox-core-python"
+        assert isinstance(payload["client.version"], str)
+        assert payload["client.version"] != ""

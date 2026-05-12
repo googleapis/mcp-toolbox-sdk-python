@@ -21,7 +21,12 @@ import pytest
 
 from toolbox_core.client import ToolboxClient
 from toolbox_core.itransport import ITransport
-from toolbox_core.protocol import ManifestSchema, ParameterSchema, ToolSchema
+from toolbox_core.protocol import (
+    ManifestSchema,
+    ParameterSchema,
+    TelemetryAttributes,
+    ToolSchema,
+)
 from toolbox_core.sync_client import ToolboxSyncClient
 from toolbox_core.sync_tool import ToolboxSyncTool
 
@@ -55,7 +60,11 @@ class MockSyncTransport(ITransport):
         return await self.tools_list_mock(toolset_name, headers)
 
     async def tool_invoke(
-        self, tool_name: str, arguments: dict, headers: Mapping[str, str]
+        self,
+        tool_name: str,
+        arguments: dict,
+        headers: Mapping[str, str],
+        telemetry_attributes: Optional[TelemetryAttributes] = None,
     ) -> str:
         return await self.tool_invoke_mock(tool_name, arguments, headers)
 

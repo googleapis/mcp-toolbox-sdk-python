@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from .client import ToolboxClient
+from .protocol import TelemetryAttributes
 from .sync_client import ToolboxSyncClient
 
-__all__ = ["ToolboxClient", "ToolboxSyncClient"]
+__all__ = ["ToolboxClient", "ToolboxSyncClient", "TelemetryAttributes"]

@@ -26,7 +26,7 @@ from aioresponses import aioresponses
 from pydantic import ValidationError
 
 from toolbox_core.itransport import ITransport
-from toolbox_core.protocol import ParameterSchema
+from toolbox_core.protocol import ParameterSchema, TelemetryAttributes
 from toolbox_core.tool import ToolboxTool
 from toolbox_core.utils import create_func_docstring, resolve_value
 
@@ -47,32 +47,12 @@ class MockTransport(ITransport):
     def base_url(self):
         return self._base_url
 
-    async def tool_invoke(self, *args, **kwargs):
-        return await self.tool_invoke_mock(*args, **kwargs)
-
-    async def tool_get(self, *args, **kwargs):
-        return await self.tool_get_mock(*args, **kwargs)
-
-    async def tools_list(self, *args, **kwargs):
-        return await self.tools_list_mock(*args, **kwargs)
-
-    async def close(self, *args, **kwargs):
-        return await self.close_mock(*args, **kwargs)
-
-
-class MockTransport(ITransport):
-    def __init__(self, base_url, session=None):
-        self._base_url = base_url
-        self.tool_invoke_mock = AsyncMock()
-        self.tool_get_mock = AsyncMock()
-        self.tools_list_mock = AsyncMock()
-        self.close_mock = AsyncMock()
-
-    @property
-    def base_url(self):
-        return self._base_url
-
-    async def tool_invoke(self, *args, **kwargs):
+    async def tool_invoke(self, *args, telemetry_attributes=None, **kwargs):
+        # Only forward telemetry_attributes when set so existing assertions
+        # that match on (name, args, headers) keep working after the
+        # ToolboxTool.__call__ collapse to always pass the kwarg.
+        if telemetry_attributes is not None:
+            kwargs["telemetry_attributes"] = telemetry_attributes
         return await self.tool_invoke_mock(*args, **kwargs)
 
     async def tool_get(self, *args, **kwargs):
@@ -787,3 +767,162 @@ async def test_tool_call_http_warning(
         assert not any(
             "This connection is using HTTP" in msg for msg in warning_messages
         )
+
+
+def _make_simple_tool(transport, name=TEST_TOOL_NAME):
+    return ToolboxTool(
+        transport=transport,
+        name=name,
+        description="A simple tool",
+        params=[
+            ParameterSchema(name="param1", type="string", description="param1 desc")
+        ],
+        required_authn_params={},
+        required_authz_tokens=[],
+        auth_service_token_getters={},
+        bound_params={},
+        client_headers={},
+    )
+
+
+def test_add_telemetry_attributes_returns_new_instance():
+    """setter is immutable — original tool is unchanged."""
+    transport = MockTransport(TEST_BASE_URL)
+    original = _make_simple_tool(transport)
+    attrs = TelemetryAttributes(llm_model="gpt-4", user_id="u1")
+    derived = original.add_telemetry_attributes(attrs)
+
+    assert derived is not original
+    assert derived._name == original._name
+    # Internal: original carries no telemetry; derived does.
+    assert original._ToolboxTool__telemetry_attributes is None
+    assert derived._ToolboxTool__telemetry_attributes is attrs
+
+
+@pytest.mark.asyncio
+async def test_add_telemetry_attributes_flows_to_transport():
+    """invoking the derived tool sends telemetry_attributes to the transport."""
+    transport = MockTransport(TEST_BASE_URL)
+    transport.tool_invoke_mock.return_value = "ok"
+    tool = _make_simple_tool(transport)
+    attrs = TelemetryAttributes(llm_model="m", user_id="u")
+    derived = tool.add_telemetry_attributes(attrs)
+
+    await derived(param1="hello")
+
+    transport.tool_invoke_mock.assert_awaited_once()
+    call_kwargs = transport.tool_invoke_mock.await_args.kwargs
+    assert call_kwargs.get("telemetry_attributes") is attrs
+
+
+@pytest.mark.asyncio
+async def test_original_tool_does_not_send_telemetry_after_derive():
+    """deriving a copy must not back-propagate state to the original."""
+    transport = MockTransport(TEST_BASE_URL)
+    transport.tool_invoke_mock.return_value = "ok"
+    tool = _make_simple_tool(transport)
+    _ = tool.add_telemetry_attributes(
+        TelemetryAttributes(user_id="should-not-reach-original")
+    )
+
+    await tool(param1="hello")
+
+    transport.tool_invoke_mock.assert_awaited_once()
+    # The original tool's call must not carry the telemetry kwarg at all.
+    assert "telemetry_attributes" not in transport.tool_invoke_mock.await_args.kwargs
+
+
+def test_add_telemetry_attributes_composes_with_bind_params():
+    """telemetry survives bind_params and add_auth_token_getter chains."""
+    transport = MockTransport(TEST_BASE_URL)
+    tool = ToolboxTool(
+        transport=transport,
+        name=TEST_TOOL_NAME,
+        description="A tool with auth",
+        params=[
+            ParameterSchema(name="param1", type="string", description="p"),
+            ParameterSchema(
+                name="api_key",
+                type="string",
+                description="key",
+                authSources=["svc"],
+            ),
+        ],
+        required_authn_params=MappingProxyType({"api_key": ["svc"]}),
+        required_authz_tokens=[],
+        auth_service_token_getters={},
+        bound_params={},
+        client_headers={},
+    )
+    attrs = TelemetryAttributes(user_id="u")
+    derived = tool.add_telemetry_attributes(attrs).add_auth_token_getter(
+        "svc", lambda: "tkn"
+    )
+    assert derived._ToolboxTool__telemetry_attributes is attrs
+
+
+def test_add_telemetry_attributes_second_call_replaces_not_merges():
+    """A second call to add_telemetry_attributes must replace the first
+    payload, not merge with it. This locks the contract that attrs are a
+    single immutable bundle, not an accumulator."""
+    transport = MockTransport(TEST_BASE_URL)
+    tool = _make_simple_tool(transport)
+    first = TelemetryAttributes(llm_model="m1", user_id="u1")
+    second = TelemetryAttributes(agent_id="a2")
+
+    derived = tool.add_telemetry_attributes(first).add_telemetry_attributes(second)
+
+    # Replace, not merge: only the second bundle's fields survive.
+    assert derived._ToolboxTool__telemetry_attributes is second
+    payload = derived._ToolboxTool__telemetry_attributes.model_dump(
+        by_alias=True, exclude_none=True
+    )
+    assert payload == {"client.agent.id": "a2"}
+    assert "client.model" not in payload
+    assert "client.user.id" not in payload
+
+
+@pytest.mark.asyncio
+async def test_telemetry_does_not_collide_with_param_named_telemetry_attributes():
+    """a tool whose schema has a parameter named
+    ``telemetry_attributes`` must invoke cleanly when telemetry is set on the
+    tool, because the implementation no longer routes the value through the
+    args dict (it uses the immutable setter instead).
+    """
+    transport = MockTransport(TEST_BASE_URL)
+    transport.tool_invoke_mock.return_value = "ok"
+
+    tool = ToolboxTool(
+        transport=transport,
+        name="weird_tool",
+        description="A tool whose own parameter shadows the SDK keyword",
+        params=[
+            ParameterSchema(
+                name="telemetry_attributes",
+                type="string",
+                description="user-facing data, NOT the SDK keyword",
+            ),
+        ],
+        required_authn_params={},
+        required_authz_tokens=[],
+        auth_service_token_getters={},
+        bound_params={},
+        client_headers={},
+    )
+    attrs = TelemetryAttributes(user_id="u1")
+    derived = tool.add_telemetry_attributes(attrs)
+
+    # The tool's user-facing param value must reach `arguments`, NOT be replaced
+    # by the SDK telemetry payload.
+    await derived(telemetry_attributes="user-data")
+
+    transport.tool_invoke_mock.assert_awaited_once()
+    args, kwargs = (
+        transport.tool_invoke_mock.await_args.args,
+        transport.tool_invoke_mock.await_args.kwargs,
+    )
+    # The transport sees the user-facing value in the arguments dict
+    # AND the SDK telemetry attributes via the dedicated keyword.
+    assert args[0] == "weird_tool"
+    assert args[1] == {"telemetry_attributes": "user-data"}
+    assert kwargs["telemetry_attributes"] is attrs

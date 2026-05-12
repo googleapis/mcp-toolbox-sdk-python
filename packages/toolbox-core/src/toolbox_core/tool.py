@@ -19,7 +19,7 @@ from types import MappingProxyType
 from typing import Any, Awaitable, Callable, Mapping, Optional, Sequence, Union
 
 from .itransport import ITransport
-from .protocol import ParameterSchema
+from .protocol import ParameterSchema, TelemetryAttributes
 from .utils import (
     create_func_docstring,
     identify_auth_requirements,
@@ -117,6 +117,9 @@ class ToolboxTool:
         self.__bound_parameters = bound_params
         # map of client headers to their value/callable/coroutine
         self.__client_headers = client_headers
+        # Telemetry attributes are not part of construction — they're set
+        # exclusively via ``add_telemetry_attributes`` on a derived copy.
+        self.__telemetry_attributes: Optional[TelemetryAttributes] = None
 
     @property
     def _name(self) -> str:
@@ -173,6 +176,7 @@ class ToolboxTool:
         client_headers: Optional[
             Mapping[str, Union[Callable[[], str], Callable[[], Awaitable[str]], str]]
         ] = None,
+        telemetry_attributes: Optional[TelemetryAttributes] = None,
     ) -> "ToolboxTool":
         """
         Creates a copy of the ToolboxTool, overriding specific fields.
@@ -191,9 +195,11 @@ class ToolboxTool:
             bound_params: A mapping of parameter names to bind to specific
                 values or callables that are called to produce values as needed.
             client_headers: Client specific headers bound to the tool.
+            telemetry_attributes: Telemetry attributes for the derived tool.
+                Set directly on the new instance (not exposed via __init__).
         """
         check = lambda val, default: val if val is not None else default
-        return ToolboxTool(
+        new_tool = ToolboxTool(
             transport=check(transport, self.__transport),
             name=check(name, self.__name__),
             description=check(description, self.__description),
@@ -210,6 +216,10 @@ class ToolboxTool:
             bound_params=check(bound_params, self.__bound_parameters),
             client_headers=check(client_headers, self.__client_headers),
         )
+        new_tool.__telemetry_attributes = check(
+            telemetry_attributes, self.__telemetry_attributes
+        )
+        return new_tool
 
     def __get_auth_header(self, auth_token_name: str) -> str:
         """Returns the formatted auth token header name."""
@@ -281,7 +291,26 @@ class ToolboxTool:
             self.__name__,
             payload,
             headers,
+            telemetry_attributes=self.__telemetry_attributes,
         )
+
+    def add_telemetry_attributes(
+        self, telemetry_attributes: TelemetryAttributes
+    ) -> "ToolboxTool":
+        """Returns a copy of this tool with the given telemetry attributes set.
+
+        The original tool is left untouched, mirroring the immutable pattern
+        used by ``add_auth_token_getter`` and ``bind_params``. Attributes
+        are sent to the server on every invocation of the returned tool.
+        A second call replaces (does not merge with) the previous attributes.
+
+        Args:
+            telemetry_attributes: The telemetry attributes to attach.
+
+        Returns:
+            A new ToolboxTool instance with the attributes attached.
+        """
+        return self.__copy(telemetry_attributes=telemetry_attributes)
 
     def add_auth_token_getters(
         self,

@@ -15,7 +15,7 @@
 from abc import ABC, abstractmethod
 from typing import Mapping, Optional
 
-from .protocol import ManifestSchema
+from .protocol import ManifestSchema, TelemetryAttributes
 
 
 class ITransport(ABC):
@@ -47,7 +47,11 @@ class ITransport(ABC):
 
     @abstractmethod
     async def tool_invoke(
-        self, tool_name: str, arguments: dict, headers: Mapping[str, str]
+        self,
+        tool_name: str,
+        arguments: dict,
+        headers: Mapping[str, str],
+        telemetry_attributes: Optional[TelemetryAttributes] = None,
     ) -> str:
         """Invokes a specific tool on the server."""
         pass

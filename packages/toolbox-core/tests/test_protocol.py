@@ -18,7 +18,58 @@ from typing import Any, Optional
 
 import pytest
 
-from toolbox_core.protocol import AdditionalPropertiesSchema, ParameterSchema, Protocol
+from toolbox_core.protocol import (
+    AdditionalPropertiesSchema,
+    ParameterSchema,
+    Protocol,
+    TelemetryAttributes,
+)
+
+# --------------------------------------------------------------------------- #
+# TelemetryAttributes — wire format & alias contract                          #
+# --------------------------------------------------------------------------- #
+
+
+def test_telemetry_attributes_alias_dump_full():
+    """model_dump(by_alias=True) maps Python field names to wire keys."""
+    attrs = TelemetryAttributes(llm_model="gpt-4", user_id="u1", agent_id="a1")
+    payload = attrs.model_dump(by_alias=True, exclude_none=True)
+    assert payload == {
+        "client.model": "gpt-4",
+        "client.user.id": "u1",
+        "client.agent.id": "a1",
+    }
+
+
+def test_telemetry_attributes_alias_dump_partial():
+    """only-set fields appear in the payload, exclude_none drops missing ones."""
+    attrs = TelemetryAttributes(user_id="u1")
+    payload = attrs.model_dump(by_alias=True, exclude_none=True)
+    assert payload == {"client.user.id": "u1"}
+    assert "client.model" not in payload
+    assert "client.agent.id" not in payload
+
+
+def test_telemetry_attributes_default_construction():
+    """TelemetryAttributes() with no args is valid and dumps to empty dict."""
+    attrs = TelemetryAttributes()
+    assert attrs.llm_model is None
+    assert attrs.user_id is None
+    assert attrs.agent_id is None
+    assert attrs.model_dump(by_alias=True, exclude_none=True) == {}
+
+
+def test_telemetry_attributes_empty_string_excluded_from_wire():
+    """Empty strings must not pollute the wire payload.
+
+    A ``mode="before"`` validator coerces ``""`` to ``None`` so SQL Commenter
+    on the server side never receives ``client.model=`` and similar.
+    """
+    attrs = TelemetryAttributes(llm_model="", user_id="u1", agent_id="")
+    payload = attrs.model_dump(by_alias=True, exclude_none=True)
+    assert "client.model" not in payload, payload
+    assert "client.agent.id" not in payload, payload
+    assert payload.get("client.user.id") == "u1"
 
 
 def test_get_supported_mcp_versions():
