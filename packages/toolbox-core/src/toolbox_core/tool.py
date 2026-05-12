@@ -287,11 +287,17 @@ class ToolboxTool:
 
         warn_if_http_and_headers(self.__transport.base_url, headers)
 
+        if self.__telemetry_attributes is not None:
+            return await self.__transport.tool_invoke(
+                self.__name__,
+                payload,
+                headers,
+                telemetry_attributes=self.__telemetry_attributes,
+            )
         return await self.__transport.tool_invoke(
             self.__name__,
             payload,
             headers,
-            telemetry_attributes=self.__telemetry_attributes,
         )
 
     def add_telemetry_attributes(
