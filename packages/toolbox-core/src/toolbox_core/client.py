@@ -28,6 +28,7 @@ from .mcp_transport import (
     McpHttpTransportV20250326,
     McpHttpTransportV20250618,
     McpHttpTransportV20251125,
+    McpHttpTransportV20260618,
 )
 from .protocol import Protocol, ToolSchema
 from .tool import ToolboxTool
@@ -86,6 +87,15 @@ class ToolboxClient:
             )
 
         match protocol:
+            case Protocol.MCP_v20260618:
+                self.__transport = McpHttpTransportV20260618(
+                    url,
+                    session,
+                    protocol,
+                    client_name,
+                    client_version,
+                    telemetry_enabled=telemetry_enabled,
+                )
             case Protocol.MCP_v20251125:
                 self.__transport = McpHttpTransportV20251125(
                     url,
