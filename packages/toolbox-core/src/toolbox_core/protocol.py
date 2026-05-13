@@ -59,6 +59,7 @@ class Protocol(str, Enum):
     def get_supported_mcp_versions() -> list[str]:
         """Returns a list of supported MCP protocol versions."""
         return [
+            # TODO: Uncomment
             # Protocol.MCP_v20260618.value,
             Protocol.MCP_v20251125.value,
             Protocol.MCP_v20250618.value,
