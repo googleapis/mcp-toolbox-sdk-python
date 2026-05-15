@@ -47,20 +47,19 @@ class TelemetryAttributes(BaseModel):
 class Protocol(str, Enum):
     """Defines how the client should choose between communication protocols."""
 
+    MCP_v20260618 = "DRAFT-2026-v1"
     MCP_v20250618 = "2025-06-18"
     MCP_v20250326 = "2025-03-26"
     MCP_v20241105 = "2024-11-05"
     MCP_v20251125 = "2025-11-25"
-    MCP_v20260618 = "DRAFT-2026-v1"
     MCP = MCP_v20250618
-    MCP_LATEST = MCP_v20251125
+    MCP_LATEST = MCP_v20260618
 
     @staticmethod
     def get_supported_mcp_versions() -> list[str]:
         """Returns a list of supported MCP protocol versions."""
         return [
-            # TODO: Uncomment
-            # Protocol.MCP_v20260618.value,
+            Protocol.MCP_v20260618.value,
             Protocol.MCP_v20251125.value,
             Protocol.MCP_v20250618.value,
             Protocol.MCP_v20250326.value,
