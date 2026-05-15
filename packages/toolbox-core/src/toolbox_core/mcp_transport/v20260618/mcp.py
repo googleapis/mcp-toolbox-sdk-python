@@ -46,9 +46,7 @@ class McpHttpTransportV20260618(_McpHttpTransportBase):
                 hasattr(request.params, "field_meta")
                 and request.params.field_meta is not None
             ):
-                request.params.field_meta.protocol_version = (
-                    self._protocol_version
-                )
+                request.params.field_meta.protocol_version = self._protocol_version
 
         params = (
             request.params.model_dump(mode="json", exclude_none=True, by_alias=True)
@@ -80,9 +78,7 @@ class McpHttpTransportV20260618(_McpHttpTransportBase):
                             )
 
                         server_supported = (
-                            json_resp["error"]
-                            .get("data", {})
-                            .get("supported", [])
+                            json_resp["error"].get("data", {}).get("supported", [])
                         )
                         from ...protocol import Protocol
 
@@ -135,9 +131,7 @@ class McpHttpTransportV20260618(_McpHttpTransportBase):
             if isinstance(request, types.MCPRequest):
                 try:
                     rpc_resp = types.JSONRPCResponse.model_validate(json_resp)
-                    return request.get_result_model().model_validate(
-                        rpc_resp.result
-                    )
+                    return request.get_result_model().model_validate(rpc_resp.result)
                 except Exception as e:
                     raise RuntimeError(f"Failed to parse JSON-RPC response: {e}")
             return None
@@ -192,9 +186,7 @@ class McpHttpTransportV20260618(_McpHttpTransportBase):
             if result is None:
                 raise RuntimeError("Failed to list tools: No response from server.")
 
-            tools_map = {
-                t["name"]: self._convert_tool_schema(t) for t in result.tools
-            }
+            tools_map = {t["name"]: self._convert_tool_schema(t) for t in result.tools}
 
             return ManifestSchema(
                 serverVersion="1.0.0",

@@ -231,7 +231,9 @@ class TestMcpHttpTransportV20260618:
             },
         }
 
-        transport._session.post.return_value.__aenter__.return_value = mock_response_reject
+        transport._session.post.return_value.__aenter__.return_value = (
+            mock_response_reject
+        )
 
         class TestResult(types.BaseModel):
             pass
