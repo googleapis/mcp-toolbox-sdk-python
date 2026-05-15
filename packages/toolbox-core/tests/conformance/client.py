@@ -18,6 +18,7 @@ import os
 import sys
 
 from toolbox_core.client import ToolboxClient
+from toolbox_core.protocol import Protocol
 
 
 async def main():
@@ -40,8 +41,6 @@ async def main():
     print(f"Context: {context_json}", file=sys.stderr)
 
     client_headers = {"Accept": "application/json, text/event-stream"}
-
-    from toolbox_core.protocol import Protocol
 
     protocol = Protocol.MCP
     if scenario == "request-metadata":
