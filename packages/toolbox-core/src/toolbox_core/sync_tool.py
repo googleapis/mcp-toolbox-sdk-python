@@ -19,7 +19,7 @@ from inspect import Signature
 from threading import Thread
 from typing import Any, Awaitable, Callable, Mapping, Sequence, Union
 
-from .protocol import ParameterSchema
+from .protocol import ParameterSchema, TelemetryAttributes
 from .tool import ToolboxTool
 
 
@@ -240,3 +240,24 @@ class ToolboxSyncTool:
 
         """
         return self.bind_params({param_name: param_value})
+
+    def add_telemetry_attributes(
+        self, telemetry_attributes: TelemetryAttributes
+    ) -> "ToolboxSyncTool":
+        """Returns a copy of this tool with the given telemetry attributes set.
+
+        Mirrors ``ToolboxTool.add_telemetry_attributes``. The original tool
+        is left untouched. Attributes are sent to the server on every
+        invocation of the returned tool; a second call replaces (does not
+        merge with) the previous attributes.
+
+        Args:
+            telemetry_attributes: The telemetry attributes to attach.
+
+        Returns:
+            A new ToolboxSyncTool instance with the attributes attached.
+        """
+        new_async_tool = self.__async_tool.add_telemetry_attributes(
+            telemetry_attributes
+        )
+        return ToolboxSyncTool(new_async_tool, self.__loop, self.__thread)

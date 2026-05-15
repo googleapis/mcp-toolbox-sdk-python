@@ -15,13 +15,19 @@
 import asyncio
 import json
 from abc import ABC, abstractmethod
-from typing import Mapping, Optional, Union
+from typing import Any, Mapping, Optional, Union
 
 from aiohttp import ClientSession
 
 from .. import version
 from ..itransport import ITransport
-from ..protocol import AdditionalPropertiesSchema, ParameterSchema, Protocol, ToolSchema
+from ..protocol import (
+    AdditionalPropertiesSchema,
+    ParameterSchema,
+    Protocol,
+    TelemetryAttributes,
+    ToolSchema,
+)
 from . import telemetry
 
 
@@ -176,6 +182,33 @@ class _McpHttpTransportBase(ITransport, ABC):
             parameters=parameters,
             authRequired=invoke_auth,
         )
+
+    def _build_telemetry_payload(
+        self,
+        telemetry_attributes: Optional[TelemetryAttributes] = None,
+    ) -> Optional[dict[str, Any]]:
+        """Builds the telemetry payload dict from TelemetryAttributes.
+
+        Returns None if no telemetry_attributes are provided OR if the
+        user-supplied attrs have no fields set (all fields default to
+        None or coerced from empty strings). When telemetry is enabled,
+        callers should also set these as span attributes.
+
+        Per-call user-supplied fields use TelemetryAttributes' aliased
+        serialization; client.name/client.version are merged in from
+        transport state only when at least one user field is set.
+        """
+        if telemetry_attributes is None:
+            return None
+        user_payload = telemetry_attributes.model_dump(by_alias=True, exclude_none=True)
+        if not user_payload:
+            return None
+        payload: dict[str, Any] = {
+            "client.name": self._client_name or "toolbox-core-python",
+            "client.version": self._client_version or version.__version__,
+        }
+        payload.update(user_payload)
+        return payload
 
     async def close(self):
         async with self._init_lock:

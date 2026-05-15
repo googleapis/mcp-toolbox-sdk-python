@@ -21,6 +21,7 @@ from unittest.mock import MagicMock, Mock, create_autospec, patch
 
 import pytest
 
+from toolbox_core.protocol import TelemetryAttributes
 from toolbox_core.sync_tool import ToolboxSyncTool
 from toolbox_core.tool import ToolboxTool
 
@@ -45,6 +46,9 @@ def mock_async_tool() -> MagicMock:
         ToolboxTool, instance=True
     )
     tool.bind_params.return_value = create_autospec(ToolboxTool, instance=True)
+    tool.add_telemetry_attributes.return_value = create_autospec(
+        ToolboxTool, instance=True
+    )
 
     return tool
 
@@ -335,3 +339,27 @@ def test_toolbox_sync_tool_bind_param(
     assert (
         new_sync_tool.__qualname__ == f"ToolboxSyncTool.{new_mock_async_tool.__name__}"
     )
+
+
+def test_toolbox_sync_tool_add_telemetry_attributes(
+    toolbox_sync_tool: ToolboxSyncTool,
+    mock_async_tool: MagicMock,
+    event_loop: asyncio.AbstractEventLoop,
+    mock_thread: MagicMock,
+):
+    """Tests add_telemetry_attributes forwards to the wrapped async tool
+    and returns a new ToolboxSyncTool reusing the same loop and thread."""
+    attrs = TelemetryAttributes(llm_model="gpt-4", user_id="u1")
+
+    new_mock_async_tool = mock_async_tool.add_telemetry_attributes.return_value
+    new_mock_async_tool.__name__ = "new_async_tool_with_telemetry"
+
+    new_sync_tool = toolbox_sync_tool.add_telemetry_attributes(attrs)
+
+    mock_async_tool.add_telemetry_attributes.assert_called_once_with(attrs)
+
+    assert isinstance(new_sync_tool, ToolboxSyncTool)
+    assert new_sync_tool is not toolbox_sync_tool
+    assert new_sync_tool._ToolboxSyncTool__async_tool is new_mock_async_tool
+    assert new_sync_tool._ToolboxSyncTool__loop is event_loop
+    assert new_sync_tool._ToolboxSyncTool__thread is mock_thread

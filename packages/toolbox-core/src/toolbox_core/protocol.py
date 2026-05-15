@@ -15,7 +15,33 @@ from enum import Enum
 from inspect import Parameter
 from typing import Any, Optional, Type, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
+
+
+class TelemetryAttributes(BaseModel):
+    """Attributes passed to the server via _meta and exported on client spans.
+
+    Field names map to OpenTelemetry-style keys via serialization aliases,
+    so `model_dump(by_alias=True, exclude_none=True)` produces the wire payload.
+    Empty strings are coerced to ``None`` so they never reach the server, where
+    they would otherwise appear as ``client.model=`` in SQL Commenter output.
+
+    The Python field for the model name is ``llm_model`` (not ``model``)
+    because pydantic v2 reserves ``model`` as a method namespace; declaring
+    a field literally named ``model`` breaks the serializer. The wire alias
+    ``client.model`` is unchanged from the server's perspective.
+    """
+
+    llm_model: Optional[str] = Field(default=None, serialization_alias="client.model")
+    user_id: Optional[str] = Field(default=None, serialization_alias="client.user.id")
+    agent_id: Optional[str] = Field(default=None, serialization_alias="client.agent.id")
+
+    @field_validator("llm_model", "user_id", "agent_id", mode="before")
+    @classmethod
+    def _empty_string_to_none(cls, value: Any) -> Any:
+        if isinstance(value, str) and value == "":
+            return None
+        return value
 
 
 class Protocol(str, Enum):

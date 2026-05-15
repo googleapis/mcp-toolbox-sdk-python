@@ -23,7 +23,13 @@ from aiohttp import web
 
 from toolbox_core.client import ToolboxClient
 from toolbox_core.itransport import ITransport
-from toolbox_core.protocol import ManifestSchema, ParameterSchema, Protocol, ToolSchema
+from toolbox_core.protocol import (
+    ManifestSchema,
+    ParameterSchema,
+    Protocol,
+    TelemetryAttributes,
+    ToolSchema,
+)
 
 TEST_BASE_URL = "http://toolbox.example.com"
 
@@ -55,7 +61,11 @@ class MockTransport(ITransport):
         return await self.tools_list_mock(toolset_name, headers)
 
     async def tool_invoke(
-        self, tool_name: str, arguments: dict, headers: Mapping[str, str]
+        self,
+        tool_name: str,
+        arguments: dict,
+        headers: Mapping[str, str],
+        telemetry_attributes: Optional[TelemetryAttributes] = None,
     ) -> str:
         return await self.tool_invoke_mock(tool_name, arguments, headers)
 
