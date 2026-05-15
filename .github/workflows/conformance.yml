@@ -73,7 +73,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Run Conformance Tests
-        uses: modelcontextprotocol/conformance@main
+        uses: modelcontextprotocol/conformance@v0.1.16
         with:
           mode: client
           command: 'python packages/toolbox-core/tests/conformance/client.py'
