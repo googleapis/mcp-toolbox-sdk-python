@@ -22,6 +22,12 @@ from toolbox_core.protocol import Protocol
 
 
 async def main():
+    """Harness main execution block.
+
+    NOTE: All non-protocol outputs (logs, traces, errors) must be directed to
+    sys.stderr. The test runner captures stdout for protocol messages only,
+    printing other content to stdout will pollute the stream and crash the runner.
+    """
     if len(sys.argv) < 2:
         print("Usage: client.py <server_url>", file=sys.stderr)
         sys.exit(1)
