@@ -5,7 +5,7 @@
 
 ### Features
 
-* **toolbox_core:** enable telemetry_attribute for SQLCommenter ([#634](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/634)) ([323f60e](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/323f60efc9e290428d2aa64691d2570cca00a9f1))
+* **core:** enable telemetry_attribute for SQLCommenter ([#634](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/634)) ([323f60e](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/323f60efc9e290428d2aa64691d2570cca00a9f1))
 
 
 ### Documentation
