@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v1.1.0...toolbox-core-v0.7.0) (2026-05-18)
+
+
+### Miscellaneous Chores
+
+* **toolbox-llamaindex:** release v0.7.0 ([#656](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/656)) ([bdbfd48](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/bdbfd487be2c7470372c494ebad315b11e01c160))
+
 ## [1.1.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v1.0.0...toolbox-core-v1.1.0) (2026-05-18)
 
 
