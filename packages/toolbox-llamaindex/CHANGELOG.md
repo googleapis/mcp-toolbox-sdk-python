@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.7.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-llamaindex-v0.6.0...toolbox-llamaindex-v0.7.0) (2026-05-18)
+
+
+### Documentation
+
+* Consolidate and improve `DEVELOPER.md` and `CONTRIBUTING.md` ([#636](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/636)) ([7d08938](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/7d0893801668fc122a62da4cb9979e85db4cd598))
+* migrate documentation links to mcp-toolbox.dev ([#624](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/624)) ([bfb1b02](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/bfb1b02377cf98010abbaf641eca04629a796694))
+* rebrand references for repo and docsite ([#635](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/635)) ([95b484b](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/95b484bef3d1390110f129fd6eb5c0f96dde838c))
+
 ## [0.6.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-llamaindex-v0.5.10...toolbox-llamaindex-v0.6.0) (2026-03-06)
 
 
