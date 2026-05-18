@@ -14,7 +14,7 @@
 
 import inspect
 import logging
-from typing import Any, Awaitable, Callable, Dict, Mapping, Optional
+from typing import Any, Dict, Mapping, Optional
 
 import toolbox_core
 from fastapi.openapi.models import (
@@ -31,6 +31,7 @@ from google.adk.auth.auth_tool import AuthConfig
 from google.adk.tools.base_tool import BaseTool
 from google.adk.tools.tool_context import ToolContext
 from google.genai.types import FunctionDeclaration, Schema, Type
+from pydantic import ValidationError
 from toolbox_core.protocol import AdditionalPropertiesSchema, ParameterSchema
 from toolbox_core.tool import ToolboxTool as CoreToolboxTool
 from typing_extensions import override
@@ -40,9 +41,7 @@ from .credentials import CredentialConfig, CredentialType
 
 
 class ToolboxTool(BaseTool):
-    """
-    A tool that delegates to a remote Toolbox tool, integrated with ADK.
-    """
+    """A tool that delegates to a remote Toolbox tool, integrated with ADK."""
 
     def __init__(
         self,
@@ -50,15 +49,11 @@ class ToolboxTool(BaseTool):
         auth_config: Optional[CredentialConfig] = None,
         adk_token_getters: Optional[Mapping[str, Any]] = None,
     ):
+        """Args:
+        core_tool: The underlying toolbox_core.py tool instance.
+        auth_config: Credential configuration to handle interactive flows.
+        adk_token_getters: Tool-specific auth token getters.
         """
-        Args:
-            core_tool: The underlying toolbox_core.py tool instance.
-            auth_config: Credential configuration to handle interactive flows.
-            adk_token_getters: Tool-specific auth token getters.
-        """
-        # We act as a proxy.
-        # We need to extract metadata from the core tool to satisfy BaseTool's contract.
-
         name = getattr(core_tool, "__name__", None)
         if not name:
             raise ValueError(f"Core tool {core_tool} must have a valid __name__")
@@ -72,7 +67,6 @@ class ToolboxTool(BaseTool):
         super().__init__(
             name=name,
             description=description,
-            # Pass empty custom_metadata as it is not currently used
             custom_metadata={},
         )
         self._core_tool = core_tool
@@ -95,11 +89,9 @@ class ToolboxTool(BaseTool):
         """Builds a Schema from a parameter."""
         param_type = getattr(param, "type", "string")
         schema_type = self._param_type_to_schema_type(param_type)
-
         properties = {}
         required = []
         schema_items = None
-        schema_additional_properties = None
 
         if schema_type == Type.ARRAY:
             if hasattr(param, "items") and param.items:
@@ -111,6 +103,7 @@ class ToolboxTool(BaseTool):
                     properties[k] = self._build_schema(v)
                     if getattr(v, "required", False):
                         required.append(k)
+
         return Schema(
             type=schema_type,
             description=getattr(param, "description", "") or "",
@@ -124,10 +117,6 @@ class ToolboxTool(BaseTool):
         """Gets the function declaration for the tool."""
         properties = {}
         required = []
-
-        # We do not use `google.genai.types.FunctionDeclaration.from_callable`
-        # here because it explicitly drops argument descriptions from the schema
-        # properties, lumping them all into the root description instead.
         if hasattr(self._core_tool, "_params") and self._core_tool._params:
             for param in self._core_tool._params:
                 properties[param.name] = self._build_schema(param)
@@ -143,7 +132,6 @@ class ToolboxTool(BaseTool):
             if properties
             else None
         )
-
         return FunctionDeclaration(
             name=self.name, description=self.description, parameters=parameters
         )
@@ -154,7 +142,6 @@ class ToolboxTool(BaseTool):
         args: Dict[str, Any],
         tool_context: ToolContext,
     ) -> Any:
-        # Check if USER_IDENTITY is configured
         reset_token = None
 
         if self._auth_config and self._auth_config.type == CredentialType.USER_IDENTITY:
@@ -172,7 +159,6 @@ class ToolboxTool(BaseTool):
                         "USER_IDENTITY requires client_id and client_secret"
                     )
 
-                # Construct ADK AuthConfig
                 scopes = self._auth_config.scopes or ["openid", "profile", "email"]
                 scope_dict = {s: "" for s in scopes}
 
@@ -195,9 +181,7 @@ class ToolboxTool(BaseTool):
                     ),
                 )
 
-                # Check if we already have credentials from a previous exchange
                 try:
-                    # Try to load credential from credential service first (persists across sessions)
                     creds = None
                     try:
                         if tool_context._invocation_context.credential_service:
@@ -206,11 +190,9 @@ class ToolboxTool(BaseTool):
                                 callback_context=tool_context,
                             )
                     except ValueError:
-                        # Credential service might not be initialized
                         pass
 
                     if not creds:
-                        # Fallback to session state (get_auth_response returns AuthCredential if found)
                         creds = tool_context.get_auth_response(auth_config_adk)
 
                     if creds and creds.oauth2 and creds.oauth2.access_token:
@@ -218,7 +200,6 @@ class ToolboxTool(BaseTool):
                             creds.oauth2.access_token
                         )
 
-                        # Bind the token to the underlying core_tool so it constructs headers properly
                         needed_services = set()
                         for requested_service in list(
                             self._core_tool._required_authn_params.values()
@@ -229,7 +210,6 @@ class ToolboxTool(BaseTool):
                                 needed_services.add(requested_service)
 
                         for s in needed_services:
-                            # Only add if not already registered (prevents ValueError on duplicate params or subsequent runs)
                             if (
                                 not hasattr(self._core_tool, "_auth_token_getters")
                                 or s not in self._core_tool._auth_token_getters
@@ -238,7 +218,6 @@ class ToolboxTool(BaseTool):
                                     s,
                                     lambda t=creds.oauth2.id_token or creds.oauth2.access_token: t,
                                 )
-                        # Once we use it from get_auth_response, save it to the auth service for future use
                         try:
                             if tool_context._invocation_context.credential_service:
                                 auth_config_adk.exchanged_auth_credential = creds
@@ -256,7 +235,6 @@ class ToolboxTool(BaseTool):
                 except Exception as e:
                     if "credential" in str(e).lower() or isinstance(e, ValueError):
                         raise e
-
                     logging.warning(
                         f"Unexpected error in get_auth_response during User Identity (OAuth2) retrieval: {e}. "
                         "Falling back to request_credential.",
@@ -272,41 +250,41 @@ class ToolboxTool(BaseTool):
             # This deferred loop also enables dynamic 1-arity `tool_context` injection.
             needed_services = set()
             for reqs in self._core_tool._required_authn_params.values():
-                needed_services.update(reqs)
+                if isinstance(reqs, list):
+                    needed_services.update(reqs)
+                else:
+                    needed_services.add(reqs)
             needed_services.update(self._core_tool._required_authz_tokens)
 
             for service, getter in self._adk_token_getters.items():
                 if service in needed_services:
                     sig = inspect.signature(getter)
-
                     if len(sig.parameters) == 1:
                         bound_getter = lambda t=getter, ctx=tool_context: t(ctx)
                     else:
                         bound_getter = getter
-
                     self._core_tool = self._core_tool.add_auth_token_getter(
                         service, bound_getter
                     )
 
-        result: Optional[Any] = None
-        error: Optional[Exception] = None
-
         try:
-            # Execute the core tool
-            result = await self._core_tool(**args)
-            return result
-
-        except Exception as e:
-            error = e
+            return await self._core_tool(**args)
+        except (TypeError, PermissionError) as e:
+            # Propagate system-level errors
             raise e
+        except (ValueError, ValidationError, Exception) as e:
+            # Catch tool execution and validation errors and return as a structured dictionary
+            # This handles cases like invalid parameters, tool crashes, or server errors
+            logging.warning(
+                "Toolbox tool '%s' execution failed: %s", self.name, e, exc_info=True
+            )
+            return {"error": f"{type(e).__name__}: {e}", "is_error": True}
         finally:
             if reset_token:
                 USER_TOKEN_CONTEXT_VAR.reset(reset_token)
 
     def bind_params(self, bounded_params: Dict[str, Any]) -> "ToolboxTool":
-        """Allows runtime binding of parameters, delegating to core tool."""
         new_core_tool = self._core_tool.bind_params(bounded_params)
-        # Return a new wrapper
         return ToolboxTool(
             core_tool=new_core_tool,
             auth_config=self._auth_config,
