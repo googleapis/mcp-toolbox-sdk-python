@@ -1,0 +1,280 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
+
+import pytest
+import pytest_asyncio
+from aiohttp import ClientSession
+
+from toolbox_core.mcp_transport.v20260618 import types
+from toolbox_core.mcp_transport.v20260618.mcp import McpHttpTransportV20260618
+from toolbox_core.protocol import ManifestSchema, Protocol
+
+
+def create_fake_tools_list_result():
+    return types.ListToolsResult(
+        tools=[
+            {
+                "name": "get_weather",
+                "description": "Gets the weather.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {"location": {"type": "string"}},
+                    "required": ["location"],
+                },
+            }
+        ]
+    )
+
+
+@pytest_asyncio.fixture(
+    params=[False, True], ids=["telemetry_disabled", "telemetry_enabled"]
+)
+async def transport(request, mocker):
+    if request.param:
+        mocker.patch("toolbox_core.mcp_transport.telemetry.TELEMETRY_AVAILABLE", True)
+        mocker.patch(
+            "toolbox_core.mcp_transport.telemetry.get_tracer", return_value=MagicMock()
+        )
+        mocker.patch(
+            "toolbox_core.mcp_transport.telemetry.get_meter", return_value=MagicMock()
+        )
+        mocker.patch(
+            "toolbox_core.mcp_transport.telemetry.create_operation_duration_histogram",
+            return_value=MagicMock(),
+        )
+        mocker.patch(
+            "toolbox_core.mcp_transport.telemetry.create_session_duration_histogram",
+            return_value=MagicMock(),
+        )
+        mocker.patch(
+            "toolbox_core.mcp_transport.telemetry.start_span",
+            return_value=(MagicMock(), "00-traceparent", ""),
+        )
+        mocker.patch("toolbox_core.mcp_transport.telemetry.end_span")
+        mocker.patch("toolbox_core.mcp_transport.telemetry.record_operation_duration")
+        mocker.patch("toolbox_core.mcp_transport.telemetry.record_session_duration")
+    mock_session = AsyncMock(spec=ClientSession)
+    transport = McpHttpTransportV20260618(
+        "http://fake-server.com",
+        session=mock_session,
+        protocol=Protocol.MCP_v20260618,
+        telemetry_enabled=request.param,
+    )
+    yield transport
+    await transport.close()
+
+
+@pytest.mark.asyncio
+class TestMcpHttpTransportV20260618:
+
+    # --- Request Sending Tests (Standard + Header) ---
+
+    async def test_send_request_success(self, transport):
+        mock_response = AsyncMock()
+        mock_response.ok = True
+        mock_response.status = 200
+        mock_response.content = Mock()
+        mock_response.content.at_eof.return_value = False
+        mock_response.json.return_value = {"jsonrpc": "2.0", "id": "1", "result": {}}
+        transport._session.post.return_value.__aenter__.return_value = mock_response
+
+        class TestResult(types.BaseModel):
+            pass
+
+        class TestRequest(types.MCPRequest[TestResult]):
+            method: str = "method"
+            params: dict = {}
+
+            def get_result_model(self):
+                return TestResult
+
+        result = await transport._send_request("url", TestRequest())
+        assert result == TestResult()
+
+    async def test_send_request_adds_protocol_header(self, transport):
+        """Test that the MCP-Protocol-Version header is added."""
+        mock_response = AsyncMock()
+        mock_response.ok = True
+        mock_response.content = Mock()
+        mock_response.content.at_eof.return_value = False
+        mock_response.json.return_value = {"jsonrpc": "2.0", "id": "1", "result": {}}
+        transport._session.post.return_value.__aenter__.return_value = mock_response
+
+        class TestResult(types.BaseModel):
+            pass
+
+        class TestRequest(types.MCPRequest[TestResult]):
+            method: str = "method"
+            params: dict = {}
+
+            def get_result_model(self):
+                return TestResult
+
+        await transport._send_request("url", TestRequest())
+
+        call_args = transport._session.post.call_args
+        headers = call_args.kwargs["headers"]
+        assert headers["MCP-Protocol-Version"] == "DRAFT-2026-v1"
+
+    # --- Version Negotiation Tests ---
+
+    async def test_version_negotiation_retry_success(self, transport):
+        """Tests that the client retries when the server rejects initial version."""
+        mock_response_reject = AsyncMock()
+        mock_response_reject.ok = False
+        mock_response_reject.status = 400
+        mock_response_reject.json.return_value = {
+            "jsonrpc": "2.0",
+            "id": "1",
+            "error": {
+                "code": -32001,
+                "message": "Unsupported protocol version",
+                "data": {"supported": ["DRAFT-2026-v1"]},
+            },
+        }
+
+        mock_response_accept = AsyncMock()
+        mock_response_accept.ok = True
+        mock_response_accept.status = 200
+        mock_response_accept.content = Mock()
+        mock_response_accept.content.at_eof.return_value = False
+        mock_response_accept.json.return_value = {
+            "jsonrpc": "2.0",
+            "id": "1",
+            "result": {},
+        }
+
+        # Configure first call to return reject response, second call to succeed
+        transport._session.post.return_value.__aenter__.side_effect = [
+            mock_response_reject,
+            mock_response_accept,
+        ]
+
+        class TestResult(types.BaseModel):
+            pass
+
+        class TestRequest(types.MCPRequest[TestResult]):
+            method: str = "method"
+            params: dict = {}
+
+            def get_result_model(self):
+                return TestResult
+
+        result = await transport._send_request("url", TestRequest())
+        assert result == TestResult()
+        assert transport._session.post.call_count == 2
+
+    async def test_version_negotiation_loop_prevention(self, transport):
+        """Tests that the client raises an error if the retry gets rejected (loop prevention)."""
+        mock_response_reject = AsyncMock()
+        mock_response_reject.ok = False
+        mock_response_reject.status = 400
+        mock_response_reject.json.return_value = {
+            "jsonrpc": "2.0",
+            "id": "1",
+            "error": {
+                "code": -32001,
+                "message": "Unsupported protocol version",
+                "data": {"supported": ["DRAFT-2026-v1"]},
+            },
+        }
+
+        # Return rejection repeatedly
+        transport._session.post.return_value.__aenter__.side_effect = [
+            mock_response_reject,
+            mock_response_reject,
+        ]
+
+        class TestResult(types.BaseModel):
+            pass
+
+        class TestRequest(types.MCPRequest[TestResult]):
+            method: str = "method"
+            params: dict = {}
+
+            def get_result_model(self):
+                return TestResult
+
+        with pytest.raises(
+            RuntimeError,
+            match="Protocol negotiation failed: server rejected negotiated version",
+        ):
+            await transport._send_request("url", TestRequest())
+
+        assert transport._session.post.call_count == 2
+
+    async def test_version_negotiation_empty_intersection(self, transport):
+        """Tests that the client errors immediately without retrying when there is no mutual version."""
+        mock_response_reject = AsyncMock()
+        mock_response_reject.ok = False
+        mock_response_reject.status = 400
+        mock_response_reject.json.return_value = {
+            "jsonrpc": "2.0",
+            "id": "1",
+            "error": {
+                "code": -32001,
+                "message": "Unsupported protocol version",
+                "data": {"supported": ["UNSUPPORTED-VERSION"]},
+            },
+        }
+
+        transport._session.post.return_value.__aenter__.return_value = (
+            mock_response_reject
+        )
+
+        class TestResult(types.BaseModel):
+            pass
+
+        class TestRequest(types.MCPRequest[TestResult]):
+            method: str = "method"
+            params: dict = {}
+
+            def get_result_model(self):
+                return TestResult
+
+        with pytest.raises(
+            RuntimeError, match="No mutually supported protocol version"
+        ):
+            await transport._send_request("url", TestRequest())
+
+        assert transport._session.post.call_count == 1
+
+    # --- Tool Management Tests ---
+
+    async def test_tools_list_success(self, transport, mocker):
+        mocker.patch.object(transport, "_ensure_initialized", new_callable=AsyncMock)
+        mocker.patch.object(
+            transport,
+            "_send_request",
+            new_callable=AsyncMock,
+            return_value=create_fake_tools_list_result(),
+        )
+        manifest = await transport.tools_list()
+        assert isinstance(manifest, ManifestSchema)
+        assert "get_weather" in manifest.tools
+
+    async def test_tool_invoke_success(self, transport, mocker):
+        mocker.patch.object(transport, "_ensure_initialized", new_callable=AsyncMock)
+        mocker.patch.object(
+            transport,
+            "_send_request",
+            new_callable=AsyncMock,
+            return_value=types.CallToolResult(
+                content=[types.TextContent(type="text", text="Result")]
+            ),
+        )
+        result = await transport.tool_invoke("tool", {}, {})
+        assert result == "Result"

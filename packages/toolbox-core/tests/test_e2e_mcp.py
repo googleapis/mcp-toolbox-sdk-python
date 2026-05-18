@@ -24,9 +24,11 @@ from toolbox_core.protocol import Protocol
 from toolbox_core.tool import ToolboxTool
 
 
+# TODO: Include draft versions in E2E integration tests once the server
+# supports SEP-2575 (stateless MCP / Request-Metadata).
 @pytest_asyncio.fixture(
     scope="function",
-    params=Protocol.get_supported_mcp_versions(),
+    params=[v for v in Protocol.get_supported_mcp_versions() if "DRAFT" not in v],
 )
 async def toolbox(request):
     """Creates a ToolboxClient instance shared by all tests in this module."""
