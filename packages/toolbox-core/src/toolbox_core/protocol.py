@@ -68,6 +68,7 @@ class Protocol(str, Enum):
 __TYPE_MAP = {
     "string": str,
     "integer": int,
+    "number": float,
     "float": float,
     "boolean": bool,
 }
