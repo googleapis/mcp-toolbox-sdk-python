@@ -99,6 +99,20 @@ def test_parameter_schema_float():
     assert param.default == Parameter.empty
 
 
+def test_parameter_schema_number():
+    """Tests ParameterSchema with standard MCP type 'number'."""
+    schema = ParameterSchema(name="price", type="number", description="The item price")
+    expected_type = float
+    assert schema._ParameterSchema__get_type() == expected_type
+
+    param = schema.to_param()
+    assert isinstance(param, Parameter)
+    assert param.name == "price"
+    assert param.annotation == expected_type
+    assert param.kind == Parameter.POSITIONAL_OR_KEYWORD
+    assert param.default == Parameter.empty
+
+
 def test_parameter_schema_boolean():
     """Tests ParameterSchema with type 'boolean'."""
     schema = ParameterSchema(
