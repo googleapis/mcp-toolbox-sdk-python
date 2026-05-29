@@ -31,6 +31,16 @@ steps:
         uv pip install -r requirements.txt
         uv pip install -e '.[test]'
     entrypoint: /bin/bash
+  - id: Extract patched server binary
+    name: 'gcr.io/cloud-builders/docker'
+    dir: 'packages/toolbox-adk'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        docker create --name temp_toolbox us-central1-docker.pkg.dev/database-toolbox/toolbox-dev/toolbox:fix-meta
+        docker cp temp_toolbox:/toolbox ./toolbox
+        docker rm temp_toolbox
   - id: Run integration tests
     name: 'python:${_VERSION}'
     dir: 'packages/toolbox-adk'
@@ -39,6 +49,7 @@ steps:
       - TOOLBOX_VERSION=$_TOOLBOX_VERSION
       - GOOGLE_CLOUD_PROJECT=$PROJECT_ID
       - TOOLBOX_MANIFEST_VERSION=${_TOOLBOX_MANIFEST_VERSION}
+      - TOOLBOX_SKIP_DOWNLOAD=true
     args:
       - '-c'
       - |

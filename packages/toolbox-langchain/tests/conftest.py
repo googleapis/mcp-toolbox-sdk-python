@@ -60,6 +60,9 @@ def download_blob(
     bucket_name: str, source_blob_name: str, destination_file_name: str
 ) -> None:
     """Downloads a blob from a GCS bucket."""
+    if os.environ.get("TOOLBOX_SKIP_DOWNLOAD") == "true" and os.path.exists(destination_file_name):
+        print(f"Skipping download. Using existing file {destination_file_name}")
+        return
     storage_client = storage.Client()
 
     bucket = storage_client.bucket(bucket_name)
