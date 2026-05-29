@@ -3,7 +3,7 @@ google-adk==1.34.1
 google-auth==2.53.0
 google-auth-oauthlib==1.4.0
 typing-extensions==4.15.0
-opentelemetry-exporter-otlp-proto-http==1.42.1
+opentelemetry-exporter-otlp-proto-http==1.41.1
 opentelemetry-exporter-gcp-trace==1.12.0
 opentelemetry-exporter-gcp-monitoring==1.9.0a0
-opentelemetry-sdk==1.42.1
+opentelemetry-sdk==1.41.1
