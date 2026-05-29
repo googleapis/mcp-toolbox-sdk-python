@@ -140,7 +140,7 @@ class TestMcpHttpTransportV20260618:
             "jsonrpc": "2.0",
             "id": "1",
             "error": {
-                "code": -32001,
+                "code": -32004,
                 "message": "Unsupported protocol version",
                 "data": {"supported": ["DRAFT-2026-v1"]},
             },
@@ -186,7 +186,7 @@ class TestMcpHttpTransportV20260618:
             "jsonrpc": "2.0",
             "id": "1",
             "error": {
-                "code": -32001,
+                "code": -32004,
                 "message": "Unsupported protocol version",
                 "data": {"supported": ["DRAFT-2026-v1"]},
             },
@@ -225,7 +225,7 @@ class TestMcpHttpTransportV20260618:
             "jsonrpc": "2.0",
             "id": "1",
             "error": {
-                "code": -32001,
+                "code": -32004,
                 "message": "Unsupported protocol version",
                 "data": {"supported": ["UNSUPPORTED-VERSION"]},
             },

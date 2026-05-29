@@ -70,7 +70,7 @@ class McpHttpTransportV20260618(_McpHttpTransportBase):
                     json_resp = await response.json()
                     if (
                         "error" in json_resp
-                        and json_resp["error"].get("code") == -32001
+                        and json_resp["error"].get("code") == -32004
                     ):
                         if is_retry:
                             raise RuntimeError(
