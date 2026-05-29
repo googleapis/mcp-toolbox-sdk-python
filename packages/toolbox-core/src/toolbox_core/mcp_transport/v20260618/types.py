@@ -57,8 +57,22 @@ class JSONRPCError(_BaseMCPModel):
     error: ErrorData
 
 
+class SamplingCapabilities(_BaseMCPModel):
+    context: dict[str, Any] | None = None
+    tools: dict[str, Any] | None = None
+
+
+class ElicitationCapabilities(_BaseMCPModel):
+    form: dict[str, Any] | None = None
+    url: dict[str, Any] | None = None
+
+
 class ClientCapabilities(_BaseMCPModel):
-    tools: dict[str, Any] = Field(default_factory=dict)
+    experimental: dict[str, Any] | None = None
+    roots: dict[str, Any] | None = None
+    sampling: SamplingCapabilities | None = None
+    elicitation: ElicitationCapabilities | None = None
+    extensions: dict[str, Any] | None = None
 
 
 class Implementation(_BaseMCPModel):
