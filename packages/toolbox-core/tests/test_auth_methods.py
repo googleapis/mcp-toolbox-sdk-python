@@ -24,6 +24,9 @@ from toolbox_core import auth_methods
 MOCK_ID_TOKEN = "test_id_token_123"
 MOCK_PROJECT_ID = "test-project"
 MOCK_AUDIENCE = "https://test-audience.com"
+# The cache is keyed by (audience, clock_skew_in_seconds); the helpers default
+# clock_skew to 0, so this is the key the tests below operate on.
+MOCK_CACHE_KEY = (MOCK_AUDIENCE, 0)
 # A realistic expiry timestamp (e.g., 1 hour from now)
 MOCK_EXPIRY_TIMESTAMP = int(time.time()) + 3600
 MOCK_EXPIRY_DATETIME = auth_methods.datetime.fromtimestamp(
@@ -35,13 +38,10 @@ MOCK_EXPIRY_DATETIME = auth_methods.datetime.fromtimestamp(
 def reset_cache():
     """Fixture to reset the module's token cache before each test."""
     original_cache = auth_methods._token_cache.copy()
-    # Reset to the initial empty state as defined in the new module
-    auth_methods._token_cache["token"] = None
-    auth_methods._token_cache["expires_at"] = auth_methods.datetime.min.replace(
-        tzinfo=auth_methods.timezone.utc
-    )
+    auth_methods._token_cache.clear()
     yield
-    auth_methods._token_cache = original_cache
+    auth_methods._token_cache.clear()
+    auth_methods._token_cache.update(original_cache)
 
 
 @pytest.mark.asyncio
@@ -67,16 +67,20 @@ class TestAsyncAuthMethods:
         mock_default.assert_called_once()
         mock_fetch.assert_called_once_with(ANY, MOCK_AUDIENCE)
         assert token == f"{auth_methods.BEARER_TOKEN_PREFIX}{MOCK_ID_TOKEN}"
-        assert auth_methods._token_cache["token"] == MOCK_ID_TOKEN
-        assert auth_methods._token_cache["expires_at"] == MOCK_EXPIRY_DATETIME
+        assert auth_methods._token_cache[MOCK_CACHE_KEY]["token"] == MOCK_ID_TOKEN
+        assert (
+            auth_methods._token_cache[MOCK_CACHE_KEY]["expires_at"]
+            == MOCK_EXPIRY_DATETIME
+        )
 
     @patch("toolbox_core.auth_methods.google.auth.default")
     async def test_aget_google_id_token_success_uses_cache(self, mock_default):
         """Tests that subsequent calls use the cached token if valid."""
-        auth_methods._token_cache["token"] = MOCK_ID_TOKEN
-        auth_methods._token_cache["expires_at"] = auth_methods.datetime.now(
-            auth_methods.timezone.utc
-        ) + auth_methods.timedelta(hours=1)
+        auth_methods._token_cache[MOCK_CACHE_KEY] = {
+            "token": MOCK_ID_TOKEN,
+            "expires_at": auth_methods.datetime.now(auth_methods.timezone.utc)
+            + auth_methods.timedelta(hours=1),
+        }
 
         token_getter = auth_methods.aget_google_id_token(MOCK_AUDIENCE)
         token = await token_getter()
@@ -94,10 +98,11 @@ class TestAsyncAuthMethods:
         self, mock_default, mock_fetch, mock_verify
     ):
         """Tests that an expired cached token triggers a refresh."""
-        auth_methods._token_cache["token"] = "expired_token"
-        auth_methods._token_cache["expires_at"] = auth_methods.datetime.now(
-            auth_methods.timezone.utc
-        ) - auth_methods.timedelta(seconds=100)
+        auth_methods._token_cache[MOCK_CACHE_KEY] = {
+            "token": "expired_token",
+            "expires_at": auth_methods.datetime.now(auth_methods.timezone.utc)
+            - auth_methods.timedelta(seconds=100),
+        }
 
         mock_fetch.return_value = MOCK_ID_TOKEN
         mock_verify.return_value = {"exp": MOCK_EXPIRY_TIMESTAMP}
@@ -108,7 +113,38 @@ class TestAsyncAuthMethods:
         mock_default.assert_called_once()
         mock_fetch.assert_called_once()
         assert token == f"{auth_methods.BEARER_TOKEN_PREFIX}{MOCK_ID_TOKEN}"
-        assert auth_methods._token_cache["token"] == MOCK_ID_TOKEN
+        assert auth_methods._token_cache[MOCK_CACHE_KEY]["token"] == MOCK_ID_TOKEN
+
+    @patch("toolbox_core.auth_methods.id_token.verify_oauth2_token")
+    @patch("toolbox_core.auth_methods.id_token.fetch_id_token")
+    @patch(
+        "toolbox_core.auth_methods.google.auth.default",
+        return_value=(MagicMock(id_token=None), MOCK_PROJECT_ID),
+    )
+    async def test_token_cache_is_keyed_by_audience(
+        self, mock_default, mock_fetch, mock_verify
+    ):
+        """Regression test: a token fetched for one audience must NOT be returned
+        for a getter configured with a different audience.
+
+        On the unpatched code (single global cache slot) the second getter would
+        return the first audience's token and fetch_id_token would be called only
+        once. This test fails there and passes once the cache is keyed by audience.
+        """
+        aud_a = "https://service-a.example"
+        aud_b = "https://service-b.example"
+        # Each minted token embeds the audience it was requested for.
+        mock_fetch.side_effect = lambda request, audience: f"token-for::{audience}"
+        mock_verify.return_value = {"exp": MOCK_EXPIRY_TIMESTAMP}
+
+        token_a = await auth_methods.aget_google_id_token(aud_a)()
+        token_b = await auth_methods.aget_google_id_token(aud_b)()
+
+        assert token_a == f"{auth_methods.BEARER_TOKEN_PREFIX}token-for::{aud_a}"
+        assert token_b == f"{auth_methods.BEARER_TOKEN_PREFIX}token-for::{aud_b}"
+        assert token_a != token_b
+        # Both audiences must have independently minted their own token.
+        assert mock_fetch.call_count == 2
 
     @patch("toolbox_core.auth_methods.id_token.fetch_id_token")
     @patch(
@@ -156,16 +192,20 @@ class TestSyncAuthMethods:
         mock_creds.refresh.assert_called_once_with(mock_request_instance)
         mock_verify.assert_called_once_with(MOCK_ID_TOKEN, ANY, clock_skew_in_seconds=0)
         assert token == f"{auth_methods.BEARER_TOKEN_PREFIX}{MOCK_ID_TOKEN}"
-        assert auth_methods._token_cache["token"] == MOCK_ID_TOKEN
-        assert auth_methods._token_cache["expires_at"] == MOCK_EXPIRY_DATETIME
+        assert auth_methods._token_cache[MOCK_CACHE_KEY]["token"] == MOCK_ID_TOKEN
+        assert (
+            auth_methods._token_cache[MOCK_CACHE_KEY]["expires_at"]
+            == MOCK_EXPIRY_DATETIME
+        )
 
     @patch("toolbox_core.auth_methods.google.auth.default")
     def test_get_google_id_token_success_uses_cache(self, mock_default):
         """Tests that subsequent calls use the cached token if valid."""
-        auth_methods._token_cache["token"] = MOCK_ID_TOKEN
-        auth_methods._token_cache["expires_at"] = auth_methods.datetime.now(
-            auth_methods.timezone.utc
-        ) + auth_methods.timedelta(hours=1)
+        auth_methods._token_cache[MOCK_CACHE_KEY] = {
+            "token": MOCK_ID_TOKEN,
+            "expires_at": auth_methods.datetime.now(auth_methods.timezone.utc)
+            + auth_methods.timedelta(hours=1),
+        }
 
         token_getter = auth_methods.get_google_id_token(MOCK_AUDIENCE)
         token = token_getter()
@@ -188,7 +228,7 @@ class TestSyncAuthMethods:
         with pytest.raises(GoogleAuthError, match="Fetch failed"):
             auth_methods.get_google_id_token(MOCK_AUDIENCE)()
 
-        assert auth_methods._token_cache["token"] is None
+        assert MOCK_CACHE_KEY not in auth_methods._token_cache
         mock_default.assert_called_once()
         mock_fetch.assert_called_once()
         mock_verify.assert_not_called()
@@ -211,7 +251,7 @@ class TestSyncAuthMethods:
         ):
             auth_methods.get_google_id_token(MOCK_AUDIENCE)()
 
-        assert auth_methods._token_cache["token"] is None
+        assert MOCK_CACHE_KEY not in auth_methods._token_cache
 
     @patch("toolbox_core.auth_methods.id_token.fetch_id_token")
     @patch(
