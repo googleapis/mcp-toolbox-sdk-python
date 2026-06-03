@@ -47,6 +47,12 @@ DEFAULT_CLOCK_SKEW = 0
 # via its `aud` claim, so a token minted for audience A must never be returned
 # for a request targeting audience B (doing so would leak a credential for A to
 # B and break OIDC audience isolation).
+#
+# A key of None is the local/user-credentials (ADC) path: the token is taken
+# from the credentials' own `id_token` rather than fetched for a specific
+# audience. That token's audience is fixed when the credentials are issued (not
+# by a per-call value), so all audience-less calls safely share the single None
+# entry and never mix with audience-specific entries.
 _CacheKey = Optional[str]
 _token_cache: Dict[_CacheKey, Dict[str, Any]] = {}
 
