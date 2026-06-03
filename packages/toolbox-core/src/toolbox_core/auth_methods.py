@@ -31,7 +31,7 @@ as toolbox:
 
 import asyncio
 from datetime import datetime, timedelta, timezone
-from typing import Any, Callable, Coroutine, Dict, Optional, Tuple
+from typing import Any, Callable, Coroutine, Dict, Optional
 
 import google.auth
 from google.auth.exceptions import GoogleAuthError
@@ -43,13 +43,11 @@ BEARER_TOKEN_PREFIX = "Bearer "
 CACHE_REFRESH_MARGIN = timedelta(seconds=60)
 DEFAULT_CLOCK_SKEW = 0
 
-# The cache is keyed by (audience, clock_skew_in_seconds). Keying by audience is
-# required for correctness and security: an ID token is scoped to a single
-# audience via its `aud` claim, so a token minted for audience A must never be
-# returned for a request targeting audience B (doing so leaks a credential for A
-# to B and breaks OIDC audience isolation). `clock_skew_in_seconds` is part of
-# the key because it changes how expiry is validated.
-_CacheKey = Tuple[Optional[str], int]
+# The cache is keyed by `audience`: an ID token is scoped to a single audience
+# via its `aud` claim, so a token minted for audience A must never be returned
+# for a request targeting audience B (doing so would leak a credential for A to
+# B and break OIDC audience isolation).
+_CacheKey = Optional[str]
 _token_cache: Dict[_CacheKey, Dict[str, Any]] = {}
 
 
@@ -69,8 +67,10 @@ def _update_cache(
     the given key.
 
     Args:
-        cache_key: The (audience, clock_skew_in_seconds) the token was fetched for.
+        cache_key: The audience the token was fetched for (used as the cache key).
         new_token: The new JWT ID token string.
+        clock_skew_in_seconds: Leeway, in seconds, forwarded to token verification
+            when validating the token's time-based claims.
 
     Raises:
         ValueError: If the token is invalid or its expiry cannot be determined.
@@ -107,7 +107,7 @@ def get_google_token_from_aud(
             ", inclusive."
         )
 
-    cache_key: _CacheKey = (audience, clock_skew_in_seconds)
+    cache_key: _CacheKey = audience
 
     if _is_token_valid(cache_key):
         return BEARER_TOKEN_PREFIX + _token_cache[cache_key]["token"]

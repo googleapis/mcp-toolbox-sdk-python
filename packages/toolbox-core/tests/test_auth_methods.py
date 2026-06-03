@@ -24,9 +24,8 @@ from toolbox_core import auth_methods
 MOCK_ID_TOKEN = "test_id_token_123"
 MOCK_PROJECT_ID = "test-project"
 MOCK_AUDIENCE = "https://test-audience.com"
-# The cache is keyed by (audience, clock_skew_in_seconds); the helpers default
-# clock_skew to 0, so this is the key the tests below operate on.
-MOCK_CACHE_KEY = (MOCK_AUDIENCE, 0)
+# The cache is keyed by `audience`.
+MOCK_CACHE_KEY = MOCK_AUDIENCE
 # A realistic expiry timestamp (e.g., 1 hour from now)
 MOCK_EXPIRY_TIMESTAMP = int(time.time()) + 3600
 MOCK_EXPIRY_DATETIME = auth_methods.datetime.fromtimestamp(
