@@ -150,7 +150,8 @@ class TestAsyncToolboxTool:
         )
         tool = AsyncToolboxTool(core_tool=core_tool_instance)
         assert tool.name == "test_tool"
-        assert tool.description == core_tool_instance.__doc__
+        assert tool.description == core_tool_instance._description
+        assert "Args:" not in tool.description
 
     @pytest.mark.parametrize(
         "params_to_bind",
