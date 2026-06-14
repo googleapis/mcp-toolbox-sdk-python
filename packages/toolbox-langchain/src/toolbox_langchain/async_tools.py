@@ -20,6 +20,13 @@ from toolbox_core.tool import ToolboxTool as ToolboxCoreTool
 from toolbox_core.utils import params_to_pydantic_model
 
 
+def _get_tool_description(core_tool: ToolboxCoreTool) -> str:
+    description = core_tool._description
+    if isinstance(description, str):
+        return description
+    return core_tool.__doc__ or ""
+
+
 # This class is an internal implementation detail and is not exposed to the
 # end-user. It should not be used directly by external code. Changes to this
 # class will not be considered breaking changes to the public API.
@@ -44,7 +51,7 @@ class AsyncToolboxTool(BaseTool):
         # BaseTool class before assigning values to member variables.
         super().__init__(
             name=core_tool.__name__,
-            description=core_tool.__doc__,
+            description=_get_tool_description(core_tool),
             args_schema=params_to_pydantic_model(core_tool._name, core_tool._params),
         )
         self.__core_tool = core_tool

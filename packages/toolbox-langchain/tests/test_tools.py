@@ -109,7 +109,13 @@ class TestToolboxTool:
         sync_mock = Mock(spec=ToolboxCoreSyncTool)
 
         sync_mock.__name__ = "test_tool_name_for_langchain"
-        sync_mock.__doc__ = tool_schema_dict["description"]
+        sync_mock._description = tool_schema_dict["description"]
+        sync_mock.__doc__ = (
+            f"{tool_schema_dict['description']}\n\n"
+            "Args:\n"
+            "    param1 (str): Param 1\n"
+            "    param2 (int): Param 2"
+        )
         sync_mock._name = "TestToolPydanticModel"
         sync_mock._params = [
             CoreParameterSchema(**p) for p in tool_schema_dict["parameters"]
@@ -123,6 +129,7 @@ class TestToolboxTool:
 
         new_mock_instance_for_methods = Mock(spec=ToolboxCoreSyncTool)
         new_mock_instance_for_methods.__name__ = sync_mock.__name__
+        new_mock_instance_for_methods._description = sync_mock._description
         new_mock_instance_for_methods.__doc__ = sync_mock.__doc__
         new_mock_instance_for_methods._name = sync_mock._name
         new_mock_instance_for_methods._params = sync_mock._params
@@ -145,7 +152,13 @@ class TestToolboxTool:
     def mock_core_sync_auth_tool(self, auth_tool_schema_dict):
         sync_mock = Mock(spec=ToolboxCoreSyncTool)
         sync_mock.__name__ = "test_auth_tool_lc_name"
-        sync_mock.__doc__ = auth_tool_schema_dict["description"]
+        sync_mock._description = auth_tool_schema_dict["description"]
+        sync_mock.__doc__ = (
+            f"{auth_tool_schema_dict['description']}\n\n"
+            "Args:\n"
+            "    param1 (str): Param 1\n"
+            "    param2 (int): Param 2"
+        )
         sync_mock._name = "TestAuthToolPydanticModel"
         sync_mock._params = [
             CoreParameterSchema(**p) for p in auth_tool_schema_dict["parameters"]
@@ -159,6 +172,7 @@ class TestToolboxTool:
 
         new_mock_instance_for_methods = Mock(spec=ToolboxCoreSyncTool)
         new_mock_instance_for_methods.__name__ = sync_mock.__name__
+        new_mock_instance_for_methods._description = sync_mock._description
         new_mock_instance_for_methods.__doc__ = sync_mock.__doc__
         new_mock_instance_for_methods._name = sync_mock._name
         new_mock_instance_for_methods._params = sync_mock._params
@@ -188,7 +202,8 @@ class TestToolboxTool:
         tool = ToolboxTool(core_tool=mock_core_tool)
 
         assert tool.name == mock_core_tool.__name__
-        assert tool.description == mock_core_tool.__doc__
+        assert tool.description == mock_core_tool._description
+        assert "Args:" not in tool.description
         assert tool._ToolboxTool__core_tool == mock_core_tool
 
         expected_args_schema = params_to_pydantic_model(

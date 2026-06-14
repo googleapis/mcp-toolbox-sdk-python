@@ -21,6 +21,13 @@ from toolbox_core.sync_tool import ToolboxSyncTool as ToolboxCoreSyncTool
 from toolbox_core.utils import params_to_pydantic_model
 
 
+def _get_tool_description(core_tool: ToolboxCoreSyncTool) -> str:
+    description = core_tool._description
+    if isinstance(description, str):
+        return description
+    return core_tool.__doc__ or ""
+
+
 class ToolboxTool(BaseTool):
     """
     A subclass of LangChain's BaseTool that supports features specific to
@@ -42,7 +49,7 @@ class ToolboxTool(BaseTool):
         # BaseTool class before assigning values to member variables.
         super().__init__(
             name=core_tool.__name__,
-            description=core_tool.__doc__,
+            description=_get_tool_description(core_tool),
             args_schema=params_to_pydantic_model(core_tool._name, core_tool._params),
         )
         self.__core_tool = core_tool
