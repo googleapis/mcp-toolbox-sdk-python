@@ -18,6 +18,7 @@ from typing import Mapping, Optional, TypeVar
 from pydantic import BaseModel
 
 from ... import version
+from ...exceptions import ProtocolNegotiationError
 from ...protocol import ManifestSchema, TelemetryAttributes
 from .. import telemetry
 from ..transport_base import _McpHttpTransportBase
@@ -91,9 +92,7 @@ class McpHttpTransportV20260618(_McpHttpTransportBase):
                             ]
 
                             if mutually_supported:
-                                self._protocol_version = mutually_supported[0]
-                                is_retry = True
-                                continue
+                                raise ProtocolNegotiationError(mutually_supported[0])
                             else:
                                 raise RuntimeError(
                                     "No mutually supported protocol version. "
@@ -101,7 +100,7 @@ class McpHttpTransportV20260618(_McpHttpTransportBase):
                                     f"Server supports: {server_supported}"
                                 )
                     except Exception as e:
-                        if isinstance(e, RuntimeError):
+                        if isinstance(e, (RuntimeError, ProtocolNegotiationError)):
                             raise e
 
                 if not response.ok:

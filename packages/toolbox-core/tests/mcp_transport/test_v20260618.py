@@ -131,8 +131,10 @@ class TestMcpHttpTransportV20260618:
 
     # --- Version Negotiation Tests ---
 
-    async def test_version_negotiation_retry_success(self, transport):
-        """Tests that the client retries when the server rejects initial version."""
+    async def test_version_negotiation_raises_fallback(self, transport):
+        """Tests that the client raises ProtocolNegotiationError when the server requests a fallback."""
+        from toolbox_core.exceptions import ProtocolNegotiationError
+
         mock_response_reject = AsyncMock()
         mock_response_reject.ok = False
         mock_response_reject.status = 400
@@ -146,22 +148,9 @@ class TestMcpHttpTransportV20260618:
             },
         }
 
-        mock_response_accept = AsyncMock()
-        mock_response_accept.ok = True
-        mock_response_accept.status = 200
-        mock_response_accept.content = Mock()
-        mock_response_accept.content.at_eof.return_value = False
-        mock_response_accept.json.return_value = {
-            "jsonrpc": "2.0",
-            "id": "1",
-            "result": {},
-        }
-
-        # Configure first call to return reject response, second call to succeed
-        transport._session.post.return_value.__aenter__.side_effect = [
-            mock_response_reject,
-            mock_response_accept,
-        ]
+        transport._session.post.return_value.__aenter__.return_value = (
+            mock_response_reject
+        )
 
         class TestResult(types.BaseModel):
             pass
@@ -173,48 +162,11 @@ class TestMcpHttpTransportV20260618:
             def get_result_model(self):
                 return TestResult
 
-        result = await transport._send_request("url", TestRequest())
-        assert result == TestResult()
-        assert transport._session.post.call_count == 2
-
-    async def test_version_negotiation_loop_prevention(self, transport):
-        """Tests that the client raises an error if the retry gets rejected (loop prevention)."""
-        mock_response_reject = AsyncMock()
-        mock_response_reject.ok = False
-        mock_response_reject.status = 400
-        mock_response_reject.json.return_value = {
-            "jsonrpc": "2.0",
-            "id": "1",
-            "error": {
-                "code": -32004,
-                "message": "Unsupported protocol version",
-                "data": {"supported": ["DRAFT-2026-v1"]},
-            },
-        }
-
-        # Return rejection repeatedly
-        transport._session.post.return_value.__aenter__.side_effect = [
-            mock_response_reject,
-            mock_response_reject,
-        ]
-
-        class TestResult(types.BaseModel):
-            pass
-
-        class TestRequest(types.MCPRequest[TestResult]):
-            method: str = "method"
-            params: dict = {}
-
-            def get_result_model(self):
-                return TestResult
-
-        with pytest.raises(
-            RuntimeError,
-            match="Protocol negotiation failed: server rejected negotiated version",
-        ):
+        with pytest.raises(ProtocolNegotiationError) as exc_info:
             await transport._send_request("url", TestRequest())
 
-        assert transport._session.post.call_count == 2
+        assert exc_info.value.negotiated_version == "DRAFT-2026-v1"
+        assert transport._session.post.call_count == 1
 
     async def test_version_negotiation_empty_intersection(self, transport):
         """Tests that the client errors immediately without retrying when there is no mutual version."""

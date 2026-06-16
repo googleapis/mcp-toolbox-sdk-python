@@ -21,6 +21,8 @@ from typing import Any, Awaitable, Callable, Mapping, Optional, Union
 from aiohttp import ClientSession
 from deprecated import deprecated
 
+from toolbox_core.exceptions import ProtocolNegotiationError
+
 from . import version
 from .itransport import ITransport
 from .mcp_transport import (
@@ -38,6 +40,110 @@ from .utils import (
     validate_unused_requirements,
     warn_if_http_and_headers,
 )
+
+
+class _McpTransportProxy(ITransport):
+    """A proxy transport that transparently handles protocol fallback negotiation."""
+
+    def __init__(
+        self,
+        url: str,
+        session: Optional[ClientSession],
+        protocol: Protocol,
+        client_name: Optional[str],
+        client_version: Optional[str],
+        telemetry_enabled: bool,
+    ):
+        self._url = url
+        self._session = session
+        self._client_name = client_name
+        self._client_version = client_version
+        self._telemetry_enabled = telemetry_enabled
+        self._active_transport = self._create_transport(protocol)
+
+    def _create_transport(self, protocol: Protocol) -> ITransport:
+        match protocol:
+            case Protocol.MCP_v20260618:
+                return McpHttpTransportV20260618(
+                    self._url,
+                    self._session,
+                    protocol,
+                    self._client_name,
+                    self._client_version,
+                    telemetry_enabled=self._telemetry_enabled,
+                )
+            case Protocol.MCP_v20251125:
+                return McpHttpTransportV20251125(
+                    self._url,
+                    self._session,
+                    protocol,
+                    self._client_name,
+                    self._client_version,
+                    telemetry_enabled=self._telemetry_enabled,
+                )
+            case Protocol.MCP_v20250618:
+                return McpHttpTransportV20250618(
+                    self._url,
+                    self._session,
+                    protocol,
+                    self._client_name,
+                    self._client_version,
+                    telemetry_enabled=self._telemetry_enabled,
+                )
+            case Protocol.MCP_v20250326:
+                return McpHttpTransportV20250326(
+                    self._url,
+                    self._session,
+                    protocol,
+                    self._client_name,
+                    self._client_version,
+                    telemetry_enabled=self._telemetry_enabled,
+                )
+            case Protocol.MCP_v20241105:
+                return McpHttpTransportV20241105(
+                    self._url,
+                    self._session,
+                    protocol,
+                    self._client_name,
+                    self._client_version,
+                    telemetry_enabled=self._telemetry_enabled,
+                )
+            case _:
+                raise ValueError(f"Unsupported MCP protocol version: {protocol}")
+
+    @property
+    def base_url(self) -> str:
+        return self._active_transport.base_url
+
+    @property
+    def _protocol_version(self) -> str:
+        # We must expose this for tests asserting the current protocol version.
+        return getattr(self._active_transport, "_protocol_version", "")
+
+    async def _execute_with_fallback(self, method_name: str, *args, **kwargs) -> Any:
+        try:
+            return await getattr(self._active_transport, method_name)(*args, **kwargs)
+        except ProtocolNegotiationError as e:
+            fallback_protocol = Protocol(e.negotiated_version)
+            logging.warning(
+                f"Protocol fallback required. Switching from "
+                f"{self._protocol_version} to {fallback_protocol.value}"
+            )
+            await self._active_transport.close()
+            self._active_transport = self._create_transport(fallback_protocol)
+            return await getattr(self._active_transport, method_name)(*args, **kwargs)
+
+    async def tool_get(self, *args, **kwargs) -> Any:
+        return await self._execute_with_fallback("tool_get", *args, **kwargs)
+
+    async def tools_list(self, *args, **kwargs) -> Any:
+        return await self._execute_with_fallback("tools_list", *args, **kwargs)
+
+    async def tool_invoke(self, *args, **kwargs) -> Any:
+        return await self._execute_with_fallback("tool_invoke", *args, **kwargs)
+
+    async def close(self) -> None:
+        await self._active_transport.close()
 
 
 class ToolboxClient:
@@ -86,54 +192,14 @@ class ToolboxClient:
                 "Please use Protocol.MCP_LATEST to use the latest features."
             )
 
-        match protocol:
-            case Protocol.MCP_v20260618:
-                self.__transport = McpHttpTransportV20260618(
-                    url,
-                    session,
-                    protocol,
-                    client_name,
-                    client_version,
-                    telemetry_enabled=telemetry_enabled,
-                )
-            case Protocol.MCP_v20251125:
-                self.__transport = McpHttpTransportV20251125(
-                    url,
-                    session,
-                    protocol,
-                    client_name,
-                    client_version,
-                    telemetry_enabled=telemetry_enabled,
-                )
-            case Protocol.MCP_v20250618:
-                self.__transport = McpHttpTransportV20250618(
-                    url,
-                    session,
-                    protocol,
-                    client_name,
-                    client_version,
-                    telemetry_enabled=telemetry_enabled,
-                )
-            case Protocol.MCP_v20250326:
-                self.__transport = McpHttpTransportV20250326(
-                    url,
-                    session,
-                    protocol,
-                    client_name,
-                    client_version,
-                    telemetry_enabled=telemetry_enabled,
-                )
-            case Protocol.MCP_v20241105:
-                self.__transport = McpHttpTransportV20241105(
-                    url,
-                    session,
-                    protocol,
-                    client_name,
-                    client_version,
-                    telemetry_enabled=telemetry_enabled,
-                )
-            case _:
-                raise ValueError(f"Unsupported MCP protocol version: {protocol}")
+        self.__transport = _McpTransportProxy(
+            url,
+            session,
+            protocol,
+            client_name,
+            client_version,
+            telemetry_enabled,
+        )
 
         self.__client_headers = client_headers if client_headers is not None else {}
         warn_if_http_and_headers(url, self.__client_headers)
