@@ -266,10 +266,12 @@ async def test_load_tool_protocol_fallback_success(test_tool_str):
     ):
 
         mock_2026 = AsyncMock()
+        mock_2026.base_url = TEST_BASE_URL
         mock_2026.tool_get.side_effect = ProtocolNegotiationError("2025-06-18")
         mock_2026_cls.return_value = mock_2026
 
         mock_2025 = AsyncMock()
+        mock_2025.base_url = TEST_BASE_URL
         mock_2025.tool_get.return_value = manifest
         mock_2025.tool_invoke.return_value = "ok_from_fallback"
         mock_2025_cls.return_value = mock_2025
@@ -310,10 +312,12 @@ async def test_load_tool_protocol_fallback_infinite_loop_prevention(test_tool_st
     ):
 
         mock_2026 = AsyncMock()
+        mock_2026.base_url = TEST_BASE_URL
         mock_2026.tool_get.side_effect = ProtocolNegotiationError("2025-06-18")
         mock_2026_cls.return_value = mock_2026
 
         mock_2025 = AsyncMock()
+        mock_2025.base_url = TEST_BASE_URL
         # The fallback transport also throws the error
         mock_2025.tool_get.side_effect = ProtocolNegotiationError("2024-11-05")
         mock_2025_cls.return_value = mock_2025

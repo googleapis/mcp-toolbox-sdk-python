@@ -120,7 +120,9 @@ class _McpTransportProxy(ITransport):
         # We must expose this for tests asserting the current protocol version.
         return getattr(self._active_transport, "_protocol_version", "")
 
-    async def _execute_with_fallback(self, method_name: str, *args, **kwargs) -> Any:
+    async def _execute_with_fallback(
+        self, method_name: str, *args: Any, **kwargs: Any
+    ) -> Any:
         try:
             return await getattr(self._active_transport, method_name)(*args, **kwargs)
         except ProtocolNegotiationError as e:
@@ -133,13 +135,13 @@ class _McpTransportProxy(ITransport):
             self._active_transport = self._create_transport(fallback_protocol)
             return await getattr(self._active_transport, method_name)(*args, **kwargs)
 
-    async def tool_get(self, *args, **kwargs) -> Any:
+    async def tool_get(self, *args: Any, **kwargs: Any) -> Any:
         return await self._execute_with_fallback("tool_get", *args, **kwargs)
 
-    async def tools_list(self, *args, **kwargs) -> Any:
+    async def tools_list(self, *args: Any, **kwargs: Any) -> Any:
         return await self._execute_with_fallback("tools_list", *args, **kwargs)
 
-    async def tool_invoke(self, *args, **kwargs) -> Any:
+    async def tool_invoke(self, *args: Any, **kwargs: Any) -> Any:
         return await self._execute_with_fallback("tool_invoke", *args, **kwargs)
 
     async def close(self) -> None:
