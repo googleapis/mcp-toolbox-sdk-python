@@ -57,7 +57,9 @@ class McpHttpTransportV20260618(_McpHttpTransportBase):
 
             rpc_msg: BaseModel
             if isinstance(request, types.MCPNotification):
-                rpc_msg = types.JSONRPCNotification(method=request.method, params=params)
+                rpc_msg = types.JSONRPCNotification(
+                    method=request.method, params=params
+                )
             else:
                 rpc_msg = types.JSONRPCRequest(method=request.method, params=params)
 
@@ -131,7 +133,9 @@ class McpHttpTransportV20260618(_McpHttpTransportBase):
                 if isinstance(request, types.MCPRequest):
                     try:
                         rpc_resp = types.JSONRPCResponse.model_validate(json_resp)
-                        return request.get_result_model().model_validate(rpc_resp.result)
+                        return request.get_result_model().model_validate(
+                            rpc_resp.result
+                        )
                     except Exception as e:
                         raise RuntimeError(f"Failed to parse JSON-RPC response: {e}")
                 return None
