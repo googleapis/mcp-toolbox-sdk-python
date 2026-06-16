@@ -19,7 +19,7 @@ from pydantic import BaseModel
 
 from ... import version
 from ...exceptions import ProtocolNegotiationError
-from ...protocol import ManifestSchema, TelemetryAttributes
+from ...protocol import ManifestSchema, Protocol, TelemetryAttributes
 from .. import telemetry
 from ..transport_base import _McpHttpTransportBase
 from . import types
@@ -72,33 +72,45 @@ class McpHttpTransportV20260618(_McpHttpTransportBase):
                 if response.status == 400:
                     try:
                         json_resp = await response.json()
-                        if (
-                            "error" in json_resp
-                            and json_resp["error"].get("code") == -32004
-                        ):
-                            if is_retry:
-                                raise RuntimeError(
-                                    "Protocol negotiation failed: server rejected negotiated version"
+                        if "error" in json_resp:
+                            err_val = json_resp["error"]
+                            if (
+                                isinstance(err_val, dict)
+                                and err_val.get("code") == -32004
+                            ):
+                                if is_retry:
+                                    raise RuntimeError(
+                                        "Protocol negotiation failed: server rejected negotiated version"
+                                    )
+
+                                server_supported = err_val.get("data", {}).get(
+                                    "supported", []
                                 )
+                                from ...protocol import Protocol
 
-                            server_supported = (
-                                json_resp["error"].get("data", {}).get("supported", [])
-                            )
-                            from ...protocol import Protocol
+                                client_supported = Protocol.get_supported_mcp_versions()
+                                mutually_supported = [
+                                    v for v in client_supported if v in server_supported
+                                ]
 
-                            client_supported = Protocol.get_supported_mcp_versions()
-                            mutually_supported = [
-                                v for v in client_supported if v in server_supported
-                            ]
-
-                            if mutually_supported:
-                                raise ProtocolNegotiationError(mutually_supported[0])
-                            else:
-                                raise RuntimeError(
-                                    "No mutually supported protocol version. "
-                                    f"Client supports: {client_supported}, "
-                                    f"Server supports: {server_supported}"
-                                )
+                                if mutually_supported:
+                                    raise ProtocolNegotiationError(
+                                        mutually_supported[0]
+                                    )
+                                else:
+                                    raise RuntimeError(
+                                        "No mutually supported protocol version. "
+                                        f"Client supports: {client_supported}, "
+                                        f"Server supports: {server_supported}"
+                                    )
+                            elif (
+                                isinstance(err_val, str)
+                                and "invalid protocol version" in err_val.lower()
+                            ):
+                                # Legacy 2025-06-18 servers don't use the -32004 code or provide
+                                # a supported versions list. They return this raw string error
+                                # instead. We safely assume 2025-06-18 here.
+                                raise ProtocolNegotiationError(Protocol.MCP_v20250618)
                     except Exception as e:
                         if isinstance(e, (RuntimeError, ProtocolNegotiationError)):
                             raise e
