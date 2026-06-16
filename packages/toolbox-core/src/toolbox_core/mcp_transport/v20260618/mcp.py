@@ -86,7 +86,6 @@ class McpHttpTransportV20260618(_McpHttpTransportBase):
                                 server_supported = err_val.get("data", {}).get(
                                     "supported", []
                                 )
-                                from ...protocol import Protocol
 
                                 client_supported = Protocol.get_supported_mcp_versions()
                                 mutually_supported = [
