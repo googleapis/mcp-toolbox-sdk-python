@@ -58,11 +58,13 @@ jobs:
 
       - name: Install PostCSS Dependencies
         run: |
-          # --no-workspaces installs into docs-site/node_modules (where Hugo's
-          # PostCSS looks). docs-site/package.json pins postcss/postcss-cli/
-          # autoprefixer.
+          # npm ci installs the exact versions from docs-site/package-lock.json
+          # into docs-site/node_modules (where Hugo's PostCSS looks), so the
+          # build is reproducible -- a broken upstream patch can't be pulled in.
+          # docs-site/package.json pins postcss/postcss-cli/autoprefixer; the
+          # lockfile freezes their transitive deps.
           cd docs-site
-          npm install --no-workspaces
+          npm ci
 
       - name: Resolve build target
         id: resolve
