@@ -15,3 +15,10 @@ __pycache__/**
 **/.coverage
 build/
 **/build/
+
+# Hugo docs-site build output
+node_modules/
+docs-site/public/
+docs-site/resources/
+.hugo_build.lock
+docs-site/package-lock.json
