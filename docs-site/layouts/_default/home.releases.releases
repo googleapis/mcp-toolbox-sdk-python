@@ -1,0 +1,7 @@
+{{- $pkg := .Site.Params.package | default "" -}}
+<a class="dropdown-item" href="/{{ $pkg }}/latest/">latest</a>
+{{- with index .Site.Params.versions $pkg }}
+  {{- range . }}
+<a class="dropdown-item" href="{{ .url }}">{{ .version }}</a>
+  {{- end }}
+{{- end -}}
