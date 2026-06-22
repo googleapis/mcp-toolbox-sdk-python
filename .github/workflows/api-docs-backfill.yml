@@ -1,0 +1,133 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+name: "API Reference Backfill"
+on:
+  workflow_dispatch:
+    inputs:
+      package:
+        description: "Package to backfill"
+        type: choice
+        options: [core, tbadk, tbgenkit]
+        required: true
+      version:
+        description: "Version tag to build, e.g. v1.0.0"
+        type: string
+        required: true
+
+# Scope per version: each run produces an independent branch/PR, so runs for
+# different versions can proceed in parallel. A shared group with
+# cancel-in-progress: false would make GitHub cancel a pending run whenever a
+# newer one queues, silently dropping versions when several are dispatched.
+concurrency:
+  group: api-docs-backfill-${{ github.event.inputs.package }}-${{ github.event.inputs.version }}
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    # Never run on forks; docs deploy only from the upstream repository.
+    if: github.repository == 'googleapis/mcp-toolbox-sdk-go'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      # Build from main so the archived page carries the current version picker;
+      # only the package's source comes from the tag (overlaid below) so
+      # gomarkdoc documents that version's API.
+      - name: Checkout main (current layout + scripts)
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          ref: main
+          submodules: recursive
+
+      - name: Checkout tagged package source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          ref: refs/tags/${{ inputs.package }}/${{ inputs.version }}
+          path: tagged_src
+          sparse-checkout: ${{ inputs.package }}
+
+      - name: Overlay tagged source onto main
+        env:
+          PKG: ${{ inputs.package }}
+        run: |
+          rm -rf "$PKG"
+          mv "tagged_src/$PKG" "$PKG"
+
+      - name: Set up Go
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
+        with:
+          go-version: '1.25.0'
+
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@2752ce1d29631191ea3f27c23495fa06139a5b78 # v3
+        with:
+          hugo-version: '0.152.2'
+          extended: true
+
+      - name: Install PostCSS Dependencies
+        run: |
+          cd docs-site
+          npm install postcss postcss-cli autoprefixer
+
+      - name: Build docs
+        env:
+          PKG: ${{ inputs.package }}
+          VER: ${{ inputs.version }}
+          # Deploys only run upstream (see job-level guard), so always use the
+          # production domain.
+          BASE_URL: https://go.mcp-toolbox.dev/
+        run: |
+          chmod +x scripts/generate-api-docs.sh
+          ./scripts/generate-api-docs.sh "$PKG" "$VER" "$BASE_URL"
+
+      # Open a PR into gh-pages instead of deploying directly, so a human reviews
+      # before the page goes live. Overlaying the build onto a clone of the live
+      # gh-pages tree mirrors keep_files: true — existing files (other versions,
+      # CNAME, .nojekyll) are preserved and the PR diff is just this version.
+      - name: Open PR against gh-pages
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PKG: ${{ inputs.package }}
+          VER: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          BRANCH="backfill/${PKG}-${VER}"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          WORK="$(mktemp -d)"
+          git clone --depth 1 --branch gh-pages --single-branch \
+            "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$WORK"
+          cp -R "${GITHUB_WORKSPACE}/docs-site/public/." "$WORK/"
+
+          cd "$WORK"
+          git checkout -B "$BRANCH"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No documentation changes for ${PKG} ${VER}; skipping PR."
+            exit 0
+          fi
+          git commit -m "docs(api): backfill ${PKG} ${VER}"
+          git push -f origin "$BRANCH"
+
+          if gh pr view "$BRANCH" --json number >/dev/null 2>&1; then
+            echo "PR already open for ${BRANCH}; branch updated."
+          else
+            gh pr create --base gh-pages --head "$BRANCH" \
+              --title "docs(api): backfill ${PKG} ${VER}" \
+              --body "Automated API reference backfill for \`${PKG}/${VER}\`, built from main tooling with the tagged source overlaid. Merging publishes to gh-pages (additive)."
+          fi
