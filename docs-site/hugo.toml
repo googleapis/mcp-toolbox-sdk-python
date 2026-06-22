@@ -13,15 +13,51 @@ title = "MCP Toolbox Python API"
   [[params.versions.core]]
     version = "dev"
     url = "/core/dev/"
+  [[params.versions.core]]
+    version = "v1.1.0"
+    url = "/core/v1.1.0/"
+  [[params.versions.core]]
+    version = "v1.0.0"
+    url = "/core/v1.0.0/"
+  [[params.versions.core]]
+    version = "v0.6.0"
+    url = "/core/v0.6.0/"
   [[params.versions.adk]]
     version = "dev"
     url = "/adk/dev/"
+  [[params.versions.adk]]
+    version = "v1.0.1"
+    url = "/adk/v1.0.1/"
+  [[params.versions.adk]]
+    version = "v1.0.0"
+    url = "/adk/v1.0.0/"
+  [[params.versions.adk]]
+    version = "v0.7.0"
+    url = "/adk/v0.7.0/"
   [[params.versions.langchain]]
     version = "dev"
     url = "/langchain/dev/"
+  [[params.versions.langchain]]
+    version = "v1.0.1"
+    url = "/langchain/v1.0.1/"
+  [[params.versions.langchain]]
+    version = "v1.0.0"
+    url = "/langchain/v1.0.0/"
+  [[params.versions.langchain]]
+    version = "v0.6.0"
+    url = "/langchain/v0.6.0/"
   [[params.versions.llamaindex]]
     version = "dev"
     url = "/llamaindex/dev/"
+  [[params.versions.llamaindex]]
+    version = "v1.0.0"
+    url = "/llamaindex/v1.0.0/"
+  [[params.versions.llamaindex]]
+    version = "v0.7.0"
+    url = "/llamaindex/v0.7.0/"
+  [[params.versions.llamaindex]]
+    version = "v0.6.0"
+    url = "/llamaindex/v0.6.0/"
 
 [markup.goldmark.renderer]
   unsafe = true
