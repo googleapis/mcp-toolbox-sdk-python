@@ -1,0 +1,97 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+name: "API Reference Deployment"
+on:
+  push:
+    branches: [ 'main' ]
+    tags: [ '**' ]
+  workflow_dispatch:
+
+concurrency:
+  group: api-docs-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    # Never run on forks; docs deploy only from the upstream repository.
+    if: github.repository == 'googleapis/mcp-toolbox-sdk-go'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
+        with:
+          go-version: '1.25.0'
+
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@2752ce1d29631191ea3f27c23495fa06139a5b78 # v3
+        with:
+          hugo-version: '0.152.2'
+          extended: true   
+          
+      - name: Install PostCSS Dependencies
+        run: |
+          cd docs-site
+          npm install postcss postcss-cli autoprefixer
+
+      - name: Resolve build target
+        id: resolve
+        run: |
+          # Route the git ref to the package(s) and version to build.
+          # A per-package tag builds that one package; pushes to main (and manual
+          # dispatch) build all three as "dev". Any other tag is skipped.
+          REF="${GITHUB_REF}"
+          case "$REF" in
+            refs/tags/core/v*)     echo "packages=core"                >> "$GITHUB_OUTPUT"; echo "version=${REF#refs/tags/core/}"     >> "$GITHUB_OUTPUT" ;;
+            refs/tags/tbadk/v*)    echo "packages=tbadk"               >> "$GITHUB_OUTPUT"; echo "version=${REF#refs/tags/tbadk/}"    >> "$GITHUB_OUTPUT" ;;
+            refs/tags/tbgenkit/v*) echo "packages=tbgenkit"            >> "$GITHUB_OUTPUT"; echo "version=${REF#refs/tags/tbgenkit/}" >> "$GITHUB_OUTPUT" ;;
+            refs/tags/*)           echo "packages="                    >> "$GITHUB_OUTPUT"; echo "version="                          >> "$GITHUB_OUTPUT" ;;
+            *)                     echo "packages=core tbadk tbgenkit" >> "$GITHUB_OUTPUT"; echo "version=dev"                        >> "$GITHUB_OUTPUT" ;;
+          esac
+
+          # Deploys only run upstream (see job-level guard), so always use the
+          # production domain.
+          echo "BASE_URL=https://go.mcp-toolbox.dev/" >> "$GITHUB_ENV"
+
+      - name: Build per-package docs
+        if: steps.resolve.outputs.packages != ''
+        run: |
+          chmod +x scripts/generate-api-docs.sh
+          for PKG in ${{ steps.resolve.outputs.packages }}; do
+            ./scripts/generate-api-docs.sh "$PKG" "${{ steps.resolve.outputs.version }}" "$BASE_URL"
+          done
+
+      - name: Build root page
+        if: steps.resolve.outputs.packages != '' && startsWith(github.ref, 'refs/tags/')
+        run: |
+          chmod +x scripts/generate-root.sh
+          ./scripts/generate-root.sh "$BASE_URL"
+
+      - name: Deploy to gh-pages
+        if: steps.resolve.outputs.packages != ''
+        uses: peaceiris/actions-gh-pages@84c30a85c19949d7eee79c4ff27748b70285e453 # v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs-site/public
+          keep_files: true 
+          cname: ${{ github.repository == 'googleapis/mcp-toolbox-sdk-go' && 'go.mcp-toolbox.dev' || '' }}
