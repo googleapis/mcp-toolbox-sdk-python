@@ -1,0 +1,5 @@
+<a class="dropdown-item" href="/core/latest/">latest</a>
+<a class="dropdown-item" href="/core/dev/">dev</a>
+<a class="dropdown-item" href="/core/v1.1.0/">v1.1.0</a>
+<a class="dropdown-item" href="/core/v1.0.0/">v1.0.0</a>
+<a class="dropdown-item" href="/core/v0.6.0/">v0.6.0</a>
