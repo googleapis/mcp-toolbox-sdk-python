@@ -15,6 +15,10 @@
 
 name: "API Reference Backfill"
 on:
+  # TEMP (do not merge): lets a draft PR trigger this workflow for a real run.
+  # On pull_request there are no dispatch inputs, so the steps below fall back
+  # to llamaindex/v0.7.0 via `inputs.x || 'default'`.
+  pull_request:
   workflow_dispatch:
     inputs:
       package:
@@ -50,7 +54,9 @@ jobs:
       - name: Checkout main (current layout + scripts)
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
-          ref: main
+          # TEMP: head_ref so the pre-merge test sees docs-site/scripts (not yet
+          # on main); falls back to main for real workflow_dispatch runs.
+          ref: ${{ github.head_ref || 'main' }}
           submodules: recursive
 
       # Map the URL slug to its package directory (the slug is not the directory
@@ -58,7 +64,7 @@ jobs:
       - name: Resolve package directory
         id: resolve
         env:
-          PKG: ${{ inputs.package }}
+          PKG: ${{ inputs.package || 'llamaindex' }}
         run: |
           case "$PKG" in
             core)       echo "dir=packages/toolbox-core"       >> "$GITHUB_OUTPUT" ;;
@@ -71,7 +77,7 @@ jobs:
       - name: Checkout tagged package source
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
-          ref: refs/tags/toolbox-${{ inputs.package }}-${{ inputs.version }}
+          ref: refs/tags/toolbox-${{ inputs.package || 'llamaindex' }}-${{ inputs.version || 'v0.7.0' }}
           path: tagged_src
           sparse-checkout: ${{ steps.resolve.outputs.dir }}
 
@@ -114,8 +120,8 @@ jobs:
 
       - name: Build docs
         env:
-          PKG: ${{ inputs.package }}
-          VER: ${{ inputs.version }}
+          PKG: ${{ inputs.package || 'llamaindex' }}
+          VER: ${{ inputs.version || 'v0.7.0' }}
           # Deploys only run upstream (see job-level guard), so always use the
           # production domain.
           BASE_URL: https://py.mcp-toolbox.dev/
@@ -130,8 +136,8 @@ jobs:
       - name: Open PR against gh-pages
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PKG: ${{ inputs.package }}
-          VER: ${{ inputs.version }}
+          PKG: ${{ inputs.package || 'llamaindex' }}
+          VER: ${{ inputs.version || 'v0.7.0' }}
         run: |
           set -euo pipefail
           BRANCH="backfill/${PKG}-${VER}"
