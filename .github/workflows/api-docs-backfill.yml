@@ -20,7 +20,7 @@ on:
       package:
         description: "Package to backfill"
         type: choice
-        options: [core, tbadk, tbgenkit]
+        options: [core, adk, langchain, llamaindex]
         required: true
       version:
         description: "Version tag to build, e.g. v1.0.0"
@@ -38,7 +38,7 @@ concurrency:
 jobs:
   backfill:
     # Never run on forks; docs deploy only from the upstream repository.
-    if: github.repository == 'googleapis/mcp-toolbox-sdk-go'
+    if: github.repository == 'googleapis/mcp-toolbox-sdk-python'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -46,31 +46,57 @@ jobs:
     steps:
       # Build from main so the archived page carries the current version picker;
       # only the package's source comes from the tag (overlaid below) so
-      # gomarkdoc documents that version's API.
+      # pydoc-markdown documents that version's API.
       - name: Checkout main (current layout + scripts)
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
           ref: main
           submodules: recursive
 
-      - name: Checkout tagged package source
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
-        with:
-          ref: refs/tags/${{ inputs.package }}/${{ inputs.version }}
-          path: tagged_src
-          sparse-checkout: ${{ inputs.package }}
-
-      - name: Overlay tagged source onto main
+      # Map the URL slug to its package directory (the slug is not the directory
+      # name).
+      - name: Resolve package directory
+        id: resolve
         env:
           PKG: ${{ inputs.package }}
         run: |
-          rm -rf "$PKG"
-          mv "tagged_src/$PKG" "$PKG"
+          case "$PKG" in
+            core)       echo "dir=packages/toolbox-core"       >> "$GITHUB_OUTPUT" ;;
+            adk)        echo "dir=packages/toolbox-adk"        >> "$GITHUB_OUTPUT" ;;
+            langchain)  echo "dir=packages/toolbox-langchain"  >> "$GITHUB_OUTPUT" ;;
+            llamaindex) echo "dir=packages/toolbox-llamaindex" >> "$GITHUB_OUTPUT" ;;
+            *)          echo "Unknown package: $PKG" >&2; exit 1 ;;
+          esac
 
-      - name: Set up Go
-        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
+      - name: Checkout tagged package source
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
-          go-version: '1.25.0'
+          ref: refs/tags/toolbox-${{ inputs.package }}-${{ inputs.version }}
+          path: tagged_src
+          sparse-checkout: ${{ steps.resolve.outputs.dir }}
+
+      # Overlay only the tagged package's src/, keeping main's pyproject.toml and
+      # the docs tooling intact. pydoc-markdown parses src statically, so the
+      # archived page reflects the tagged version's API. (Go overlays the whole
+      # package dir; here src-only keeps the rest of main's layout in sync.)
+      - name: Overlay tagged source onto main
+        env:
+          DIR: ${{ steps.resolve.outputs.dir }}
+        run: |
+          rm -rf "$DIR/src"
+          mv "tagged_src/$DIR/src" "$DIR/src"
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
+        with:
+          python-version: '3.13'
+
+      - name: Install doc generator
+        run: |
+          # pydoc-markdown parses the SDK source statically (no install/import of
+          # the packages), so no package build step is needed -- unlike the JS
+          # pipeline, which compiles types before TypeDoc runs.
+          pip install -r docs-site/requirements.txt
 
       - name: Setup Hugo
         uses: peaceiris/actions-hugo@2752ce1d29631191ea3f27c23495fa06139a5b78 # v3
@@ -80,8 +106,11 @@ jobs:
 
       - name: Install PostCSS Dependencies
         run: |
+          # --no-workspaces installs into docs-site/node_modules (where Hugo's
+          # PostCSS looks). docs-site/package.json pins postcss/postcss-cli/
+          # autoprefixer.
           cd docs-site
-          npm install postcss postcss-cli autoprefixer
+          npm install --no-workspaces
 
       - name: Build docs
         env:
@@ -89,7 +118,7 @@ jobs:
           VER: ${{ inputs.version }}
           # Deploys only run upstream (see job-level guard), so always use the
           # production domain.
-          BASE_URL: https://go.mcp-toolbox.dev/
+          BASE_URL: https://py.mcp-toolbox.dev/
         run: |
           chmod +x scripts/generate-api-docs.sh
           ./scripts/generate-api-docs.sh "$PKG" "$VER" "$BASE_URL"
