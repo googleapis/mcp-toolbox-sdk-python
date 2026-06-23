@@ -56,9 +56,7 @@ class McpHttpTransportV20260618(_McpHttpTransportBase):
 
         rpc_msg: BaseModel
         if isinstance(request, types.MCPNotification):
-            rpc_msg = types.JSONRPCNotification(
-                method=request.method, params=params
-            )
+            rpc_msg = types.JSONRPCNotification(method=request.method, params=params)
         else:
             rpc_msg = types.JSONRPCRequest(method=request.method, params=params)
 
@@ -72,10 +70,7 @@ class McpHttpTransportV20260618(_McpHttpTransportBase):
                     json_resp = await response.json()
                     if "error" in json_resp:
                         err_val = json_resp["error"]
-                        if (
-                            isinstance(err_val, dict)
-                            and err_val.get("code") == -32004
-                        ):
+                        if isinstance(err_val, dict) and err_val.get("code") == -32004:
                             server_supported = err_val.get("data", {}).get(
                                 "supported", []
                             )
@@ -86,9 +81,7 @@ class McpHttpTransportV20260618(_McpHttpTransportBase):
                             ]
 
                             if mutually_supported:
-                                raise ProtocolNegotiationError(
-                                    mutually_supported[0]
-                                )
+                                raise ProtocolNegotiationError(mutually_supported[0])
                             else:
                                 raise RuntimeError(
                                     "No mutually supported protocol version. "
@@ -136,9 +129,7 @@ class McpHttpTransportV20260618(_McpHttpTransportBase):
             if isinstance(request, types.MCPRequest):
                 try:
                     rpc_resp = types.JSONRPCResponse.model_validate(json_resp)
-                    return request.get_result_model().model_validate(
-                        rpc_resp.result
-                    )
+                    return request.get_result_model().model_validate(rpc_resp.result)
                 except Exception as e:
                     raise RuntimeError(f"Failed to parse JSON-RPC response: {e}")
             return None
