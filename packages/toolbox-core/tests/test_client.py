@@ -248,6 +248,94 @@ async def test_load_tool_not_found_in_manifest(mock_transport, test_tool_str):
     mock_transport.tool_get_mock.assert_awaited_once_with(REQUESTED_TOOL_NAME, {})
 
 
+@pytest.mark.asyncio
+async def test_load_tool_protocol_fallback_success(test_tool_str):
+    """
+    Tests that the client successfully swaps transports and retries when a
+    ProtocolNegotiationError is raised.
+    """
+    TOOL_NAME = "test_tool_1"
+    manifest = ManifestSchema(serverVersion="0.0.0", tools={TOOL_NAME: test_tool_str})
+
+    from toolbox_core.exceptions import ProtocolNegotiationError
+
+    # We need to mock the transports that client.py will instantiate
+    with (
+        patch("toolbox_core.client.McpHttpTransportV20260618") as mock_2026_cls,
+        patch("toolbox_core.client.McpHttpTransportV20250618") as mock_2025_cls,
+    ):
+
+        mock_2026 = AsyncMock()
+        mock_2026.base_url = TEST_BASE_URL
+        mock_2026.tool_get.side_effect = ProtocolNegotiationError("2025-06-18")
+        mock_2026_cls.return_value = mock_2026
+
+        mock_2025 = AsyncMock()
+        mock_2025.base_url = TEST_BASE_URL
+        mock_2025.tool_get.return_value = manifest
+        mock_2025.tool_invoke.return_value = "ok_from_fallback"
+        mock_2025_cls.return_value = mock_2025
+
+        async with ToolboxClient(
+            TEST_BASE_URL, protocol=Protocol.MCP_v20260618
+        ) as client:
+            # This should trigger the fallback
+            loaded_tool = await client.load_tool(TOOL_NAME)
+
+            # Assert the first transport was closed
+            mock_2026.close.assert_awaited_once()
+
+            # Assert the second transport was instantiated and used
+            mock_2025_cls.assert_called_once()
+            mock_2025.tool_get.assert_awaited_once_with(TOOL_NAME, {})
+
+            # Assert the tool was bound to the *new* transport
+            assert await loaded_tool("some value") == "ok_from_fallback"
+            mock_2025.tool_invoke.assert_awaited_once_with(
+                TOOL_NAME, {"param1": "some value"}, {}
+            )
+
+
+@pytest.mark.asyncio
+async def test_load_tool_protocol_fallback_infinite_loop_prevention(test_tool_str):
+    """
+    Tests that if the fallback transport *also* raises ProtocolNegotiationError,
+    the client does not get stuck in an infinite loop.
+    """
+    TOOL_NAME = "test_tool_1"
+
+    from toolbox_core.exceptions import ProtocolNegotiationError
+
+    with (
+        patch("toolbox_core.client.McpHttpTransportV20260618") as mock_2026_cls,
+        patch("toolbox_core.client.McpHttpTransportV20250618") as mock_2025_cls,
+    ):
+
+        mock_2026 = AsyncMock()
+        mock_2026.base_url = TEST_BASE_URL
+        mock_2026.tool_get.side_effect = ProtocolNegotiationError("2025-06-18")
+        mock_2026_cls.return_value = mock_2026
+
+        mock_2025 = AsyncMock()
+        mock_2025.base_url = TEST_BASE_URL
+        # The fallback transport also throws the error
+        mock_2025.tool_get.side_effect = ProtocolNegotiationError("2024-11-05")
+        mock_2025_cls.return_value = mock_2025
+
+        async with ToolboxClient(
+            TEST_BASE_URL, protocol=Protocol.MCP_v20260618
+        ) as client:
+            with pytest.raises(
+                ProtocolNegotiationError,
+                match="Server requires protocol fallback to 2024-11-05",
+            ):
+                await client.load_tool(TOOL_NAME)
+
+            # Assert we tried both, but then let the exception bubble up instead of looping
+            mock_2026.tool_get.assert_awaited_once()
+            mock_2025.tool_get.assert_awaited_once()
+
+
 class TestAuth:
     @pytest.fixture
     def expected_header(self):
