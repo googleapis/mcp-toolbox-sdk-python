@@ -36,119 +36,112 @@ class McpHttpTransportV20260618(_McpHttpTransportBase):
         request: types.MCPRequest[ReceiveResultT] | types.MCPNotification,
         headers: Optional[Mapping[str, str]] = None,
     ) -> ReceiveResultT | None:
-        """Sends a JSON-RPC request to the MCP server with version negotiation retry."""
-        is_retry = False
-        while True:
-            req_headers = dict(headers or {})
-            req_headers["MCP-Protocol-Version"] = self._protocol_version
+        """Sends a JSON-RPC request to the MCP server."""
+        req_headers = dict(headers or {})
+        req_headers["MCP-Protocol-Version"] = self._protocol_version
 
-            # Dynamically update the _meta protocol version in the parameters model
-            if hasattr(request, "params") and request.params is not None:
-                if (
-                    hasattr(request.params, "field_meta")
-                    and request.params.field_meta is not None
-                ):
-                    request.params.field_meta.protocol_version = self._protocol_version
+        # Dynamically update the _meta protocol version in the parameters model
+        if hasattr(request, "params") and request.params is not None:
+            if (
+                hasattr(request.params, "field_meta")
+                and request.params.field_meta is not None
+            ):
+                request.params.field_meta.protocol_version = self._protocol_version
 
-            params = (
-                request.params.model_dump(mode="json", exclude_none=True, by_alias=True)
-                if isinstance(request.params, BaseModel)
-                else request.params
+        params = (
+            request.params.model_dump(mode="json", exclude_none=True, by_alias=True)
+            if isinstance(request.params, BaseModel)
+            else request.params
+        )
+
+        rpc_msg: BaseModel
+        if isinstance(request, types.MCPNotification):
+            rpc_msg = types.JSONRPCNotification(
+                method=request.method, params=params
             )
+        else:
+            rpc_msg = types.JSONRPCRequest(method=request.method, params=params)
 
-            rpc_msg: BaseModel
-            if isinstance(request, types.MCPNotification):
-                rpc_msg = types.JSONRPCNotification(
-                    method=request.method, params=params
-                )
-            else:
-                rpc_msg = types.JSONRPCRequest(method=request.method, params=params)
+        payload = rpc_msg.model_dump(mode="json", exclude_none=True)
 
-            payload = rpc_msg.model_dump(mode="json", exclude_none=True)
+        async with self._session.post(
+            url, json=payload, headers=req_headers
+        ) as response:
+            if response.status == 400:
+                try:
+                    json_resp = await response.json()
+                    if "error" in json_resp:
+                        err_val = json_resp["error"]
+                        if (
+                            isinstance(err_val, dict)
+                            and err_val.get("code") == -32004
+                        ):
+                            server_supported = err_val.get("data", {}).get(
+                                "supported", []
+                            )
 
-            async with self._session.post(
-                url, json=payload, headers=req_headers
-            ) as response:
-                if response.status == 400:
-                    try:
-                        json_resp = await response.json()
-                        if "error" in json_resp:
-                            err_val = json_resp["error"]
-                            if (
-                                isinstance(err_val, dict)
-                                and err_val.get("code") == -32004
-                            ):
-                                if is_retry:
-                                    raise RuntimeError(
-                                        "Protocol negotiation failed: server rejected negotiated version"
-                                    )
+                            client_supported = Protocol.get_supported_mcp_versions()
+                            mutually_supported = [
+                                v for v in client_supported if v in server_supported
+                            ]
 
-                                server_supported = err_val.get("data", {}).get(
-                                    "supported", []
+                            if mutually_supported:
+                                raise ProtocolNegotiationError(
+                                    mutually_supported[0]
                                 )
+                            else:
+                                raise RuntimeError(
+                                    "No mutually supported protocol version. "
+                                    f"Client supports: {client_supported}, "
+                                    f"Server supports: {server_supported}"
+                                )
+                        elif (
+                            isinstance(err_val, str)
+                            and "invalid protocol version" in err_val.lower()
+                        ):
+                            # Legacy 2025-06-18 servers don't use the -32004 code or provide
+                            # a supported versions list. They return this raw string error
+                            # instead. We safely assume 2025-06-18 here.
+                            raise ProtocolNegotiationError(Protocol.MCP_v20250618)
+                except Exception as e:
+                    if isinstance(e, (RuntimeError, ProtocolNegotiationError)):
+                        raise e
 
-                                client_supported = Protocol.get_supported_mcp_versions()
-                                mutually_supported = [
-                                    v for v in client_supported if v in server_supported
-                                ]
+            if not response.ok:
+                error_text = await response.text()
+                raise RuntimeError(
+                    "API request failed with status"
+                    f" {response.status} ({response.reason}). Server response:"
+                    f" {error_text}"
+                )
 
-                                if mutually_supported:
-                                    raise ProtocolNegotiationError(
-                                        mutually_supported[0]
-                                    )
-                                else:
-                                    raise RuntimeError(
-                                        "No mutually supported protocol version. "
-                                        f"Client supports: {client_supported}, "
-                                        f"Server supports: {server_supported}"
-                                    )
-                            elif (
-                                isinstance(err_val, str)
-                                and "invalid protocol version" in err_val.lower()
-                            ):
-                                # Legacy 2025-06-18 servers don't use the -32004 code or provide
-                                # a supported versions list. They return this raw string error
-                                # instead. We safely assume 2025-06-18 here.
-                                raise ProtocolNegotiationError(Protocol.MCP_v20250618)
-                    except Exception as e:
-                        if isinstance(e, (RuntimeError, ProtocolNegotiationError)):
-                            raise e
-
-                if not response.ok:
-                    error_text = await response.text()
-                    raise RuntimeError(
-                        "API request failed with status"
-                        f" {response.status} ({response.reason}). Server response:"
-                        f" {error_text}"
-                    )
-
-                if response.status == 204 or response.content.at_eof():
-                    return None
-
-                json_resp = await response.json()
-
-                # Check for JSON-RPC Error
-                if "error" in json_resp:
-                    try:
-                        err = types.JSONRPCError.model_validate(json_resp).error
-                        raise RuntimeError(
-                            f"MCP request failed with code {err.code}: {err.message}"
-                        )
-                    except Exception:
-                        # Fallback if the error doesn't match our schema exactly
-                        raw_error = json_resp.get("error", {})
-                        raise RuntimeError(f"MCP request failed: {raw_error}")
-
-                # Parse Result
-                if isinstance(request, types.MCPRequest):
-                    try:
-                        rpc_resp = types.JSONRPCResponse.model_validate(json_resp)
-                        return request.get_result_model().model_validate(
-                            rpc_resp.result
-                        )
-                    except Exception as e:
-                        raise RuntimeError(f"Failed to parse JSON-RPC response: {e}")
+            if response.status == 204 or response.content.at_eof():
                 return None
+
+            json_resp = await response.json()
+
+            # Check for JSON-RPC Error
+            if "error" in json_resp:
+                try:
+                    err = types.JSONRPCError.model_validate(json_resp).error
+                    raise RuntimeError(
+                        f"MCP request failed with code {err.code}: {err.message}"
+                    )
+                except Exception:
+                    # Fallback if the error doesn't match our schema exactly
+                    raw_error = json_resp.get("error", {})
+                    raise RuntimeError(f"MCP request failed: {raw_error}")
+
+            # Parse Result
+            if isinstance(request, types.MCPRequest):
+                try:
+                    rpc_resp = types.JSONRPCResponse.model_validate(json_resp)
+                    return request.get_result_model().model_validate(
+                        rpc_resp.result
+                    )
+                except Exception as e:
+                    raise RuntimeError(f"Failed to parse JSON-RPC response: {e}")
+            return None
 
     async def _initialize_session(
         self, headers: Optional[Mapping[str, str]] = None
