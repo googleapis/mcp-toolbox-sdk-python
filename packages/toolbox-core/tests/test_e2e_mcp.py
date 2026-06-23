@@ -24,9 +24,11 @@ from toolbox_core.protocol import Protocol
 from toolbox_core.tool import ToolboxTool
 
 
+# TODO: Include draft versions in E2E integration tests once the server
+# supports SEP-2575 (stateless MCP / Request-Metadata).
 @pytest_asyncio.fixture(
     scope="function",
-    params=Protocol.get_supported_mcp_versions(),
+    params=[v for v in Protocol.get_supported_mcp_versions() if "DRAFT" not in v],
 )
 async def toolbox(request):
     """Creates a ToolboxClient instance shared by all tests in this module."""
@@ -97,6 +99,21 @@ class TestBasicE2E:
         """Invoke a tool with missing params."""
         with pytest.raises(TypeError, match="missing a required argument: 'num_rows'"):
             await get_n_rows_tool()
+
+    async def test_protocol_fallback_e2e(self):
+        """Tests that a client using MCP_LATEST can fallback to an older protocol against a server that doesn't support the latest version."""
+        # The E2E server currently does not support DRAFT 2026, so this will trigger a fallback.
+        async with ToolboxClient(
+            "http://localhost:5000", protocol=Protocol.MCP_LATEST
+        ) as client:
+            tool = await client.load_tool("get-n-rows")
+            response = await tool(num_rows="1")
+            assert "row1" in response
+            # Verify that fallback occurred by checking the transport's final protocol version
+            assert (
+                client._ToolboxClient__transport._protocol_version
+                != Protocol.MCP_LATEST.value
+            )
 
     async def test_run_tool_wrong_param_type(self, get_n_rows_tool: ToolboxTool):
         """Invoke a tool with wrong param type."""

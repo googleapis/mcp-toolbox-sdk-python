@@ -1,4 +1,4 @@
-# Copyright 2025 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,16 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .v20241105.mcp import McpHttpTransportV20241105
-from .v20250326.mcp import McpHttpTransportV20250326
-from .v20250618.mcp import McpHttpTransportV20250618
-from .v20251125.mcp import McpHttpTransportV20251125
-from .v20260618.mcp import McpHttpTransportV20260618
 
-__all__ = [
-    "McpHttpTransportV20241105",
-    "McpHttpTransportV20250326",
-    "McpHttpTransportV20250618",
-    "McpHttpTransportV20251125",
-    "McpHttpTransportV20260618",
-]
+class ToolboxError(Exception):
+    """Base exception for all MCP Toolbox errors."""
+
+    pass
+
+
+class ProtocolNegotiationError(ToolboxError):
+    """Raised when the server requires a different protocol version during a stateless request."""
+
+    def __init__(self, negotiated_version: str):
+        self.negotiated_version = negotiated_version
+        super().__init__(f"Server requires protocol fallback to {negotiated_version}")
