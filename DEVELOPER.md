@@ -125,6 +125,28 @@ redirect to the newest release. `<package>` is the URL slug: `core`, `adk`,
 pydoc-markdown parses the SDK source statically — it never imports the packages —
 so no build or install of the SDK is needed before generating docs.
 
+### What gets documented
+
+Each package's public API is a **curated module list** in
+[`scripts/generate-api-docs.sh`](./scripts/generate-api-docs.sh). The `case` block
+there is the single source of truth for both the valid package slugs and the
+modules rendered for each; internal modules (e.g. `utils`, the transport layer)
+are deliberately left out. To document a new module, add it to that package's
+`MODULES`.
+
+#### Adding a new package
+
+The package must already live under `packages/toolbox-<slug>/`. Then:
+
+1. Add a `case` arm (slug → `TITLE` + `MODULES`) in
+   [`scripts/generate-api-docs.sh`](./scripts/generate-api-docs.sh).
+2. In [`.github/workflows/api-docs.yml`](./.github/workflows/api-docs.yml), add a
+   `refs/tags/toolbox-<slug>-v*` arm to the tag router **and** append the slug to
+   the default `packages=` list (the `dev` build of all packages).
+3. Add a `[[params.versions.<slug>]]` block in
+   [`docs-site/hugo.toml`](./docs-site/hugo.toml) so the version picker lists it
+   (see [Adding a version to the picker](#adding-a-version-to-the-picker)).
+
 ### Workflows
 
 The `api-docs.yml` workflow deploys to the `gh-pages` branch. It runs only on the
