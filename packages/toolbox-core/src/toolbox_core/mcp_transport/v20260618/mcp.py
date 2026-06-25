@@ -40,6 +40,16 @@ class McpHttpTransportV20260618(_McpHttpTransportBase):
         req_headers = dict(headers or {})
         req_headers["MCP-Protocol-Version"] = self._protocol_version
 
+        # Inject SEP-2243 routing headers
+        req_headers["Mcp-Method"] = request.method
+        if (
+            request.method == "tools/call"
+            and hasattr(request, "params")
+            and request.params is not None
+        ):
+            if hasattr(request.params, "name"):
+                req_headers["Mcp-Name"] = request.params.name
+
         # Dynamically update the _meta protocol version in the parameters model
         if hasattr(request, "params") and request.params is not None:
             if (

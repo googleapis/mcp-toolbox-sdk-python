@@ -128,6 +128,39 @@ class TestMcpHttpTransportV20260618:
         call_args = transport._session.post.call_args
         headers = call_args.kwargs["headers"]
         assert headers["MCP-Protocol-Version"] == "DRAFT-2026-v1"
+        assert headers["Mcp-Method"] == "method"
+        assert "Mcp-Name" not in headers
+
+    async def test_send_request_adds_mcp_name_header(self, transport):
+        """Test that the Mcp-Name header is added for tools/call."""
+        mock_response = AsyncMock()
+        mock_response.ok = True
+        mock_response.content = Mock()
+        mock_response.content.at_eof.return_value = False
+        mock_response.json.return_value = {"jsonrpc": "2.0", "id": "1", "result": {}}
+        transport._session.post.return_value.__aenter__.return_value = mock_response
+
+        class TestResult(types.BaseModel):
+            pass
+
+        class TestParams(types.BaseModel):
+            name: str
+
+        class TestRequest(types.MCPRequest[TestResult]):
+            method: str = "tools/call"
+            params: TestParams
+
+            def get_result_model(self):
+                return TestResult
+
+        await transport._send_request(
+            "url", TestRequest(params=TestParams(name="test_tool"))
+        )
+
+        call_args = transport._session.post.call_args
+        headers = call_args.kwargs["headers"]
+        assert headers["Mcp-Method"] == "tools/call"
+        assert headers["Mcp-Name"] == "test_tool"
 
     # --- Version Negotiation Tests ---
 
