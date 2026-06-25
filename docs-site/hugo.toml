@@ -1,0 +1,79 @@
+title = "MCP Toolbox Python API"
+
+[params]
+  offlineSearch = true
+  copyright = "Google LLC"
+
+# Hand-edited version lists, one per package. Newest first — the order is
+# mirrored into the dropdown. Add a block before tagging a release, and only
+# list versions whose /<pkg>/<version>/ docs already exist (or will after the
+# backfill run), or the dropdown link 404s. URLs are root-relative so they
+# resolve against whatever host serves the page (production or staging).
+[params.versions]
+  [[params.versions.core]]
+    version = "dev"
+    url = "/core/dev/"
+  [[params.versions.adk]]
+    version = "dev"
+    url = "/adk/dev/"
+  [[params.versions.langchain]]
+    version = "dev"
+    url = "/langchain/dev/"
+  [[params.versions.llamaindex]]
+    version = "dev"
+    url = "/llamaindex/dev/"
+
+[markup.goldmark.renderer]
+  unsafe = true
+
+# Resolve relative .md / _index.md links to per-version pretty URLs. Kept as a
+# safety net for any cross-links pydoc-markdown's crossref processor emits so
+# none leak as raw .md hrefs once fed through Hugo.
+[markup.goldmark.renderHooks.link]
+  useEmbedded = "fallback"
+
+[markup.highlight]
+  noClasses = false
+  style = "tango"
+
+[params.ui]
+  navbar_logo = true
+  sidebar_menu_foldable = true
+  ul_show = 2
+  breadcrumb_disable = true
+  sidebar_menu_compact = false
+  showLightDarkModeMenu = true
+
+[[menu.main]]
+  name = "Documentation"
+  url = "https://mcp-toolbox.dev"
+  weight = 10
+
+[[menu.main]]
+  name = "GitHub"
+  url = "https://github.com/googleapis/mcp-toolbox-sdk-python"
+  weight = 20
+  pre = "<i class='fab fa-github'></i>"
+
+[outputFormats]
+  # Dropdown fragment, fetched at runtime by the navbar version selector so
+  # frozen old version pages show newly-added versions without a rebuild.
+  [outputFormats.releases]
+    baseName = "releases"
+    isPlainText = true
+    mediaType = "text/releases"
+  # Per-package "latest" redirect, hoisted to /<pkg>/latest/index.html.
+  [outputFormats.latest]
+    baseName = "latest"
+    mediaType = "text/html"
+    isHTML = true
+
+[mediaTypes."text/releases"]
+  suffixes = ["releases"]
+
+[outputs]
+  home = ["HTML", "JSON", "releases", "latest"]   # JSON kept for offline search
+
+[module]
+  [[module.imports]]
+    path = "github.com/google/docsy"

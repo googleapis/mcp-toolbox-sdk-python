@@ -1,0 +1,16 @@
+{{/* Require a package context: on the rootless landing $pkg is empty, which
+     would emit a broken //releases.releases include and a meaningless picker. */ -}}
+{{ if and .Site.Params.versions .Site.Params.package -}}
+{{ $pkg := .Site.Params.package | default "" -}}
+<div class="dropdown">
+  <a class="nav-link dropdown-toggle" href="#" role="button"
+     data-bs-toggle="dropdown" aria-expanded="false">
+    {{ .Site.Params.version | default "Versions" }}
+  </a>
+  <div class="dropdown-menu"
+       w3-include-html="/{{ $pkg }}/releases.releases"
+       w3-include-html-default='<a class="dropdown-item" href="/{{ $pkg }}/dev/">dev</a>'>
+  </div>
+  <script>w3.includeHTML();</script>
+</div>
+{{ end -}}
