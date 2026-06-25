@@ -13,6 +13,22 @@
 # limitations under the License.
 
 
+# Manual fallback for (re)building a release tag's API docs when the automatic
+# deploy (api-docs.yml, on tag push) didn't run or failed. Builds entirely from
+# the tag -- a release carries its own source plus the docs tooling (docs-site/,
+# scripts/) -- and opens a PR against gh-pages for review instead of deploying
+# directly.
+#
+# Only works for tags that already carry the docs tooling. Tags cut before the
+# docs tooling landed (no docs-site/ or scripts/generate-api-docs.sh) will fail.
+#
+# How to trigger:
+#   - UI: Actions tab -> "API Reference Backfill" -> "Run workflow", pick the
+#     package and enter the version tag (e.g. v1.0.0).
+#   - CLI: gh workflow run api-docs-backfill.yml -f package=core -f version=v1.0.0
+#   The package + version must match an existing release tag
+#   (toolbox-<package>-<version>, e.g. toolbox-core-v1.0.0). Review and merge the
+#   resulting gh-pages PR to publish.
 name: "API Reference Backfill"
 on:
   workflow_dispatch:
@@ -44,47 +60,14 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      # Build from main so the archived page carries the current version picker;
-      # only the package's source comes from the tag (overlaid below) so
-      # pydoc-markdown documents that version's API.
-      - name: Checkout main (current layout + scripts)
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
-        with:
-          ref: main
-          submodules: recursive
-
-      # Map the URL slug to its package directory (the slug is not the directory
-      # name).
-      - name: Resolve package directory
-        id: resolve
-        env:
-          PKG: ${{ inputs.package }}
-        run: |
-          case "$PKG" in
-            core)       echo "dir=packages/toolbox-core"       >> "$GITHUB_OUTPUT" ;;
-            adk)        echo "dir=packages/toolbox-adk"        >> "$GITHUB_OUTPUT" ;;
-            langchain)  echo "dir=packages/toolbox-langchain"  >> "$GITHUB_OUTPUT" ;;
-            llamaindex) echo "dir=packages/toolbox-llamaindex" >> "$GITHUB_OUTPUT" ;;
-            *)          echo "Unknown package: $PKG" >&2; exit 1 ;;
-          esac
-
-      - name: Checkout tagged package source
+      # Build entirely from the tag: its source and the docs tooling (docs-site/,
+      # scripts/) all ship in the release, so no overlay from main is needed.
+      - name: Checkout tagged source
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
           ref: refs/tags/toolbox-${{ inputs.package }}-${{ inputs.version }}
-          path: tagged_src
-          sparse-checkout: ${{ steps.resolve.outputs.dir }}
-
-      # Overlay only the tagged package's src/, keeping main's pyproject.toml and
-      # the docs tooling intact. pydoc-markdown parses src statically, so the
-      # archived page reflects the tagged version's API. (Go overlays the whole
-      # package dir; here src-only keeps the rest of main's layout in sync.)
-      - name: Overlay tagged source onto main
-        env:
-          DIR: ${{ steps.resolve.outputs.dir }}
-        run: |
-          rm -rf "$DIR/src"
-          mv "tagged_src/$DIR/src" "$DIR/src"
+          submodules: recursive
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
@@ -160,5 +143,5 @@ jobs:
           else
             gh pr create --base gh-pages --head "$BRANCH" \
               --title "docs(api): backfill ${PKG} ${VER}" \
-              --body "Automated API reference backfill for \`${PKG}/${VER}\`, built from main tooling with the tagged source overlaid. Merging publishes to gh-pages (additive)."
+              --body "Automated API reference backfill for \`${PKG}/${VER}\`, built from the release tag. Merging publishes to gh-pages (additive)."
           fi
