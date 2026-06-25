@@ -63,7 +63,7 @@ class _McpTransportProxy(ITransport):
 
     def _create_transport(self, protocol: Protocol) -> ITransport:
         match protocol:
-            case Protocol.MCP_v20260618:
+            case Protocol.MCP_LATEST:
                 return McpHttpTransportV20260618(
                     self._url,
                     self._session,
@@ -188,11 +188,6 @@ class ToolboxClient:
             telemetry_enabled: Whether to enable OpenTelemetry tracing and metrics. (Default: False)
         """
 
-        if protocol != Protocol.MCP_LATEST:
-            logging.warning(
-                f"A newer version of MCP ({Protocol.MCP_LATEST.value}) is available. "
-                "Please use Protocol.MCP_LATEST to use the latest features."
-            )
 
         self.__transport = _McpTransportProxy(
             url,

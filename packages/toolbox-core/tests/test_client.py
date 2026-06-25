@@ -277,7 +277,7 @@ async def test_load_tool_protocol_fallback_success(test_tool_str):
         mock_2025_cls.return_value = mock_2025
 
         async with ToolboxClient(
-            TEST_BASE_URL, protocol=Protocol.MCP_v20260618
+            TEST_BASE_URL, protocol=Protocol.MCP_LATEST
         ) as client:
             # This should trigger the fallback
             loaded_tool = await client.load_tool(TOOL_NAME)
@@ -323,7 +323,7 @@ async def test_load_tool_protocol_fallback_infinite_loop_prevention(test_tool_st
         mock_2025_cls.return_value = mock_2025
 
         async with ToolboxClient(
-            TEST_BASE_URL, protocol=Protocol.MCP_v20260618
+            TEST_BASE_URL, protocol=Protocol.MCP_LATEST
         ) as client:
             with pytest.raises(
                 ProtocolNegotiationError,

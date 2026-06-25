@@ -50,7 +50,7 @@ async def main():
 
     protocol = Protocol.MCP
     if scenario == "request-metadata":
-        protocol = Protocol.MCP_v20260618
+        protocol = Protocol.MCP_LATEST
 
     async with ToolboxClient(
         server_url, client_headers=client_headers, protocol=protocol
