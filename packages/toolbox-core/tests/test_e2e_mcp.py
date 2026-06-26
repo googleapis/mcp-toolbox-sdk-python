@@ -101,10 +101,10 @@ class TestBasicE2E:
             await get_n_rows_tool()
 
     async def test_protocol_fallback_e2e(self):
-        """Tests that a client using MCP_LATEST can fallback to an older protocol against a server that doesn't support the latest version."""
+        """Tests that a client using MCP_DRAFT can fallback to an older protocol against a server that doesn't support the draft version."""
         # The E2E server currently does not support DRAFT 2026, so this will trigger a fallback.
         async with ToolboxClient(
-            "http://localhost:5000", protocol=Protocol.MCP_LATEST
+            "http://localhost:5000", protocol=Protocol.MCP_DRAFT
         ) as client:
             tool = await client.load_tool("get-n-rows")
             response = await tool(num_rows="1")
@@ -112,7 +112,7 @@ class TestBasicE2E:
             # Verify that fallback occurred by checking the transport's final protocol version
             assert (
                 client._ToolboxClient__transport._protocol_version
-                != Protocol.MCP_LATEST.value
+                != Protocol.MCP_DRAFT.value
             )
 
     async def test_run_tool_wrong_param_type(self, get_n_rows_tool: ToolboxTool):
