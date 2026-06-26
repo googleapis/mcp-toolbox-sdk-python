@@ -188,7 +188,6 @@ class ToolboxClient:
             telemetry_enabled: Whether to enable OpenTelemetry tracing and metrics. (Default: False)
         """
 
-
         self.__transport = _McpTransportProxy(
             url,
             session,

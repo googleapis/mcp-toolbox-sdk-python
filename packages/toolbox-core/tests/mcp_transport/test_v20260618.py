@@ -193,7 +193,9 @@ class TestMcpHttpTransportV20260618:
         assert headers["Mcp-Method"] == "prompts/get"
         assert headers["Mcp-Name"] == "test_prompt"
 
-    async def test_send_request_adds_mcp_name_header_for_resources_read(self, transport):
+    async def test_send_request_adds_mcp_name_header_for_resources_read(
+        self, transport
+    ):
         """Test that the Mcp-Name header is added for resources/read."""
         mock_response = AsyncMock()
         mock_response.ok = True
