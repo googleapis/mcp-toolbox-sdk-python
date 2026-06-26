@@ -131,7 +131,7 @@ class TestMcpHttpTransportV20260618:
         assert headers["Mcp-Method"] == "method"
         assert "Mcp-Name" not in headers
 
-    async def test_send_request_adds_mcp_name_header(self, transport):
+    async def test_send_request_adds_mcp_name_header_for_tools_call(self, transport):
         """Test that the Mcp-Name header is added for tools/call."""
         mock_response = AsyncMock()
         mock_response.ok = True
@@ -161,6 +161,68 @@ class TestMcpHttpTransportV20260618:
         headers = call_args.kwargs["headers"]
         assert headers["Mcp-Method"] == "tools/call"
         assert headers["Mcp-Name"] == "test_tool"
+
+    async def test_send_request_adds_mcp_name_header_for_prompts_get(self, transport):
+        """Test that the Mcp-Name header is added for prompts/get."""
+        mock_response = AsyncMock()
+        mock_response.ok = True
+        mock_response.content = Mock()
+        mock_response.content.at_eof.return_value = False
+        mock_response.json.return_value = {"jsonrpc": "2.0", "id": "1", "result": {}}
+        transport._session.post.return_value.__aenter__.return_value = mock_response
+
+        class TestResult(types.BaseModel):
+            pass
+
+        class TestParams(types.BaseModel):
+            name: str
+
+        class TestRequest(types.MCPRequest[TestResult]):
+            method: str = "prompts/get"
+            params: TestParams
+
+            def get_result_model(self):
+                return TestResult
+
+        await transport._send_request(
+            "url", TestRequest(params=TestParams(name="test_prompt"))
+        )
+
+        call_args = transport._session.post.call_args
+        headers = call_args.kwargs["headers"]
+        assert headers["Mcp-Method"] == "prompts/get"
+        assert headers["Mcp-Name"] == "test_prompt"
+
+    async def test_send_request_adds_mcp_name_header_for_resources_read(self, transport):
+        """Test that the Mcp-Name header is added for resources/read."""
+        mock_response = AsyncMock()
+        mock_response.ok = True
+        mock_response.content = Mock()
+        mock_response.content.at_eof.return_value = False
+        mock_response.json.return_value = {"jsonrpc": "2.0", "id": "1", "result": {}}
+        transport._session.post.return_value.__aenter__.return_value = mock_response
+
+        class TestResult(types.BaseModel):
+            pass
+
+        class TestParams(types.BaseModel):
+            uri: str
+
+        class TestRequest(types.MCPRequest[TestResult]):
+            method: str = "resources/read"
+            params: TestParams
+
+            def get_result_model(self):
+                return TestResult
+
+        await transport._send_request(
+            "url", TestRequest(params=TestParams(uri="file:///test.txt"))
+        )
+
+        call_args = transport._session.post.call_args
+        headers = call_args.kwargs["headers"]
+        assert headers["Mcp-Method"] == "resources/read"
+        assert headers["Mcp-Name"] == "file:///test.txt"
 
     # --- Version Negotiation Tests ---
 

@@ -42,13 +42,16 @@ class McpHttpTransportV20260618(_McpHttpTransportBase):
 
         # Inject SEP-2243 routing headers
         req_headers["Mcp-Method"] = request.method
-        if (
-            request.method == "tools/call"
-            and hasattr(request, "params")
-            and request.params is not None
-        ):
-            if hasattr(request.params, "name"):
-                req_headers["Mcp-Name"] = request.params.name
+        params = getattr(request, "params", None)
+        if params is not None:
+            if request.method in ("tools/call", "prompts/get"):
+                name = getattr(params, "name", None)
+                if name is not None:
+                    req_headers["Mcp-Name"] = str(name)
+            elif request.method == "resources/read":
+                uri = getattr(params, "uri", None)
+                if uri is not None:
+                    req_headers["Mcp-Name"] = str(uri)
 
         # Dynamically update the _meta protocol version in the parameters model
         if hasattr(request, "params") and request.params is not None:
