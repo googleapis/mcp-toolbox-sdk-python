@@ -18,10 +18,10 @@ import pytest
 import pytest_asyncio
 from aiohttp import ClientSession
 
+from toolbox_core.exceptions import ProtocolNegotiationError
 from toolbox_core.mcp_transport.v20251125 import types
 from toolbox_core.mcp_transport.v20251125.mcp import McpHttpTransportV20251125
 from toolbox_core.protocol import ManifestSchema, Protocol
-from toolbox_core.exceptions import ProtocolNegotiationError
 
 
 def create_fake_tools_list_result():
