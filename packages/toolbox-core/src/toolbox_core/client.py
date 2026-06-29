@@ -63,7 +63,7 @@ class _McpTransportProxy(ITransport):
 
     def _create_transport(self, protocol: Protocol) -> ITransport:
         match protocol:
-            case Protocol.MCP_LATEST:
+            case Protocol.MCP_DRAFT:
                 return McpHttpTransportV20260618(
                     self._url,
                     self._session,
