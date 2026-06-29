@@ -810,7 +810,7 @@ async def test_client_init_with_client_info():
 def test_toolbox_client_no_warning_on_mcp():
     """Test that initializing ToolboxClient with Protocol.MCP issues NO DeprecationWarning."""
     # Mock the transport to avoid actual connection attempts or MCP version warnings
-    with patch("toolbox_core.client.McpHttpTransportV20250618") as mock_transport:
+    with patch("toolbox_core.client.McpHttpTransportV20251125") as mock_transport:
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
 

@@ -70,7 +70,7 @@ async def transport(request, mocker):
     transport = McpHttpTransportV20260618(
         "http://fake-server.com",
         session=mock_session,
-        protocol=Protocol.MCP_LATEST,
+        protocol=Protocol.MCP_DRAFT,
         telemetry_enabled=request.param,
     )
     yield transport
