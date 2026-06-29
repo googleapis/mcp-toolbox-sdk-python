@@ -276,7 +276,7 @@ async def test_load_tool_protocol_fallback_success(test_tool_str):
         mock_2025.tool_invoke.return_value = "ok_from_fallback"
         mock_2025_cls.return_value = mock_2025
 
-        async with ToolboxClient(TEST_BASE_URL, protocol=Protocol.MCP_LATEST) as client:
+        async with ToolboxClient(TEST_BASE_URL, protocol=Protocol.MCP_DRAFT) as client:
             # This should trigger the fallback
             loaded_tool = await client.load_tool(TOOL_NAME)
 
@@ -320,7 +320,7 @@ async def test_load_tool_protocol_fallback_infinite_loop_prevention(test_tool_st
         mock_2025.tool_get.side_effect = ProtocolNegotiationError("2024-11-05")
         mock_2025_cls.return_value = mock_2025
 
-        async with ToolboxClient(TEST_BASE_URL, protocol=Protocol.MCP_LATEST) as client:
+        async with ToolboxClient(TEST_BASE_URL, protocol=Protocol.MCP_DRAFT) as client:
             with pytest.raises(
                 ProtocolNegotiationError,
                 match="Server requires protocol fallback to 2024-11-05",
