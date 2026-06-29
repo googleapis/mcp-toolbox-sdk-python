@@ -479,8 +479,9 @@ async def test_mcp_default_protocol():
 @pytest.mark.usefixtures("toolbox_server")
 async def test_mcp_draft_fallback():
     """Verify that explicitly using MCP_DRAFT against a server that doesn't support it falls back successfully."""
-    async with ToolboxClient("http://localhost:5000", protocol=Protocol.MCP_DRAFT) as client:
+    async with ToolboxClient(
+        "http://localhost:5000", protocol=Protocol.MCP_DRAFT
+    ) as client:
         tool = await client.load_tool("get-n-rows")
         response = await tool(num_rows="1")
         assert "row1" in response
-
