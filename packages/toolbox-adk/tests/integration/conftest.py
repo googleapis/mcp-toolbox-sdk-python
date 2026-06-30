@@ -75,7 +75,8 @@ def get_toolbox_binary_url(toolbox_version: str) -> str:
     arch = (
         "arm64" if os_system == "darwin" and platform.machine() == "arm64" else "amd64"
     )
-    return f"staging/v1.6.0-draft/{os_system}/{arch}/toolbox"
+    ext = ".exe" if os_system == "windows" else ""
+    return f"{toolbox_version}/{os_system}/{arch}/toolbox{ext}"
 
 
 def get_auth_token(client_id: str) -> str:
@@ -151,7 +152,8 @@ def toolbox_server(toolbox_version: str, tools_file_path: str) -> Generator[None
 
     print("Downloading toolbox binary from gcs bucket...")
     source_blob_name = get_toolbox_binary_url(toolbox_version)
-    download_blob("mcp-toolbox-for-databases", source_blob_name, "toolbox")
+    bucket_name = "mcp-toolbox-for-databases-dev" if toolbox_version in ("main", "mcp-v202606") else "mcp-toolbox-for-databases"
+    download_blob(bucket_name, source_blob_name, "toolbox")
 
     print("Toolbox binary downloaded successfully.")
     try:
