@@ -50,5 +50,5 @@ options:
 substitutions:
   _VERSION: '3.13'
   # Default values (can be overridden by triggers)
-  _TOOLBOX_VERSION: 'main'
+  _TOOLBOX_VERSION: 'mcp-v202606'
   _TOOLBOX_MANIFEST_VERSION: '34'
