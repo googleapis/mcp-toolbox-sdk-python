@@ -75,7 +75,7 @@ def get_toolbox_binary_url(toolbox_version: str) -> str:
     arch = (
         "arm64" if os_system == "darwin" and platform.machine() == "arm64" else "amd64"
     )
-    return f"v{toolbox_version}/{os_system}/{arch}/toolbox"
+    return f"staging/v1.6.0-draft/{os_system}/{arch}/toolbox"
 
 
 def get_auth_token(client_id: str) -> str:
@@ -143,20 +143,23 @@ def toolbox_server(toolbox_version: str, tools_file_path: str) -> Generator[None
         # Make toolbox executable
         os.chmod("toolbox", 0o700)
         # Run toolbox binary
-        toolbox_server = subprocess.Popen(
-            ["./toolbox", "--tools-file", tools_file_path]
+        toolbox_server_1 = subprocess.Popen(
+            ["./toolbox", "--port", "5000", "--tools-file", tools_file_path]
+        )
+        toolbox_server_2 = subprocess.Popen(
+            ["./toolbox", "--port", "5001", "--tools-file", tools_file_path, "--enable-draft-specs"]
         )
 
         # Wait for server to start
         # Retry logic with a timeout
         for _ in range(5):  # retries
             time.sleep(2)
-            print("Checking if toolbox is successfully started...")
-            if toolbox_server.poll() is None:
-                print("Toolbox server started successfully.")
+            print("Checking if both toolbox servers are successfully started...")
+            if toolbox_server_1.poll() is None and toolbox_server_2.poll() is None:
+                print("Toolbox servers started successfully.")
                 break
         else:
-            raise RuntimeError("Toolbox server failed to start after 5 retries.")
+            raise RuntimeError("Toolbox servers failed to start after 5 retries.")
     except subprocess.CalledProcessError as e:
         print(e.stderr.decode("utf-8"))
         print(e.stdout.decode("utf-8"))
@@ -164,5 +167,33 @@ def toolbox_server(toolbox_version: str, tools_file_path: str) -> Generator[None
     yield
 
     # Clean up toolbox server
-    toolbox_server.terminate()
-    toolbox_server.wait(timeout=5)
+    toolbox_server_1.terminate()
+    toolbox_server_2.terminate()
+    toolbox_server_1.wait(timeout=5)
+    toolbox_server_2.wait(timeout=5)
+
+@pytest_asyncio.fixture(params=["http://localhost:5000", "http://localhost:5001"], scope="session")
+def toolbox_server_url(request) -> str:
+    return request.param
+
+@pytest_asyncio.fixture(autouse=True)
+def patch_toolbox_client_url(toolbox_server_url):
+    from toolbox_core.client import ToolboxClient
+    from toolbox_core.sync_client import ToolboxSyncClient
+    original_init = ToolboxClient.__init__
+    original_sync_init = ToolboxSyncClient.__init__
+    
+    def new_init(self, url="http://localhost:5000", *args, **kwargs):
+        if url == "http://localhost:5000":
+            url = toolbox_server_url
+        original_init(self, url, *args, **kwargs)
+        
+    def new_sync_init(self, url="http://localhost:5000", *args, **kwargs):
+        if url == "http://localhost:5000":
+            url = toolbox_server_url
+        original_sync_init(self, url, *args, **kwargs)
+        
+    from unittest.mock import patch
+    with patch.object(ToolboxClient, '__init__', new_init, create=True):
+        with patch.object(ToolboxSyncClient, '__init__', new_sync_init, create=True):
+            yield
