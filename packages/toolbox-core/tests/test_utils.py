@@ -20,15 +20,11 @@ from unittest.mock import Mock
 
 import pytest
 from pydantic import BaseModel, ValidationError
-
 from toolbox_core.protocol import ParameterSchema
-from toolbox_core.utils import (
-    create_func_docstring,
-    identify_auth_requirements,
-    params_to_pydantic_model,
-    resolve_value,
-    warn_if_http_and_headers,
-)
+from toolbox_core.utils import (create_func_docstring,
+                                identify_auth_requirements,
+                                params_to_pydantic_model, resolve_value,
+                                warn_if_http_and_headers)
 
 
 def create_param_mock(name: str, description: str, annotation: Type) -> Mock:

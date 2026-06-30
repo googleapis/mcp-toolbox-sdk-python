@@ -16,7 +16,6 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from google.genai.types import Type
-
 from toolbox_adk.credentials import CredentialConfig, CredentialType
 from toolbox_adk.tool import ToolboxTool
 
