@@ -17,10 +17,12 @@ import logging
 from typing import Any, Awaitable, Callable, Dict, Mapping, Optional
 
 import toolbox_core
-from fastapi.openapi.models import (OAuth2, OAuthFlowAuthorizationCode,
-                                    OAuthFlows)
-from google.adk.auth.auth_credential import (AuthCredential,
-                                             AuthCredentialTypes, OAuth2Auth)
+from fastapi.openapi.models import OAuth2, OAuthFlowAuthorizationCode, OAuthFlows
+from google.adk.auth.auth_credential import (
+    AuthCredential,
+    AuthCredentialTypes,
+    OAuth2Auth,
+)
 from google.adk.auth.auth_tool import AuthConfig
 from google.adk.tools.base_tool import BaseTool
 from google.adk.tools.tool_context import ToolContext

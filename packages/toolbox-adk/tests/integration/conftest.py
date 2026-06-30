@@ -26,7 +26,6 @@ from typing import Generator
 
 import google
 import pytest
-import pytest_asyncio
 from google.auth import compute_engine
 from google.cloud import secretmanager, storage
 
@@ -93,17 +92,17 @@ def get_auth_token(client_id: str) -> str:
 
 
 #### Define Fixtures
-@pytest_asyncio.fixture(scope="session")
+@pytest.fixture(scope="session")
 def project_id() -> str:
     return get_env_var("GOOGLE_CLOUD_PROJECT")
 
 
-@pytest_asyncio.fixture(scope="session")
+@pytest.fixture(scope="session")
 def toolbox_version() -> str:
     return get_env_var("TOOLBOX_VERSION")
 
 
-@pytest_asyncio.fixture(scope="session")
+@pytest.fixture(scope="session")
 def tools_file_path(project_id: str) -> Generator[str]:
     """Provides a temporary file path containing the tools manifest."""
     if os.environ.get("TEST_MOCK_GCP"):
@@ -123,7 +122,7 @@ def tools_file_path(project_id: str) -> Generator[str]:
     os.remove(tools_file_path)
 
 
-@pytest_asyncio.fixture(scope="session")
+@pytest.fixture(scope="session")
 def auth_token1(project_id: str) -> str:
     if os.environ.get("TEST_MOCK_GCP"):
         return "mock-token-1"
@@ -133,7 +132,7 @@ def auth_token1(project_id: str) -> str:
     return get_auth_token(client_id)
 
 
-@pytest_asyncio.fixture(scope="session")
+@pytest.fixture(scope="session")
 def auth_token2(project_id: str) -> str:
     if os.environ.get("TEST_MOCK_GCP"):
         return "mock-token-2"
@@ -143,7 +142,7 @@ def auth_token2(project_id: str) -> str:
     return get_auth_token(client_id)
 
 
-@pytest_asyncio.fixture(scope="session")
+@pytest.fixture(scope="session")
 def toolbox_server(toolbox_version: str, tools_file_path: str) -> Generator[None]:
     """Starts the toolbox server as a subprocess."""
     if os.environ.get("TEST_MOCK_GCP"):

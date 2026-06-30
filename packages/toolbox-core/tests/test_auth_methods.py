@@ -17,6 +17,7 @@ from unittest.mock import ANY, MagicMock, patch
 
 import pytest
 from google.auth.exceptions import GoogleAuthError
+
 from toolbox_core import auth_methods
 
 # Constants for test values

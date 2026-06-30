@@ -21,8 +21,13 @@ from aiohttp import ClientSession
 
 from .. import version
 from ..itransport import ITransport
-from ..protocol import (AdditionalPropertiesSchema, ParameterSchema, Protocol,
-                        TelemetryAttributes, ToolSchema)
+from ..protocol import (
+    AdditionalPropertiesSchema,
+    ParameterSchema,
+    Protocol,
+    TelemetryAttributes,
+    ToolSchema,
+)
 from . import telemetry
 
 

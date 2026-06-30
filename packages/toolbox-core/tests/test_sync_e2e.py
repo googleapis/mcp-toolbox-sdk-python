@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import pytest
+
 from toolbox_core.sync_client import ToolboxSyncClient
 from toolbox_core.sync_tool import ToolboxSyncTool
 
