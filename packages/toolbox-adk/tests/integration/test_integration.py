@@ -19,19 +19,16 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from google import genai
 from google.adk import Agent
-from google.adk.auth.auth_credential import (
-    AuthCredential,
-    AuthCredentialTypes,
-    OAuth2Auth,
-)
+from google.adk.auth.auth_credential import (AuthCredential,
+                                             AuthCredentialTypes, OAuth2Auth)
 from google.adk.runners import Runner
-from google.adk.sessions.in_memory_session_service import InMemorySessionService
+from google.adk.sessions.in_memory_session_service import \
+    InMemorySessionService
 from google.adk.tools.base_tool import BaseTool
 from google.genai import types
 from pydantic import ValidationError
-from toolbox_core.protocol import Protocol
-
 from toolbox_adk import CredentialStrategy, ToolboxTool, ToolboxToolset
+from toolbox_core.protocol import Protocol
 
 # Ensure TOOLBOX_VERSION is set for the fixture
 if "TOOLBOX_VERSION" not in os.environ:
@@ -312,12 +309,9 @@ class TestToolboxAdkIntegration:
 
     async def test_adk_integration_optional_params(self):
         """test that we can create credentials from ADK objects without auth_scheme."""
-        from google.adk.auth.auth_credential import (
-            AuthCredential,
-            AuthCredentialTypes,
-            HttpAuth,
-            HttpCredentials,
-        )
+        from google.adk.auth.auth_credential import (AuthCredential,
+                                                     AuthCredentialTypes,
+                                                     HttpAuth, HttpCredentials)
 
         # 1. Create ADK credential (HTTP Bearer)
         adk_creds = AuthCredential(

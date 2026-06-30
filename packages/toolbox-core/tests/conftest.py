@@ -25,6 +25,7 @@ import time
 from typing import Generator
 
 import google
+import pytest
 import pytest_asyncio
 from google.auth import compute_engine
 from google.cloud import secretmanager, storage
@@ -147,7 +148,14 @@ def toolbox_server(toolbox_version: str, tools_file_path: str) -> Generator[None
             ["./toolbox", "--port", "5000", "--tools-file", tools_file_path]
         )
         toolbox_server_2 = subprocess.Popen(
-            ["./toolbox", "--port", "5001", "--tools-file", tools_file_path, "--enable-draft-specs"]
+            [
+                "./toolbox",
+                "--port",
+                "5001",
+                "--tools-file",
+                tools_file_path,
+                "--enable-draft-specs",
+            ]
         )
 
         # Wait for server to start
@@ -172,28 +180,34 @@ def toolbox_server(toolbox_version: str, tools_file_path: str) -> Generator[None
     toolbox_server_1.wait(timeout=5)
     toolbox_server_2.wait(timeout=5)
 
-@pytest_asyncio.fixture(params=["http://localhost:5000", "http://localhost:5001"], scope="session")
+
+@pytest.fixture(
+    params=["http://localhost:5000", "http://localhost:5001"], scope="session"
+)
 def toolbox_server_url(request) -> str:
     return request.param
 
-@pytest_asyncio.fixture(autouse=True)
+
+@pytest.fixture(autouse=True)
 def patch_toolbox_client_url(toolbox_server_url):
     from toolbox_core.client import ToolboxClient
     from toolbox_core.sync_client import ToolboxSyncClient
+
     original_init = ToolboxClient.__init__
     original_sync_init = ToolboxSyncClient.__init__
-    
+
     def new_init(self, url="http://localhost:5000", *args, **kwargs):
         if url == "http://localhost:5000":
             url = toolbox_server_url
         original_init(self, url, *args, **kwargs)
-        
+
     def new_sync_init(self, url="http://localhost:5000", *args, **kwargs):
         if url == "http://localhost:5000":
             url = toolbox_server_url
         original_sync_init(self, url, *args, **kwargs)
-        
+
     from unittest.mock import patch
-    with patch.object(ToolboxClient, '__init__', new_init, create=True):
-        with patch.object(ToolboxSyncClient, '__init__', new_sync_init, create=True):
+
+    with patch.object(ToolboxClient, "__init__", new_init, create=True):
+        with patch.object(ToolboxSyncClient, "__init__", new_sync_init, create=True):
             yield
