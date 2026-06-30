@@ -20,6 +20,7 @@ from typing import Any, Callable, Mapping, Union
 from unittest.mock import MagicMock, Mock, create_autospec, patch
 
 import pytest
+
 from toolbox_core.protocol import TelemetryAttributes
 from toolbox_core.sync_tool import ToolboxSyncTool
 from toolbox_core.tool import ToolboxTool

@@ -16,6 +16,7 @@ import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+
 from toolbox_adk import CredentialStrategy, ToolboxClient
 from toolbox_adk.client import CredentialConfig, CredentialType
 
