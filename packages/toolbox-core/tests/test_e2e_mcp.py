@@ -24,11 +24,9 @@ from toolbox_core.protocol import Protocol
 from toolbox_core.tool import ToolboxTool
 
 
-# TODO: Include draft versions in E2E integration tests once the server
-# supports SEP-2575 (stateless MCP / Request-Metadata).
 @pytest_asyncio.fixture(
     scope="function",
-    params=[v for v in Protocol.get_supported_mcp_versions() if "DRAFT" not in v],
+    params=[v for v in Protocol.get_supported_mcp_versions()],
 )
 async def toolbox(request):
     """Creates a ToolboxClient instance shared by all tests in this module."""
@@ -105,7 +103,7 @@ class TestBasicE2E:
         # The E2E server currently does not support DRAFT 2026 on port 5000, so this will trigger a fallback.
         # However, port 5001 does support DRAFT 2026.
         async with ToolboxClient(
-            "http://localhost:5000", protocol=Protocol.MCP_DRAFT
+            toolbox_server_url, protocol=Protocol.MCP_DRAFT
         ) as client:
             tool = await client.load_tool("get-n-rows")
             response = await tool(num_rows="1")
