@@ -1,0 +1,11 @@
+{{- $pkg := .Site.Params.package | default "" -}}
+{{- $target := printf "/%s/dev/" $pkg -}}
+{{- with index .Site.Params.versions $pkg }}
+  {{- range . }}{{ if ne .version "dev" }}{{ $target = .url }}{{ break }}{{ end }}{{ end }}
+{{- end -}}
+<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<meta http-equiv="refresh" content="0; url={{ $target }}">
+<link rel="canonical" href="{{ $target }}">
+</head><body><a href="{{ $target }}">Redirecting…</a>
+<script>location.replace('{{ $target }}');</script></body></html>

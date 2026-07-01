@@ -1,0 +1,5 @@
+# Pins the API reference doc generator used by scripts/generate-api-docs.sh.
+# pydoc-markdown parses the SDK source statically (no install/import of the
+# packages), pulling docspec-python transitively. Keep in sync with the version
+# installed in .github/workflows/api-docs.yml.
+pydoc-markdown==4.8.2

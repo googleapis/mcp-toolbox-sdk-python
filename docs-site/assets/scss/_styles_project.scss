@@ -1,0 +1,27 @@
+@import 'td/code-dark';
+
+.td-navbar {
+  background-color: #80a7e9 !important;
+}
+
+.nav-tabs {
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.td-content table {
+  display: table;
+  width: 100% !important;
+  margin-bottom: 1.5rem;
+}
+
+.td-footer {
+  background-color: rgb(64, 63, 76) !important; 
+  border-top: none;
+}
+
+.td-footer, .td-footer a, .td-footer span {
+  color: #ffffff !important;
+}
