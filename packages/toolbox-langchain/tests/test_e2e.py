@@ -46,6 +46,8 @@ TOOLBOX_SERVER_URL = "http://localhost:5000"
 
 pytestmark = pytest.mark.usefixtures("patch_toolbox_client_url")
 
+pytestmark = pytest.mark.usefixtures("patch_toolbox_client_url")
+
 
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("toolbox_server")
