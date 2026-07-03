@@ -109,10 +109,7 @@ class TestCredentialStrategy:
 
     def test_from_adk_credentials_api_key(self):
         from fastapi.openapi.models import APIKey, APIKeyIn
-        from google.adk.auth.auth_credential import (
-            AuthCredential,
-            AuthCredentialTypes,
-        )
+        from google.adk.auth.auth_credential import AuthCredential, AuthCredentialTypes
 
         auth_credential = AuthCredential(
             auth_type=AuthCredentialTypes.API_KEY, api_key="abc"
@@ -129,10 +126,7 @@ class TestCredentialStrategy:
 
     def test_from_adk_credentials_api_key_default_location(self):
         from fastapi.openapi.models import APIKey
-        from google.adk.auth.auth_credential import (
-            AuthCredential,
-            AuthCredentialTypes,
-        )
+        from google.adk.auth.auth_credential import AuthCredential, AuthCredentialTypes
 
         auth_credential = AuthCredential(
             auth_type=AuthCredentialTypes.API_KEY, api_key="abc"
@@ -157,10 +151,7 @@ class TestCredentialStrategy:
     def test_from_adk_credentials_api_key_query_fail(self):
         import pytest
         from fastapi.openapi.models import APIKey, APIKeyIn
-        from google.adk.auth.auth_credential import (
-            AuthCredential,
-            AuthCredentialTypes,
-        )
+        from google.adk.auth.auth_credential import AuthCredential, AuthCredentialTypes
 
         cred = AuthCredential(auth_type=AuthCredentialTypes.API_KEY, api_key="abc")
         scheme = APIKey(type="apiKey", name="key", **{"in": APIKeyIn.query})
@@ -172,10 +163,7 @@ class TestCredentialStrategy:
 
     def test_from_adk_credentials_api_key_no_scheme_raises(self):
         import pytest
-        from google.adk.auth.auth_credential import (
-            AuthCredential,
-            AuthCredentialTypes,
-        )
+        from google.adk.auth.auth_credential import AuthCredential, AuthCredentialTypes
 
         auth_credential = AuthCredential(
             auth_type=AuthCredentialTypes.API_KEY, api_key="my-key"
@@ -187,10 +175,7 @@ class TestCredentialStrategy:
 
     def test_from_adk_credentials_unsupported(self):
         import pytest
-        from google.adk.auth.auth_credential import (
-            AuthCredential,
-            AuthCredentialTypes,
-        )
+        from google.adk.auth.auth_credential import AuthCredential, AuthCredentialTypes
 
         auth_credential = AuthCredential(
             auth_type=AuthCredentialTypes.OAUTH2

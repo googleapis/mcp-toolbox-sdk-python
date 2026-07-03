@@ -18,6 +18,7 @@ from typing import Mapping, Optional, TypeVar
 from pydantic import BaseModel
 
 from ... import version
+from ...exceptions import ProtocolNegotiationError
 from ...protocol import ManifestSchema, TelemetryAttributes
 from .. import telemetry
 from ..transport_base import _McpHttpTransportBase
@@ -131,9 +132,7 @@ class McpHttpTransportV20241105(_McpHttpTransportBase):
             self._server_version = result.serverInfo.version
 
             if result.protocolVersion != self._protocol_version:
-                raise RuntimeError(
-                    f"MCP version mismatch: client does not support server version {result.protocolVersion}"
-                )
+                raise ProtocolNegotiationError(result.protocolVersion)
 
             if not result.capabilities.tools:
                 if self._manage_session:

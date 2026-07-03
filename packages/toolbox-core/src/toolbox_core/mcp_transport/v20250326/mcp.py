@@ -13,11 +13,12 @@
 # limitations under the License.
 
 import time
-from typing import Mapping, Optional, TypeVar
+from typing import Any, Mapping, Optional, TypeVar
 
 from pydantic import BaseModel
 
 from ... import version
+from ...exceptions import ProtocolNegotiationError
 from ...protocol import ManifestSchema, TelemetryAttributes
 from .. import telemetry
 from ..transport_base import _McpHttpTransportBase
@@ -29,7 +30,7 @@ ReceiveResultT = TypeVar("ReceiveResultT", bound=BaseModel)
 class McpHttpTransportV20250326(_McpHttpTransportBase):
     """Transport for the MCP v2025-03-26 protocol."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self._session_id: Optional[str] = None
 
@@ -147,10 +148,7 @@ class McpHttpTransportV20250326(_McpHttpTransportBase):
             self._server_version = result.serverInfo.version
 
             if result.protocolVersion != self._protocol_version:
-                raise RuntimeError(
-                    "MCP version mismatch: client does not support server version"
-                    f" {result.protocolVersion}"
-                )
+                raise ProtocolNegotiationError(result.protocolVersion)
 
             if not result.capabilities.tools:
                 if self._manage_session:

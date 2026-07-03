@@ -42,13 +42,16 @@ class McpHttpTransportV20260618(_McpHttpTransportBase):
 
         # Inject SEP-2243 routing headers
         req_headers["Mcp-Method"] = request.method
-        if (
-            request.method == "tools/call"
-            and hasattr(request, "params")
-            and request.params is not None
-        ):
-            if hasattr(request.params, "name"):
-                req_headers["Mcp-Name"] = request.params.name
+        params = getattr(request, "params", None)
+        if params is not None:
+            if request.method in ("tools/call", "prompts/get"):
+                name = getattr(params, "name", None)
+                if name is not None:
+                    req_headers["Mcp-Name"] = str(name)
+            elif request.method == "resources/read":
+                uri = getattr(params, "uri", None)
+                if uri is not None:
+                    req_headers["Mcp-Name"] = str(uri)
 
         # Dynamically update the _meta protocol version in the parameters model
         if hasattr(request, "params") and request.params is not None:
@@ -125,6 +128,21 @@ class McpHttpTransportV20260618(_McpHttpTransportBase):
 
             # Check for JSON-RPC Error
             if "error" in json_resp:
+                err_val = json_resp["error"]
+                if isinstance(err_val, dict) and err_val.get("code") == -32004:
+                    server_supported = err_val.get("data", {}).get("supported", [])
+                    client_supported = Protocol.get_supported_mcp_versions()
+                    mutually_supported = [
+                        v for v in client_supported if v in server_supported
+                    ]
+                    if mutually_supported:
+                        raise ProtocolNegotiationError(mutually_supported[0])
+                    else:
+                        raise RuntimeError(
+                            "No mutually supported protocol version. "
+                            f"Client supports: {client_supported}, "
+                            f"Server supports: {server_supported}"
+                        )
                 try:
                     err = types.JSONRPCError.model_validate(json_resp).error
                     raise RuntimeError(

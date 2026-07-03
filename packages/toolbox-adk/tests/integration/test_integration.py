@@ -35,6 +35,8 @@ from toolbox_adk import CredentialStrategy, ToolboxTool, ToolboxToolset
 
 TOOLBOX_SERVER_URL = "http://localhost:5000"
 
+pytestmark = pytest.mark.usefixtures("patch_toolbox_client_url")
+
 # Ensure TOOLBOX_VERSION is set for the fixture
 if "TOOLBOX_VERSION" not in os.environ:
     os.environ["TOOLBOX_VERSION"] = "0.0.1"  # Use a valid version or mock
