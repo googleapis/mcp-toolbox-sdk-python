@@ -17,6 +17,7 @@ from warnings import warn
 
 from aiohttp import ClientSession
 from toolbox_core.client import ToolboxClient as ToolboxCoreClient
+from typing import Any, Sequence
 from toolbox_core.protocol import Protocol
 
 from .async_tools import AsyncToolboxTool
@@ -35,7 +36,7 @@ class AsyncToolboxClient:
         client_headers: Optional[
             Mapping[str, Union[Callable[[], str], Callable[[], Awaitable[str]], str]]
         ] = None,
-        protocol: Protocol = Protocol.MCP,
+        protocol: Protocol | Sequence[Protocol] = Protocol.MCP,
         telemetry_enabled: bool = False,
     ):
         """

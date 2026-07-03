@@ -58,11 +58,28 @@ The core package provides a framework-agnostic way to interact with your Toolbox
 - [Loading Tools](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/core/#loading-tools)
 - [Invoking Tools](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/core/#invoking-tools)
 - [Synchronous Usage](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/core/#synchronous-usage)
+- [Protocol Negotiation](#protocol-negotiation)
 - [Use With Langraph](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/core/#use-with-langgraph)
+
 - [Client to Server Authentication](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/core/#client-to-server-authentication)
 - [Authenticating Tools](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/core/#authenticating-tools)
 - [Binding Parameter Values](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/core/#parameter-binding)
 - [OpenTelemetry](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/core/#opentelemetry)
+
+## Protocol Negotiation
+
+By default, the client negotiates the newest protocol version supported by the server. You can provide a custom list of supported protocols to restrict negotiation to specific versions or a single version. Ensure you pass the [`Protocol`](src/toolbox_core/protocol.py) enum constants. Both `Protocol.MCP_LATEST` and `Protocol.MCP_DRAFT` are supported as well.
+
+```py
+from toolbox_core import ToolboxClient, Protocol
+
+async def main():
+    async with ToolboxClient(
+        "http://127.0.0.1:5000", 
+        protocol=[Protocol.MCP_LATEST, Protocol.MCP_DRAFT]
+    ) as toolbox:
+        pass
+```
 
 
 # Contributing

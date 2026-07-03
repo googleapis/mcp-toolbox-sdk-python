@@ -21,6 +21,7 @@ from unittest.mock import AsyncMock, Mock, patch
 import pytest
 from aiohttp import web
 
+from tests.constants import TOOLBOX_SERVER_URL_STABLE
 from toolbox_core.client import ToolboxClient
 from toolbox_core.itransport import ITransport
 from toolbox_core.protocol import (
@@ -814,7 +815,7 @@ def test_toolbox_client_no_warning_on_mcp():
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
 
-            client = ToolboxClient("http://localhost:5000", protocol=Protocol.MCP)
+            client = ToolboxClient(TOOLBOX_SERVER_URL_STABLE, protocol=Protocol.MCP)
             assert len(w) == 0
 
 
@@ -825,6 +826,32 @@ def test_toolbox_client_no_warning_on_explicit_mcp_version():
             warnings.simplefilter("always")
 
             client = ToolboxClient(
-                "http://localhost:5000", protocol=Protocol.MCP_v20251125
+                TOOLBOX_SERVER_URL_STABLE, protocol=Protocol.MCP_v20251125
             )
             assert len(w) == 0
+
+
+def test_toolbox_client_custom_protocols():
+    """Test that custom protocols array is correctly parsed and sorted."""
+    with patch("toolbox_core.client._McpTransportProxy") as mock_proxy:
+        client = ToolboxClient(
+            TOOLBOX_SERVER_URL_STABLE,
+            protocol=[Protocol.MCP_v20241105, Protocol.MCP_DRAFT, "2025-06-18"],
+        )
+        mock_proxy.assert_called_once()
+        args, kwargs = mock_proxy.call_args
+
+        # Check initial_protocol
+        assert args[2] == Protocol.MCP_DRAFT
+        # Check supported_protocols (must be sorted from newest to oldest)
+        assert args[6] == ["DRAFT-2026-v1", "2025-06-18", "2024-11-05"]
+
+
+def test_toolbox_client_custom_protocols_invalid():
+    """Test that custom protocols array raises error on invalid inputs."""
+
+    with pytest.raises(ValueError, match="protocol list cannot be empty"):
+        ToolboxClient(TOOLBOX_SERVER_URL_STABLE, protocol=[])
+
+    with pytest.raises(ValueError, match="Invalid protocol version 'invalid-version'"):
+        ToolboxClient(TOOLBOX_SERVER_URL_STABLE, protocol=["invalid-version"])

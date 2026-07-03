@@ -16,6 +16,7 @@ from asyncio import to_thread
 from typing import Any, Awaitable, Callable, Mapping, Optional, Union
 from warnings import warn
 
+from typing import Any, Sequence
 from toolbox_core.protocol import Protocol
 from toolbox_core.sync_client import ToolboxSyncClient as ToolboxCoreSyncClient
 from toolbox_core.sync_tool import ToolboxSyncTool
@@ -32,7 +33,7 @@ class ToolboxClient:
         client_headers: Optional[
             Mapping[str, Union[Callable[[], str], Callable[[], Awaitable[str]], str]]
         ] = None,
-        protocol: Protocol = Protocol.MCP,
+        protocol: Protocol | Sequence[Protocol] = Protocol.MCP,
         telemetry_enabled: bool = False,
     ) -> None:
         """

@@ -88,7 +88,10 @@ class McpHttpTransportV20260618(_McpHttpTransportBase):
                                 "supported", []
                             )
 
-                            client_supported = Protocol.get_supported_mcp_versions()
+                            client_supported = (
+                                self._supported_protocols
+                                or Protocol.get_supported_mcp_versions()
+                            )
                             mutually_supported = [
                                 v for v in client_supported if v in server_supported
                             ]
@@ -105,10 +108,24 @@ class McpHttpTransportV20260618(_McpHttpTransportBase):
                             isinstance(err_val, str)
                             and "invalid protocol version" in err_val.lower()
                         ):
-                            # Legacy 2025-06-18 servers don't use the -32004 code or provide
-                            # a supported versions list. They return this raw string error
-                            # instead. We safely assume 2025-06-18 here.
-                            raise ProtocolNegotiationError(Protocol.MCP_v20250618)
+                            # Cascading Fallback: Legacy servers throw this string error.
+                            # We pick the next version from the user's supported list.
+                            client_supported = (
+                                self._supported_protocols
+                                or Protocol.get_supported_mcp_versions()
+                            )
+                            try:
+                                current_idx = client_supported.index(self._protocol_version)
+                                if current_idx + 1 < len(client_supported):
+                                    raise ProtocolNegotiationError(client_supported[current_idx + 1])
+                                else:
+                                    raise RuntimeError(
+                                        "Server threw 'invalid protocol version' but no fallback versions "
+                                        "remain in the user's supported protocols array."
+                                    )
+                            except ValueError:
+                                # Current version not in list somehow, just fallback to highest stateful
+                                raise ProtocolNegotiationError(Protocol.MCP_v20251125)
                 except Exception as e:
                     if isinstance(e, (RuntimeError, ProtocolNegotiationError)):
                         raise e
@@ -131,7 +148,10 @@ class McpHttpTransportV20260618(_McpHttpTransportBase):
                 err_val = json_resp["error"]
                 if isinstance(err_val, dict) and err_val.get("code") == -32004:
                     server_supported = err_val.get("data", {}).get("supported", [])
-                    client_supported = Protocol.get_supported_mcp_versions()
+                    client_supported = (
+                        self._supported_protocols
+                        or Protocol.get_supported_mcp_versions()
+                    )
                     mutually_supported = [
                         v for v in client_supported if v in server_supported
                     ]

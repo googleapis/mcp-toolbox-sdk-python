@@ -75,7 +75,7 @@ class McpHttpTransportV20251125(_McpHttpTransportBase):
                 err_val = json_resp["error"]
                 if isinstance(err_val, dict) and err_val.get("code") == -32004:
                     server_supported = err_val.get("data", {}).get("supported", [])
-                    client_supported = Protocol.get_supported_mcp_versions()
+                    client_supported = self._supported_protocols
                     mutually_supported = [
                         v for v in client_supported if v in server_supported
                     ]

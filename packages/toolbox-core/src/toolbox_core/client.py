@@ -53,12 +53,14 @@ class _McpTransportProxy(ITransport):
         client_name: Optional[str],
         client_version: Optional[str],
         telemetry_enabled: bool,
+        supported_protocols: Optional[list[str]] = None,
     ):
         self._url = url
         self._session = session
         self._client_name = client_name
         self._client_version = client_version
         self._telemetry_enabled = telemetry_enabled
+        self._supported_protocols = supported_protocols
         self._active_transport = self._create_transport(protocol)
 
     def _create_transport(self, protocol: Protocol) -> ITransport:
@@ -71,6 +73,7 @@ class _McpTransportProxy(ITransport):
                     self._client_name,
                     self._client_version,
                     telemetry_enabled=self._telemetry_enabled,
+                    supported_protocols=self._supported_protocols,
                 )
             case Protocol.MCP_v20251125:
                 return McpHttpTransportV20251125(
@@ -80,6 +83,7 @@ class _McpTransportProxy(ITransport):
                     self._client_name,
                     self._client_version,
                     telemetry_enabled=self._telemetry_enabled,
+                    supported_protocols=self._supported_protocols,
                 )
             case Protocol.MCP_v20250618:
                 return McpHttpTransportV20250618(
@@ -89,6 +93,7 @@ class _McpTransportProxy(ITransport):
                     self._client_name,
                     self._client_version,
                     telemetry_enabled=self._telemetry_enabled,
+                    supported_protocols=self._supported_protocols,
                 )
             case Protocol.MCP_v20250326:
                 return McpHttpTransportV20250326(
@@ -98,6 +103,7 @@ class _McpTransportProxy(ITransport):
                     self._client_name,
                     self._client_version,
                     telemetry_enabled=self._telemetry_enabled,
+                    supported_protocols=self._supported_protocols,
                 )
             case Protocol.MCP_v20241105:
                 return McpHttpTransportV20241105(
@@ -107,6 +113,7 @@ class _McpTransportProxy(ITransport):
                     self._client_name,
                     self._client_version,
                     telemetry_enabled=self._telemetry_enabled,
+                    supported_protocols=self._supported_protocols,
                 )
             case _:
                 raise ValueError(f"Unsupported MCP protocol version: {protocol}")
@@ -126,7 +133,33 @@ class _McpTransportProxy(ITransport):
         try:
             return await getattr(self._active_transport, method_name)(*args, **kwargs)
         except ProtocolNegotiationError as e:
-            fallback_protocol = Protocol(e.negotiated_version)
+            server_version = e.negotiated_version
+            all_versions = Protocol.get_supported_mcp_versions()
+
+            try:
+                server_idx = all_versions.index(server_version)
+            except ValueError:
+                raise RuntimeError(
+                    f"Server returned unknown protocol version: {server_version}"
+                )
+
+            # Artificial Array: Server supports this version and all older ones
+            server_supported = all_versions[server_idx:]
+
+            if self._supported_protocols:
+                client_supported = self._supported_protocols
+                mutually_supported = [v for v in client_supported if v in server_supported]
+                if mutually_supported:
+                    fallback_protocol = Protocol(mutually_supported[0])
+                else:
+                    raise RuntimeError(
+                        "No mutually supported protocol version. "
+                        f"Client supports: {client_supported}, "
+                        f"Server supports (and older): {server_version}"
+                    )
+            else:
+                fallback_protocol = Protocol(server_version)
+
             logging.warning(
                 f"Protocol fallback required. Switching from "
                 f"{self._protocol_version} to {fallback_protocol.value}"
@@ -166,7 +199,7 @@ class ToolboxClient:
         client_headers: Optional[
             Mapping[str, Union[Callable[[], str], Callable[[], Awaitable[str]], str]]
         ] = None,
-        protocol: Protocol = Protocol.MCP,
+        protocol: Union[Protocol, list[Protocol], list[str]] = Protocol.MCP,
         client_name: Optional[str] = None,
         client_version: Optional[str] = None,
         telemetry_enabled: bool = False,
@@ -188,13 +221,38 @@ class ToolboxClient:
             telemetry_enabled: Whether to enable OpenTelemetry tracing and metrics. (Default: False)
         """
 
+        if isinstance(protocol, list):
+            if not protocol:
+                raise ValueError("protocol list cannot be empty")
+            user_protocols = [
+                p.value if isinstance(p, Protocol) else str(p) for p in protocol
+            ]
+
+            supported_mcp_versions = Protocol.get_supported_mcp_versions()
+            for p in user_protocols:
+                if p not in supported_mcp_versions:
+                    raise ValueError(
+                        f"Invalid protocol version '{p}'. Must be one of: {supported_mcp_versions}"
+                    )
+
+            user_protocols_set = set(user_protocols)
+            # Intersect with the globally sorted list to strictly enforce newest-to-oldest ordering
+            supported_protocols = [
+                v for v in supported_mcp_versions if v in user_protocols_set
+            ]
+            initial_protocol = Protocol(supported_protocols[0])
+        else:
+            supported_protocols = None
+            initial_protocol = protocol
+
         self.__transport = _McpTransportProxy(
             url,
             session,
-            protocol,
+            initial_protocol,
             client_name,
             client_version,
             telemetry_enabled,
+            supported_protocols,
         )
 
         self.__client_headers = client_headers if client_headers is not None else {}
