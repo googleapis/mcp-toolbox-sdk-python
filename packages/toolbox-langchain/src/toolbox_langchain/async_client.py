@@ -12,12 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, Awaitable, Callable, Mapping, Optional, Union
+from typing import Any, Awaitable, Callable, Mapping, Optional, Sequence, Union
 from warnings import warn
 
 from aiohttp import ClientSession
 from toolbox_core.client import ToolboxClient as ToolboxCoreClient
-from typing import Any, Sequence
 from toolbox_core.protocol import Protocol
 
 from .async_tools import AsyncToolboxTool

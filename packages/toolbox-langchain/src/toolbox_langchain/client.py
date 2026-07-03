@@ -13,10 +13,9 @@
 # limitations under the License.
 
 from asyncio import to_thread
-from typing import Any, Awaitable, Callable, Mapping, Optional, Union
+from typing import Any, Awaitable, Callable, Mapping, Optional, Sequence, Union
 from warnings import warn
 
-from typing import Any, Sequence
 from toolbox_core.protocol import Protocol
 from toolbox_core.sync_client import ToolboxSyncClient as ToolboxCoreSyncClient
 

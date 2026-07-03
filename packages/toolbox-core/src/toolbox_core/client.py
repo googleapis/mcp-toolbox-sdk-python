@@ -148,7 +148,9 @@ class _McpTransportProxy(ITransport):
 
             if self._supported_protocols:
                 client_supported = self._supported_protocols
-                mutually_supported = [v for v in client_supported if v in server_supported]
+                mutually_supported = [
+                    v for v in client_supported if v in server_supported
+                ]
                 if mutually_supported:
                     fallback_protocol = Protocol(mutually_supported[0])
                 else:

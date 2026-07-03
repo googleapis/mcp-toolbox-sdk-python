@@ -115,9 +115,13 @@ class McpHttpTransportV20260618(_McpHttpTransportBase):
                                 or Protocol.get_supported_mcp_versions()
                             )
                             try:
-                                current_idx = client_supported.index(self._protocol_version)
+                                current_idx = client_supported.index(
+                                    self._protocol_version
+                                )
                                 if current_idx + 1 < len(client_supported):
-                                    raise ProtocolNegotiationError(client_supported[current_idx + 1])
+                                    raise ProtocolNegotiationError(
+                                        client_supported[current_idx + 1]
+                                    )
                                 else:
                                     raise RuntimeError(
                                         "Server threw 'invalid protocol version' but no fallback versions "

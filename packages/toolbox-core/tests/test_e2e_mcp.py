@@ -514,13 +514,13 @@ async def test_mcp_latest_protocol(toolbox_server_url: str):
 async def test_mcp_custom_protocols_list(toolbox_server_url: str):
     """Verify that passing a list of protocols with MCP_LATEST and MCP_DRAFT works successfully."""
     async with ToolboxClient(
-        toolbox_server_url, 
+        toolbox_server_url,
         protocol=[
-            Protocol.MCP_v20241105, 
-            Protocol.MCP_v20250326, 
-            Protocol.MCP_LATEST, 
-            Protocol.MCP_DRAFT
-        ]
+            Protocol.MCP_v20241105,
+            Protocol.MCP_v20250326,
+            Protocol.MCP_LATEST,
+            Protocol.MCP_DRAFT,
+        ],
     ) as client:
         tool = await client.load_tool("get-n-rows")
         response = await tool(num_rows="1")
