@@ -215,7 +215,9 @@ class ToolboxClient:
                 should typically be managed externally.
             client_headers: Headers to include in each request sent through this
             client.
-            protocol: The communication protocol to use.
+            protocol: The communication protocol to use. Can be a single version or a list of versions.
+                If a single version is provided (e.g. Protocol.MCP_LATEST), the client falls back through all older versions during negotiation.
+                If a list of versions is provided (e.g. [Protocol.MCP_LATEST, "2025-11-25"]), negotiation is restricted to those versions, and the newest version in the list is negotiated for first.
             client_name: Optional client name for identification.
             client_version: Optional client version for identification.
             telemetry_enabled: Whether to enable OpenTelemetry tracing and metrics. (Default: False)

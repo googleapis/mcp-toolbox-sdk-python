@@ -58,13 +58,12 @@ The core package provides a framework-agnostic way to interact with your Toolbox
 - [Loading Tools](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/core/#loading-tools)
 - [Invoking Tools](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/core/#invoking-tools)
 - [Synchronous Usage](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/core/#synchronous-usage)
-- [Protocol Negotiation](#protocol-negotiation)
 - [Use With Langraph](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/core/#use-with-langgraph)
-
 - [Client to Server Authentication](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/core/#client-to-server-authentication)
 - [Authenticating Tools](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/core/#authenticating-tools)
 - [Binding Parameter Values](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/core/#parameter-binding)
 - [OpenTelemetry](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/core/#opentelemetry)
+- [Protocol Negotiation](#protocol-negotiation)
 
 ## Protocol Negotiation
 
