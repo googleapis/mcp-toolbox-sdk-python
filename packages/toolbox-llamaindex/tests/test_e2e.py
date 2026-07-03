@@ -39,6 +39,7 @@ import pytest_asyncio
 from pydantic import ValidationError
 
 from toolbox_llamaindex.client import ToolboxClient
+from .conftest import TOOLBOX_SERVER_URL_STABLE
 
 
 @pytest.mark.asyncio
@@ -47,7 +48,7 @@ class TestE2EClientAsync:
     @pytest.fixture(scope="function")
     def toolbox(self):
         """Provides a ToolboxClient instance for each test."""
-        toolbox = ToolboxClient("http://localhost:5000")
+        toolbox = ToolboxClient(TOOLBOX_SERVER_URL_STABLE)
         return toolbox
 
     @pytest_asyncio.fixture(scope="function")
@@ -194,7 +195,7 @@ class TestE2EClientSync:
     @pytest.fixture(scope="session")
     def toolbox(self):
         """Provides a ToolboxClient instance for each test."""
-        toolbox = ToolboxClient("http://localhost:5000")
+        toolbox = ToolboxClient(TOOLBOX_SERVER_URL_STABLE)
         return toolbox
 
     @pytest.fixture(scope="function")
