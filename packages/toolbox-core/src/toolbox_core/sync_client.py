@@ -53,7 +53,10 @@ class ToolboxSyncClient:
         Args:
             url: The base URL for the Toolbox service API (e.g., "http://localhost:5000").
             client_headers: Headers to include in each request sent through this client.
-            protocol: The communication protocol to use.
+            protocol: The communication protocol to use. Can be a single version or a list of versions.
+                If no version is given, the latest version is tried for.
+                If a single version is given, then that version is tried for, followed by newest mutually supported version.
+                If a list of versions is provided (e.g. [Protocol.MCP_LATEST, "2025-11-25"]), negotiation is restricted to those versions, and the newest mutually supported version in that range is tried for.
             client_name: Optional client name for identification.
             client_version: Optional client version for identification.
             telemetry_enabled: Whether to enable OpenTelemetry tracing and metrics. (Default: False)

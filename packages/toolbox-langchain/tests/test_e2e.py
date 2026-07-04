@@ -97,6 +97,16 @@ class TestE2EClientAsync:
             name = tool._ToolboxTool__core_tool.__name__
             assert name in tool_names
 
+    async def test_aload_toolset_explicit_protocol(self):
+        from toolbox_core.protocol import Protocol
+
+        toolbox = ToolboxClient(
+            TOOLBOX_SERVER_URL_STABLE, protocol=Protocol.MCP_v20251125
+        )
+        toolset = await toolbox.aload_toolset()
+        assert len(toolset) == 7
+        toolbox.close()
+
     async def test_run_tool_async(self, get_n_rows_tool):
         response = await get_n_rows_tool.ainvoke({"num_rows": "2"})
 
@@ -243,6 +253,16 @@ class TestE2EClientSync:
         for tool in toolset:
             name = tool._ToolboxTool__core_tool.__name__
             assert name in tool_names
+
+    def test_load_toolset_explicit_protocol(self):
+        from toolbox_core.protocol import Protocol
+
+        toolbox = ToolboxClient(
+            TOOLBOX_SERVER_URL_STABLE, protocol=Protocol.MCP_v20251125
+        )
+        toolset = toolbox.load_toolset()
+        assert len(toolset) == 7
+        toolbox.close()
 
     @pytest.mark.asyncio
     async def test_run_tool_async(self, get_n_rows_tool):
