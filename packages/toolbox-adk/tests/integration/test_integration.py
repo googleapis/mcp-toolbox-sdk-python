@@ -32,8 +32,7 @@ from pydantic import ValidationError
 from toolbox_core.protocol import Protocol
 
 from toolbox_adk import CredentialStrategy, ToolboxTool, ToolboxToolset
-
-TOOLBOX_SERVER_URL = "http://localhost:5000"
+from tests.constants import TOOLBOX_SERVER_URL_STABLE
 
 pytestmark = pytest.mark.usefixtures("patch_toolbox_client_url")
 
@@ -56,7 +55,7 @@ class TestToolboxAdkIntegration:
         # Auth: TOOLBOX_IDENTITY for simplicity in this local test as we don't have ADK identity setup.
 
         toolset = ToolboxToolset(
-            server_url=TOOLBOX_SERVER_URL,
+            server_url=TOOLBOX_SERVER_URL_STABLE,
             toolset_name="my-toolset",
             credentials=CredentialStrategy.toolbox_identity(),
         )
@@ -90,7 +89,7 @@ class TestToolboxAdkIntegration:
     async def test_load_toolset_with_default_protocol(self):
         """Test initializing toolset with default protocol (MCP)."""
         toolset = ToolboxToolset(
-            server_url=TOOLBOX_SERVER_URL,
+            server_url=TOOLBOX_SERVER_URL_STABLE,
             toolset_name="my-toolset",
             credentials=CredentialStrategy.toolbox_identity(),
         )

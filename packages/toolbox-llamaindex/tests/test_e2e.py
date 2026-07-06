@@ -206,7 +206,7 @@ class TestE2EClientSync:
     @pytest.fixture(scope="session")
     def toolbox(self):
         """Provides a ToolboxClient instance for each test."""
-        toolbox = ToolboxClient(TOOLBOX_SERVER_URL)
+        toolbox = ToolboxClient(TOOLBOX_SERVER_URL_STABLE)
         return toolbox
 
     @pytest.fixture(scope="function")
