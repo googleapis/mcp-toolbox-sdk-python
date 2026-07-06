@@ -100,9 +100,7 @@ class TestE2EClientAsync:
     async def test_aload_toolset_explicit_protocol(self):
         from toolbox_core.protocol import Protocol
 
-        toolbox = ToolboxClient(
-            TOOLBOX_SERVER_URL_STABLE, protocol=Protocol.MCP_v20251125
-        )
+        toolbox = ToolboxClient(TOOLBOX_SERVER_URL, protocol=Protocol.MCP_v20251125)
         toolset = await toolbox.aload_toolset()
         assert len(toolset) == 7
         toolbox.close()
@@ -257,9 +255,7 @@ class TestE2EClientSync:
     def test_load_toolset_explicit_protocol(self):
         from toolbox_core.protocol import Protocol
 
-        toolbox = ToolboxClient(
-            TOOLBOX_SERVER_URL_STABLE, protocol=Protocol.MCP_v20251125
-        )
+        toolbox = ToolboxClient(TOOLBOX_SERVER_URL, protocol=Protocol.MCP_v20251125)
         toolset = toolbox.load_toolset()
         assert len(toolset) == 7
         toolbox.close()

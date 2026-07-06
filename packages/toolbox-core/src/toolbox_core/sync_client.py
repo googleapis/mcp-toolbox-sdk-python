@@ -42,7 +42,7 @@ class ToolboxSyncClient:
         client_headers: Optional[
             Mapping[str, Union[Callable[[], str], Callable[[], Awaitable[str]], str]]
         ] = None,
-        protocol: Protocol = Protocol.MCP,
+        protocol: Union[Protocol, list[Protocol], list[str]] = Protocol.MCP,
         client_name: Optional[str] = None,
         client_version: Optional[str] = None,
         telemetry_enabled: bool = False,

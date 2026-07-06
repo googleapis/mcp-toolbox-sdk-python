@@ -35,7 +35,7 @@ class AsyncToolboxClient:
         client_headers: Optional[
             Mapping[str, Union[Callable[[], str], Callable[[], Awaitable[str]], str]]
         ] = None,
-        protocol: Protocol | Sequence[Protocol] = Protocol.MCP,
+        protocol: Union[Protocol, list[Protocol], list[str]] = Protocol.MCP,
         telemetry_enabled: bool = False,
     ):
         """
