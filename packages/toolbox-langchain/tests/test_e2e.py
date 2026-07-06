@@ -37,14 +37,10 @@ This file covers the following use cases:
 import pytest
 import pytest_asyncio
 from pydantic import ValidationError
+from toolbox_core.protocol import Protocol
 
+from tests.constants import TOOLBOX_SERVER_URL_STABLE
 from toolbox_langchain.client import ToolboxClient
-
-pytestmark = pytest.mark.usefixtures("patch_toolbox_client_url")
-
-TOOLBOX_SERVER_URL = "http://localhost:5000"
-
-pytestmark = pytest.mark.usefixtures("patch_toolbox_client_url")
 
 pytestmark = pytest.mark.usefixtures("patch_toolbox_client_url")
 
@@ -55,7 +51,7 @@ class TestE2EClientAsync:
     @pytest.fixture(scope="function")
     def toolbox(self):
         """Provides a ToolboxClient instance for each test."""
-        toolbox = ToolboxClient(TOOLBOX_SERVER_URL)
+        toolbox = ToolboxClient(TOOLBOX_SERVER_URL_STABLE)
         return toolbox
 
     @pytest_asyncio.fixture(scope="function")
@@ -98,9 +94,9 @@ class TestE2EClientAsync:
             assert name in tool_names
 
     async def test_aload_toolset_explicit_protocol(self):
-        from toolbox_core.protocol import Protocol
-
-        toolbox = ToolboxClient(TOOLBOX_SERVER_URL, protocol=Protocol.MCP_v20251125)
+        toolbox = ToolboxClient(
+            TOOLBOX_SERVER_URL_STABLE, protocol=Protocol.MCP_v20251125
+        )
         toolset = await toolbox.aload_toolset()
         assert len(toolset) == 7
         toolbox.close()
@@ -253,9 +249,9 @@ class TestE2EClientSync:
             assert name in tool_names
 
     def test_load_toolset_explicit_protocol(self):
-        from toolbox_core.protocol import Protocol
-
-        toolbox = ToolboxClient(TOOLBOX_SERVER_URL, protocol=Protocol.MCP_v20251125)
+        toolbox = ToolboxClient(
+            TOOLBOX_SERVER_URL_STABLE, protocol=Protocol.MCP_v20251125
+        )
         toolset = toolbox.load_toolset()
         assert len(toolset) == 7
         toolbox.close()
