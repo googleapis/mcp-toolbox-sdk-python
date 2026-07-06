@@ -31,8 +31,8 @@ from google.genai import types
 from pydantic import ValidationError
 from toolbox_core.protocol import Protocol
 
-from toolbox_adk import CredentialStrategy, ToolboxTool, ToolboxToolset
 from tests.constants import TOOLBOX_SERVER_URL_STABLE
+from toolbox_adk import CredentialStrategy, ToolboxTool, ToolboxToolset
 
 pytestmark = pytest.mark.usefixtures("patch_toolbox_client_url")
 
