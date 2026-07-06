@@ -40,6 +40,8 @@ from pydantic import ValidationError
 
 from toolbox_langchain.client import ToolboxClient
 
+pytestmark = pytest.mark.usefixtures("patch_toolbox_client_url")
+
 TOOLBOX_SERVER_URL = "http://localhost:5000"
 
 

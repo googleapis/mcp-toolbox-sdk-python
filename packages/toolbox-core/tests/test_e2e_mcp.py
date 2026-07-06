@@ -23,6 +23,8 @@ from toolbox_core.client import ToolboxClient
 from toolbox_core.protocol import Protocol
 from toolbox_core.tool import ToolboxTool
 
+pytestmark = pytest.mark.usefixtures("patch_toolbox_client_url")
+
 
 # TODO: Include draft versions in E2E integration tests once the server
 # supports SEP-2575 (stateless MCP / Request-Metadata).
