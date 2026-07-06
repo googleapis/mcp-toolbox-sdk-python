@@ -26,11 +26,11 @@ from typing import Generator
 
 import google
 import pytest
+from google.auth import compute_engine
+from google.cloud import secretmanager, storage
 
 TOOLBOX_SERVER_URL_STABLE = "http://localhost:5000"
 TOOLBOX_SERVER_URL_DRAFT = "http://localhost:5001"
-from google.auth import compute_engine
-from google.cloud import secretmanager, storage
 
 
 #### Define Utility Functions
