@@ -78,8 +78,7 @@ def get_toolbox_binary_url(toolbox_version: str) -> str:
     arch = (
         "arm64" if os_system == "darwin" and platform.machine() == "arm64" else "amd64"
     )
-    ext = ".exe" if os_system == "windows" else ""
-    return f"v{toolbox_version}/{os_system}/{arch}/toolbox{ext}"
+    return f"v{toolbox_version}/{os_system}/{arch}/toolbox"
 
 
 def get_auth_token(client_id: str) -> str:
