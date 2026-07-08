@@ -81,6 +81,21 @@ class McpHttpTransportV20250326(_McpHttpTransportBase):
 
             # Check for JSON-RPC Error
             if "error" in json_resp:
+                err_val = json_resp["error"]
+                if isinstance(err_val, dict) and err_val.get("code") == -32022:
+                    server_supported = err_val.get("data", {}).get("supported", [])
+                    client_supported = self._supported_protocols
+                    mutually_supported = [
+                        v for v in client_supported if v in server_supported
+                    ]
+                    if mutually_supported:
+                        raise ProtocolNegotiationError(mutually_supported[0])
+                    else:
+                        raise RuntimeError(
+                            "No mutually supported protocol version. "
+                            f"Client supports: {client_supported}, "
+                            f"Server supports: {server_supported}"
+                        )
                 try:
                     err = types.JSONRPCError.model_validate(json_resp).error
                     raise RuntimeError(

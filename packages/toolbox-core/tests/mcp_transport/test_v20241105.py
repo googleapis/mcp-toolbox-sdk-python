@@ -159,6 +159,77 @@ class TestMcpHttpTransportV20241105:
         with pytest.raises(RuntimeError, match="MCP request failed"):
             await transport._send_request("url", TestRequest())
 
+    async def test_version_negotiation_raises_fallback_200_ok(self, transport):
+        """Tests that the client raises ProtocolNegotiationError when the server returns 200 OK with -32022."""
+        from toolbox_core.exceptions import ProtocolNegotiationError
+
+        mock_response_reject = AsyncMock()
+        mock_response_reject.ok = True
+        mock_response_reject.status = 200
+        mock_response_reject.content.at_eof = MagicMock(return_value=False)
+        mock_response_reject.json.return_value = {
+            "jsonrpc": "2.0",
+            "id": "1",
+            "error": {
+                "code": -32022,
+                "message": "Unsupported protocol version",
+                "data": {"supported": ["DRAFT-2026-v1"]},
+            },
+        }
+
+        transport._session.post.return_value.__aenter__.return_value = (
+            mock_response_reject
+        )
+
+        class TestResult(types.BaseModel):
+            pass
+
+        class TestRequest(types.MCPRequest[TestResult]):
+            method: str = "method"
+            params: dict = {}
+
+            def get_result_model(self):
+                return TestResult
+
+        with pytest.raises(ProtocolNegotiationError) as exc_info:
+            await transport._send_request("url", TestRequest())
+
+        assert exc_info.value.negotiated_version == "DRAFT-2026-v1"
+        assert transport._session.post.call_count == 1
+
+    async def test_version_negotiation_empty_intersection(self, transport):
+        """Tests that the client errors immediately without retrying when there is no mutual version."""
+        mock_response_reject = AsyncMock()
+        mock_response_reject.ok = True
+        mock_response_reject.status = 200
+        mock_response_reject.content.at_eof = MagicMock(return_value=False)
+        mock_response_reject.json.return_value = {
+            "jsonrpc": "2.0",
+            "id": "1",
+            "error": {
+                "code": -32022,
+                "message": "Unsupported protocol version",
+                "data": {"supported": ["UNSUPPORTED-VERSION"]},
+            },
+        }
+
+        transport._session.post.return_value.__aenter__.return_value = (
+            mock_response_reject
+        )
+
+        class TestResult(types.BaseModel):
+            pass
+
+        class TestRequest(types.MCPRequest[TestResult]):
+            method: str = "method"
+            params: dict = {}
+
+            def get_result_model(self):
+                return TestResult
+
+        with pytest.raises(RuntimeError, match="No mutually supported protocol version"):
+            await transport._send_request("url", TestRequest())
+
     async def test_send_notification(self, transport):
         mock_response = AsyncMock()
         mock_response.ok = True
