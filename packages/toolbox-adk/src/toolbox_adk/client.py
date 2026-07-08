@@ -16,11 +16,10 @@ from contextvars import ContextVar
 from typing import Any, Awaitable, Callable, Dict, Optional, Union
 
 import google.auth
+import toolbox_core
 from google.auth import compute_engine, transport
 from google.auth.transport import requests
 from google.oauth2 import id_token
-
-import toolbox_core
 
 from .credentials import CredentialConfig, CredentialType
 

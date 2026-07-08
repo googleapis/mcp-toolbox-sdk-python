@@ -17,7 +17,6 @@ from typing import Any, Callable, Union
 
 from deprecated import deprecated
 from langchain_core.tools import BaseTool
-
 from toolbox_core.sync_tool import ToolboxSyncTool as ToolboxCoreSyncTool
 from toolbox_core.utils import params_to_pydantic_model
 

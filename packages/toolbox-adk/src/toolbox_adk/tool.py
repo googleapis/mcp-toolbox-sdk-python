@@ -16,6 +16,7 @@ import inspect
 import logging
 from typing import Any, Awaitable, Callable, Dict, Mapping, Optional
 
+import toolbox_core
 from fastapi.openapi.models import OAuth2, OAuthFlowAuthorizationCode, OAuthFlows
 from google.adk.auth.auth_credential import (
     AuthCredential,
@@ -26,11 +27,9 @@ from google.adk.auth.auth_tool import AuthConfig
 from google.adk.tools.base_tool import BaseTool
 from google.adk.tools.tool_context import ToolContext
 from google.genai.types import FunctionDeclaration, Schema, Type
-from typing_extensions import override
-
-import toolbox_core
 from toolbox_core.protocol import AdditionalPropertiesSchema, ParameterSchema
 from toolbox_core.tool import ToolboxTool as CoreToolboxTool
+from typing_extensions import override
 
 from .client import USER_TOKEN_CONTEXT_VAR
 from .credentials import CredentialConfig, CredentialType
