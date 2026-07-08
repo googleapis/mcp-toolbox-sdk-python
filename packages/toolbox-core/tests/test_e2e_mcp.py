@@ -196,7 +196,7 @@ class TestAuth:
         auth_tool = tool.add_auth_token_getters({"my-test-auth": lambda: auth_token2})
         with pytest.raises(
             Exception,
-            match=r"401 \(Unauthorized\)",
+            match=r"(401 \(Unauthorized\)|MCP request failed with code -32600)",
         ):
             await auth_tool(id="2")
 

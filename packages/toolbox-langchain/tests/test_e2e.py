@@ -158,7 +158,7 @@ class TestE2EClientAsync:
         auth_tool = tool.add_auth_token_getter("my-test-auth", lambda: auth_token2)
         with pytest.raises(
             Exception,
-            match=r"401 \(Unauthorized\)",
+            match=r"(401 \(Unauthorized\)|MCP request failed with code -32600)",
         ):
             await auth_tool.ainvoke({"id": "2"})
 
@@ -316,7 +316,7 @@ class TestE2EClientSync:
         auth_tool = tool.add_auth_token_getter("my-test-auth", lambda: auth_token2)
         with pytest.raises(
             Exception,
-            match=r"401 \(Unauthorized\)",
+            match=r"(401 \(Unauthorized\)|MCP request failed with code -32600)",
         ):
             auth_tool.invoke({"id": "2"})
 

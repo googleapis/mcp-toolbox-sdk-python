@@ -639,7 +639,7 @@ class TestAuth:
 
             with pytest.raises(
                 Exception,
-                match=r"401 \(Unauthorized\)",
+                match=r"(401 \(Unauthorized\)|MCP request failed with code -32600)",
             ):
                 await tool.run_async({"id": "2"}, ctx)
         finally:
