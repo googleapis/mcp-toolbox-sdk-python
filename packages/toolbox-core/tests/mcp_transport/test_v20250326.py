@@ -505,57 +505,52 @@ class TestMcpHttpTransportV20250326:
         assert result == '{"a": 1}'
 
 
-@pytest.mark.asyncio
-async def test_send_request_400_with_json_rpc_error(
-    mcp_transport,
-):
-    request = types.MCPRequest(method="some/method", params={"key": "val"})
-    mock_response = AsyncMock()
-    mock_response.ok = False
-    mock_response.status = 400
-    mock_response.json.return_value = {
-        "jsonrpc": "2.0",
-        "id": "test-id",
-        "error": {"code": -32602, "message": "Missing _meta"},
-    }
-    mcp_transport._session.post.return_value.__aenter__.return_value = mock_response
+    async def test_send_request_400_with_json_rpc_error(self, transport):
+        request = types.MCPRequest(method="some/method", params={"key": "val"})
+        mock_response = AsyncMock()
+        mock_response.ok = False
+        mock_response.status = 400
+        mock_response.json.return_value = {
+            "jsonrpc": "2.0",
+            "id": "test-id",
+            "error": {"code": -32602, "message": "Missing _meta"},
+        }
+        transport._session.post.return_value.__aenter__.return_value = mock_response
 
-    with pytest.raises(
-        RuntimeError, match="MCP request failed with code -32602: Missing _meta"
-    ):
-        await mcp_transport._send_request(request, "http://test.local/messages")
+        with pytest.raises(
+            RuntimeError, match="MCP request failed with code -32602: Missing _meta"
+        ):
+            await transport._send_request("http://test.local/messages", request)
 
 
-@pytest.mark.asyncio
-async def test_send_request_400_with_raw_text(mcp_transport):
-    request = types.MCPRequest(method="some/method", params={"key": "val"})
-    mock_response = AsyncMock()
-    mock_response.ok = False
-    mock_response.status = 400
-    mock_response.json.side_effect = Exception("Not JSON")
-    mock_response.text.return_value = "<html>Bad Request</html>"
-    mcp_transport._session.post.return_value.__aenter__.return_value = mock_response
+    async def test_send_request_400_with_raw_text(self, transport):
+        request = types.MCPRequest(method="some/method", params={"key": "val"})
+        mock_response = AsyncMock()
+        mock_response.ok = False
+        mock_response.status = 400
+        mock_response.json.side_effect = Exception("Not JSON")
+        mock_response.text.return_value = "<html>Bad Request</html>"
+        transport._session.post.return_value.__aenter__.return_value = mock_response
 
-    with pytest.raises(RuntimeError, match="API request failed with status 400"):
-        await mcp_transport._send_request(request, "http://test.local/messages")
+        with pytest.raises(RuntimeError, match="API request failed with status 400"):
+            await transport._send_request("http://test.local/messages", request)
 
 
-@pytest.mark.asyncio
-async def test_version_negotiation_legacy_string_fallback(
-    mcp_transport,
-):
-    from aioresponses import aioresponses
+    async def test_version_negotiation_legacy_string_fallback(self, transport):
+        from toolbox_core.exceptions import ProtocolNegotiationError
 
-    request = types.MCPRequest(method="some/method", params={})
-    with aioresponses() as m:
-        m.post(
-            "http://test.local/messages",
-            status=400,
-            payload={
-                "jsonrpc": "2.0",
-                "id": "test-id",
-                "error": "invalid protocol version",
-            },
-        )
+        request = types.MCPRequest(method="some/method", params={})
+        mock_response_reject = AsyncMock()
+        mock_response_reject.ok = False
+        mock_response_reject.status = 400
+        mock_response_reject.json.return_value = {
+            "jsonrpc": "2.0",
+            "id": "test-id",
+            "error": "invalid protocol version",
+        }
+
+        mock_post = transport._session.post.return_value
+        mock_post.__aenter__.return_value = mock_response_reject
+
         with pytest.raises(ProtocolNegotiationError):
-            await mcp_transport._send_request(request, "http://test.local/messages")
+            await transport._send_request("http://test.local/messages", request)
