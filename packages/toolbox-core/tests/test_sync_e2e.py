@@ -25,8 +25,8 @@ pytestmark = pytest.mark.usefixtures("patch_toolbox_client_url")
 @pytest.fixture(scope="module")
 def toolbox():
     """Creates a ToolboxSyncClient instance shared by all tests in this module."""
-    # Note: The STABLE URL passed here is automatically patched by the 
-    # 'patch_toolbox_client_url' fixture to run against both 
+    # Note: The STABLE URL passed here is automatically patched by the
+    # 'patch_toolbox_client_url' fixture to run against both
     # the STABLE (5000) and DRAFT (5001) servers.
     toolbox = ToolboxSyncClient(TOOLBOX_SERVER_URL_STABLE)
     try:
