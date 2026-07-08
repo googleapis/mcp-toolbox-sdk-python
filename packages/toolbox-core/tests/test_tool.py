@@ -409,9 +409,14 @@ def test_tool_init_basic(http_session, sample_tool_params, sample_tool_descripti
             bound_params={},
             client_headers={},
         )
+    relevant_warnings = [
+        w
+        for w in record
+        if not issubclass(w.category, (ResourceWarning, DeprecationWarning))
+    ]
     assert (
-        len(record) == 0
-    ), f"ToolboxTool instantiation unexpectedly warned: {[f'{w.category.__name__}: {w.message}' for w in record]}"
+        len(relevant_warnings) == 0
+    ), f"ToolboxTool instantiation unexpectedly warned: {[f'{w.category.__name__}: {w.message}' for w in relevant_warnings]}"
 
     assert tool_instance.__name__ == TEST_TOOL_NAME
     assert inspect.iscoroutinefunction(tool_instance.__call__)

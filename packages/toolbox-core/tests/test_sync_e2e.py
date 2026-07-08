@@ -17,6 +17,8 @@ import pytest
 from toolbox_core.sync_client import ToolboxSyncClient
 from toolbox_core.sync_tool import ToolboxSyncTool
 
+pytestmark = pytest.mark.usefixtures("patch_toolbox_client_url")
+
 
 # --- Shared Fixtures Defined at Module Level ---
 @pytest.fixture(scope="module")

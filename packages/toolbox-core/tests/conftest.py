@@ -25,9 +25,12 @@ import time
 from typing import Generator
 
 import google
-import pytest_asyncio
+import pytest
 from google.auth import compute_engine
 from google.cloud import secretmanager, storage
+
+TOOLBOX_SERVER_URL_STABLE = "http://localhost:5000"
+TOOLBOX_SERVER_URL_DRAFT = "http://localhost:5001"
 
 
 #### Define Utility Functions
@@ -92,17 +95,17 @@ def get_auth_token(client_id: str) -> str:
 
 
 #### Define Fixtures
-@pytest_asyncio.fixture(scope="session")
+@pytest.fixture(scope="session")
 def project_id() -> str:
     return get_env_var("GOOGLE_CLOUD_PROJECT")
 
 
-@pytest_asyncio.fixture(scope="session")
+@pytest.fixture(scope="session")
 def toolbox_version() -> str:
     return get_env_var("TOOLBOX_VERSION")
 
 
-@pytest_asyncio.fixture(scope="session")
+@pytest.fixture(scope="session")
 def tools_file_path(project_id: str) -> Generator[str]:
     """Provides a temporary file path containing the tools manifest."""
     tools_manifest = access_secret_version(
@@ -115,7 +118,7 @@ def tools_file_path(project_id: str) -> Generator[str]:
     os.remove(tools_file_path)
 
 
-@pytest_asyncio.fixture(scope="session")
+@pytest.fixture(scope="session")
 def auth_token1(project_id: str) -> str:
     client_id = access_secret_version(
         project_id=project_id, secret_id="sdk_testing_client1"
@@ -123,7 +126,7 @@ def auth_token1(project_id: str) -> str:
     return get_auth_token(client_id)
 
 
-@pytest_asyncio.fixture(scope="session")
+@pytest.fixture(scope="session")
 def auth_token2(project_id: str) -> str:
     client_id = access_secret_version(
         project_id=project_id, secret_id="sdk_testing_client2"
@@ -131,7 +134,7 @@ def auth_token2(project_id: str) -> str:
     return get_auth_token(client_id)
 
 
-@pytest_asyncio.fixture(scope="session")
+@pytest.fixture(scope="session")
 def toolbox_server(toolbox_version: str, tools_file_path: str) -> Generator[None]:
     """Starts the toolbox server as a subprocess."""
     print("Downloading toolbox binary from gcs bucket...")
@@ -143,20 +146,30 @@ def toolbox_server(toolbox_version: str, tools_file_path: str) -> Generator[None
         # Make toolbox executable
         os.chmod("toolbox", 0o700)
         # Run toolbox binary
-        toolbox_server = subprocess.Popen(
-            ["./toolbox", "--tools-file", tools_file_path]
+        toolbox_server_1 = subprocess.Popen(
+            ["./toolbox", "--port", "5000", "--tools-file", tools_file_path]
+        )
+        toolbox_server_2 = subprocess.Popen(
+            [
+                "./toolbox",
+                "--port",
+                "5001",
+                "--tools-file",
+                tools_file_path,
+                "--enable-draft-specs",
+            ]
         )
 
         # Wait for server to start
         # Retry logic with a timeout
         for _ in range(5):  # retries
             time.sleep(2)
-            print("Checking if toolbox is successfully started...")
-            if toolbox_server.poll() is None:
-                print("Toolbox server started successfully.")
+            print("Checking if both toolbox servers are successfully started...")
+            if toolbox_server_1.poll() is None and toolbox_server_2.poll() is None:
+                print("Toolbox servers started successfully.")
                 break
         else:
-            raise RuntimeError("Toolbox server failed to start after 5 retries.")
+            raise RuntimeError("Toolbox servers failed to start after 5 retries.")
     except subprocess.CalledProcessError as e:
         print(e.stderr.decode("utf-8"))
         print(e.stdout.decode("utf-8"))
@@ -164,5 +177,39 @@ def toolbox_server(toolbox_version: str, tools_file_path: str) -> Generator[None
     yield
 
     # Clean up toolbox server
-    toolbox_server.terminate()
-    toolbox_server.wait(timeout=5)
+    toolbox_server_1.terminate()
+    toolbox_server_2.terminate()
+    toolbox_server_1.wait(timeout=5)
+    toolbox_server_2.wait(timeout=5)
+
+
+@pytest.fixture(
+    params=[TOOLBOX_SERVER_URL_STABLE, TOOLBOX_SERVER_URL_DRAFT], scope="session"
+)
+def toolbox_server_url(request) -> str:
+    return request.param
+
+
+@pytest.fixture()
+def patch_toolbox_client_url(toolbox_server_url):
+    from toolbox_core.client import ToolboxClient
+    from toolbox_core.sync_client import ToolboxSyncClient
+
+    original_init = ToolboxClient.__init__
+    original_sync_init = ToolboxSyncClient.__init__
+
+    def new_init(self, url=TOOLBOX_SERVER_URL_STABLE, *args, **kwargs):
+        if url == TOOLBOX_SERVER_URL_STABLE:
+            url = toolbox_server_url
+        original_init(self, url, *args, **kwargs)
+
+    def new_sync_init(self, url=TOOLBOX_SERVER_URL_STABLE, *args, **kwargs):
+        if url == TOOLBOX_SERVER_URL_STABLE:
+            url = toolbox_server_url
+        original_sync_init(self, url, *args, **kwargs)
+
+    from unittest.mock import patch
+
+    with patch.object(ToolboxClient, "__init__", new_init, create=True):
+        with patch.object(ToolboxSyncClient, "__init__", new_sync_init, create=True):
+            yield
