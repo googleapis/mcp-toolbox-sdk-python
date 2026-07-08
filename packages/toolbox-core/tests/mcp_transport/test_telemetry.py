@@ -15,6 +15,7 @@
 from unittest.mock import ANY, MagicMock, patch
 
 import pytest
+
 import toolbox_core.mcp_transport.telemetry as telemetry_module
 from toolbox_core.mcp_transport.telemetry import (
     ATTR_ERROR_TYPE,

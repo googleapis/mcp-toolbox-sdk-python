@@ -17,11 +17,12 @@ from unittest.mock import AsyncMock, Mock, call, patch
 
 import pytest
 from pydantic import BaseModel
+from toolbox_langchain.tools import ToolboxTool
+
 from toolbox_core.protocol import ParameterSchema as CoreParameterSchema
 from toolbox_core.sync_tool import ToolboxSyncTool as ToolboxCoreSyncTool
 from toolbox_core.tool import ToolboxTool as CoreAsyncTool
 from toolbox_core.utils import params_to_pydantic_model
-from toolbox_langchain.tools import ToolboxTool
 
 
 def assert_pydantic_models_equivalent(

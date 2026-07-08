@@ -37,9 +37,10 @@ This file covers the following use cases:
 import pytest
 import pytest_asyncio
 from pydantic import ValidationError
+from toolbox_llamaindex.client import ToolboxClient
+
 from tests.constants import TOOLBOX_SERVER_URL_STABLE
 from toolbox_core.protocol import Protocol
-from toolbox_llamaindex.client import ToolboxClient
 
 pytestmark = pytest.mark.usefixtures("patch_toolbox_client_url")
 

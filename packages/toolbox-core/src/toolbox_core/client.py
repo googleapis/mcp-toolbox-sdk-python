@@ -20,6 +20,7 @@ from typing import Any, Awaitable, Callable, Mapping, Optional, Union
 
 from aiohttp import ClientSession
 from deprecated import deprecated
+
 from toolbox_core.exceptions import ProtocolNegotiationError
 
 from . import version

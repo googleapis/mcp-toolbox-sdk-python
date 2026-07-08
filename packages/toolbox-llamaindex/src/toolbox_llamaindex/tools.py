@@ -18,6 +18,7 @@ from typing import Any, Callable, Union
 from deprecated import deprecated
 from llama_index.core.tools import ToolMetadata
 from llama_index.core.tools.types import AsyncBaseTool, ToolOutput
+
 from toolbox_core.sync_tool import ToolboxSyncTool as ToolboxCoreSyncTool
 from toolbox_core.utils import params_to_pydantic_model
 

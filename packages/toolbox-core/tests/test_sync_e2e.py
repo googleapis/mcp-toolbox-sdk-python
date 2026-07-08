@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import pytest
+
 from tests.constants import TOOLBOX_SERVER_URL_STABLE
 from toolbox_core.sync_client import ToolboxSyncClient
 from toolbox_core.sync_tool import ToolboxSyncTool
