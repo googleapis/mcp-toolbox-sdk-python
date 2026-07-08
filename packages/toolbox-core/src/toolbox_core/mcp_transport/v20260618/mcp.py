@@ -137,8 +137,9 @@ class McpHttpTransportV20260618(_McpHttpTransportBase):
                                 "remain in the user's supported protocols array."
                             )
                     except ValueError:
-                        # Current version not in list somehow, just fallback to highest stateful
-                        raise ProtocolNegotiationError(Protocol.MCP_v20251125)
+                        raise RuntimeError(
+                            f"Invalid state: current protocol {self._protocol_version} is not in supported_protocols."
+                        )
 
                 try:
                     err = types.JSONRPCError.model_validate(json_resp).error

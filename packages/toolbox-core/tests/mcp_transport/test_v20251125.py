@@ -420,3 +420,60 @@ class TestMcpHttpTransportV20251125:
 
         result = await transport.tool_invoke("tool", {}, {})
         assert result == '{"a": 1}'
+
+
+@pytest.mark.asyncio
+async def test_send_request_400_with_json_rpc_error(
+    mcp_transport: _McpHttpTransportBase,
+):
+    from aioresponses import aioresponses
+
+    request = types.MCPRequest(method="some/method", params={"key": "val"})
+    with aioresponses() as m:
+        m.post(
+            "http://test.local/messages",
+            status=400,
+            payload={
+                "jsonrpc": "2.0",
+                "id": "test-id",
+                "error": {"code": -32602, "message": "Missing _meta"},
+            },
+        )
+        with pytest.raises(
+            RuntimeError, match="MCP request failed with code -32602: Missing _meta"
+        ):
+            await mcp_transport._send_request(request, "http://test.local/messages")
+
+
+@pytest.mark.asyncio
+async def test_send_request_400_with_raw_text(mcp_transport: _McpHttpTransportBase):
+    from aioresponses import aioresponses
+
+    request = types.MCPRequest(method="some/method", params={"key": "val"})
+    with aioresponses() as m:
+        m.post(
+            "http://test.local/messages", status=400, body="<html>Bad Request</html>"
+        )
+        with pytest.raises(RuntimeError, match="API request failed with status 400"):
+            await mcp_transport._send_request(request, "http://test.local/messages")
+
+
+@pytest.mark.asyncio
+async def test_version_negotiation_legacy_string_fallback(
+    mcp_transport: _McpHttpTransportBase,
+):
+    from aioresponses import aioresponses
+
+    request = types.MCPRequest(method="some/method", params={})
+    with aioresponses() as m:
+        m.post(
+            "http://test.local/messages",
+            status=400,
+            payload={
+                "jsonrpc": "2.0",
+                "id": "test-id",
+                "error": "invalid protocol version",
+            },
+        )
+        with pytest.raises(ProtocolNegotiationError):
+            await mcp_transport._send_request(request, "http://test.local/messages")
