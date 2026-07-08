@@ -410,9 +410,7 @@ def test_tool_init_basic(http_session, sample_tool_params, sample_tool_descripti
             client_headers={},
         )
     relevant_warnings = [
-        w
-        for w in record
-        if not issubclass(w.category, (ResourceWarning, DeprecationWarning))
+        w for w in record if not issubclass(w.category, ResourceWarning)
     ]
     assert (
         len(relevant_warnings) == 0

@@ -18,6 +18,7 @@ import pytest
 import pytest_asyncio
 from aiohttp import ClientSession
 
+from toolbox_core.exceptions import ProtocolNegotiationError
 from toolbox_core.mcp_transport.v20251125 import types
 from toolbox_core.mcp_transport.v20251125.mcp import McpHttpTransportV20251125
 from toolbox_core.protocol import ManifestSchema, Protocol
@@ -256,7 +257,7 @@ class TestMcpHttpTransportV20251125:
             ),
         )
 
-        with pytest.raises(RuntimeError, match="MCP version mismatch"):
+        with pytest.raises(ProtocolNegotiationError):
             await transport._initialize_session()
 
     async def test_initialize_session_missing_tools_capability(self, transport, mocker):

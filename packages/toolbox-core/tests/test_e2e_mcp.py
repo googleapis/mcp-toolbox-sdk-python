@@ -26,11 +26,9 @@ from toolbox_core.tool import ToolboxTool
 pytestmark = pytest.mark.usefixtures("patch_toolbox_client_url")
 
 
-# TODO: Include draft versions in E2E integration tests once the server
-# supports SEP-2575 (stateless MCP / Request-Metadata).
 @pytest_asyncio.fixture(
     scope="function",
-    params=[v for v in Protocol.get_supported_mcp_versions() if "DRAFT" not in v],
+    params=[v for v in Protocol.get_supported_mcp_versions()],
 )
 async def toolbox(request):
     """Creates a ToolboxClient instance shared by all tests in this module."""
@@ -102,25 +100,26 @@ class TestBasicE2E:
         with pytest.raises(TypeError, match="missing a required argument: 'num_rows'"):
             await get_n_rows_tool()
 
-    async def test_protocol_fallback_e2e(self, toolbox_server_url):
-        """Tests that a client using MCP_LATEST can fallback to an older protocol against a server that doesn't support the latest version."""
-        # The E2E server currently does not support DRAFT 2026, so this will trigger a fallback.
+    async def test_protocol_fallback_e2e(self, toolbox_server_url: str):
+        """Tests that a client using MCP_DRAFT can fallback to an older protocol against a server that doesn't support the draft version."""
+        # The E2E server currently does not support DRAFT 2026 on port 5000, so this will trigger a fallback.
+        # However, port 5001 does support DRAFT 2026.
         async with ToolboxClient(
-            toolbox_server_url, protocol=Protocol.MCP_LATEST
+            toolbox_server_url, protocol=Protocol.MCP_DRAFT
         ) as client:
             tool = await client.load_tool("get-n-rows")
             response = await tool(num_rows="1")
             assert "row1" in response
             # Verify that fallback occurred by checking the transport's final protocol version
-            if "5000" in toolbox_server_url:
+            if "5001" in toolbox_server_url:
                 assert (
                     client._ToolboxClient__transport._protocol_version
-                    != Protocol.MCP_LATEST.value
+                    == Protocol.MCP_DRAFT.value
                 )
             else:
                 assert (
                     client._ToolboxClient__transport._protocol_version
-                    == Protocol.MCP_LATEST.value
+                    != Protocol.MCP_DRAFT.value
                 )
 
     async def test_run_tool_wrong_param_type(self, get_n_rows_tool: ToolboxTool):
@@ -471,3 +470,25 @@ class TestMapParams:
                 execution_context={"env": "staging"},
                 user_scores={"user4": "not-an-integer"},
             )
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("toolbox_server")
+async def test_mcp_default_protocol():
+    """Verify that omitting the protocol argument defaults correctly and works."""
+    async with ToolboxClient("http://localhost:5000") as client:
+        tool = await client.load_tool("get-n-rows")
+        response = await tool(num_rows="1")
+        assert "row1" in response
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("toolbox_server")
+async def test_mcp_draft_fallback():
+    """Verify that explicitly using MCP_DRAFT against a server that doesn't support it falls back successfully."""
+    async with ToolboxClient(
+        "http://localhost:5000", protocol=Protocol.MCP_DRAFT
+    ) as client:
+        tool = await client.load_tool("get-n-rows")
+        response = await tool(num_rows="1")
+        assert "row1" in response

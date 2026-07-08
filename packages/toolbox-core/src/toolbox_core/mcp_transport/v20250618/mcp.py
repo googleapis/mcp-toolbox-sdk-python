@@ -18,7 +18,8 @@ from typing import Mapping, Optional, TypeVar
 from pydantic import BaseModel
 
 from ... import version
-from ...protocol import ManifestSchema, TelemetryAttributes
+from ...exceptions import ProtocolNegotiationError
+from ...protocol import ManifestSchema, Protocol, TelemetryAttributes
 from .. import telemetry
 from ..transport_base import _McpHttpTransportBase
 from . import types
@@ -71,6 +72,21 @@ class McpHttpTransportV20250618(_McpHttpTransportBase):
 
             # Check for JSON-RPC Error
             if "error" in json_resp:
+                err_val = json_resp["error"]
+                if isinstance(err_val, dict) and err_val.get("code") == -32004:
+                    server_supported = err_val.get("data", {}).get("supported", [])
+                    client_supported = Protocol.get_supported_mcp_versions()
+                    mutually_supported = [
+                        v for v in client_supported if v in server_supported
+                    ]
+                    if mutually_supported:
+                        raise ProtocolNegotiationError(mutually_supported[0])
+                    else:
+                        raise RuntimeError(
+                            "No mutually supported protocol version. "
+                            f"Client supports: {client_supported}, "
+                            f"Server supports: {server_supported}"
+                        )
                 try:
                     err = types.JSONRPCError.model_validate(json_resp).error
                     raise RuntimeError(
@@ -138,10 +154,7 @@ class McpHttpTransportV20250618(_McpHttpTransportBase):
             self._server_version = result.serverInfo.version
 
             if result.protocolVersion != self._protocol_version:
-                raise RuntimeError(
-                    "MCP version mismatch: client does not support server version"
-                    f" {result.protocolVersion}"
-                )
+                raise ProtocolNegotiationError(result.protocolVersion)
 
             if not result.capabilities.tools:
                 if self._manage_session:

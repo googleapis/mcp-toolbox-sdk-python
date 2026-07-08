@@ -276,9 +276,7 @@ async def test_load_tool_protocol_fallback_success(test_tool_str):
         mock_2025.tool_invoke.return_value = "ok_from_fallback"
         mock_2025_cls.return_value = mock_2025
 
-        async with ToolboxClient(
-            TEST_BASE_URL, protocol=Protocol.MCP_v20260618
-        ) as client:
+        async with ToolboxClient(TEST_BASE_URL, protocol=Protocol.MCP_DRAFT) as client:
             # This should trigger the fallback
             loaded_tool = await client.load_tool(TOOL_NAME)
 
@@ -322,9 +320,7 @@ async def test_load_tool_protocol_fallback_infinite_loop_prevention(test_tool_st
         mock_2025.tool_get.side_effect = ProtocolNegotiationError("2024-11-05")
         mock_2025_cls.return_value = mock_2025
 
-        async with ToolboxClient(
-            TEST_BASE_URL, protocol=Protocol.MCP_v20260618
-        ) as client:
+        async with ToolboxClient(TEST_BASE_URL, protocol=Protocol.MCP_DRAFT) as client:
             with pytest.raises(
                 ProtocolNegotiationError,
                 match="Server requires protocol fallback to 2024-11-05",
@@ -814,7 +810,7 @@ async def test_client_init_with_client_info():
 def test_toolbox_client_no_warning_on_mcp():
     """Test that initializing ToolboxClient with Protocol.MCP issues NO DeprecationWarning."""
     # Mock the transport to avoid actual connection attempts or MCP version warnings
-    with patch("toolbox_core.client.McpHttpTransportV20250618") as mock_transport:
+    with patch("toolbox_core.client.McpHttpTransportV20251125") as mock_transport:
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
 
