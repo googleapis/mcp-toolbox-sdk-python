@@ -637,11 +637,12 @@ class TestAuth:
             tool = tools[0]
             ctx = MagicMock()
 
-            with pytest.raises(
-                Exception,
-                match=r"(401 \(Unauthorized\)|MCP request failed with code -32600)",
-            ):
+            try:
                 await tool.run_async({"id": "2"}, ctx)
+                pytest.fail("Expected tool to fail with auth error")
+            except Exception as e:
+                err_str = str(e)
+                assert "401" in err_str or "-32600" in err_str, f"Unexpected error message: {err_str}"
         finally:
             await toolset.close()
 

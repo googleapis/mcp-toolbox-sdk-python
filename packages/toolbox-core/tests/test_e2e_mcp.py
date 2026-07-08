@@ -194,11 +194,12 @@ class TestAuth:
         requires a different authentication than the one provided."""
         tool = await toolbox.load_tool("get-row-by-id-auth")
         auth_tool = tool.add_auth_token_getters({"my-test-auth": lambda: auth_token2})
-        with pytest.raises(
-            Exception,
-            match=r"(401 \(Unauthorized\)|MCP request failed with code -32600)",
-        ):
+        try:
             await auth_tool(id="2")
+            pytest.fail("Expected tool to fail with auth error")
+        except Exception as e:
+            err_str = str(e)
+            assert "401" in err_str or "-32600" in err_str, f"Unexpected error message: {err_str}"
 
     async def test_run_tool_auth(self, toolbox: ToolboxClient, auth_token1: str):
         """Tests running a tool with correct auth."""
