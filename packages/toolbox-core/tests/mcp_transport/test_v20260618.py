@@ -239,7 +239,7 @@ class TestMcpHttpTransportV20260618:
             "jsonrpc": "2.0",
             "id": "1",
             "error": {
-                "code": -32004,
+                "code": -32022,
                 "message": "Unsupported protocol version",
                 "data": {"supported": ["DRAFT-2026-v1"]},
             },
@@ -266,7 +266,7 @@ class TestMcpHttpTransportV20260618:
         assert transport._session.post.call_count == 1
 
     async def test_version_negotiation_raises_fallback_200_ok(self, transport):
-        """Tests that the client raises ProtocolNegotiationError when the server returns 200 OK with -32004."""
+        """Tests that the client raises ProtocolNegotiationError when the server returns 200 OK with -32022."""
         from toolbox_core.exceptions import ProtocolNegotiationError
 
         mock_response_reject = AsyncMock()
@@ -277,7 +277,7 @@ class TestMcpHttpTransportV20260618:
             "jsonrpc": "2.0",
             "id": "1",
             "error": {
-                "code": -32004,
+                "code": -32022,
                 "message": "Unsupported protocol version",
                 "data": {"supported": ["DRAFT-2026-v1"]},
             },
@@ -312,7 +312,7 @@ class TestMcpHttpTransportV20260618:
             "jsonrpc": "2.0",
             "id": "1",
             "error": {
-                "code": -32004,
+                "code": -32022,
                 "message": "Unsupported protocol version",
                 "data": {"supported": ["UNSUPPORTED-VERSION"]},
             },

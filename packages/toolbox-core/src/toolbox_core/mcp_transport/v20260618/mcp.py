@@ -83,7 +83,7 @@ class McpHttpTransportV20260618(_McpHttpTransportBase):
                     json_resp = await response.json()
                     if "error" in json_resp:
                         err_val = json_resp["error"]
-                        if isinstance(err_val, dict) and err_val.get("code") == -32004:
+                        if isinstance(err_val, dict) and err_val.get("code") == -32022:
                             server_supported = err_val.get("data", {}).get(
                                 "supported", []
                             )
