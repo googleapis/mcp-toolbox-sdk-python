@@ -92,10 +92,18 @@ class McpHttpTransportV20251125(_McpHttpTransportBase):
                         )
                 elif (
                     isinstance(err_val, str)
-                    and "invalid protocol version" in err_val.lower()
+                    and (
+                        "invalid protocol version" in err_val.lower()
+                        or "unsupported protocol version" in err_val.lower()
+                    )
                 ) or (
                     isinstance(err_val, dict)
-                    and "invalid protocol version" in str(err_val.get("message", "")).lower()
+                    and (
+                        "invalid protocol version"
+                        in str(err_val.get("message", "")).lower()
+                        or "unsupported protocol version"
+                        in str(err_val.get("message", "")).lower()
+                    )
                 ):
                     client_supported = (
                         self._supported_protocols
