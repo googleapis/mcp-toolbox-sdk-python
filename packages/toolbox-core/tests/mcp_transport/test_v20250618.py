@@ -470,43 +470,42 @@ class TestMcpHttpTransportV20250618:
 
 @pytest.mark.asyncio
 async def test_send_request_400_with_json_rpc_error(
-    mcp_transport: _McpHttpTransportBase,
+    mcp_transport,
 ):
-    from aioresponses import aioresponses
-
     request = types.MCPRequest(method="some/method", params={"key": "val"})
-    with aioresponses() as m:
-        m.post(
-            "http://test.local/messages",
-            status=400,
-            payload={
-                "jsonrpc": "2.0",
-                "id": "test-id",
-                "error": {"code": -32602, "message": "Missing _meta"},
-            },
-        )
-        with pytest.raises(
-            RuntimeError, match="MCP request failed with code -32602: Missing _meta"
-        ):
-            await mcp_transport._send_request(request, "http://test.local/messages")
+    mock_response = AsyncMock()
+    mock_response.ok = False
+    mock_response.status = 400
+    mock_response.json.return_value = {
+        "jsonrpc": "2.0",
+        "id": "test-id",
+        "error": {"code": -32602, "message": "Missing _meta"},
+    }
+    mcp_transport._session.post.return_value.__aenter__.return_value = mock_response
+
+    with pytest.raises(
+        RuntimeError, match="MCP request failed with code -32602: Missing _meta"
+    ):
+        await mcp_transport._send_request(request, "http://test.local/messages")
 
 
 @pytest.mark.asyncio
-async def test_send_request_400_with_raw_text(mcp_transport: _McpHttpTransportBase):
-    from aioresponses import aioresponses
-
+async def test_send_request_400_with_raw_text(mcp_transport):
     request = types.MCPRequest(method="some/method", params={"key": "val"})
-    with aioresponses() as m:
-        m.post(
-            "http://test.local/messages", status=400, body="<html>Bad Request</html>"
-        )
-        with pytest.raises(RuntimeError, match="API request failed with status 400"):
-            await mcp_transport._send_request(request, "http://test.local/messages")
+    mock_response = AsyncMock()
+    mock_response.ok = False
+    mock_response.status = 400
+    mock_response.json.side_effect = Exception("Not JSON")
+    mock_response.text.return_value = "<html>Bad Request</html>"
+    mcp_transport._session.post.return_value.__aenter__.return_value = mock_response
+
+    with pytest.raises(RuntimeError, match="API request failed with status 400"):
+        await mcp_transport._send_request(request, "http://test.local/messages")
 
 
 @pytest.mark.asyncio
 async def test_version_negotiation_legacy_string_fallback(
-    mcp_transport: _McpHttpTransportBase,
+    mcp_transport,
 ):
     from aioresponses import aioresponses
 

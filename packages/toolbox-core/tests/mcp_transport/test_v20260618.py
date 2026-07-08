@@ -369,42 +369,45 @@ class TestMcpHttpTransportV20260618:
 
     async def test_send_request_400_with_json_rpc_error(self, transport):
         # Test that an HTTP 400 with a non-negotiation JSON-RPC error is parsed properly.
-        with aioresponses() as m:
-            m.post(
-                "http://test.com/mcp",
-                status=400,
-                payload={
-                    "jsonrpc": "2.0",
-                    "id": 1,
-                    "error": {"code": -32602, "message": "missing _meta"},
-                },
-            )
-            with pytest.raises(RuntimeError) as exc_info:
-                await transport._send_request(
-                    "http://test.com/mcp",
-                    types.JSONRPCRequest(method="test", params={}),
-                )
+        mock_response = AsyncMock()
+        mock_response.ok = False
+        mock_response.status = 400
+        mock_response.json.return_value = {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "error": {"code": -32602, "message": "missing _meta"},
+        }
 
-            assert "MCP request failed with code -32602" in str(exc_info.value)
-            assert "missing _meta" in str(exc_info.value)
+        transport._session.post.return_value.__aenter__.return_value = mock_response
+
+        with pytest.raises(RuntimeError) as exc_info:
+            await transport._send_request(
+                "http://test.com/mcp",
+                types.JSONRPCRequest(method="test", params={}),
+            )
+
+        assert "MCP request failed with code -32602" in str(exc_info.value)
+        assert "missing _meta" in str(exc_info.value)
 
     async def test_send_request_400_with_raw_text(self, transport):
         # Test that an HTTP 400 with non-JSON text is raised with the raw string payload.
-        with aioresponses() as m:
-            m.post(
-                "http://test.com/mcp",
-                status=400,
-                body="<html/>",
-                headers={"Content-Type": "text/html"},
-            )
-            with pytest.raises(RuntimeError) as exc_info:
-                await transport._send_request(
-                    "http://test.com/mcp",
-                    types.JSONRPCRequest(method="test", params={}),
-                )
+        mock_response = AsyncMock()
+        mock_response.ok = False
+        mock_response.status = 400
+        mock_response.reason = "Bad Request"
+        mock_response.json.side_effect = Exception("Not JSON")
+        mock_response.text.return_value = "<html/>"
 
-            assert "API request failed with status 400" in str(exc_info.value)
-            assert "<html/>" in str(exc_info.value)
+        transport._session.post.return_value.__aenter__.return_value = mock_response
+
+        with pytest.raises(RuntimeError) as exc_info:
+            await transport._send_request(
+                "http://test.com/mcp",
+                types.JSONRPCRequest(method="test", params={}),
+            )
+
+        assert "API request failed with status 400" in str(exc_info.value)
+        assert "<html/>" in str(exc_info.value)
 
     async def test_version_negotiation_legacy_string_fallback(self, transport):
         """Tests that the client raises ProtocolNegotiationError when the server returns a string 'invalid protocol version' error."""
