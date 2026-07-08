@@ -15,31 +15,16 @@
 from unittest.mock import ANY, MagicMock, patch
 
 import pytest
-
 import toolbox_core.mcp_transport.telemetry as telemetry_module
 from toolbox_core.mcp_transport.telemetry import (
-    ATTR_ERROR_TYPE,
-    ATTR_GEN_AI_OPERATION_NAME,
-    ATTR_GEN_AI_TOOL_NAME,
-    ATTR_MCP_METHOD_NAME,
-    ATTR_MCP_PROTOCOL_VERSION,
-    ATTR_NETWORK_PROTOCOL_NAME,
-    ATTR_NETWORK_TRANSPORT,
-    ATTR_SERVER_ADDRESS,
-    ATTR_SERVER_PORT,
-    create_operation_duration_histogram,
-    create_session_duration_histogram,
-    create_traceparent_from_context,
-    create_tracestate_from_context,
-    end_span,
-    extract_server_info,
-    get_meter,
-    get_tracer,
-    record_error_from_jsonrpc,
-    record_operation_duration,
-    record_session_duration,
-    start_span,
-)
+    ATTR_ERROR_TYPE, ATTR_GEN_AI_OPERATION_NAME, ATTR_GEN_AI_TOOL_NAME,
+    ATTR_MCP_METHOD_NAME, ATTR_MCP_PROTOCOL_VERSION,
+    ATTR_NETWORK_PROTOCOL_NAME, ATTR_NETWORK_TRANSPORT, ATTR_SERVER_ADDRESS,
+    ATTR_SERVER_PORT, create_operation_duration_histogram,
+    create_session_duration_histogram, create_traceparent_from_context,
+    create_tracestate_from_context, end_span, extract_server_info, get_meter,
+    get_tracer, record_error_from_jsonrpc, record_operation_duration,
+    record_session_duration, start_span)
 
 
 class TestGetTracer:

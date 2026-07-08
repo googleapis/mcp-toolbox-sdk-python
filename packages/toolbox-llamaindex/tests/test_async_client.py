@@ -21,7 +21,6 @@ from toolbox_core.client import ToolboxClient as ToolboxCoreClient
 from toolbox_core.protocol import ParameterSchema as CoreParameterSchema
 from toolbox_core.protocol import Protocol
 from toolbox_core.tool import ToolboxTool as ToolboxCoreTool
-
 from toolbox_llamaindex.async_client import AsyncToolboxClient
 from toolbox_llamaindex.async_tools import AsyncToolboxTool
 

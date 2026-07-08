@@ -117,7 +117,7 @@ class McpHttpTransportV20241105(_McpHttpTransportBase):
                             )
                     except ValueError:
                         raise RuntimeError(
-                            f"Invalid state: current protocol "\
+                            f"Invalid state: current protocol "
                             f"{self._protocol_version} is not in "
                             f"supported_protocols."
                         )
@@ -126,7 +126,7 @@ class McpHttpTransportV20241105(_McpHttpTransportBase):
                     err = types.JSONRPCError.model_validate(json_resp).error
                 except Exception:
                     err = None
-                
+
                 if err:
                     raise RuntimeError(
                         f"MCP request failed with code {err.code}: {err.message}"

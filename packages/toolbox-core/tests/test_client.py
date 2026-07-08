@@ -20,18 +20,12 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from aiohttp import web
-
 from tests.constants import TOOLBOX_SERVER_URL_STABLE
 from toolbox_core.client import ToolboxClient, _McpTransportProxy
 from toolbox_core.exceptions import ProtocolNegotiationError
 from toolbox_core.itransport import ITransport
-from toolbox_core.protocol import (
-    ManifestSchema,
-    ParameterSchema,
-    Protocol,
-    TelemetryAttributes,
-    ToolSchema,
-)
+from toolbox_core.protocol import (ManifestSchema, ParameterSchema, Protocol,
+                                   TelemetryAttributes, ToolSchema)
 
 TEST_BASE_URL = "http://toolbox.example.com"
 

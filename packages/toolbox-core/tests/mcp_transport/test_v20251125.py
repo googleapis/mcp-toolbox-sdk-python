@@ -17,7 +17,6 @@ from unittest.mock import AsyncMock, MagicMock, Mock, patch
 import pytest
 import pytest_asyncio
 from aiohttp import ClientSession
-
 from toolbox_core.exceptions import ProtocolNegotiationError
 from toolbox_core.mcp_transport.v20251125 import types
 from toolbox_core.mcp_transport.v20251125.mcp import McpHttpTransportV20251125
@@ -421,7 +420,6 @@ class TestMcpHttpTransportV20251125:
         result = await transport.tool_invoke("tool", {}, {})
         assert result == '{"a": 1}'
 
-
     async def test_send_request_400_with_json_rpc_error(self, transport):
         mock_response = AsyncMock()
         mock_response.ok = False
@@ -440,7 +438,6 @@ class TestMcpHttpTransportV20251125:
         ):
             await transport._send_request("http://test.local/messages", request)
 
-
     async def test_send_request_400_with_raw_text(self, transport):
         mock_response = AsyncMock()
         mock_response.ok = False
@@ -454,7 +451,6 @@ class TestMcpHttpTransportV20251125:
         request = types.MCPRequest(method="some/method", params={"key": "val"})
         with pytest.raises(RuntimeError, match="API request failed with status 400"):
             await transport._send_request("http://test.local/messages", request)
-
 
     async def test_version_negotiation_legacy_string_fallback(self, transport):
         from toolbox_core.exceptions import ProtocolNegotiationError

@@ -20,13 +20,9 @@ from typing import Any, Awaitable, Callable, Mapping, Optional, Sequence, Union
 
 from .itransport import ITransport
 from .protocol import ParameterSchema, TelemetryAttributes
-from .utils import (
-    create_func_docstring,
-    identify_auth_requirements,
-    params_to_pydantic_model,
-    resolve_value,
-    warn_if_http_and_headers,
-)
+from .utils import (create_func_docstring, identify_auth_requirements,
+                    params_to_pydantic_model, resolve_value,
+                    warn_if_http_and_headers)
 
 
 class ToolboxTool:

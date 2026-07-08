@@ -16,10 +16,9 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from toolbox_core.protocol import Protocol
-
 from toolbox_adk.tool import ToolboxTool
 from toolbox_adk.toolset import ToolboxToolset
+from toolbox_core.protocol import Protocol
 
 
 class TestToolboxToolset:
