@@ -206,7 +206,7 @@ def toolbox_server_url(request) -> str:
     return request.param
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture()
 def patch_toolbox_client_url(toolbox_server_url):
     from toolbox_adk.toolset import ToolboxToolset
 
