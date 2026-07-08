@@ -52,6 +52,9 @@ class TestToolboxAdkIntegration:
     async def test_load_toolset_and_run(self):
         # Auth: TOOLBOX_IDENTITY for simplicity in this local test as we don't have ADK identity setup.
 
+        # Note: The STABLE URL passed here is automatically patched by the 
+        # 'patch_toolbox_client_url' fixture to run against both 
+        # the STABLE (5000) and DRAFT (5001) servers.
         toolset = ToolboxToolset(
             server_url=TOOLBOX_SERVER_URL_STABLE,
             toolset_name="my-toolset",

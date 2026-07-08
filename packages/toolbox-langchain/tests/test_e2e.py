@@ -51,6 +51,9 @@ class TestE2EClientAsync:
     @pytest.fixture(scope="function")
     def toolbox(self):
         """Provides a ToolboxClient instance for each test."""
+        # Note: The STABLE URL passed here is automatically patched by the 
+        # 'patch_toolbox_client_url' fixture to run against both 
+        # the STABLE (5000) and DRAFT (5001) servers.
         toolbox = ToolboxClient(TOOLBOX_SERVER_URL_STABLE)
         return toolbox
 
@@ -206,6 +209,9 @@ class TestE2EClientSync:
     @pytest.fixture(scope="session")
     def toolbox(self):
         """Provides a ToolboxClient instance for each test."""
+        # Note: The STABLE URL passed here is automatically patched by the 
+        # 'patch_toolbox_client_url' fixture to run against both 
+        # the STABLE (5000) and DRAFT (5001) servers.
         toolbox = ToolboxClient(TOOLBOX_SERVER_URL_STABLE)
         return toolbox
 
