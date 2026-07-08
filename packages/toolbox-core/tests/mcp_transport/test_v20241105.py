@@ -227,7 +227,9 @@ class TestMcpHttpTransportV20241105:
             def get_result_model(self):
                 return TestResult
 
-        with pytest.raises(RuntimeError, match="No mutually supported protocol version"):
+        with pytest.raises(
+            RuntimeError, match="No mutually supported protocol version"
+        ):
             await transport._send_request("url", TestRequest())
 
     async def test_send_notification(self, transport):
