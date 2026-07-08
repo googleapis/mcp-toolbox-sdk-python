@@ -20,8 +20,12 @@ from unittest.mock import AsyncMock, Mock, patch
 import pytest
 from toolbox_core.client import ToolboxClient
 from toolbox_core.itransport import ITransport
-from toolbox_core.protocol import (ManifestSchema, ParameterSchema,
-                                   TelemetryAttributes, ToolSchema)
+from toolbox_core.protocol import (
+    ManifestSchema,
+    ParameterSchema,
+    TelemetryAttributes,
+    ToolSchema,
+)
 from toolbox_core.sync_client import ToolboxSyncClient
 from toolbox_core.sync_tool import ToolboxSyncTool
 

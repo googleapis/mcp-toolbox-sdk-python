@@ -33,8 +33,9 @@ try:
     from opentelemetry import metrics, trace
     from opentelemetry.metrics import Histogram, Meter
     from opentelemetry.trace import Span, SpanKind, Status, StatusCode, Tracer
-    from opentelemetry.trace.propagation.tracecontext import \
-        TraceContextTextMapPropagator
+    from opentelemetry.trace.propagation.tracecontext import (
+        TraceContextTextMapPropagator,
+    )
 
     TELEMETRY_AVAILABLE = True
 except ImportError:

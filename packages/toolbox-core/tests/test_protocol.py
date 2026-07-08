@@ -17,8 +17,12 @@ from inspect import Parameter
 from typing import Any, Optional
 
 import pytest
-from toolbox_core.protocol import (AdditionalPropertiesSchema, ParameterSchema,
-                                   Protocol, TelemetryAttributes)
+from toolbox_core.protocol import (
+    AdditionalPropertiesSchema,
+    ParameterSchema,
+    Protocol,
+    TelemetryAttributes,
+)
 
 # --------------------------------------------------------------------------- #
 # TelemetryAttributes — wire format & alias contract                          #

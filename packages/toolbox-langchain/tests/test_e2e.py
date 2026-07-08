@@ -160,7 +160,9 @@ class TestE2EClientAsync:
             pytest.fail("Expected tool to fail with auth error")
         except Exception as e:
             err_str = str(e)
-            assert "401" in err_str or "-32600" in err_str, f"Unexpected error message: {err_str}"
+            assert (
+                "401" in err_str or "-32600" in err_str
+            ), f"Unexpected error message: {err_str}"
 
     async def test_run_tool_auth(self, toolbox, auth_token1):
         """Tests running a tool with correct auth."""
@@ -319,7 +321,9 @@ class TestE2EClientSync:
             pytest.fail("Expected tool to fail with auth error")
         except Exception as e:
             err_str = str(e)
-            assert "401" in err_str or "-32600" in err_str, f"Unexpected error message: {err_str}"
+            assert (
+                "401" in err_str or "-32600" in err_str
+            ), f"Unexpected error message: {err_str}"
 
     def test_run_tool_auth(self, toolbox, auth_token1):
         """Tests running a tool with correct auth."""
