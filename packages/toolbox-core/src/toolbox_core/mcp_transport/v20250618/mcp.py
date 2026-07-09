@@ -76,7 +76,11 @@ class McpHttpTransportV20250618(_McpHttpTransportBase):
             # Check for JSON-RPC Error
             if json_resp and isinstance(json_resp, dict) and "error" in json_resp:
                 err_val = json_resp["error"]
-                if isinstance(err_val, dict) and err_val.get("code") == -32022:
+                if (
+                    isinstance(err_val, dict)
+                    and err_val.get("code")
+                    == types.UNSUPPORTED_PROTOCOL_VERSION_ERROR_CODE
+                ):
                     server_supported = err_val.get("data", {}).get("supported", [])
                     client_supported = self._supported_protocols
                     mutually_supported = [

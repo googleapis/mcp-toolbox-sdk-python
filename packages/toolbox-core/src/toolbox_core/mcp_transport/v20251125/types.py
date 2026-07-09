@@ -55,6 +55,9 @@ class ErrorData(_BaseMCPModel):
     data: Any | None = None
 
 
+UNSUPPORTED_PROTOCOL_VERSION_ERROR_CODE = -32022
+
+
 class JSONRPCError(_BaseMCPModel):
     jsonrpc: Literal["2.0"]
     id: str | int
