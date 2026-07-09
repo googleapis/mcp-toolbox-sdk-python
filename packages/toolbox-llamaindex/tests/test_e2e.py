@@ -37,8 +37,12 @@ This file covers the following use cases:
 import pytest
 import pytest_asyncio
 from pydantic import ValidationError
+from toolbox_core.protocol import Protocol
 
+from tests.constants import TOOLBOX_SERVER_URL_STABLE
 from toolbox_llamaindex.client import ToolboxClient
+
+pytestmark = pytest.mark.usefixtures("patch_toolbox_client_url")
 
 
 @pytest.mark.asyncio
@@ -47,7 +51,10 @@ class TestE2EClientAsync:
     @pytest.fixture(scope="function")
     def toolbox(self):
         """Provides a ToolboxClient instance for each test."""
-        toolbox = ToolboxClient("http://localhost:5000")
+        # Note: The STABLE URL passed here is automatically patched by the
+        # 'patch_toolbox_client_url' fixture to run against both
+        # the STABLE (5000) and DRAFT (5001) servers.
+        toolbox = ToolboxClient(TOOLBOX_SERVER_URL_STABLE)
         return toolbox
 
     @pytest_asyncio.fixture(scope="function")
@@ -88,6 +95,14 @@ class TestE2EClientAsync:
         for tool in toolset:
             name = tool._ToolboxTool__core_tool.__name__
             assert name in tool_names
+
+    async def test_aload_toolset_explicit_protocol(self):
+        toolbox = ToolboxClient(
+            TOOLBOX_SERVER_URL_STABLE, protocol=Protocol.MCP_v20251125
+        )
+        toolset = await toolbox.aload_toolset()
+        assert len(toolset) == 7
+        toolbox.close()
 
     async def test_run_tool_async(self, get_n_rows_tool):
         response = await get_n_rows_tool.acall(num_rows="2")
@@ -141,11 +156,14 @@ class TestE2EClientAsync:
             "get-row-by-id-auth",
         )
         auth_tool = tool.add_auth_token_getter("my-test-auth", lambda: auth_token2)
-        with pytest.raises(
-            Exception,
-            match=r"401 \(Unauthorized\)",
-        ):
+        try:
             await auth_tool.acall(id="2")
+            pytest.fail("Expected tool to fail with auth error")
+        except Exception as e:
+            err_str = str(e)
+            assert (
+                "401" in err_str or "-32600" in err_str
+            ), f"Unexpected error message: {err_str}"
 
     async def test_run_tool_auth(self, toolbox, auth_token1):
         """Tests running a tool with correct auth."""
@@ -194,7 +212,10 @@ class TestE2EClientSync:
     @pytest.fixture(scope="session")
     def toolbox(self):
         """Provides a ToolboxClient instance for each test."""
-        toolbox = ToolboxClient("http://localhost:5000")
+        # Note: The STABLE URL passed here is automatically patched by the
+        # 'patch_toolbox_client_url' fixture to run against both
+        # the STABLE (5000) and DRAFT (5001) servers.
+        toolbox = ToolboxClient(TOOLBOX_SERVER_URL_STABLE)
         return toolbox
 
     @pytest.fixture(scope="function")
@@ -235,6 +256,14 @@ class TestE2EClientSync:
         for tool in toolset:
             name = tool._ToolboxTool__core_tool.__name__
             assert name in tool_names
+
+    def test_load_toolset_explicit_protocol(self):
+        toolbox = ToolboxClient(
+            TOOLBOX_SERVER_URL_STABLE, protocol=Protocol.MCP_v20251125
+        )
+        toolset = toolbox.load_toolset()
+        assert len(toolset) == 7
+        toolbox.close()
 
     @pytest.mark.asyncio
     async def test_run_tool_async(self, get_n_rows_tool):
@@ -288,11 +317,14 @@ class TestE2EClientSync:
             "get-row-by-id-auth",
         )
         auth_tool = tool.add_auth_token_getter("my-test-auth", lambda: auth_token2)
-        with pytest.raises(
-            Exception,
-            match=r"401 \(Unauthorized\)",
-        ):
+        try:
             auth_tool.call(id="2")
+            pytest.fail("Expected tool to fail with auth error")
+        except Exception as e:
+            err_str = str(e)
+            assert (
+                "401" in err_str or "-32600" in err_str
+            ), f"Unexpected error message: {err_str}"
 
     def test_run_tool_auth(self, toolbox, auth_token1):
         """Tests running a tool with correct auth."""

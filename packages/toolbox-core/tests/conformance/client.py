@@ -18,9 +18,16 @@ import os
 import sys
 
 from toolbox_core.client import ToolboxClient
+from toolbox_core.protocol import Protocol
 
 
 async def main():
+    """Harness main execution block.
+
+    NOTE: All non-protocol outputs (logs, traces, errors) must be directed to
+    sys.stderr. The test runner captures stdout for protocol messages only,
+    printing other content to stdout will pollute the stream and crash the runner.
+    """
     if len(sys.argv) < 2:
         print("Usage: client.py <server_url>", file=sys.stderr)
         sys.exit(1)
@@ -41,7 +48,13 @@ async def main():
 
     client_headers = {"Accept": "application/json, text/event-stream"}
 
-    async with ToolboxClient(server_url, client_headers=client_headers) as client:
+    protocol = Protocol.MCP
+    if scenario == "request-metadata":
+        protocol = Protocol.MCP_LATEST
+
+    async with ToolboxClient(
+        server_url, client_headers=client_headers, protocol=protocol
+    ) as client:
         if scenario == "initialize":
             await client.load_toolset()
             print("Client initialization test completed", file=sys.stderr)
@@ -50,6 +63,10 @@ async def main():
             add_numbers = await client.load_tool("add_numbers")
             await add_numbers(a=1, b=2)
             print("Invoked add_numbers(a=1, b=2)", file=sys.stderr)
+
+        elif scenario == "request-metadata":
+            await client.load_toolset()
+            print("Client request-metadata test completed", file=sys.stderr)
 
         else:
             # Default behavior: load default toolset to trigger standard interactions

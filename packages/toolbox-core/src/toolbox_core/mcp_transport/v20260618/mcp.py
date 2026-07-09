@@ -1,4 +1,4 @@
-# Copyright 2025 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -27,8 +27,8 @@ from . import types
 ReceiveResultT = TypeVar("ReceiveResultT", bound=BaseModel)
 
 
-class McpHttpTransportV20250618(_McpHttpTransportBase):
-    """Transport for the MCP v2025-06-18 protocol."""
+class McpHttpTransportV20260618(_McpHttpTransportBase):
+    """Transport for the MCP draft Request-Metadata (v2026-06-18) protocol."""
 
     async def _send_request(
         self,
@@ -39,6 +39,27 @@ class McpHttpTransportV20250618(_McpHttpTransportBase):
         """Sends a JSON-RPC request to the MCP server."""
         req_headers = dict(headers or {})
         req_headers["MCP-Protocol-Version"] = self._protocol_version
+
+        # Inject SEP-2243 routing headers
+        req_headers["Mcp-Method"] = request.method
+        params = getattr(request, "params", None)
+        if params is not None:
+            if request.method in ("tools/call", "prompts/get"):
+                name = getattr(params, "name", None)
+                if name is not None:
+                    req_headers["Mcp-Name"] = str(name)
+            elif request.method == "resources/read":
+                uri = getattr(params, "uri", None)
+                if uri is not None:
+                    req_headers["Mcp-Name"] = str(uri)
+
+        # Dynamically update the _meta protocol version in the parameters model
+        if hasattr(request, "params") and request.params is not None:
+            if (
+                hasattr(request.params, "field_meta")
+                and request.params.field_meta is not None
+            ):
+                request.params.field_meta.protocol_version = self._protocol_version
 
         params = (
             request.params.model_dump(mode="json", exclude_none=True, by_alias=True)
@@ -62,6 +83,7 @@ class McpHttpTransportV20250618(_McpHttpTransportBase):
                 try:
                     json_resp = await response.json()
                 except Exception:
+                    # Not JSON, fallback to raw text
                     error_text = await response.text()
                     raise RuntimeError(
                         "API request failed with status"
@@ -82,7 +104,10 @@ class McpHttpTransportV20250618(_McpHttpTransportBase):
                     == types.UNSUPPORTED_PROTOCOL_VERSION_ERROR_CODE
                 ):
                     server_supported = err_val.get("data", {}).get("supported", [])
-                    client_supported = self._supported_protocols
+                    client_supported = (
+                        self._supported_protocols
+                        or Protocol.get_supported_mcp_versions()
+                    )
                     mutually_supported = [
                         v for v in client_supported if v in server_supported
                     ]
@@ -109,6 +134,8 @@ class McpHttpTransportV20250618(_McpHttpTransportBase):
                         in str(err_val.get("message", "")).lower()
                     )
                 ):
+                    # Cascading Fallback: Legacy servers throw this string error.
+                    # We pick the next version from the user's supported list.
                     client_supported = (
                         self._supported_protocols
                         or Protocol.get_supported_mcp_versions()
@@ -144,6 +171,7 @@ class McpHttpTransportV20250618(_McpHttpTransportBase):
                     raw_error = json_resp.get("error", {})
                     raise RuntimeError(f"MCP request failed: {raw_error}")
 
+            # If response.ok was False, but there was no JSON-RPC "error" field
             if not response.ok:
                 raise RuntimeError(
                     f"API request failed with status {response.status} ({response.reason}). "
@@ -162,80 +190,8 @@ class McpHttpTransportV20250618(_McpHttpTransportBase):
     async def _initialize_session(
         self, headers: Optional[Mapping[str, str]] = None
     ) -> None:
-        """Initializes the MCP session."""
-        meta: Optional[types.MCPMeta] = None
-
-        if self._telemetry_enabled:
-            self._session_start_time = time.time()
-            operation_start = time.time()
-            span, traceparent, tracestate = telemetry.start_span(
-                self._tracer,
-                "initialize",
-                self._protocol_version,
-                self._mcp_base_url,
-                network_transport="tcp",
-            )
-            if span is not None:
-                meta = types.MCPMeta(
-                    traceparent=traceparent or None,
-                    tracestate=tracestate or None,
-                )
-
-        params = types.InitializeRequestParams(
-            protocolVersion=self._protocol_version,
-            capabilities=types.ClientCapabilities(),
-            clientInfo=types.Implementation(
-                name=self._client_name or "toolbox-core-python",
-                version=self._client_version or version.__version__,
-            ),
-            field_meta=meta,
-        )
-
-        error: Optional[Exception] = None
-        try:
-            result = await self._send_request(
-                url=self._mcp_base_url,
-                request=types.InitializeRequest(params=params),
-                headers=headers,
-            )
-
-            if result is None:
-                raise RuntimeError(
-                    "Failed to initialize session: No response from server."
-                )
-
-            self._server_version = result.serverInfo.version
-
-            if result.protocolVersion != self._protocol_version:
-                raise ProtocolNegotiationError(result.protocolVersion)
-
-            if not result.capabilities.tools:
-                if self._manage_session:
-                    await self.close()
-                raise RuntimeError("Server does not support the 'tools' capability.")
-
-            await self._send_request(
-                url=self._mcp_base_url,
-                request=types.InitializedNotification(),
-                headers=headers,
-            )
-        except Exception as e:
-            error = e
-            raise
-        finally:
-            if self._telemetry_enabled:
-                # Record operation duration metric
-                operation_duration = time.time() - operation_start
-                telemetry.record_operation_duration(
-                    self._operation_duration_histogram,
-                    operation_duration,
-                    "initialize",
-                    self._protocol_version,
-                    self._mcp_base_url,
-                    network_transport="tcp",
-                    error=error,
-                )
-                telemetry.end_span(span, error=error)
+        """No-op for stateless transport since there is no session handshake."""
+        pass
 
     async def tools_list(
         self,
@@ -247,7 +203,14 @@ class McpHttpTransportV20250618(_McpHttpTransportBase):
 
         url = self._mcp_base_url + (toolset_name if toolset_name else "")
 
-        meta: Optional[types.MCPMeta] = None
+        meta = types.MCPMeta(
+            protocol_version=self._protocol_version,
+            client_info=types.Implementation(
+                name=self._client_name or "toolbox-core-python",
+                version=self._client_version or version.__version__,
+            ),
+            client_capabilities=types.ClientCapabilities(),
+        )
 
         if self._telemetry_enabled:
             operation_start = time.time()
@@ -259,10 +222,8 @@ class McpHttpTransportV20250618(_McpHttpTransportBase):
                 network_transport="tcp",
             )
             if span is not None:
-                meta = types.MCPMeta(
-                    traceparent=traceparent or None,
-                    tracestate=tracestate or None,
-                )
+                meta.traceparent = traceparent or None
+                meta.tracestate = tracestate or None
 
         error: Optional[Exception] = None
         try:
@@ -276,17 +237,10 @@ class McpHttpTransportV20250618(_McpHttpTransportBase):
             if result is None:
                 raise RuntimeError("Failed to list tools: No response from server.")
 
-            tools_map = {
-                t.name: self._convert_tool_schema(
-                    t.model_dump(mode="json", by_alias=True)
-                )
-                for t in result.tools
-            }
-            if self._server_version is None:
-                raise RuntimeError("Server version not available.")
+            tools_map = {t["name"]: self._convert_tool_schema(t) for t in result.tools}
 
             return ManifestSchema(
-                serverVersion=self._server_version,
+                serverVersion="1.0.0",
                 tools=tools_map,
             )
         except Exception as e:
@@ -294,7 +248,6 @@ class McpHttpTransportV20250618(_McpHttpTransportBase):
             raise
         finally:
             if self._telemetry_enabled:
-                # Record operation duration metric
                 operation_duration = time.time() - operation_start
                 telemetry.record_operation_duration(
                     self._operation_duration_histogram,
@@ -305,7 +258,6 @@ class McpHttpTransportV20250618(_McpHttpTransportBase):
                     network_transport="tcp",
                     error=error,
                 )
-                # End span
                 telemetry.end_span(span, error=error)
 
     async def tool_get(
@@ -322,22 +274,6 @@ class McpHttpTransportV20250618(_McpHttpTransportBase):
             tools={tool_name: manifest.tools[tool_name]},
         )
 
-    async def close(self):
-        """Closes the MCP session and records session duration metric."""
-        if self._telemetry_enabled:
-            # Record session duration if session was initialized
-            if self._session_start_time is not None:
-                session_duration = time.time() - self._session_start_time
-                telemetry.record_session_duration(
-                    self._session_duration_histogram,
-                    session_duration,
-                    self._protocol_version,
-                    self._mcp_base_url,
-                    network_transport="tcp",
-                )
-        # Call parent's close method
-        await super().close()
-
     async def tool_invoke(
         self,
         tool_name: str,
@@ -349,9 +285,16 @@ class McpHttpTransportV20250618(_McpHttpTransportBase):
         await self._ensure_initialized(headers=headers)
 
         payload = self._build_telemetry_payload(telemetry_attributes)
-        meta: Optional[types.MCPMeta] = None
-        if payload:
-            meta = types.MCPMeta(telemetry_attributes=payload)
+
+        meta = types.MCPMeta(
+            protocol_version=self._protocol_version,
+            client_info=types.Implementation(
+                name=self._client_name or "toolbox-core-python",
+                version=self._client_version or version.__version__,
+            ),
+            client_capabilities=types.ClientCapabilities(),
+            telemetry_attributes=payload,
+        )
 
         span = None
         if self._telemetry_enabled:
@@ -364,8 +307,6 @@ class McpHttpTransportV20250618(_McpHttpTransportBase):
                 tool_name=tool_name,
                 network_transport="tcp",
             )
-            if meta is None:
-                meta = types.MCPMeta()
             meta.traceparent = traceparent or None
             meta.tracestate = tracestate or None
             if span is not None and payload:
@@ -395,7 +336,6 @@ class McpHttpTransportV20250618(_McpHttpTransportBase):
             raise
         finally:
             if self._telemetry_enabled:
-                # Record operation duration metric
                 operation_duration = time.time() - operation_start
                 telemetry.record_operation_duration(
                     self._operation_duration_histogram,
@@ -407,5 +347,4 @@ class McpHttpTransportV20250618(_McpHttpTransportBase):
                     network_transport="tcp",
                     error=error,
                 )
-                # End span
                 telemetry.end_span(span, error=error)
