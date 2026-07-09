@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-langchain-v1.0.1...toolbox-langchain-v1.2.0) (2026-07-09)
+
+
+### Features
+
+* add support for stateless MCP 2026 draft and protocol negotiation fallback ([#699](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/699)) ([68263e1](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/68263e138e37125249584ca410f1c1bcf562602a))
+
+
 ## [1.0.1](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-langchain-v1.0.0...toolbox-langchain-v1.0.1) (2026-05-18)
 
 
