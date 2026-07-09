@@ -37,9 +37,10 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Set up Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: '3.13'
 
@@ -91,9 +92,12 @@ jobs:
         if: steps.resolve.outputs.packages != ''
         run: |
           chmod +x scripts/generate-api-docs.sh
-          for PKG in ${{ steps.resolve.outputs.packages }}; do
-            ./scripts/generate-api-docs.sh "$PKG" "${{ steps.resolve.outputs.version }}" "$BASE_URL"
+          for PKG in ${STEPS_RESOLVE_OUTPUTS_PACKAGES}; do
+            ./scripts/generate-api-docs.sh "$PKG" "${STEPS_RESOLVE_OUTPUTS_VERSION}" "$BASE_URL"
           done
+        env:
+          STEPS_RESOLVE_OUTPUTS_PACKAGES: ${{ steps.resolve.outputs.packages }}
+          STEPS_RESOLVE_OUTPUTS_VERSION: ${{ steps.resolve.outputs.version }}
 
       - name: Build root page
         if: steps.resolve.outputs.packages != '' && startsWith(github.ref, 'refs/tags/')
