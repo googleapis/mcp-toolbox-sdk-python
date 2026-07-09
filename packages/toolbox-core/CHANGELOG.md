@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.2.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v1.1.0...toolbox-core-v1.2.0) (2026-07-09)
+
+
+### Features
+
+* add support for stateless MCP 2026 draft and protocol negotiation fallback ([#699](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/699)) ([68263e1](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/68263e138e37125249584ca410f1c1bcf562602a))
+
+
+### Bug Fixes
+
+* **core:** add 'number' schema type mapping to fix float parameter loading ([#667](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/667)) ([0e8d2da](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/0e8d2dac9bfcef6f858ceeb04fa6ebe21a7fc506))
+* **core:** cache Google ID tokens per audience to prevent cross-audience token reuse ([#675](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/675)) ([91b5bb9](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/91b5bb9081ab6b34d9678082a82205756c6f298f))
+
+
 ## [1.1.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v1.0.0...toolbox-core-v1.1.0) (2026-05-18)
 
 
