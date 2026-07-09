@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.2.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-langchain-v1.0.1...toolbox-langchain-v1.2.0) (2026-07-09)
+
+
+### Features
+
+* add support for stateless MCP 2026 draft and protocol negotiation fallback ([#699](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/699)) ([68263e1](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/68263e138e37125249584ca410f1c1bcf562602a))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump aiohttp in /packages/toolbox-langchain ([#685](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/685)) ([ddabbac](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/ddabbac2b42968c06ace313ec80bdfc22fb727d0))
+* **deps:** bump aiohttp in /packages/toolbox-llamaindex ([#676](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/676)) ([4475b56](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/4475b567bd73972f36e22af40170ed0d700cdf68))
+* **deps:** update all non-major dependencies to v1.4.0 ([#666](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/666)) ([7cb3ab1](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/7cb3ab16c28602475aa473c18d572986a9e0ee41))
+* **deps:** update all non-major dependencies to v1.5.0 ([#687](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/687)) ([f0a201b](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/f0a201b5fca89e9f5d4aa16c6e7dd870b235f73a))
+* **deps:** update dependency aiohttp to v3.14.0 [security] ([#677](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/677)) ([4d69795](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/4d6979578d777de76b6db62d1b75cb4e9af5e9c3))
+* **deps:** update python-nonmajor ([#657](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/657)) ([6697b20](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/6697b20eadab6967475dcd7579db363d07510d13))
+* release 1.2.0 ([#710](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/710)) ([2028df0](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/2028df09a432ff022420316d117d55ca8a3e9f07))
+* **toolbox-llamaindex:** release v0.7.0 ([#656](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/656)) ([bdbfd48](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/bdbfd487be2c7470372c494ebad315b11e01c160))
+
 ## [1.0.1](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-langchain-v1.0.0...toolbox-langchain-v1.0.1) (2026-05-18)
 
 
