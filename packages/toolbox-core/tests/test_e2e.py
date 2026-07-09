@@ -19,6 +19,7 @@ import pytest
 import pytest_asyncio
 from pydantic import ValidationError
 
+from tests.constants import TOOLBOX_SERVER_URL_STABLE
 from toolbox_core.client import ToolboxClient
 from toolbox_core.protocol import Protocol
 from toolbox_core.tool import ToolboxTool
@@ -30,7 +31,10 @@ pytestmark = pytest.mark.usefixtures("patch_toolbox_client_url")
 @pytest_asyncio.fixture(scope="function")
 async def toolbox():
     """Creates a ToolboxClient instance shared by all tests in this module."""
-    toolbox = ToolboxClient("http://localhost:5000", protocol=Protocol.MCP)
+    # Note: The STABLE URL passed here is automatically patched by the
+    # 'patch_toolbox_client_url' fixture to run against both
+    # the STABLE (5000) and DRAFT (5001) servers.
+    toolbox = ToolboxClient(TOOLBOX_SERVER_URL_STABLE, protocol=Protocol.MCP)
     try:
         yield toolbox
     finally:
@@ -114,7 +118,7 @@ class TestBasicE2E:
     async def test_load_and_run_tool_with_telemetry(self, telemetry_enabled: bool):
         """Load and invoke a tool with telemetry_enabled=True/False."""
         async with ToolboxClient(
-            "http://localhost:5000",
+            TOOLBOX_SERVER_URL_STABLE,
             protocol=Protocol.MCP,
             telemetry_enabled=telemetry_enabled,
         ) as toolbox:

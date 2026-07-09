@@ -42,6 +42,7 @@ class _McpHttpTransportBase(ITransport, ABC):
         client_name: Optional[str] = None,
         client_version: Optional[str] = None,
         telemetry_enabled: bool = False,
+        supported_protocols: Optional[list[str]] = None,
     ):
         self._mcp_base_url = f"{base_url}/mcp/"
         self._protocol_version = protocol.value
@@ -50,6 +51,9 @@ class _McpHttpTransportBase(ITransport, ABC):
         self._client_name = client_name
         self._client_version = client_version
         self._telemetry_enabled = telemetry.resolve_telemetry_enabled(telemetry_enabled)
+        self._supported_protocols = (
+            supported_protocols or Protocol.get_supported_mcp_versions()
+        )
 
         self._tracer: Optional[telemetry.Tracer] = None
         self._operation_duration_histogram: Optional[telemetry.Histogram] = None

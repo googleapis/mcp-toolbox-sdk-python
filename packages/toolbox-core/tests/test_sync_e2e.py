@@ -14,6 +14,7 @@
 
 import pytest
 
+from tests.constants import TOOLBOX_SERVER_URL_STABLE
 from toolbox_core.sync_client import ToolboxSyncClient
 from toolbox_core.sync_tool import ToolboxSyncTool
 
@@ -24,7 +25,10 @@ pytestmark = pytest.mark.usefixtures("patch_toolbox_client_url")
 @pytest.fixture(scope="module")
 def toolbox():
     """Creates a ToolboxSyncClient instance shared by all tests in this module."""
-    toolbox = ToolboxSyncClient("http://localhost:5000")
+    # Note: The STABLE URL passed here is automatically patched by the
+    # 'patch_toolbox_client_url' fixture to run against both
+    # the STABLE (5000) and DRAFT (5001) servers.
+    toolbox = ToolboxSyncClient(TOOLBOX_SERVER_URL_STABLE)
     try:
         yield toolbox
     finally:

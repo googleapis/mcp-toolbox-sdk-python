@@ -78,60 +78,36 @@ class McpHttpTransportV20260618(_McpHttpTransportBase):
         async with self._session.post(
             url, json=payload, headers=req_headers
         ) as response:
-            if response.status == 400:
+            json_resp = None
+            if not response.ok:
                 try:
                     json_resp = await response.json()
-                    if "error" in json_resp:
-                        err_val = json_resp["error"]
-                        if isinstance(err_val, dict) and err_val.get("code") == -32004:
-                            server_supported = err_val.get("data", {}).get(
-                                "supported", []
-                            )
-
-                            client_supported = Protocol.get_supported_mcp_versions()
-                            mutually_supported = [
-                                v for v in client_supported if v in server_supported
-                            ]
-
-                            if mutually_supported:
-                                raise ProtocolNegotiationError(mutually_supported[0])
-                            else:
-                                raise RuntimeError(
-                                    "No mutually supported protocol version. "
-                                    f"Client supports: {client_supported}, "
-                                    f"Server supports: {server_supported}"
-                                )
-                        elif (
-                            isinstance(err_val, str)
-                            and "invalid protocol version" in err_val.lower()
-                        ):
-                            # Legacy 2025-06-18 servers don't use the -32004 code or provide
-                            # a supported versions list. They return this raw string error
-                            # instead. We safely assume 2025-06-18 here.
-                            raise ProtocolNegotiationError(Protocol.MCP_v20250618)
-                except Exception as e:
-                    if isinstance(e, (RuntimeError, ProtocolNegotiationError)):
-                        raise e
-
-            if not response.ok:
-                error_text = await response.text()
-                raise RuntimeError(
-                    "API request failed with status"
-                    f" {response.status} ({response.reason}). Server response:"
-                    f" {error_text}"
-                )
-
-            if response.status == 204 or response.content.at_eof():
-                return None
-
-            json_resp = await response.json()
+                except Exception:
+                    # Not JSON, fallback to raw text
+                    error_text = await response.text()
+                    raise RuntimeError(
+                        "API request failed with status"
+                        f" {response.status} ({response.reason}). Server response:"
+                        f" {error_text}"
+                    )
+            else:
+                if response.status == 204 or response.content.at_eof():
+                    return None
+                json_resp = await response.json()
 
             # Check for JSON-RPC Error
-            if "error" in json_resp:
+            if json_resp and isinstance(json_resp, dict) and "error" in json_resp:
                 err_val = json_resp["error"]
-                if isinstance(err_val, dict) and err_val.get("code") == -32004:
+                if (
+                    isinstance(err_val, dict)
+                    and err_val.get("code")
+                    == types.UNSUPPORTED_PROTOCOL_VERSION_ERROR_CODE
+                ):
                     server_supported = err_val.get("data", {}).get("supported", [])
-                    client_supported = Protocol.get_supported_mcp_versions()
+                    client_supported = (
+                        self._supported_protocols
+                        or Protocol.get_supported_mcp_versions()
+                    )
                     mutually_supported = [
                         v for v in client_supported if v in server_supported
                     ]
@@ -143,15 +119,64 @@ class McpHttpTransportV20260618(_McpHttpTransportBase):
                             f"Client supports: {client_supported}, "
                             f"Server supports: {server_supported}"
                         )
+                elif (
+                    isinstance(err_val, str)
+                    and (
+                        "invalid protocol version" in err_val.lower()
+                        or "unsupported protocol version" in err_val.lower()
+                    )
+                ) or (
+                    isinstance(err_val, dict)
+                    and (
+                        "invalid protocol version"
+                        in str(err_val.get("message", "")).lower()
+                        or "unsupported protocol version"
+                        in str(err_val.get("message", "")).lower()
+                    )
+                ):
+                    # Cascading Fallback: Legacy servers throw this string error.
+                    # We pick the next version from the user's supported list.
+                    client_supported = (
+                        self._supported_protocols
+                        or Protocol.get_supported_mcp_versions()
+                    )
+                    try:
+                        current_idx = client_supported.index(self._protocol_version)
+                        if current_idx + 1 < len(client_supported):
+                            raise ProtocolNegotiationError(
+                                client_supported[current_idx + 1]
+                            )
+                        else:
+                            raise RuntimeError(
+                                "Server threw 'invalid protocol version' but no fallback versions "
+                                "remain in the user's supported protocols array."
+                            )
+                    except ValueError:
+                        raise RuntimeError(
+                            f"Invalid state: current protocol "
+                            f"{self._protocol_version} is not in "
+                            f"supported_protocols."
+                        )
+
                 try:
                     err = types.JSONRPCError.model_validate(json_resp).error
+                except Exception:
+                    err = None
+
+                if err:
                     raise RuntimeError(
                         f"MCP request failed with code {err.code}: {err.message}"
                     )
-                except Exception:
-                    # Fallback if the error doesn't match our schema exactly
+                else:
                     raw_error = json_resp.get("error", {})
                     raise RuntimeError(f"MCP request failed: {raw_error}")
+
+            # If response.ok was False, but there was no JSON-RPC "error" field
+            if not response.ok:
+                raise RuntimeError(
+                    f"API request failed with status {response.status} ({response.reason}). "
+                    f"Server response: {json_resp}"
+                )
 
             # Parse Result
             if isinstance(request, types.MCPRequest):

@@ -17,6 +17,7 @@ from unittest.mock import AsyncMock, MagicMock, Mock, patch
 import pytest
 import pytest_asyncio
 from aiohttp import ClientSession
+from aioresponses import aioresponses
 
 from toolbox_core.mcp_transport.v20260618 import types
 from toolbox_core.mcp_transport.v20260618.mcp import McpHttpTransportV20260618
@@ -239,7 +240,7 @@ class TestMcpHttpTransportV20260618:
             "jsonrpc": "2.0",
             "id": "1",
             "error": {
-                "code": -32004,
+                "code": -32022,
                 "message": "Unsupported protocol version",
                 "data": {"supported": ["DRAFT-2026-v1"]},
             },
@@ -266,7 +267,7 @@ class TestMcpHttpTransportV20260618:
         assert transport._session.post.call_count == 1
 
     async def test_version_negotiation_raises_fallback_200_ok(self, transport):
-        """Tests that the client raises ProtocolNegotiationError when the server returns 200 OK with -32004."""
+        """Tests that the client raises ProtocolNegotiationError when the server returns 200 OK with -32022."""
         from toolbox_core.exceptions import ProtocolNegotiationError
 
         mock_response_reject = AsyncMock()
@@ -277,7 +278,7 @@ class TestMcpHttpTransportV20260618:
             "jsonrpc": "2.0",
             "id": "1",
             "error": {
-                "code": -32004,
+                "code": -32022,
                 "message": "Unsupported protocol version",
                 "data": {"supported": ["DRAFT-2026-v1"]},
             },
@@ -312,7 +313,7 @@ class TestMcpHttpTransportV20260618:
             "jsonrpc": "2.0",
             "id": "1",
             "error": {
-                "code": -32004,
+                "code": -32022,
                 "message": "Unsupported protocol version",
                 "data": {"supported": ["UNSUPPORTED-VERSION"]},
             },
@@ -365,3 +366,79 @@ class TestMcpHttpTransportV20260618:
         )
         result = await transport.tool_invoke("tool", {}, {})
         assert result == "Result"
+
+    async def test_send_request_400_with_json_rpc_error(self, transport):
+        # Test that an HTTP 400 with a non-negotiation JSON-RPC error is parsed properly.
+        mock_response = AsyncMock()
+        mock_response.ok = False
+        mock_response.status = 400
+        mock_response.json.return_value = {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "error": {"code": -32602, "message": "missing _meta"},
+        }
+
+        transport._session.post.return_value.__aenter__.return_value = mock_response
+
+        with pytest.raises(RuntimeError) as exc_info:
+            await transport._send_request(
+                "http://test.com/mcp",
+                types.JSONRPCRequest(method="test", params={}),
+            )
+
+        assert "MCP request failed with code -32602" in str(exc_info.value)
+        assert "missing _meta" in str(exc_info.value)
+
+    async def test_send_request_400_with_raw_text(self, transport):
+        # Test that an HTTP 400 with non-JSON text is raised with the raw string payload.
+        mock_response = AsyncMock()
+        mock_response.ok = False
+        mock_response.status = 400
+        mock_response.reason = "Bad Request"
+        mock_response.json.side_effect = Exception("Not JSON")
+        mock_response.text.return_value = "<html/>"
+
+        transport._session.post.return_value.__aenter__.return_value = mock_response
+
+        with pytest.raises(RuntimeError) as exc_info:
+            await transport._send_request(
+                "http://test.com/mcp",
+                types.JSONRPCRequest(method="test", params={}),
+            )
+
+        assert "API request failed with status 400" in str(exc_info.value)
+        assert "<html/>" in str(exc_info.value)
+
+    async def test_version_negotiation_legacy_string_fallback(self, transport):
+        """Tests that the client raises ProtocolNegotiationError when the server returns a string 'invalid protocol version' error."""
+        from toolbox_core.exceptions import ProtocolNegotiationError
+
+        mock_response_reject = AsyncMock()
+        mock_response_reject.ok = False
+        mock_response_reject.status = 400
+        mock_response_reject.json.return_value = {
+            "jsonrpc": "2.0",
+            "id": "1",
+            "error": "invalid protocol version",
+        }
+
+        transport._session.post.return_value.__aenter__.return_value = (
+            mock_response_reject
+        )
+
+        class TestResult(types.BaseModel):
+            pass
+
+        class TestRequest(types.MCPRequest[TestResult]):
+            method: str = "method"
+            params: dict = {}
+
+            def get_result_model(self):
+                return TestResult
+
+        # The fallback defaults to picking the next version in the supported list, or 2025-11-25.
+        with pytest.raises(ProtocolNegotiationError) as exc_info:
+            await transport._send_request("url", TestRequest())
+
+        assert exc_info.value.negotiated_version == Protocol.MCP_v20251125
+        assert transport._session.post.call_count == 1

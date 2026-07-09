@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from asyncio import to_thread
-from typing import Any, Awaitable, Callable, Mapping, Optional, Union
+from typing import Any, Awaitable, Callable, Mapping, Optional, Sequence, Union
 from warnings import warn
 
 from toolbox_core.protocol import Protocol
@@ -32,7 +32,7 @@ class ToolboxClient:
         client_headers: Optional[
             Mapping[str, Union[Callable[[], str], Callable[[], Awaitable[str]], str]]
         ] = None,
-        protocol: Protocol = Protocol.MCP,
+        protocol: Union[Protocol, list[Protocol], list[str]] = Protocol.MCP,
         telemetry_enabled: bool = False,
     ) -> None:
         """

@@ -21,7 +21,9 @@ from unittest.mock import AsyncMock, Mock, patch
 import pytest
 from aiohttp import web
 
-from toolbox_core.client import ToolboxClient
+from tests.constants import TOOLBOX_SERVER_URL_STABLE
+from toolbox_core.client import ToolboxClient, _McpTransportProxy
+from toolbox_core.exceptions import ProtocolNegotiationError
 from toolbox_core.itransport import ITransport
 from toolbox_core.protocol import (
     ManifestSchema,
@@ -814,7 +816,7 @@ def test_toolbox_client_no_warning_on_mcp():
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
 
-            client = ToolboxClient("http://localhost:5000", protocol=Protocol.MCP)
+            client = ToolboxClient(TOOLBOX_SERVER_URL_STABLE, protocol=Protocol.MCP)
             assert len(w) == 0
 
 
@@ -825,6 +827,137 @@ def test_toolbox_client_no_warning_on_explicit_mcp_version():
             warnings.simplefilter("always")
 
             client = ToolboxClient(
-                "http://localhost:5000", protocol=Protocol.MCP_v20251125
+                TOOLBOX_SERVER_URL_STABLE, protocol=Protocol.MCP_v20251125
             )
             assert len(w) == 0
+
+
+def test_toolbox_client_custom_protocols():
+    """Test that custom protocols array is correctly parsed and sorted."""
+    with patch("toolbox_core.client._McpTransportProxy") as mock_proxy:
+        client = ToolboxClient(
+            TOOLBOX_SERVER_URL_STABLE,
+            protocol=[Protocol.MCP_v20241105, Protocol.MCP_DRAFT, "2025-06-18"],
+        )
+        mock_proxy.assert_called_once()
+        args, kwargs = mock_proxy.call_args
+
+        # Check initial_protocol
+        assert args[2] == Protocol.MCP_DRAFT
+        # Check supported_protocols (must be sorted from newest to oldest)
+        assert args[6] == ["DRAFT-2026-v1", "2025-06-18", "2024-11-05"]
+
+
+def test_toolbox_client_custom_protocols_invalid():
+    """Test that custom protocols array raises error on invalid inputs."""
+
+    with pytest.raises(ValueError, match="protocol list cannot be empty"):
+        ToolboxClient(TOOLBOX_SERVER_URL_STABLE, protocol=[])
+
+    with pytest.raises(ValueError, match="Invalid protocol version 'invalid-version'"):
+        ToolboxClient(TOOLBOX_SERVER_URL_STABLE, protocol=["invalid-version"])
+
+
+@pytest.mark.asyncio
+async def test_artificial_array():
+    """The Artificial Array Test: simulate server returning 2025-03-26, should fallback to 2024-11-05."""
+    proxy = _McpTransportProxy(
+        "http://mock",
+        None,
+        Protocol.MCP_DRAFT,
+        None,
+        None,
+        False,
+        [Protocol.MCP_DRAFT.value, Protocol.MCP_v20241105.value],
+    )
+
+    proxy._active_transport.tool_get = AsyncMock(
+        side_effect=ProtocolNegotiationError(Protocol.MCP_v20250326.value)
+    )
+
+    with patch.object(proxy, "_create_transport") as mock_create:
+        mock_new_transport = AsyncMock()
+        mock_new_transport.tool_get.return_value = "success"
+        mock_create.return_value = mock_new_transport
+
+        res = await proxy.tool_get("mock")
+
+        assert res == "success"
+        mock_create.assert_called_with(Protocol.MCP_v20241105)
+
+
+@pytest.mark.asyncio
+async def test_cascading_fallback():
+    """The Cascading Fallback Test: simulate server stateless generic error which throws the next stateful version."""
+    proxy = _McpTransportProxy(
+        "http://mock",
+        None,
+        Protocol.MCP_DRAFT,
+        None,
+        None,
+        False,
+        [Protocol.MCP_DRAFT.value, Protocol.MCP_v20251125.value],
+    )
+
+    proxy._active_transport.tool_get = AsyncMock(
+        side_effect=ProtocolNegotiationError(Protocol.MCP_v20251125.value)
+    )
+
+    with patch.object(proxy, "_create_transport") as mock_create:
+        mock_new_transport = AsyncMock()
+        mock_new_transport.tool_get.return_value = "success"
+        mock_create.return_value = mock_new_transport
+
+        res = await proxy.tool_get("mock")
+
+        assert res == "success"
+        mock_create.assert_called_with(Protocol.MCP_v20251125)
+
+
+@pytest.mark.asyncio
+async def test_strict_constraint():
+    """The Strict Constraint Test: simulate legacy server returning an unsupported old version."""
+    proxy = _McpTransportProxy(
+        "http://mock",
+        None,
+        Protocol.MCP_DRAFT,
+        None,
+        None,
+        False,
+        [Protocol.MCP_DRAFT.value, Protocol.MCP_v20251125.value],
+    )
+
+    proxy._active_transport.tool_get = AsyncMock(
+        side_effect=ProtocolNegotiationError(Protocol.MCP_v20241105.value)
+    )
+
+    with pytest.raises(RuntimeError, match="No mutually supported protocol version"):
+        await proxy.tool_get("mock")
+
+
+@pytest.mark.asyncio
+async def test_modern_smart_fallback():
+    """The Modern Smart-Fallback Test: simulate modern payload correctly returning pre-intersected fallback."""
+    proxy = _McpTransportProxy(
+        "http://mock",
+        None,
+        Protocol.MCP_DRAFT,
+        None,
+        None,
+        False,
+        [Protocol.MCP_DRAFT.value, Protocol.MCP_v20241105.value],
+    )
+
+    proxy._active_transport.tool_get = AsyncMock(
+        side_effect=ProtocolNegotiationError(Protocol.MCP_v20241105.value)
+    )
+
+    with patch.object(proxy, "_create_transport") as mock_create:
+        mock_new_transport = AsyncMock()
+        mock_new_transport.tool_get.return_value = "success"
+        mock_create.return_value = mock_new_transport
+
+        res = await proxy.tool_get("mock")
+
+        assert res == "success"
+        mock_create.assert_called_with(Protocol.MCP_v20241105)
