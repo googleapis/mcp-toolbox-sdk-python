@@ -17,6 +17,8 @@ from typing import Any, Generic, Literal, Type, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field
 
+UNSUPPORTED_PROTOCOL_VERSION_ERROR_CODE = -32022
+
 
 class _BaseMCPModel(BaseModel):
     """Base model with common configuration."""
@@ -53,9 +55,6 @@ class ErrorData(_BaseMCPModel):
     code: int
     message: str
     data: Any | None = None
-
-
-UNSUPPORTED_PROTOCOL_VERSION_ERROR_CODE = -32022
 
 
 class JSONRPCError(_BaseMCPModel):
