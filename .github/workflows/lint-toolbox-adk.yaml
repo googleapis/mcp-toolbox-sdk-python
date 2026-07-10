@@ -13,7 +13,8 @@
 # limitations under the License.
 
 name: adk
-on:
+# zizmor flags workflow_run, but this is safe because it only deploys internal branches and is strictly gated to the base repository.
+on: # zizmor: ignore[dangerous-triggers]
   pull_request:
     paths:
       - 'packages/toolbox-adk/**'
@@ -62,6 +63,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: false
       - name: Setup Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
