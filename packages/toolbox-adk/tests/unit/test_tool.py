@@ -16,7 +16,9 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from google.genai.types import Type
+from toolbox_core.protocol import TelemetryAttributes
 
+from toolbox_adk.client import USER_TOKEN_CONTEXT_VAR
 from toolbox_adk.credentials import CredentialConfig, CredentialType
 from toolbox_adk.tool import ToolboxTool
 
@@ -117,6 +119,49 @@ class TestToolboxTool:
 
         assert "service2" in bound_getters
         assert bound_getters["service2"]() == "dynamic_token2"
+
+    @pytest.mark.asyncio
+    async def test_dynamic_telemetry_attributes_resolved_per_invocation(self):
+        core_tool = AsyncMock()
+        core_tool.__name__ = "mock"
+        core_tool.__doc__ = "mock doc"
+
+        derived_tools = []
+
+        def add_telemetry_attributes(attrs):
+            derived_tool = AsyncMock(return_value=f"ok-{attrs.user_id}")
+            derived_tool.__name__ = "mock"
+            derived_tool.__doc__ = "mock doc"
+            derived_tools.append(derived_tool)
+            return derived_tool
+
+        core_tool.add_telemetry_attributes = MagicMock(
+            side_effect=add_telemetry_attributes
+        )
+
+        def telemetry_getter(ctx):
+            return TelemetryAttributes(
+                llm_model="gemini-2.5-pro",
+                user_id=ctx.state["user_id"],
+                agent_id="agent-1",
+            )
+
+        tool = ToolboxTool(core_tool, telemetry_attributes=telemetry_getter)
+
+        ctx1 = MagicMock()
+        ctx1.state = {"user_id": "user-1"}
+        ctx2 = MagicMock()
+        ctx2.state = {"user_id": "user-2"}
+
+        assert await tool.run_async({}, ctx1) == "ok-user-1"
+        assert await tool.run_async({}, ctx2) == "ok-user-2"
+
+        calls = core_tool.add_telemetry_attributes.call_args_list
+        assert [c.args[0].user_id for c in calls] == ["user-1", "user-2"]
+        assert all(c.args[0].llm_model == "gemini-2.5-pro" for c in calls)
+        assert core_tool.await_count == 0
+        assert [t.await_count for t in derived_tools] == [1, 1]
+        assert tool._core_tool is core_tool
 
     @pytest.mark.asyncio
     async def test_3lo_missing_client_secret(self):
@@ -229,6 +274,48 @@ class TestToolboxTool:
             "profile": "",
             "email": "",
         }
+
+    @pytest.mark.asyncio
+    async def test_3lo_resets_user_token_when_telemetry_getter_raises(self):
+        core_tool = AsyncMock(return_value="success")
+        core_tool.__name__ = "mock_tool"
+        core_tool.__doc__ = "mock doc"
+        core_tool._required_authn_params = {"mock_param": "mock_service"}
+        core_tool._required_authz_tokens = []
+        core_tool.add_auth_token_getter = MagicMock(return_value=core_tool)
+
+        auth_config = CredentialConfig(
+            type=CredentialType.USER_IDENTITY, client_id="cid", client_secret="csec"
+        )
+
+        def telemetry_getter(ctx):
+            raise RuntimeError("telemetry boom")
+
+        tool = ToolboxTool(
+            core_tool, auth_config=auth_config, telemetry_attributes=telemetry_getter
+        )
+
+        ctx = MagicMock()
+        mock_creds = MagicMock()
+        mock_creds.oauth2.access_token = "valid_access_token"
+        mock_creds.oauth2.id_token = "valid_id_token"
+        ctx.get_auth_response.return_value = mock_creds
+
+        mock_cred_service = MagicMock()
+        mock_cred_service.load_credential = AsyncMock(return_value=None)
+        mock_cred_service.save_credential = AsyncMock(return_value=None)
+        ctx._invocation_context = MagicMock()
+        ctx._invocation_context.credential_service = mock_cred_service
+
+        previous_token = USER_TOKEN_CONTEXT_VAR.set("previous_token")
+        try:
+            with pytest.raises(RuntimeError, match="telemetry boom"):
+                await tool.run_async({}, ctx)
+
+            assert USER_TOKEN_CONTEXT_VAR.get() == "previous_token"
+            core_tool.assert_not_awaited()
+        finally:
+            USER_TOKEN_CONTEXT_VAR.reset(previous_token)
 
     @pytest.mark.asyncio
     async def test_3lo_exception_reraise(self):

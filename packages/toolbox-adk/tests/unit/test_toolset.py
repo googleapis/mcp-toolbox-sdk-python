@@ -16,7 +16,7 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from toolbox_core.protocol import Protocol
+from toolbox_core.protocol import Protocol, TelemetryAttributes
 
 from toolbox_adk.tool import ToolboxTool
 from toolbox_adk.toolset import ToolboxToolset
@@ -75,6 +75,28 @@ class TestToolboxToolset:
         assert len(tools) == 1
         mock_client.load_tool.assert_awaited_with("toolA", bound_params={})
         assert tools[0]._adk_token_getters == auth_getters
+
+    @patch("toolbox_adk.toolset.ToolboxClient")
+    @pytest.mark.asyncio
+    async def test_get_tools_passes_telemetry_attributes_to_wrappers(
+        self, mock_client_cls
+    ):
+        mock_client = mock_client_cls.return_value
+
+        t1 = MagicMock()
+        t1.__name__ = "tool1"
+        t1.__doc__ = "desc1"
+        mock_client.load_tool = AsyncMock(return_value=t1)
+
+        attrs = TelemetryAttributes(llm_model="gemini-2.5-pro")
+        toolset = ToolboxToolset(
+            "url", tool_names=["toolA"], telemetry_attributes=attrs
+        )
+
+        tools = await toolset.get_tools()
+
+        assert len(tools) == 1
+        assert tools[0]._telemetry_attributes is attrs
 
     @patch("toolbox_adk.toolset.ToolboxClient")
     @pytest.mark.asyncio
