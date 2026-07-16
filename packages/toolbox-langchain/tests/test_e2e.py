@@ -111,6 +111,19 @@ class TestE2EClientAsync:
         assert "row2" in response
         assert "row3" not in response
 
+    async def test_run_tool_url_binding_async(self):
+        """Tests URL Parameter Binding natively handled by the server."""
+        toolbox = ToolboxClient(f"{TOOLBOX_SERVER_URL_STABLE}?num_rows=2")
+        tool = await toolbox.aload_tool("get-n-rows")
+
+        # 'num_rows' is filtered from the schema and automatically injected by the server
+        response = await tool.ainvoke({})
+
+        assert "row1" in response
+        assert "row2" in response
+        assert "row3" not in response
+        toolbox.close()
+
     async def test_run_tool_sync(self, get_n_rows_tool):
         response = get_n_rows_tool.invoke({"num_rows": "2"})
 
@@ -279,6 +292,19 @@ class TestE2EClientSync:
         assert "row1" in response
         assert "row2" in response
         assert "row3" not in response
+
+    def test_run_tool_url_binding_sync(self):
+        """Tests URL Parameter Binding natively handled by the server."""
+        toolbox = ToolboxClient(f"{TOOLBOX_SERVER_URL_STABLE}?num_rows=2")
+        tool = toolbox.load_tool("get-n-rows")
+
+        # 'num_rows' is filtered from the schema and automatically injected by the server
+        response = tool.invoke({})
+
+        assert "row1" in response
+        assert "row2" in response
+        assert "row3" not in response
+        toolbox.close()
 
     def test_run_tool_missing_params(self, get_n_rows_tool):
         with pytest.raises(ValidationError, match="Field required"):

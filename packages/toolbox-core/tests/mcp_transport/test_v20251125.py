@@ -451,6 +451,33 @@ class TestMcpHttpTransportV20251125:
         assert isinstance(call_args.kwargs["request"], types.ListToolsRequest)
         assert call_args.kwargs["headers"] is None
 
+    async def test_tools_list_with_toolset_name_and_query_params(self, mocker):
+        """Test listing tools with a toolset name when base_url contains query parameters."""
+        mock_session = AsyncMock(spec=ClientSession)
+        transport = McpHttpTransportV20251125(
+            "http://fake-server.com?proj=xyz&env=prod",
+            session=mock_session,
+            protocol=Protocol.MCP_v20251125,
+        )
+        try:
+            mocker.patch.object(
+                transport, "_ensure_initialized", new_callable=AsyncMock
+            )
+            mocker.patch.object(
+                transport,
+                "_send_request",
+                new_callable=AsyncMock,
+                return_value=create_fake_tools_list_result(),
+            )
+            transport._server_version = "1.0.0"
+            manifest = await transport.tools_list(toolset_name="custom_toolset")
+            assert isinstance(manifest, ManifestSchema)
+            expected_url = "http://fake-server.com/mcp/custom_toolset?proj=xyz&env=prod"
+            call_args = transport._send_request.call_args
+            assert call_args.kwargs["url"] == expected_url
+        finally:
+            await transport.close()
+
     async def test_tool_invoke_success(self, transport, mocker):
         mocker.patch.object(transport, "_ensure_initialized", new_callable=AsyncMock)
         mocker.patch.object(

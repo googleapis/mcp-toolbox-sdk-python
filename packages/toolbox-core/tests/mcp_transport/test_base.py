@@ -69,6 +69,50 @@ class TestMcpHttpTransportBase:
         assert transport._session is not None
 
     @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "input_url,expected",
+        [
+            ("http://api.com", "http://api.com/mcp/"),
+            ("http://api.com/", "http://api.com/mcp/"),
+            ("http://api.com/mcp", "http://api.com/mcp/"),
+            ("http://api.com/mcp/", "http://api.com/mcp/"),
+            ("http://api.com?proj=xyz", "http://api.com/mcp/?proj=xyz"),
+            ("http://api.com/mcp?proj=xyz", "http://api.com/mcp/?proj=xyz"),
+            ("http://api.com/mcp/?proj=xyz", "http://api.com/mcp/?proj=xyz"),
+            ("http://api.com/v1/api?proj=xyz", "http://api.com/v1/api/mcp/?proj=xyz"),
+            (
+                "http://api.com?proj=xyz&env=prod",
+                "http://api.com/mcp/?proj=xyz&env=prod",
+            ),
+            (
+                "http://api.com/mcp?proj=xyz&env=prod",
+                "http://api.com/mcp/?proj=xyz&env=prod",
+            ),
+            (
+                "http://api.com/mcp?q=a%20b&flag=true",
+                "http://api.com/mcp/?q=a%20b&flag=true",
+            ),
+            ("http://api.com?tag=1&tag=2", "http://api.com/mcp/?tag=1&tag=2"),
+            ("http://localhost:5000/mcp/sse", "http://localhost:5000/mcp/sse"),
+            (
+                "http://localhost:5000/mcp/sse?project=my-project",
+                "http://localhost:5000/mcp/sse?project=my-project",
+            ),
+            (
+                "http://api.com/v1/mcp/sse?proj=xyz",
+                "http://api.com/v1/mcp/sse?proj=xyz",
+            ),
+        ],
+    )
+    async def test_mcp_base_url_construction(self, input_url, expected):
+        """Test that _mcp_base_url is constructed correctly across edge cases."""
+        t = ConcreteTransport(input_url)
+        try:
+            assert t.base_url == expected
+        finally:
+            await t.close()
+
+    @pytest.mark.asyncio
     async def test_ensure_initialized_calls_initialize(self, transport, mocker):
         """Test that _ensure_initialized calls _initialize_session."""
         mocker.patch.object(transport, "_initialize_session", new_callable=AsyncMock)
