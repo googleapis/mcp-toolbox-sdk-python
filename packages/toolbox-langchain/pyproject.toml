@@ -53,7 +53,7 @@ test = [
     "Pillow==12.2.0; python_version >= '3.10'",
     "google-cloud-secret-manager==2.28.0",
     "google-cloud-storage==3.10.1",
-    "numpy<2", # Pinned to <2 to prevent mypy syntax errors on python 3.10 with numpy 2.x stubs
+    "numpy<3", # Pinned to <2 to prevent mypy syntax errors on python 3.10 with numpy 2.x stubs
 ]
 
 [build-system]

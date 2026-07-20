@@ -41,7 +41,7 @@ test = [
     "pytest-asyncio==1.4.0",
     "pytest-cov==7.1.0",
     "pytest-mock==3.15.1",
-    "numpy<2", # Pinned to <2 to prevent mypy syntax errors on python 3.10 with numpy 2.x stubs,
+    "numpy<3", # Pinned to <2 to prevent mypy syntax errors on python 3.10 with numpy 2.x stubs,
 ]
 
 # Tells setuptools that packages are under the 'src' directory
