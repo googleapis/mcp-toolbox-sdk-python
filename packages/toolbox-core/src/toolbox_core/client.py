@@ -64,6 +64,7 @@ class _McpTransportProxy(ITransport):
         self._active_transport = self._create_transport(protocol)
 
     def _create_transport(self, protocol: Protocol) -> ITransport:
+        self._current_protocol = protocol
         match protocol:
             case Protocol.MCP_DRAFT:
                 return McpHttpTransportV20260618(
@@ -125,50 +126,57 @@ class _McpTransportProxy(ITransport):
     @property
     def _protocol_version(self) -> str:
         # We must expose this for tests asserting the current protocol version.
-        return getattr(self._active_transport, "_protocol_version", "")
+        if hasattr(self, "_current_protocol") and self._current_protocol:
+            return self._current_protocol.value
+        return str(getattr(self._active_transport, "_protocol_version", ""))
 
     async def _execute_with_fallback(
         self, method_name: str, *args: Any, **kwargs: Any
     ) -> Any:
-        try:
-            return await getattr(self._active_transport, method_name)(*args, **kwargs)
-        except ProtocolNegotiationError as e:
-            server_version = e.negotiated_version
-            all_versions = Protocol.get_supported_mcp_versions()
-
+        while True:
             try:
-                server_idx = all_versions.index(server_version)
-            except ValueError:
-                raise RuntimeError(
-                    f"Server returned unknown protocol version: {server_version}"
+                return await getattr(self._active_transport, method_name)(
+                    *args, **kwargs
                 )
+            except ProtocolNegotiationError as e:
+                server_version = e.negotiated_version
+                all_versions = Protocol.get_supported_mcp_versions()
 
-            # Artificial Array: Server supports this version and all older ones
-            server_supported = all_versions[server_idx:]
-
-            if self._supported_protocols:
-                client_supported = self._supported_protocols
-                mutually_supported = [
-                    v for v in client_supported if v in server_supported
-                ]
-                if mutually_supported:
-                    fallback_protocol = Protocol(mutually_supported[0])
-                else:
+                try:
+                    server_idx = all_versions.index(server_version)
+                except ValueError:
                     raise RuntimeError(
-                        "No mutually supported protocol version. "
-                        f"Client supports: {client_supported}, "
-                        f"Server supports (and older): {server_version}"
+                        f"Server returned unknown protocol version: {server_version}"
                     )
-            else:
-                fallback_protocol = Protocol(server_version)
 
-            logging.warning(
-                f"Protocol fallback required. Switching from "
-                f"{self._protocol_version} to {fallback_protocol.value}"
-            )
-            await self._active_transport.close()
-            self._active_transport = self._create_transport(fallback_protocol)
-            return await getattr(self._active_transport, method_name)(*args, **kwargs)
+                # Artificial Array: Server supports this version and all older ones
+                server_supported = all_versions[server_idx:]
+
+                if self._supported_protocols:
+                    client_supported = self._supported_protocols
+                    mutually_supported = [
+                        v for v in client_supported if v in server_supported
+                    ]
+                    if mutually_supported:
+                        fallback_protocol = Protocol(mutually_supported[0])
+                    else:
+                        raise RuntimeError(
+                            "No mutually supported protocol version. "
+                            f"Client supports: {client_supported}, "
+                            f"Server supports (and older): {server_version}"
+                        )
+                else:
+                    fallback_protocol = Protocol(server_version)
+
+                if fallback_protocol.value == self._protocol_version:
+                    raise e
+
+                logging.warning(
+                    f"Protocol fallback required. Switching from "
+                    f"{self._protocol_version} to {fallback_protocol.value}"
+                )
+                await self._active_transport.close()
+                self._active_transport = self._create_transport(fallback_protocol)
 
     async def tool_get(self, *args: Any, **kwargs: Any) -> Any:
         return await self._execute_with_fallback("tool_get", *args, **kwargs)
