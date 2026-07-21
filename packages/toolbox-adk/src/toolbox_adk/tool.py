@@ -14,7 +14,7 @@
 
 import inspect
 import logging
-from typing import Any, Awaitable, Callable, Dict, Mapping, Optional, Union
+from typing import Any, Awaitable, Callable, Dict, Mapping, Optional, Union, cast
 
 import toolbox_core
 from fastapi.openapi.models import OAuth2, OAuthFlowAuthorizationCode, OAuthFlows
@@ -345,9 +345,23 @@ class ToolboxTool(BaseTool):
 
         sig = inspect.signature(attributes)
         if len(sig.parameters) == 1:
-            resolved = attributes(tool_context)
+            context_getter = cast(
+                Union[
+                    Callable[[ToolContext], TelemetryAttributes],
+                    Callable[[ToolContext], Awaitable[TelemetryAttributes]],
+                ],
+                attributes,
+            )
+            resolved = context_getter(tool_context)
         else:
-            resolved = attributes()
+            no_arg_getter = cast(
+                Union[
+                    Callable[[], TelemetryAttributes],
+                    Callable[[], Awaitable[TelemetryAttributes]],
+                ],
+                attributes,
+            )
+            resolved = no_arg_getter()
         if inspect.isawaitable(resolved):
             resolved = await resolved
         return resolved
