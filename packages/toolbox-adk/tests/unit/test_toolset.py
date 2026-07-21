@@ -88,7 +88,7 @@ class TestToolboxToolset:
         t1.__doc__ = "desc1"
         mock_client.load_tool = AsyncMock(return_value=t1)
 
-        attrs = TelemetryAttributes(llm_model="gemini-2.5-pro")
+        attrs = TelemetryAttributes(llm_model="gemini-3.5-flash")
         toolset = ToolboxToolset(
             "url", tool_names=["toolA"], telemetry_attributes=attrs
         )

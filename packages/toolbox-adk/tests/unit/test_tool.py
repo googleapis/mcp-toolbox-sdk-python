@@ -141,7 +141,7 @@ class TestToolboxTool:
 
         def telemetry_getter(ctx):
             return TelemetryAttributes(
-                llm_model="gemini-2.5-pro",
+                llm_model="gemini-3.5-flash",
                 user_id=ctx.state["user_id"],
                 agent_id="agent-1",
             )
@@ -158,10 +158,53 @@ class TestToolboxTool:
 
         calls = core_tool.add_telemetry_attributes.call_args_list
         assert [c.args[0].user_id for c in calls] == ["user-1", "user-2"]
-        assert all(c.args[0].llm_model == "gemini-2.5-pro" for c in calls)
+        assert all(c.args[0].llm_model == "gemini-3.5-flash" for c in calls)
         assert core_tool.await_count == 0
         assert [t.await_count for t in derived_tools] == [1, 1]
         assert tool._core_tool is core_tool
+
+    @pytest.mark.asyncio
+    async def test_telemetry_getter_with_default_argument_receives_tool_context(self):
+        core_tool = AsyncMock()
+        core_tool.__name__ = "mock"
+        core_tool.__doc__ = "mock doc"
+
+        derived_tool = AsyncMock(return_value="ok")
+        derived_tool.__name__ = "mock"
+        derived_tool.__doc__ = "mock doc"
+        core_tool.add_telemetry_attributes = MagicMock(return_value=derived_tool)
+
+        def telemetry_getter(ctx, default_model="gemini-3.5-flash"):
+            return TelemetryAttributes(
+                llm_model=default_model,
+                user_id=ctx.state["user_id"],
+                agent_id="agent-1",
+            )
+
+        tool = ToolboxTool(core_tool, telemetry_attributes=telemetry_getter)
+
+        ctx = MagicMock()
+        ctx.state = {"user_id": "user-1"}
+
+        assert await tool.run_async({}, ctx) == "ok"
+
+        attrs = core_tool.add_telemetry_attributes.call_args.args[0]
+        assert attrs.llm_model == "gemini-3.5-flash"
+        assert attrs.user_id == "user-1"
+
+    @pytest.mark.asyncio
+    async def test_invalid_telemetry_getter_return_type_raises(self):
+        core_tool = AsyncMock()
+        core_tool.__name__ = "mock"
+        core_tool.__doc__ = "mock doc"
+
+        tool = ToolboxTool(core_tool, telemetry_attributes=lambda: {"user_id": "u1"})
+
+        with pytest.raises(
+            TypeError,
+            match="telemetry_attributes callable must return TelemetryAttributes or None",
+        ):
+            await tool.run_async({}, MagicMock())
 
     @pytest.mark.asyncio
     async def test_3lo_missing_client_secret(self):

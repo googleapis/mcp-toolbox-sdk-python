@@ -344,7 +344,7 @@ class ToolboxTool(BaseTool):
             return attributes
 
         sig = inspect.signature(attributes)
-        if len(sig.parameters) == 1:
+        if self._accepts_tool_context_arg(sig, tool_context):
             context_getter = cast(
                 Union[
                     Callable[[ToolContext], TelemetryAttributes],
@@ -364,7 +364,26 @@ class ToolboxTool(BaseTool):
             resolved = no_arg_getter()
         if inspect.isawaitable(resolved):
             resolved = await resolved
-        return resolved
+        return self._validate_resolved_telemetry_attributes(resolved)
+
+    def _validate_resolved_telemetry_attributes(
+        self, resolved: Any
+    ) -> Optional[TelemetryAttributes]:
+        if resolved is None or isinstance(resolved, TelemetryAttributes):
+            return resolved
+        raise TypeError(
+            "telemetry_attributes callable must return TelemetryAttributes or None"
+        )
+
+    def _accepts_tool_context_arg(
+        self, sig: inspect.Signature, tool_context: ToolContext
+    ) -> bool:
+        """Returns whether a callable signature can receive ToolContext."""
+        try:
+            sig.bind(tool_context)
+            return True
+        except TypeError:
+            return False
 
     def bind_params(self, bounded_params: Dict[str, Any]) -> "ToolboxTool":
         """Allows runtime binding of parameters, delegating to core tool."""
