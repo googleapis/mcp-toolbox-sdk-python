@@ -63,7 +63,6 @@ The core package provides a framework-agnostic way to interact with your Toolbox
 - [Authenticating Tools](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/core/#authenticating-tools)
 - [Binding Parameter Values](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/core/#parameter-binding)
 - [OpenTelemetry](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/core/#opentelemetry)
-- [Protocol Negotiation](https://mcp-toolbox.dev/documentation/connect-to/toolbox-sdks/python-sdk/core/#protocol-negotiation)
 
 
 # Contributing
