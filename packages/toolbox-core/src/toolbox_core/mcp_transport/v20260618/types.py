@@ -106,7 +106,22 @@ class MCPMeta(_BaseMCPModel):
     )
 
 
-class ListToolsResult(_BaseMCPModel):
+class MCPResultMeta(_BaseMCPModel):
+    """Metadata carried in _meta block for responses."""
+
+    server_info: Implementation | None = Field(
+        default=None, alias="io.modelcontextprotocol/serverInfo"
+    )
+
+
+class MCPResult(_BaseMCPModel):
+    """Base model for all MCP results in draft specification."""
+
+    result_type: str = Field(default="complete", alias="resultType")
+    field_meta: MCPResultMeta | None = Field(default=None, alias="_meta")
+
+
+class ListToolsResult(MCPResult):
     tools: list[dict[str, Any]]
 
 
@@ -115,7 +130,7 @@ class TextContent(_BaseMCPModel):
     text: str
 
 
-class CallToolResult(_BaseMCPModel):
+class CallToolResult(MCPResult):
     content: list[TextContent]
     isError: bool = False
 
