@@ -354,6 +354,32 @@ class TestMcpHttpTransportV20260618:
         assert isinstance(manifest, ManifestSchema)
         assert "get_weather" in manifest.tools
 
+    async def test_tools_list_with_toolset_name_and_query_params(self, mocker):
+        """Test listing tools with a toolset name when base_url contains query parameters."""
+        mock_session = AsyncMock(spec=ClientSession)
+        transport = McpHttpTransportV20260618(
+            "http://fake-server.com?proj=xyz&env=prod",
+            session=mock_session,
+            protocol=Protocol.MCP_DRAFT,
+        )
+        try:
+            mocker.patch.object(
+                transport, "_ensure_initialized", new_callable=AsyncMock
+            )
+            mocker.patch.object(
+                transport,
+                "_send_request",
+                new_callable=AsyncMock,
+                return_value=create_fake_tools_list_result(),
+            )
+            manifest = await transport.tools_list(toolset_name="custom_toolset")
+            assert isinstance(manifest, ManifestSchema)
+            expected_url = "http://fake-server.com/mcp/custom_toolset?proj=xyz&env=prod"
+            call_args = transport._send_request.call_args
+            assert call_args.kwargs["url"] == expected_url
+        finally:
+            await transport.close()
+
     async def test_tool_invoke_success(self, transport, mocker):
         mocker.patch.object(transport, "_ensure_initialized", new_callable=AsyncMock)
         mocker.patch.object(

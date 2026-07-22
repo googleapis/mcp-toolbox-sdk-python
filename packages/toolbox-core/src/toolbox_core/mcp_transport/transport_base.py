@@ -14,6 +14,7 @@
 
 import asyncio
 import json
+import urllib.parse
 from abc import ABC, abstractmethod
 from typing import Any, Mapping, Optional, Union
 
@@ -44,7 +45,15 @@ class _McpHttpTransportBase(ITransport, ABC):
         telemetry_enabled: bool = False,
         supported_protocols: Optional[list[str]] = None,
     ):
-        self._mcp_base_url = f"{base_url}/mcp/"
+        parsed = urllib.parse.urlparse(base_url)
+        path = parsed.path
+        if path.endswith("/mcp"):
+            path += "/"
+        elif not path.endswith("/mcp/") and "/mcp/" not in path:
+            path = path.rstrip("/") + "/mcp/"
+
+        # Reconstruct the URL with the updated path, preserving query parameters
+        self._mcp_base_url = urllib.parse.urlunparse(parsed._replace(path=path))
         self._protocol_version = protocol.value
         self._server_version: Optional[str] = None
 
