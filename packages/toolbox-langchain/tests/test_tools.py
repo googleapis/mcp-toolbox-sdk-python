@@ -216,6 +216,13 @@ class TestToolboxTool:
         # Verify defaults actually persisted from the schema correctly
         assert tool.args_schema.model_fields["param2"].default == 42
 
+    def test_toolbox_tool_description_falls_back_to_docstring(self, mock_core_tool):
+        del mock_core_tool._description
+
+        tool = ToolboxTool(core_tool=mock_core_tool)
+
+        assert tool.description == mock_core_tool.__doc__
+
     @pytest.mark.parametrize(
         "params",
         [

@@ -21,7 +21,7 @@ from toolbox_core.utils import params_to_pydantic_model
 
 
 def _get_tool_description(core_tool: ToolboxCoreTool) -> str:
-    description = core_tool._description
+    description = getattr(core_tool, "_description", None)
     if isinstance(description, str):
         return description
     return core_tool.__doc__ or ""

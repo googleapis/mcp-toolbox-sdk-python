@@ -152,6 +152,21 @@ class TestAsyncToolboxTool:
         assert tool.description == core_tool_instance._description
         assert "Args:" not in tool.description
 
+    async def test_toolbox_tool_description_falls_back_to_docstring(
+        self, tool_schema_dict
+    ):
+        core_tool_instance = self._create_core_tool_from_dict(
+            session=None,
+            name="test_tool",
+            schema_dict=tool_schema_dict,
+            url="https://test-url",
+        )
+        core_tool_instance._ToolboxTool__description = None
+
+        tool = AsyncToolboxTool(core_tool=core_tool_instance)
+
+        assert tool.description == core_tool_instance.__doc__
+
     @pytest.mark.parametrize(
         "params_to_bind",
         [
