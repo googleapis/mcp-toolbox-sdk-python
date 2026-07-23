@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.3.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-adk-v1.2.0...toolbox-adk-v1.3.0) (2026-07-23)
+
+
+### Features
+
+* **core:** preserve query parameters in connection URLs for toolset binding ([#717](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/717)) ([e439ad5](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/e439ad5243ff1ae579492ca3ae040bc1797de81b))
+
+
+### Miscellaneous Chores
+
+* **deps:** update mcp toolbox server version in integration tests to v1.7.0 to v1.7.0 ([#719](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/719)) ([cb2eade](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/cb2eadeb41c832da3eba4ad179eebeaf8a645f46))
+
 ## [1.2.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-adk-v1.0.1...toolbox-adk-v1.2.0) (2026-07-09)
 
 
