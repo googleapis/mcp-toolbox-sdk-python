@@ -49,7 +49,7 @@ class _McpHttpTransportBase(ITransport, ABC):
         path = parsed.path
         if path.endswith("/mcp"):
             path += "/"
-        elif not path.endswith("/mcp/") and "/mcp/" not in path:
+        elif "/mcp/" not in path:
             path = path.rstrip("/") + "/mcp/"
 
         # Reconstruct the URL with the updated path, preserving query parameters
@@ -173,8 +173,10 @@ class _McpHttpTransportBase(ITransport, ABC):
                 self._protocol_version,
                 Protocol.MCP_v20260728.value,
             )
-            if is_2026_or_newer and "com.google.cloud/authParam" in meta and isinstance(
-                meta["com.google.cloud/authParam"], dict
+            if (
+                is_2026_or_newer
+                and "com.google.cloud/authParam" in meta
+                and isinstance(meta["com.google.cloud/authParam"], dict)
             ):
                 param_auth = meta["com.google.cloud/authParam"]
             elif "toolbox/authParam" in meta and isinstance(
@@ -182,8 +184,10 @@ class _McpHttpTransportBase(ITransport, ABC):
             ):
                 param_auth = meta["toolbox/authParam"]
 
-            if is_2026_or_newer and "com.google.cloud/authInvoke" in meta and isinstance(
-                meta["com.google.cloud/authInvoke"], list
+            if (
+                is_2026_or_newer
+                and "com.google.cloud/authInvoke" in meta
+                and isinstance(meta["com.google.cloud/authInvoke"], list)
             ):
                 invoke_auth = meta["com.google.cloud/authInvoke"]
             elif "toolbox/authInvoke" in meta and isinstance(

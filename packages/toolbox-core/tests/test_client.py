@@ -263,7 +263,7 @@ async def test_load_tool_protocol_fallback_success(test_tool_str):
 
     # We need to mock the transports that client.py will instantiate
     with (
-        patch("toolbox_core.client.McpHttpTransportV20260618") as mock_2026_cls,
+        patch("toolbox_core.client.McpHttpTransportV20260728") as mock_2026_cls,
         patch("toolbox_core.client.McpHttpTransportV20250618") as mock_2025_cls,
     ):
 
@@ -307,7 +307,7 @@ async def test_load_tool_protocol_fallback_infinite_loop_prevention(test_tool_st
     from toolbox_core.exceptions import ProtocolNegotiationError
 
     with (
-        patch("toolbox_core.client.McpHttpTransportV20260618") as mock_2026_cls,
+        patch("toolbox_core.client.McpHttpTransportV20260728") as mock_2026_cls,
         patch("toolbox_core.client.McpHttpTransportV20250618") as mock_2025_cls,
         patch("toolbox_core.client.McpHttpTransportV20241105") as mock_2024_cls,
     ):
@@ -820,7 +820,7 @@ async def test_client_init_with_client_info():
 def test_toolbox_client_no_warning_on_mcp():
     """Test that initializing ToolboxClient with Protocol.MCP issues NO DeprecationWarning."""
     # Mock the transport to avoid actual connection attempts or MCP version warnings
-    with patch("toolbox_core.client.McpHttpTransportV20251125") as mock_transport:
+    with patch("toolbox_core.client.McpHttpTransportV20260728") as mock_transport:
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
 
@@ -853,7 +853,7 @@ def test_toolbox_client_custom_protocols():
         # Check initial_protocol
         assert args[2] == Protocol.MCP_DRAFT
         # Check supported_protocols (must be sorted from newest to oldest)
-        assert args[6] == ["DRAFT-2026-v1", "2025-06-18", "2024-11-05"]
+        assert args[6] == ["2026-07-28", "2025-06-18", "2024-11-05"]
 
 
 def test_toolbox_client_custom_protocols_invalid():
@@ -878,12 +878,14 @@ def test_toolbox_client_custom_protocols_unrecognized_warning(caplog):
             args, _ = mock_proxy.call_args
 
             # Verify warning was logged
-            assert "Ignoring unrecognized protocol version(s) in request list: ['UNSUPPORTED-FUTURE-PROTOCOL-v99']" in caplog.text
+            assert (
+                "Ignoring unrecognized protocol version(s) in request list: ['UNSUPPORTED-FUTURE-PROTOCOL-v99']"
+                in caplog.text
+            )
 
             # Verify initial_protocol was resolved to the valid protocol
             assert args[2] == Protocol.MCP_v20251125
             assert args[6] == ["2025-11-25"]
-
 
 
 @pytest.mark.asyncio

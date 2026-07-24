@@ -28,8 +28,8 @@ from . import types
 ReceiveResultT = TypeVar("ReceiveResultT", bound=BaseModel)
 
 
-class McpHttpTransportV20260618(_McpHttpTransportBase):
-    """Transport for the MCP draft Request-Metadata (v2026-06-18) protocol."""
+class McpHttpTransportV20260728(_McpHttpTransportBase):
+    """Transport for the MCP draft Request-Metadata (v2026-07-28) protocol."""
 
     async def _send_request(
         self,

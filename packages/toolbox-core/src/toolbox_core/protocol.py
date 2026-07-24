@@ -51,17 +51,18 @@ class Protocol(str, Enum):
     MCP_v20250326 = "2025-03-26"
     MCP_v20241105 = "2024-11-05"
     MCP_v20251125 = "2025-11-25"
-    MCP_v2026_DRAFT = "DRAFT-2026-v1"
+    MCP_v20260728 = "2026-07-28"
+    MCP_v2026_DRAFT = "2026-07-28"
 
-    MCP = MCP_v20251125
-    MCP_LATEST = MCP_v20251125
-    MCP_DRAFT = MCP_v2026_DRAFT
+    MCP = MCP_v20260728
+    MCP_LATEST = MCP_v20260728
+    MCP_DRAFT = MCP_v20260728
 
     @staticmethod
     def get_supported_mcp_versions() -> list[str]:
         """Returns a list of supported MCP protocol versions."""
         return [
-            Protocol.MCP_DRAFT.value,
+            Protocol.MCP_v20260728.value,
             Protocol.MCP_v20251125.value,
             Protocol.MCP_v20250618.value,
             Protocol.MCP_v20250326.value,
@@ -90,6 +91,7 @@ class Protocol(str, Enum):
             raise ValueError(f"Unrecognized target protocol version: {min_version!r}")
 
         return supported.index(current_version) <= supported.index(min_version)
+
 
 __TYPE_MAP = {
     "string": str,

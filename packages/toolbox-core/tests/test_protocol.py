@@ -78,7 +78,7 @@ def test_get_supported_mcp_versions():
     sorted from newest to oldest.
     """
     expected_versions = [
-        "DRAFT-2026-v1",
+        "2026-07-28",
         "2025-11-25",
         "2025-06-18",
         "2025-03-26",
@@ -112,7 +112,6 @@ def test_is_version_at_least():
     # Unrecognized min_version raises ValueError
     with pytest.raises(ValueError, match="Unrecognized target protocol version"):
         Protocol._is_version_at_least("2026-07-28", "unknown-target")
-
 
 
 def test_parameter_schema_float():
