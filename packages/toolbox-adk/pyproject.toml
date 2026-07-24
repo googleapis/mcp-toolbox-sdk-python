@@ -19,7 +19,7 @@ classifiers = [
 ]
 requires-python = ">=3.10"
 dependencies = [
-    "toolbox-core==1.1.0",
+    "toolbox-core==1.2.0",
     "google-auth>=2.47.0,<3.0.0",
     "google-auth-oauthlib>=1.2.0,<2.0.0",
     "google-adk>=1.27.4,<3.0.0", 
@@ -36,8 +36,8 @@ Changelog = "https://github.com/googleapis/mcp-toolbox-sdk-python/blob/main/pack
 test = [
     "black[jupyter]==26.5.1",
     "isort==8.0.1",
-    "mypy==2.1.0",
-    "pytest==9.0.3",
+    "mypy==2.3.0",
+    "pytest==9.1.1",
     "pytest-asyncio==1.4.0",
     "pytest-cov==7.1.0",
     "pytest-mock==3.15.1",

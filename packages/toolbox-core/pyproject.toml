@@ -45,21 +45,21 @@ Changelog = "https://github.com/googleapis/mcp-toolbox-sdk-python/blob/main/pack
 [project.optional-dependencies]
 telemetry = [
     "opentelemetry-api>=1.20.0,<2.0.0",
-    "opentelemetry-sdk>=1.41.1,<1.42.0",
-    "opentelemetry-exporter-otlp>=1.41.1,<1.42.0"
+    "opentelemetry-sdk>=1.44.0,<1.45.0",
+    "opentelemetry-exporter-otlp>=1.44.0,<1.45.0"
 ]
 test = [
     "black[jupyter]==26.5.1",
     "isort==8.0.1",
-    "mypy==2.1.0",
-    "pytest==9.0.3",
+    "mypy==2.3.0",
+    "pytest==9.1.1",
     "pytest-aioresponses==0.3.0",
     "pytest-asyncio==1.4.0",
     "pytest-cov==7.1.0",
     "pytest-mock==3.15.1",
-    "google-cloud-secret-manager==2.28.0",
-    "google-cloud-storage==3.10.1",
-    "aioresponses==0.7.8",
+    "google-cloud-secret-manager==2.30.0",
+    "google-cloud-storage==3.13.0",
+    "aioresponses==0.7.9",
     "toolbox-core[telemetry]",
     "numpy<2", # Pinned to <2 to prevent mypy syntax errors on python 3.10 with numpy 2.x stubs
 ]
