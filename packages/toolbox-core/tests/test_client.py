@@ -516,6 +516,32 @@ class TestValidation:
                 )
 
     @pytest.mark.asyncio
+    async def test_load_toolset_strict_with_fully_used_bound_param_success(
+        self, mock_transport, tool_schema_with_param_P
+    ):
+        """Tests that load_toolset succeeds in strict mode when every tool uses all bound params."""
+        TOOL_P1 = "tool_with_p1"
+        TOOL_P2 = "tool_with_p2"
+        manifest = ManifestSchema(
+            serverVersion="0.0.0",
+            tools={
+                TOOL_P1: tool_schema_with_param_P,
+                TOOL_P2: tool_schema_with_param_P,
+            },
+        )
+        mock_transport.tools_list_mock.return_value = manifest
+
+        async with ToolboxClient(TEST_BASE_URL) as client:
+            client._ToolboxClient__transport = mock_transport
+            tools = await client.load_toolset(
+                bound_params={"param_P": "some_value"}, strict=True
+            )
+
+        assert len(tools) == 2
+        assert {t.__name__ for t in tools} == {TOOL_P1, TOOL_P2}
+        assert all("param_P" not in t.__signature__.parameters for t in tools)
+
+    @pytest.mark.asyncio
     async def test_load_toolset_strict_with_partially_used_bound_param_fail(
         self, mock_transport, tool_schema_with_param_P, tool_schema_minimal
     ):
@@ -558,6 +584,33 @@ class TestValidation:
                 await client.load_toolset(
                     TOOLSET_NAME, bound_params={"param_Z": "some_value"}
                 )
+
+    @pytest.mark.asyncio
+    async def test_load_toolset_strict_with_fully_used_auth_success(
+        self, mock_transport, tool_schema_requires_auth_X
+    ):
+        """Tests that load_toolset succeeds in strict mode when every tool uses all auth tokens."""
+        TOOL_AUTH1 = "tool_with_auth1"
+        TOOL_AUTH2 = "tool_with_auth2"
+        manifest = ManifestSchema(
+            serverVersion="0.0.0",
+            tools={
+                TOOL_AUTH1: tool_schema_requires_auth_X,
+                TOOL_AUTH2: tool_schema_requires_auth_X,
+            },
+        )
+        mock_transport.tools_list_mock.return_value = manifest
+
+        async with ToolboxClient(TEST_BASE_URL) as client:
+            client._ToolboxClient__transport = mock_transport
+            tools = await client.load_toolset(
+                auth_token_getters={"auth_service_X": lambda: "token"}, strict=True
+            )
+
+        assert len(tools) == 2
+        assert {t.__name__ for t in tools} == {TOOL_AUTH1, TOOL_AUTH2}
+        assert all(t._required_authn_params == {} for t in tools)
+        assert all(t._required_authz_tokens == () for t in tools)
 
     @pytest.mark.asyncio
     async def test_load_toolset_strict_with_partially_used_auth_fail(

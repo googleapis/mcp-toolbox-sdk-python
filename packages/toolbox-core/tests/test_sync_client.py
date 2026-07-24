@@ -232,6 +232,110 @@ def test_sync_load_toolset_success(
     assert result1 == f"{TOOL1_NAME}_ok"
 
 
+def test_sync_load_toolset_strict_with_fully_used_bound_param_success(
+    sync_client, mock_transport
+):
+    """Sync path: strict=True succeeds when every tool uses all bound params."""
+    TOOL_P1 = "tool_with_p1"
+    TOOL_P2 = "tool_with_p2"
+    schema = ToolSchema(
+        description="Tool with Parameter P",
+        parameters=[
+            ParameterSchema(name="param_P", type="string", description="Parameter P"),
+        ],
+    )
+    manifest = ManifestSchema(
+        serverVersion="0.0.0", tools={TOOL_P1: schema, TOOL_P2: schema}
+    )
+    mock_transport.tools_list_mock.return_value = manifest
+    sync_client._ToolboxSyncClient__async_client._ToolboxClient__transport = (
+        mock_transport
+    )
+
+    tools = sync_client.load_toolset(
+        bound_params={"param_P": "some_value"}, strict=True
+    )
+
+    assert len(tools) == 2
+    assert {t.__name__ for t in tools} == {TOOL_P1, TOOL_P2}
+    assert all("param_P" not in t.__signature__.parameters for t in tools)
+
+
+def test_sync_load_toolset_strict_with_fully_used_auth_success(
+    sync_client, mock_transport
+):
+    """Sync path: strict=True succeeds when every tool uses all auth tokens."""
+    TOOL_AUTH1 = "tool_with_auth1"
+    TOOL_AUTH2 = "tool_with_auth2"
+    schema = ToolSchema(
+        description="Tool Requiring Auth X",
+        parameters=[
+            ParameterSchema(
+                name="auth_param_X",
+                type="string",
+                description="Auth X Token",
+                authSources=["auth_service_X"],
+            ),
+            ParameterSchema(name="data", type="string", description="Some data"),
+        ],
+    )
+    manifest = ManifestSchema(
+        serverVersion="0.0.0", tools={TOOL_AUTH1: schema, TOOL_AUTH2: schema}
+    )
+    mock_transport.tools_list_mock.return_value = manifest
+    sync_client._ToolboxSyncClient__async_client._ToolboxClient__transport = (
+        mock_transport
+    )
+
+    tools = sync_client.load_toolset(
+        auth_token_getters={"auth_service_X": lambda: "token"}, strict=True
+    )
+
+    assert len(tools) == 2
+    assert {t.__name__ for t in tools} == {TOOL_AUTH1, TOOL_AUTH2}
+    assert all(t._required_authn_params == {} for t in tools)
+    assert all(t._required_authz_tokens == () for t in tools)
+
+
+def test_sync_load_toolset_strict_with_partially_used_auth_fail(
+    sync_client, mock_transport
+):
+    """Sync path: strict=True fails if an auth token is only used by some tools."""
+    TOOL_AUTH = "tool_with_auth"
+    TOOL_MIN = "minimal_tool"
+    schema_auth = ToolSchema(
+        description="Tool Requiring Auth X",
+        parameters=[
+            ParameterSchema(
+                name="auth_param_X",
+                type="string",
+                description="Auth X Token",
+                authSources=["auth_service_X"],
+            ),
+        ],
+    )
+    schema_min = ToolSchema(
+        description="Minimal Test Tool",
+        parameters=[],
+    )
+    manifest = ManifestSchema(
+        serverVersion="0.0.0",
+        tools={TOOL_AUTH: schema_auth, TOOL_MIN: schema_min},
+    )
+    mock_transport.tools_list_mock.return_value = manifest
+    sync_client._ToolboxSyncClient__async_client._ToolboxClient__transport = (
+        mock_transport
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=f"Validation failed for tool '{TOOL_MIN}': unused auth tokens: auth_service_X.",
+    ):
+        sync_client.load_toolset(
+            auth_token_getters={"auth_service_X": lambda: "token"}, strict=True
+        )
+
+
 def test_sync_invoke_tool_server_error(
     test_tool_str_schema, sync_client, mock_transport
 ):

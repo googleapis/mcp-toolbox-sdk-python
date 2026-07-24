@@ -493,6 +493,11 @@ class ToolboxClient:
             )
             tools.append(tool)
 
+            # Track usage for both modes. Skipping this under strict=True left
+            # overall-used sets empty and made the final toolset check always fail.
+            overall_used_auth_keys.update(used_auth_keys)
+            overall_used_bound_params.update(used_bound_keys)
+
             if strict:
                 validate_unused_requirements(
                     provided_auth_keys,
@@ -502,9 +507,6 @@ class ToolboxClient:
                     tool_name,
                     is_toolset=False,
                 )
-            else:
-                overall_used_auth_keys.update(used_auth_keys)
-                overall_used_bound_params.update(used_bound_keys)
 
         validate_unused_requirements(
             provided_auth_keys,
