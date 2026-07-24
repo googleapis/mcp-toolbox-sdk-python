@@ -9,7 +9,7 @@ authors = [
     {name = "Google LLC", email = "googleapis-packages@google.com"}
 ]
 dependencies = [
-    "toolbox-core==1.1.0",
+    "toolbox-core==1.2.0",
     "llama-index-core>=0.12.0,<1.0.0",
     "PyYAML>=6.0.1,<7.0.0",
     "pydantic>=2.8.0,<3.0.0",
@@ -46,13 +46,13 @@ Changelog = "https://github.com/googleapis/mcp-toolbox-sdk-python/blob/main/pack
 test = [
     "black[jupyter]==26.5.1",
     "isort==8.0.1",
-    "mypy==2.1.0",
+    "mypy==2.3.0",
     "pytest-asyncio==1.4.0",
-    "pytest==9.0.3",
+    "pytest==9.1.1",
     "pytest-cov==7.1.0",
     "Pillow==12.2.0; python_version >= '3.10'",
-    "google-cloud-secret-manager==2.28.0",
-    "google-cloud-storage==3.10.1",
+    "google-cloud-secret-manager==2.30.0",
+    "google-cloud-storage==3.13.0",
     "numpy<2", # Pinned to <2 to prevent mypy syntax errors on python 3.10 with numpy 2.x stubs
 ]
 
