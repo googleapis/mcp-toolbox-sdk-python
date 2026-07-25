@@ -14,6 +14,7 @@
 
 
 import asyncio
+import inspect
 import warnings
 from typing import (
     Any,
@@ -165,7 +166,10 @@ async def resolve_value(
     if asyncio.iscoroutinefunction(source):
         return await source()
     elif callable(source):
-        return source()
+        res = source()
+        if inspect.isawaitable(res):
+            return await res
+        return res
     return source
 
 
