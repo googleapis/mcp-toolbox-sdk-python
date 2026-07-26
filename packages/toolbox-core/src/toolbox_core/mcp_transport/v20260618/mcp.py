@@ -244,10 +244,17 @@ class McpHttpTransportV20260618(_McpHttpTransportBase):
 
             tools_map = {t["name"]: self._convert_tool_schema(t) for t in result.tools}
 
+            server_version = (
+                result.field_meta.server_info.version
+                if (result.field_meta and result.field_meta.server_info)
+                else "0.0.0"
+            )
+
             return ManifestSchema(
-                serverVersion="1.0.0",
+                serverVersion=server_version,
                 tools=tools_map,
             )
+
         except Exception as e:
             error = e
             raise

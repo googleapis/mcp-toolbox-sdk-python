@@ -468,3 +468,110 @@ class TestMcpHttpTransportV20260618:
 
         assert exc_info.value.negotiated_version == Protocol.MCP_v20251125
         assert transport._session.post.call_count == 1
+
+    # --- Spec Compliance & Metadata Tests (SEP-2575) ---
+
+    async def test_result_meta_parsing_server_info(self, transport):
+        """Test parsing of _meta with io.modelcontextprotocol/serverInfo in result."""
+        mock_response = AsyncMock()
+        mock_response.ok = True
+        mock_response.status = 200
+        mock_response.content = Mock()
+        mock_response.content.at_eof.return_value = False
+        mock_response.json.return_value = {
+            "jsonrpc": "2.0",
+            "id": "1",
+            "result": {
+                "resultType": "complete",
+                "tools": [],
+                "_meta": {
+                    "io.modelcontextprotocol/serverInfo": {
+                        "name": "ToolboxServer",
+                        "version": "1.8.0",
+                    }
+                },
+            },
+        }
+        transport._session.post.return_value.__aenter__.return_value = mock_response
+
+        res = await transport._send_request(
+            "http://test.com/mcp",
+            types.ListToolsRequest(
+                params=types.ListToolsRequestParams(
+                    field_meta=types.MCPMeta(
+                        protocol_version="DRAFT-2026-v1",
+                        client_info=types.Implementation(name="test", version="1.0"),
+                        client_capabilities=types.ClientCapabilities(),
+                    )
+                )
+            ),
+        )
+        assert res is not None
+        assert res.result_type == "complete"
+        assert res.field_meta is not None
+        assert res.field_meta.server_info is not None
+        assert res.field_meta.server_info.name == "ToolboxServer"
+        assert res.field_meta.server_info.version == "1.8.0"
+
+    async def test_tools_list_uses_server_info_from_meta(self, transport):
+        """Test that tools_list extracts serverVersion dynamically from _meta."""
+        mock_response = AsyncMock()
+        mock_response.ok = True
+        mock_response.status = 200
+        mock_response.content = Mock()
+        mock_response.content.at_eof.return_value = False
+        mock_response.json.return_value = {
+            "jsonrpc": "2.0",
+            "id": "1",
+            "result": {
+                "resultType": "complete",
+                "tools": [
+                    {
+                        "name": "sample_tool",
+                        "description": "Sample",
+                        "inputSchema": {"type": "object"},
+                    }
+                ],
+                "_meta": {
+                    "io.modelcontextprotocol/serverInfo": {
+                        "name": "ToolboxServer",
+                        "version": "2.5.0",
+                    }
+                },
+            },
+        }
+        transport._session.post.return_value.__aenter__.return_value = mock_response
+
+        manifest = await transport.tools_list()
+        assert manifest.serverVersion == "2.5.0"
+        assert "sample_tool" in manifest.tools
+
+    async def test_result_meta_optional_server_info(self, transport):
+        """Test that missing _meta or missing serverInfo falls back to default version '0.0.0'."""
+        mock_response = AsyncMock()
+        mock_response.ok = True
+        mock_response.status = 200
+        mock_response.content = Mock()
+        mock_response.content.at_eof.return_value = False
+        mock_response.json.return_value = {
+            "jsonrpc": "2.0",
+            "id": "1",
+            "result": {
+                "resultType": "complete",
+                "tools": [],
+            },
+        }
+        transport._session.post.return_value.__aenter__.return_value = mock_response
+
+        manifest = await transport.tools_list()
+        assert manifest.serverVersion == "0.0.0"
+
+    async def test_result_type_parsing_and_fallback(self, transport):
+        """Test that resultType defaults to 'complete' if missing in response result."""
+        res = types.ListToolsResult.model_validate({"tools": []})
+        assert res.result_type == "complete"
+
+        res_custom = types.ListToolsResult.model_validate(
+            {"tools": [], "resultType": "input_required"}
+        )
+        assert res_custom.result_type == "input_required"
