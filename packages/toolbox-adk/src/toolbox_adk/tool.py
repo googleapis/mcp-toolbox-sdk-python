@@ -14,7 +14,7 @@
 
 import inspect
 import logging
-from typing import Any, Awaitable, Callable, Dict, Mapping, Optional
+from typing import Any, Awaitable, Callable, Dict, Mapping, Optional, Union
 
 import toolbox_core
 from fastapi.openapi.models import OAuth2, OAuthFlowAuthorizationCode, OAuthFlows
@@ -95,7 +95,7 @@ class ToolboxTool(BaseTool):
         properties = {}
         required = []
         schema_items = None
-        schema_additional_properties = None
+        schema_additional_properties: Optional[Union[Schema, bool]] = None
 
         if schema_type == Type.ARRAY:
             if hasattr(param, "items") and param.items:
@@ -107,12 +107,19 @@ class ToolboxTool(BaseTool):
                     properties[k] = self._build_schema(v)
                     if getattr(v, "required", False):
                         required.append(k)
+            add_props = getattr(param, "additionalProperties", None)
+            if add_props is not None:
+                if isinstance(add_props, bool):
+                    schema_additional_properties = add_props
+                elif hasattr(add_props, "type"):
+                    schema_additional_properties = self._build_schema(add_props)
         return Schema(
             type=schema_type,
             description=getattr(param, "description", "") or "",
             properties=properties or None,
             required=required or None,
             items=schema_items,
+            additional_properties=schema_additional_properties,
         )
 
     @override
@@ -299,12 +306,23 @@ class ToolboxTool(BaseTool):
             if reset_token:
                 USER_TOKEN_CONTEXT_VAR.reset(reset_token)
 
-    def bind_params(self, bounded_params: Dict[str, Any]) -> "ToolboxTool":
+    def bind_params(
+        self,
+        bound_params: Optional[Dict[str, Any]] = None,
+        bounded_params: Optional[Dict[str, Any]] = None,
+    ) -> "ToolboxTool":
         """Allows runtime binding of parameters, delegating to core tool."""
-        new_core_tool = self._core_tool.bind_params(bounded_params)
+        params_to_bind = (
+            bound_params if bound_params is not None else bounded_params or {}
+        )
+        new_core_tool = self._core_tool.bind_params(params_to_bind)
         # Return a new wrapper
         return ToolboxTool(
             core_tool=new_core_tool,
             auth_config=self._auth_config,
             adk_token_getters=self._adk_token_getters,
         )
+
+    def bind_param(self, param_name: str, param_value: Any) -> "ToolboxTool":
+        """Binds a single parameter to a value or callable."""
+        return self.bind_params({param_name: param_value})

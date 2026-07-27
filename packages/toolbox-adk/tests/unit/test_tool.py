@@ -416,3 +416,66 @@ class TestToolboxTool:
         tool = ToolboxTool(core_tool)
         assert tool.name == "valid_tool"
         assert tool.description == "valid description"
+
+    def test_get_declaration_additional_properties(self):
+        class MockParam:
+            def __init__(self, name, param_type, description, required):
+                self.name = name
+                self.type = param_type
+                self.description = description
+                self.required = required
+
+        class MockAddProps:
+            def __init__(self, prop_type):
+                self.type = prop_type
+
+        core_tool = MagicMock()
+        core_tool.__name__ = "mock_tool"
+        core_tool.__doc__ = "mock doc"
+
+        map_param = MockParam("my_map", "object", "A typed map", True)
+        map_param.additionalProperties = MockAddProps("string")
+
+        bool_map_param = MockParam("bool_map", "object", "A bool map", False)
+        bool_map_param.additionalProperties = True
+
+        core_tool._params = [map_param, bool_map_param]
+
+        tool = ToolboxTool(core_tool)
+        declaration = tool._get_declaration()
+
+        parameters = declaration.parameters
+        assert parameters is not None
+
+        # Verify typed map additionalProperties
+        map_schema = parameters.properties["my_map"]
+        assert map_schema.type == Type.OBJECT
+        assert map_schema.additional_properties is not None
+        assert map_schema.additional_properties.type == Type.STRING
+
+        # Verify bool map additionalProperties
+        bool_map_schema = parameters.properties["bool_map"]
+        assert bool_map_schema.type == Type.OBJECT
+        assert bool_map_schema.additional_properties is True
+
+    def test_bind_param_and_bind_params_keyword(self):
+        mock_core = MagicMock()
+        mock_core.__name__ = "mock"
+        mock_core.__doc__ = "mock"
+
+        new_core_mock = MagicMock()
+        new_core_mock.__name__ = "bound_mock"
+        new_core_mock.__doc__ = "bound mock"
+        mock_core.bind_params.return_value = new_core_mock
+
+        tool = ToolboxTool(mock_core)
+
+        # Test bind_param (singular)
+        new_tool1 = tool.bind_param("a", 1)
+        assert isinstance(new_tool1, ToolboxTool)
+        mock_core.bind_params.assert_called_with({"a": 1})
+
+        # Test bind_params with bound_params keyword argument
+        new_tool2 = tool.bind_params(bound_params={"b": 2})
+        assert isinstance(new_tool2, ToolboxTool)
+        mock_core.bind_params.assert_called_with({"b": 2})
