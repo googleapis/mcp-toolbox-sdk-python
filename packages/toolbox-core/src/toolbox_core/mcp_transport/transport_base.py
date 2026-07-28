@@ -168,11 +168,20 @@ class _McpHttpTransportBase(ITransport, ABC):
 
         if "_meta" in tool_data and isinstance(tool_data["_meta"], dict):
             meta = tool_data["_meta"]
-            if "toolbox/authParam" in meta and isinstance(
+            if "com.google.cloud/authParam" in meta and isinstance(
+                meta["com.google.cloud/authParam"], dict
+            ):
+                param_auth = meta["com.google.cloud/authParam"]
+            elif "toolbox/authParam" in meta and isinstance(
                 meta["toolbox/authParam"], dict
             ):
                 param_auth = meta["toolbox/authParam"]
-            if "toolbox/authInvoke" in meta and isinstance(
+
+            if "com.google.cloud/authInvoke" in meta and isinstance(
+                meta["com.google.cloud/authInvoke"], list
+            ):
+                invoke_auth = meta["com.google.cloud/authInvoke"]
+            elif "toolbox/authInvoke" in meta and isinstance(
                 meta["toolbox/authInvoke"], list
             ):
                 invoke_auth = meta["toolbox/authInvoke"]
