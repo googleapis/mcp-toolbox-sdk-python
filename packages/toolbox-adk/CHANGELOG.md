@@ -10,10 +10,6 @@
 * **core:** promote MCP draft protocol to official 2026-07-28 version ([#731](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/731)) ([88cc795](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/88cc7959d9c7ebc1d92dedeae90e56fb10d2a943))
 
 
-### Miscellaneous Chores
-
-* **deps:** update mcp toolbox server version in integration tests to v1.7.0 to v1.7.0 ([#719](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/719)) ([cb2eade](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/cb2eadeb41c832da3eba4ad179eebeaf8a645f46))
-
 ## [1.2.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-adk-v1.0.1...toolbox-adk-v1.2.0) (2026-07-09)
 
 
