@@ -68,6 +68,28 @@ class Protocol(str, Enum):
             Protocol.MCP_v20241105.value,
         ]
 
+    @classmethod
+    def _is_version_at_least(cls, current_version: str, min_version: str) -> bool:
+        """Determines if current_version is greater than or equal to min_version based on supported version hierarchy.
+
+        Args:
+            current_version: The version string to check.
+            min_version: The minimum required version string to compare against.
+
+        Returns:
+            bool: True if current_version is newer than or equal to min_version.
+
+        Raises:
+            ValueError: If either current_version or min_version is not present in
+                `get_supported_mcp_versions()`.
+        """
+        supported = cls.get_supported_mcp_versions()
+        if current_version not in supported:
+            raise ValueError(f"Unrecognized protocol version: {current_version!r}")
+        if min_version not in supported:
+            raise ValueError(f"Unrecognized target protocol version: {min_version!r}")
+
+        return supported.index(current_version) <= supported.index(min_version)
 
 __TYPE_MAP = {
     "string": str,

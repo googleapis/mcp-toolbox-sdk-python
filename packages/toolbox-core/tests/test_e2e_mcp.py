@@ -117,18 +117,23 @@ class TestBasicE2E:
             assert "row2" in response
             assert "row3" not in response
 
-    async def test_protocol_fallback_e2e(self, toolbox_server_url: str):
+    async def test_protocol_fallback_e2e(self, toolbox_server_url: str, caplog: pytest.LogCaptureFixture):
         """Tests that a client requesting an unsupported protocol version falls back to a supported version."""
-        async with ToolboxClient(
-            toolbox_server_url, protocol=["UNSUPPORTED-FUTURE-PROTOCOL-v99", Protocol.MCP_LATEST]
-        ) as client:
-            tool = await client.load_tool("get-n-rows")
-            response = await tool(num_rows="1")
-            assert "row1" in response
-            assert (
-                client._ToolboxClient__transport._protocol_version
-                == Protocol.MCP_LATEST.value
-            )
+        with caplog.at_level("WARNING"):
+            async with ToolboxClient(
+                toolbox_server_url, protocol=["UNSUPPORTED-FUTURE-PROTOCOL-v99", Protocol.MCP_LATEST]
+            ) as client:
+                tool = await client.load_tool("get-n-rows")
+                response = await tool(num_rows="1")
+                assert "row1" in response
+                assert (
+                    client._ToolboxClient__transport._protocol_version
+                    == Protocol.MCP_LATEST.value
+                )
+                assert (
+                    "Ignoring unrecognized protocol version(s) in request list: ['UNSUPPORTED-FUTURE-PROTOCOL-v99']"
+                    in caplog.text
+                )
 
     async def test_run_tool_wrong_param_type(self, get_n_rows_tool: ToolboxTool):
         """Invoke a tool with wrong param type."""

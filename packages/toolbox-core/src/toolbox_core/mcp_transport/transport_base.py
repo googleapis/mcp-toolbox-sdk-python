@@ -168,7 +168,12 @@ class _McpHttpTransportBase(ITransport, ABC):
 
         if "_meta" in tool_data and isinstance(tool_data["_meta"], dict):
             meta = tool_data["_meta"]
-            if "com.google.cloud/authParam" in meta and isinstance(
+
+            is_2026_or_newer = Protocol._is_version_at_least(
+                self._protocol_version,
+                Protocol.MCP_v20260728.value,
+            )
+            if is_2026_or_newer and "com.google.cloud/authParam" in meta and isinstance(
                 meta["com.google.cloud/authParam"], dict
             ):
                 param_auth = meta["com.google.cloud/authParam"]
@@ -177,7 +182,7 @@ class _McpHttpTransportBase(ITransport, ABC):
             ):
                 param_auth = meta["toolbox/authParam"]
 
-            if "com.google.cloud/authInvoke" in meta and isinstance(
+            if is_2026_or_newer and "com.google.cloud/authInvoke" in meta and isinstance(
                 meta["com.google.cloud/authInvoke"], list
             ):
                 invoke_auth = meta["com.google.cloud/authInvoke"]

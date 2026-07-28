@@ -857,13 +857,33 @@ def test_toolbox_client_custom_protocols():
 
 
 def test_toolbox_client_custom_protocols_invalid():
-    """Test that custom protocols array raises error on invalid inputs."""
+    """Test that custom protocols array raises error when no valid protocols are found."""
 
     with pytest.raises(ValueError, match="protocol list cannot be empty"):
         ToolboxClient(TOOLBOX_SERVER_URL_STABLE, protocol=[])
 
-    with pytest.raises(ValueError, match="Invalid protocol version 'invalid-version'"):
+    with pytest.raises(ValueError, match="No supported protocol version found"):
         ToolboxClient(TOOLBOX_SERVER_URL_STABLE, protocol=["invalid-version"])
+
+
+def test_toolbox_client_custom_protocols_unrecognized_warning(caplog):
+    """Test that custom protocols list with unrecognized versions logs a warning and proceeds with valid ones."""
+    with patch("toolbox_core.client._McpTransportProxy") as mock_proxy:
+        with caplog.at_level("WARNING"):
+            client = ToolboxClient(
+                TOOLBOX_SERVER_URL_STABLE,
+                protocol=["UNSUPPORTED-FUTURE-PROTOCOL-v99", Protocol.MCP_v20251125],
+            )
+            mock_proxy.assert_called_once()
+            args, _ = mock_proxy.call_args
+
+            # Verify warning was logged
+            assert "Ignoring unrecognized protocol version(s) in request list: ['UNSUPPORTED-FUTURE-PROTOCOL-v99']" in caplog.text
+
+            # Verify initial_protocol was resolved to the valid protocol
+            assert args[2] == Protocol.MCP_v20251125
+            assert args[6] == ["2025-11-25"]
+
 
 
 @pytest.mark.asyncio
