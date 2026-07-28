@@ -11,11 +11,6 @@
 * **core:** support response _meta serverInfo and resultType in draft protocol ([#730](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/730)) ([c6e88df](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/c6e88dfd4147e162f7469f995a87ca07ae3535a8))
 
 
-### Miscellaneous Chores
-
-* **deps:** update mcp toolbox server version in integration tests to v1.7.0 to v1.7.0 ([#719](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/719)) ([cb2eade](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/cb2eadeb41c832da3eba4ad179eebeaf8a645f46))
-
-
 ### Documentation
 
 * **core:** remove outdated protocol negotiation link from README ([#724](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/724)) ([edc6060](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/edc6060a7a7ea9096f8a5e9c10f69086fa540f8b))
