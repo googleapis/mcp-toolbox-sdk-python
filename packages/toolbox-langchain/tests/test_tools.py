@@ -18,6 +18,7 @@ from unittest.mock import AsyncMock, Mock, call, patch
 import pytest
 from pydantic import BaseModel
 from toolbox_core.protocol import ParameterSchema as CoreParameterSchema
+from toolbox_core.protocol import TelemetryAttributes
 from toolbox_core.sync_tool import ToolboxSyncTool as ToolboxCoreSyncTool
 from toolbox_core.tool import ToolboxTool as CoreAsyncTool
 from toolbox_core.utils import params_to_pydantic_model
@@ -138,6 +139,9 @@ class TestToolboxTool:
             return_value=new_mock_instance_for_methods
         )
         sync_mock.bind_params = Mock(return_value=new_mock_instance_for_methods)
+        sync_mock.add_telemetry_attributes = Mock(
+            return_value=new_mock_instance_for_methods
+        )
 
         return sync_mock
 
@@ -276,6 +280,16 @@ class TestToolboxTool:
         mock_core_sync_auth_tool.add_auth_token_getters.assert_called_once_with(
             {"test-auth-source": get_id_token}
         )
+        assert isinstance(new_langchain_tool, ToolboxTool)
+        assert new_langchain_tool._ToolboxTool__core_tool == returned_core_tool_mock
+
+    def test_toolbox_tool_add_telemetry_attributes(self, toolbox_tool, mock_core_tool):
+        attrs = TelemetryAttributes(llm_model="gemini-3.5-flash", user_id="user-1")
+        returned_core_tool_mock = mock_core_tool.add_telemetry_attributes.return_value
+
+        new_langchain_tool = toolbox_tool.add_telemetry_attributes(attrs)
+
+        mock_core_tool.add_telemetry_attributes.assert_called_once_with(attrs)
         assert isinstance(new_langchain_tool, ToolboxTool)
         assert new_langchain_tool._ToolboxTool__core_tool == returned_core_tool_mock
 
