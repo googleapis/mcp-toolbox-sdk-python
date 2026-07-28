@@ -19,8 +19,8 @@ import pytest_asyncio
 from aiohttp import ClientSession
 from aioresponses import aioresponses
 
-from toolbox_core.mcp_transport.v20260618 import types
-from toolbox_core.mcp_transport.v20260618.mcp import McpHttpTransportV20260618
+from toolbox_core.mcp_transport.v20260728 import types
+from toolbox_core.mcp_transport.v20260728.mcp import McpHttpTransportV20260728
 from toolbox_core.protocol import ManifestSchema, Protocol
 
 
@@ -68,7 +68,7 @@ async def transport(request, mocker):
         mocker.patch("toolbox_core.mcp_transport.telemetry.record_operation_duration")
         mocker.patch("toolbox_core.mcp_transport.telemetry.record_session_duration")
     mock_session = AsyncMock(spec=ClientSession)
-    transport = McpHttpTransportV20260618(
+    transport = McpHttpTransportV20260728(
         "http://fake-server.com",
         session=mock_session,
         protocol=Protocol.MCP_DRAFT,
@@ -79,7 +79,7 @@ async def transport(request, mocker):
 
 
 @pytest.mark.asyncio
-class TestMcpHttpTransportV20260618:
+class TestMcpHttpTransportV20260728:
 
     # --- Request Sending Tests (Standard + Header) ---
 
@@ -128,7 +128,7 @@ class TestMcpHttpTransportV20260618:
 
         call_args = transport._session.post.call_args
         headers = call_args.kwargs["headers"]
-        assert headers["MCP-Protocol-Version"] == "DRAFT-2026-v1"
+        assert headers["MCP-Protocol-Version"] == "2026-07-28"
         assert headers["Mcp-Method"] == "method"
         assert "Mcp-Name" not in headers
 
@@ -242,7 +242,7 @@ class TestMcpHttpTransportV20260618:
             "error": {
                 "code": -32022,
                 "message": "Unsupported protocol version",
-                "data": {"supported": ["DRAFT-2026-v1"]},
+                "data": {"supported": ["2026-07-28"]},
             },
         }
 
@@ -263,7 +263,7 @@ class TestMcpHttpTransportV20260618:
         with pytest.raises(ProtocolNegotiationError) as exc_info:
             await transport._send_request("url", TestRequest())
 
-        assert exc_info.value.negotiated_version == "DRAFT-2026-v1"
+        assert exc_info.value.negotiated_version == "2026-07-28"
         assert transport._session.post.call_count == 1
 
     async def test_version_negotiation_raises_fallback_200_ok(self, transport):
@@ -280,7 +280,7 @@ class TestMcpHttpTransportV20260618:
             "error": {
                 "code": -32022,
                 "message": "Unsupported protocol version",
-                "data": {"supported": ["DRAFT-2026-v1"]},
+                "data": {"supported": ["2026-07-28"]},
             },
         }
 
@@ -301,7 +301,7 @@ class TestMcpHttpTransportV20260618:
         with pytest.raises(ProtocolNegotiationError) as exc_info:
             await transport._send_request("url", TestRequest())
 
-        assert exc_info.value.negotiated_version == "DRAFT-2026-v1"
+        assert exc_info.value.negotiated_version == "2026-07-28"
         assert transport._session.post.call_count == 1
 
     async def test_version_negotiation_empty_intersection(self, transport):
@@ -357,7 +357,7 @@ class TestMcpHttpTransportV20260618:
     async def test_tools_list_with_toolset_name_and_query_params(self, mocker):
         """Test listing tools with a toolset name when base_url contains query parameters."""
         mock_session = AsyncMock(spec=ClientSession)
-        transport = McpHttpTransportV20260618(
+        transport = McpHttpTransportV20260728(
             "http://fake-server.com?proj=xyz&env=prod",
             session=mock_session,
             protocol=Protocol.MCP_DRAFT,
@@ -468,3 +468,110 @@ class TestMcpHttpTransportV20260618:
 
         assert exc_info.value.negotiated_version == Protocol.MCP_v20251125
         assert transport._session.post.call_count == 1
+
+    # --- Spec Compliance & Metadata Tests (SEP-2575) ---
+
+    async def test_result_meta_parsing_server_info(self, transport):
+        """Test parsing of _meta with io.modelcontextprotocol/serverInfo in result."""
+        mock_response = AsyncMock()
+        mock_response.ok = True
+        mock_response.status = 200
+        mock_response.content = Mock()
+        mock_response.content.at_eof.return_value = False
+        mock_response.json.return_value = {
+            "jsonrpc": "2.0",
+            "id": "1",
+            "result": {
+                "resultType": "complete",
+                "tools": [],
+                "_meta": {
+                    "io.modelcontextprotocol/serverInfo": {
+                        "name": "ToolboxServer",
+                        "version": "1.8.0",
+                    }
+                },
+            },
+        }
+        transport._session.post.return_value.__aenter__.return_value = mock_response
+
+        res = await transport._send_request(
+            "http://test.com/mcp",
+            types.ListToolsRequest(
+                params=types.ListToolsRequestParams(
+                    field_meta=types.MCPMeta(
+                        protocol_version="2026-07-28",
+                        client_info=types.Implementation(name="test", version="1.0"),
+                        client_capabilities=types.ClientCapabilities(),
+                    )
+                )
+            ),
+        )
+        assert res is not None
+        assert res.result_type == "complete"
+        assert res.field_meta is not None
+        assert res.field_meta.server_info is not None
+        assert res.field_meta.server_info.name == "ToolboxServer"
+        assert res.field_meta.server_info.version == "1.8.0"
+
+    async def test_tools_list_uses_server_info_from_meta(self, transport):
+        """Test that tools_list extracts serverVersion dynamically from _meta."""
+        mock_response = AsyncMock()
+        mock_response.ok = True
+        mock_response.status = 200
+        mock_response.content = Mock()
+        mock_response.content.at_eof.return_value = False
+        mock_response.json.return_value = {
+            "jsonrpc": "2.0",
+            "id": "1",
+            "result": {
+                "resultType": "complete",
+                "tools": [
+                    {
+                        "name": "sample_tool",
+                        "description": "Sample",
+                        "inputSchema": {"type": "object"},
+                    }
+                ],
+                "_meta": {
+                    "io.modelcontextprotocol/serverInfo": {
+                        "name": "ToolboxServer",
+                        "version": "2.5.0",
+                    }
+                },
+            },
+        }
+        transport._session.post.return_value.__aenter__.return_value = mock_response
+
+        manifest = await transport.tools_list()
+        assert manifest.serverVersion == "2.5.0"
+        assert "sample_tool" in manifest.tools
+
+    async def test_result_meta_optional_server_info(self, transport):
+        """Test that missing _meta or missing serverInfo falls back to default version '0.0.0'."""
+        mock_response = AsyncMock()
+        mock_response.ok = True
+        mock_response.status = 200
+        mock_response.content = Mock()
+        mock_response.content.at_eof.return_value = False
+        mock_response.json.return_value = {
+            "jsonrpc": "2.0",
+            "id": "1",
+            "result": {
+                "resultType": "complete",
+                "tools": [],
+            },
+        }
+        transport._session.post.return_value.__aenter__.return_value = mock_response
+
+        manifest = await transport.tools_list()
+        assert manifest.serverVersion == "0.0.0"
+
+    async def test_result_type_parsing_and_fallback(self, transport):
+        """Test that resultType defaults to 'complete' if missing in response result."""
+        res = types.ListToolsResult.model_validate({"tools": []})
+        assert res.result_type == "complete"
+
+        res_custom = types.ListToolsResult.model_validate(
+            {"tools": [], "resultType": "input_required"}
+        )
+        assert res_custom.result_type == "input_required"

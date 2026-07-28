@@ -28,8 +28,8 @@ from . import types
 ReceiveResultT = TypeVar("ReceiveResultT", bound=BaseModel)
 
 
-class McpHttpTransportV20260618(_McpHttpTransportBase):
-    """Transport for the MCP draft Request-Metadata (v2026-06-18) protocol."""
+class McpHttpTransportV20260728(_McpHttpTransportBase):
+    """Transport for the MCP draft Request-Metadata (v2026-07-28) protocol."""
 
     async def _send_request(
         self,
@@ -244,10 +244,17 @@ class McpHttpTransportV20260618(_McpHttpTransportBase):
 
             tools_map = {t["name"]: self._convert_tool_schema(t) for t in result.tools}
 
+            server_version = (
+                result.field_meta.server_info.version
+                if (result.field_meta and result.field_meta.server_info)
+                else "0.0.0"
+            )
+
             return ManifestSchema(
-                serverVersion="1.0.0",
+                serverVersion=server_version,
                 tools=tools_map,
             )
+
         except Exception as e:
             error = e
             raise
