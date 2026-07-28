@@ -246,7 +246,7 @@ class _McpHttpTransportBase(ITransport, ABC):
             if self._init_task:
                 try:
                     await self._init_task
-                except Exception:
+                except (asyncio.CancelledError, Exception):
                     # If initialization failed, we can still try to close.
                     pass
         if self._manage_session and self._session and not self._session.closed:
