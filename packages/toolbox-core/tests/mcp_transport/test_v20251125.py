@@ -189,7 +189,7 @@ class TestMcpHttpTransportV20251125:
             "error": {
                 "code": -32022,
                 "message": "Unsupported protocol version",
-                "data": {"supported": ["DRAFT-2026-v1"]},
+                "data": {"supported": ["2026-07-28"]},
             },
         }
 
@@ -210,7 +210,7 @@ class TestMcpHttpTransportV20251125:
         with pytest.raises(ProtocolNegotiationError) as exc_info:
             await transport._send_request("url", TestRequest())
 
-        assert exc_info.value.negotiated_version == "DRAFT-2026-v1"
+        assert exc_info.value.negotiated_version == "2026-07-28"
         assert transport._session.post.call_count == 1
 
     async def test_version_negotiation_raises_fallback_200_ok(self, transport):
@@ -227,7 +227,7 @@ class TestMcpHttpTransportV20251125:
             "error": {
                 "code": -32022,
                 "message": "Unsupported protocol version",
-                "data": {"supported": ["DRAFT-2026-v1"]},
+                "data": {"supported": ["2026-07-28"]},
             },
         }
 
@@ -248,7 +248,7 @@ class TestMcpHttpTransportV20251125:
         with pytest.raises(ProtocolNegotiationError) as exc_info:
             await transport._send_request("url", TestRequest())
 
-        assert exc_info.value.negotiated_version == "DRAFT-2026-v1"
+        assert exc_info.value.negotiated_version == "2026-07-28"
         assert transport._session.post.call_count == 1
 
     async def test_version_negotiation_empty_intersection(self, transport):
