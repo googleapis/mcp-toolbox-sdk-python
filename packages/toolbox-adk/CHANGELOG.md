@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.1](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-adk-v1.3.0...toolbox-adk-v1.3.1) (2026-07-29)
+
+
+### Bug Fixes
+
+* **adk:** update toolbox-core dependency to v1.3.0 ([#754](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/754)) ([69d30bf](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/69d30bf624809fa49bb0eb23c34125b6839fa07c))
+
 ## [1.3.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-adk-v1.2.0...toolbox-adk-v1.3.0) (2026-07-28)
 
 
