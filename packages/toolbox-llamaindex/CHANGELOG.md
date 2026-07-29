@@ -6,10 +6,10 @@
 ### Features
 
 * add support for stateless MCP 2026 draft and protocol negotiation fallback ([#699](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/699)) ([68263e1](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/68263e138e37125249584ca410f1c1bcf562602a))
-  * **Stateless MCP Support (SEP-2575)**: Implements reference support for the new `DRAFT-2026-v1` stateless transport protocol.
-  * **Protocol Version Auto-Negotiation & Fallback**
-  * **Routing Headers (SEP-2243)**: Implements routing header support for the HTTP transport.
-  * **Testing Enhancements**: 
+  * Stateless MCP Support (SEP-2575)
+  * Protocol Version Auto-Negotiation & Fallback
+  * Routing Headers (SEP-2243)
+  * Testing Enhancements
 
 * **core:** preserve query parameters in connection URLs for toolset binding ([#717](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/717)) ([e439ad5](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/e439ad5243ff1ae579492ca3ae040bc1797de81b))
 * **core:** promote MCP draft protocol to official 2026-07-28 version ([#731](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/731)) ([88cc795](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/88cc7959d9c7ebc1d92dedeae90e56fb10d2a943))
