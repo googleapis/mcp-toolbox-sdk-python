@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.1](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-adk-v1.3.0...toolbox-adk-v1.3.1) (2026-07-29)
+
+
+### Miscellaneous Chores
+
+* release 1.3.1 ([#759](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/759)) ([4b9dd77](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/4b9dd77bf752edaefc084894367cd3fab4cfb1be))
+
 ## [1.3.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-adk-v1.2.0...toolbox-adk-v1.3.0) (2026-07-28)
 
 
