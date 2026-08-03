@@ -263,7 +263,7 @@ async def test_load_tool_protocol_fallback_success(test_tool_str):
 
     # We need to mock the transports that client.py will instantiate
     with (
-        patch("toolbox_core.client.McpHttpTransportV20260618") as mock_2026_cls,
+        patch("toolbox_core.client.McpHttpTransportV20260728") as mock_2026_cls,
         patch("toolbox_core.client.McpHttpTransportV20250618") as mock_2025_cls,
     ):
 
@@ -307,8 +307,9 @@ async def test_load_tool_protocol_fallback_infinite_loop_prevention(test_tool_st
     from toolbox_core.exceptions import ProtocolNegotiationError
 
     with (
-        patch("toolbox_core.client.McpHttpTransportV20260618") as mock_2026_cls,
+        patch("toolbox_core.client.McpHttpTransportV20260728") as mock_2026_cls,
         patch("toolbox_core.client.McpHttpTransportV20250618") as mock_2025_cls,
+        patch("toolbox_core.client.McpHttpTransportV20241105") as mock_2024_cls,
     ):
 
         mock_2026 = AsyncMock()
@@ -318,9 +319,15 @@ async def test_load_tool_protocol_fallback_infinite_loop_prevention(test_tool_st
 
         mock_2025 = AsyncMock()
         mock_2025.base_url = TEST_BASE_URL
-        # The fallback transport also throws the error
+        # The fallback transport also throws the error trying to fall back to 2024-11-05
         mock_2025.tool_get.side_effect = ProtocolNegotiationError("2024-11-05")
         mock_2025_cls.return_value = mock_2025
+
+        mock_2024 = AsyncMock()
+        mock_2024.base_url = TEST_BASE_URL
+        # The 2024-11-05 transport also throws ProtocolNegotiationError("2024-11-05")
+        mock_2024.tool_get.side_effect = ProtocolNegotiationError("2024-11-05")
+        mock_2024_cls.return_value = mock_2024
 
         async with ToolboxClient(TEST_BASE_URL, protocol=Protocol.MCP_DRAFT) as client:
             with pytest.raises(
@@ -329,9 +336,10 @@ async def test_load_tool_protocol_fallback_infinite_loop_prevention(test_tool_st
             ):
                 await client.load_tool(TOOL_NAME)
 
-            # Assert we tried both, but then let the exception bubble up instead of looping
+            # Assert we tried all steps, but then let the exception bubble up instead of looping infinitely
             mock_2026.tool_get.assert_awaited_once()
             mock_2025.tool_get.assert_awaited_once()
+            mock_2024.tool_get.assert_awaited_once()
 
 
 class TestAuth:
@@ -812,7 +820,7 @@ async def test_client_init_with_client_info():
 def test_toolbox_client_no_warning_on_mcp():
     """Test that initializing ToolboxClient with Protocol.MCP issues NO DeprecationWarning."""
     # Mock the transport to avoid actual connection attempts or MCP version warnings
-    with patch("toolbox_core.client.McpHttpTransportV20251125") as mock_transport:
+    with patch("toolbox_core.client.McpHttpTransportV20260728") as mock_transport:
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
 
@@ -845,17 +853,39 @@ def test_toolbox_client_custom_protocols():
         # Check initial_protocol
         assert args[2] == Protocol.MCP_DRAFT
         # Check supported_protocols (must be sorted from newest to oldest)
-        assert args[6] == ["DRAFT-2026-v1", "2025-06-18", "2024-11-05"]
+        assert args[6] == ["2026-07-28", "2025-06-18", "2024-11-05"]
 
 
 def test_toolbox_client_custom_protocols_invalid():
-    """Test that custom protocols array raises error on invalid inputs."""
+    """Test that custom protocols array raises error when no valid protocols are found."""
 
     with pytest.raises(ValueError, match="protocol list cannot be empty"):
         ToolboxClient(TOOLBOX_SERVER_URL_STABLE, protocol=[])
 
-    with pytest.raises(ValueError, match="Invalid protocol version 'invalid-version'"):
+    with pytest.raises(ValueError, match="No supported protocol version found"):
         ToolboxClient(TOOLBOX_SERVER_URL_STABLE, protocol=["invalid-version"])
+
+
+def test_toolbox_client_custom_protocols_unrecognized_warning(caplog):
+    """Test that custom protocols list with unrecognized versions logs a warning and proceeds with valid ones."""
+    with patch("toolbox_core.client._McpTransportProxy") as mock_proxy:
+        with caplog.at_level("WARNING"):
+            client = ToolboxClient(
+                TOOLBOX_SERVER_URL_STABLE,
+                protocol=["UNSUPPORTED-FUTURE-PROTOCOL-v99", Protocol.MCP_v20251125],
+            )
+            mock_proxy.assert_called_once()
+            args, _ = mock_proxy.call_args
+
+            # Verify warning was logged
+            assert (
+                "Ignoring unrecognized protocol version(s) in request list: ['UNSUPPORTED-FUTURE-PROTOCOL-v99']"
+                in caplog.text
+            )
+
+            # Verify initial_protocol was resolved to the valid protocol
+            assert args[2] == Protocol.MCP_v20251125
+            assert args[6] == ["2025-11-25"]
 
 
 @pytest.mark.asyncio
@@ -961,3 +991,42 @@ async def test_modern_smart_fallback():
 
         assert res == "success"
         mock_create.assert_called_with(Protocol.MCP_v20241105)
+
+
+@pytest.mark.asyncio
+async def test_multistep_cascading_fallback():
+    """Multi-step Cascading Fallback Test across three transport versions (Draft -> 20251125 -> 20241105)."""
+    proxy = _McpTransportProxy(
+        "http://mock",
+        None,
+        Protocol.MCP_DRAFT,
+        None,
+        None,
+        False,
+        [
+            Protocol.MCP_DRAFT.value,
+            Protocol.MCP_v20251125.value,
+            Protocol.MCP_v20241105.value,
+        ],
+    )
+
+    t1 = AsyncMock()
+    t1.tool_get.side_effect = ProtocolNegotiationError(Protocol.MCP_v20251125.value)
+
+    t2 = AsyncMock()
+    t2.tool_get.side_effect = ProtocolNegotiationError(Protocol.MCP_v20241105.value)
+
+    t3 = AsyncMock()
+    t3.tool_get.return_value = "success"
+
+    proxy._active_transport = t1
+
+    with patch.object(proxy, "_create_transport") as mock_create:
+        mock_create.side_effect = [t2, t3]
+
+        res = await proxy.tool_get("mock")
+
+        assert res == "success"
+        assert mock_create.call_count == 2
+        assert mock_create.call_args_list[0][0][0] == Protocol.MCP_v20251125
+        assert mock_create.call_args_list[1][0][0] == Protocol.MCP_v20241105

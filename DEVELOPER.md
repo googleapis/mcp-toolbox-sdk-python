@@ -114,10 +114,13 @@ This project uses `release-please` for automated releases. The release pipeline 
 ## API Reference Documentation
 
 The API reference is published to [py.mcp-toolbox.dev](https://py.mcp-toolbox.dev).
+
 It is generated with
 [pydoc-markdown](https://niklasrosenstein.github.io/pydoc-markdown/) and rendered
 by [Hugo](https://gohugo.io/) + [Docsy](https://www.docsy.dev/) from the
-`docs-site/` directory. Docs are built **per package, per version** and served at
+`docs-site/` directory.
+
+Docs are built **per package, per version** and served at
 `/<package>/<version>/` (e.g. `/core/v1.0.0/`), with a `/<package>/latest/`
 redirect to the newest release. `<package>` is the URL slug: `core`, `adk`,
 `langchain`, or `llamaindex`.
@@ -149,9 +152,9 @@ The package must already live under `packages/toolbox-<slug>/`. Then:
 
 ### Workflows
 
-The `api-docs.yml` workflow deploys to the `gh-pages` branch. It runs only on the
-upstream repository and uses the `api-docs-deploy` concurrency group, so it never
-races another deploy.
+The [`api-docs.yml`](.github/workflows/api-docs.yml) workflow deploys to the
+`gh-pages` branch. It runs only on the upstream repository and uses the
+`api-docs-deploy` concurrency group, so it never races another deploy.
 
 The automatic flow is as follows:
 
@@ -176,44 +179,43 @@ the dropdown link 404s.
 
 ### Backfilling old docs
 
-Use the **`api-docs-backfill.yml`** (API Reference Backfill) workflow to publish
-docs for a version whose pages are missing — typically releases that predate the
-docs tooling, or a deployment that failed. It builds **one historical version per
-run**.
+Use the [`api-docs-backfill.yml`](.github/workflows/api-docs-backfill.yml)
+(API Reference Backfill) workflow to publish docs for a version whose pages are
+missing — typically a tag whose on-push deploy failed or never ran. It builds
+**one version per run**.
 
 Unlike `api-docs.yml`, this workflow does **not** deploy to production directly.
 Each run opens a **pull request into the `gh-pages` branch**, so the docs are
 reviewed before they go live. The page is published only when you merge that PR.
 
-How a run works:
-
-1.  It checks out `main` for the current docs tooling (layouts, scripts, version
-    picker), then overlays the requested version's package **`src/`** from its
-    release tag (`toolbox-<pkg>-<version>`), so pydoc-markdown documents that
-    version's API. Only `src/` is overlaid, so the package's `pyproject.toml` and
-    the docs tooling stay in sync with `main`.
-2.  It builds `/<package>/<version>/` (plus the package's `releases`/`latest`
-    files), overlays it onto a clone of the live `gh-pages` tree — existing
-    versions, `CNAME`, and `.nojekyll` are preserved — and opens a PR from branch
-    `backfill/<pkg>-<ver>` with `gh-pages` as the base.
+The run builds **entirely from the release tag** (`toolbox-<pkg>-<version>`): the
+tag carries both that version's source and the docs tooling (`docs-site/`,
+`scripts/`), so nothing is overlaid from `main` and no per-package or
+dependency-build step is needed. It builds `/<package>/<version>/` (plus the
+package's `releases`/`latest` files), overlays the result onto a clone of the
+live `gh-pages` tree — existing versions, `CNAME`, and `.nojekyll` are preserved
+— and opens a PR from branch `backfill/<pkg>-<ver>` with `gh-pages` as the base.
+Only tags that already carry the docs tooling can be backfilled; tags cut before
+it landed will fail.
 
 Steps to backfill:
 
-1.  Make sure the version is listed in `docs-site/hugo.toml` (see
-    [Adding a version to the picker](#adding-a-version-to-the-picker)), so the
-    dropdown links to it.
-2.  Trigger the workflow from the Actions tab, or with:
+1.  Trigger the workflow from the Actions tab, or with:
 
     ```bash
     gh workflow run api-docs-backfill.yml -f package=core -f version=v1.0.0
     ```
 
     To catch up several versions, dispatch it once per `package`/`version`. The
-    concurrency group is scoped per version, so the runs are independent and none
-    are cancelled — each opens its own PR.
-3.  Review the resulting `backfill/<pkg>-<ver>` PR (the diff should be just that
+    concurrency group is scoped per package/version, so the runs are independent
+    and none are cancelled — each opens its own PR.
+2.  Review the resulting `backfill/<pkg>-<ver>` PR (the diff should be just that
     version's directory) and **merge it into `gh-pages`** to publish. Re-running
     the workflow for the same version updates the existing PR's branch.
+3.  **Add the version to the picker** if it isn't already listed — add a
+    `[[params.versions.<pkg>]]` block in `docs-site/hugo.toml` on `main` (see
+    [Adding a version to the picker](#adding-a-version-to-the-picker)), otherwise
+    the dropdown won't link to it.
 
 #### Previewing a backfill PR
 
@@ -230,9 +232,11 @@ python3 -m http.server 8099 --directory /tmp/preview-docs
 # → http://localhost:8099/<pkg>/<ver>/   e.g. http://localhost:8099/core/v0.6.0/
 ```
 
-The version dropdown fetches `/<pkg>/releases.releases` at runtime, so links to
+The version dropdown fetches the package's version list at runtime, so links to
 versions not present in this branch (other backfills) will 404 locally — that's
-expected. When done, clean up:
+expected.
+
+When done, clean up:
 
 ```bash
 git worktree remove /tmp/preview-docs

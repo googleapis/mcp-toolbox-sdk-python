@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import time
+import urllib.parse
 from typing import Mapping, Optional, TypeVar
 
 from pydantic import BaseModel
@@ -27,8 +28,8 @@ from . import types
 ReceiveResultT = TypeVar("ReceiveResultT", bound=BaseModel)
 
 
-class McpHttpTransportV20260618(_McpHttpTransportBase):
-    """Transport for the MCP draft Request-Metadata (v2026-06-18) protocol."""
+class McpHttpTransportV20260728(_McpHttpTransportBase):
+    """Transport for the MCP draft Request-Metadata (v2026-07-28) protocol."""
 
     async def _send_request(
         self,
@@ -201,7 +202,11 @@ class McpHttpTransportV20260618(_McpHttpTransportBase):
         """Lists available tools from the server using the MCP protocol."""
         await self._ensure_initialized(headers=headers)
 
-        url = self._mcp_base_url + (toolset_name if toolset_name else "")
+        url = self._mcp_base_url
+        if toolset_name:
+            parsed = urllib.parse.urlparse(url)
+            new_path = parsed.path.rstrip("/") + "/" + toolset_name
+            url = urllib.parse.urlunparse(parsed._replace(path=new_path))
 
         meta = types.MCPMeta(
             protocol_version=self._protocol_version,
@@ -239,10 +244,17 @@ class McpHttpTransportV20260618(_McpHttpTransportBase):
 
             tools_map = {t["name"]: self._convert_tool_schema(t) for t in result.tools}
 
+            server_version = (
+                result.field_meta.server_info.version
+                if (result.field_meta and result.field_meta.server_info)
+                else "0.0.0"
+            )
+
             return ManifestSchema(
-                serverVersion="1.0.0",
+                serverVersion=server_version,
                 tools=tools_map,
             )
+
         except Exception as e:
             error = e
             raise

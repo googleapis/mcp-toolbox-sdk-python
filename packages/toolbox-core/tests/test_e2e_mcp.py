@@ -104,27 +104,70 @@ class TestBasicE2E:
         with pytest.raises(TypeError, match="missing a required argument: 'num_rows'"):
             await get_n_rows_tool()
 
-    async def test_protocol_fallback_e2e(self, toolbox_server_url: str):
-        """Tests that a client using MCP_DRAFT can fallback to an older protocol against a server that doesn't support the draft version."""
-        # The stable server currently does not support DRAFT 2026, so this will trigger a fallback.
-        # However, the draft server does support DRAFT 2026.
+    async def test_run_tool_url_binding(self):
+        """Tests URL Parameter Binding natively handled by the server."""
+        async with ToolboxClient(f"{TOOLBOX_SERVER_URL_STABLE}?num_rows=2") as toolbox:
+            tool = await toolbox.load_tool("get-n-rows")
+
+            # 'num_rows' is filtered from the schema and automatically injected by the server
+            response = await tool()
+
+            assert isinstance(response, str)
+            assert "row1" in response
+            assert "row2" in response
+            assert "row3" not in response
+
+    async def test_protocol_fallback_e2e(
+        self, toolbox_server_url: str, caplog: pytest.LogCaptureFixture
+    ):
+        """Tests that a client requesting an unsupported protocol version falls back to a supported version."""
+        # 1. Verify warning log and fallback for unrecognized protocol strings in list
+        with caplog.at_level("WARNING"):
+            async with ToolboxClient(
+                toolbox_server_url,
+                protocol=["UNSUPPORTED-FUTURE-PROTOCOL-v99", Protocol.MCP_LATEST],
+            ) as client:
+                tool = await client.load_tool("get-n-rows")
+                response = await tool(num_rows="1")
+                assert "row1" in response
+                assert (
+                    client._ToolboxClient__transport._protocol_version
+                    == Protocol.MCP_LATEST.value
+                )
+                assert (
+                    "Ignoring unrecognized protocol version(s) in request list: ['UNSUPPORTED-FUTURE-PROTOCOL-v99']"
+                    in caplog.text
+                )
+
+        # 2. Verify server fallback behavior when using MCP_DRAFT
         async with ToolboxClient(
             toolbox_server_url, protocol=Protocol.MCP_DRAFT
         ) as client:
             tool = await client.load_tool("get-n-rows")
             response = await tool(num_rows="1")
             assert "row1" in response
-            # Verify that fallback occurred by checking the transport's final protocol version
-            if toolbox_server_url == TOOLBOX_SERVER_URL_DRAFT:
+
+            if Protocol.MCP_DRAFT == Protocol.MCP_LATEST:
+                # Currently, no active draft spec exists (MCP_DRAFT == MCP_LATEST == 2026-07-28),
+                # so both stable and draft servers support the protocol natively without HTTP 400 fallback.
                 assert (
                     client._ToolboxClient__transport._protocol_version
                     == Protocol.MCP_DRAFT.value
                 )
             else:
-                assert (
-                    client._ToolboxClient__transport._protocol_version
-                    != Protocol.MCP_DRAFT.value
-                )
+                # When a future experimental draft version exists (e.g. DRAFT-2027-v1):
+                if toolbox_server_url == TOOLBOX_SERVER_URL_DRAFT:
+                    # Draft server (5001) supports the new draft version
+                    assert (
+                        client._ToolboxClient__transport._protocol_version
+                        == Protocol.MCP_DRAFT.value
+                    )
+                else:
+                    # Stable server (5000) rejects the new draft version and triggers HTTP 400 fallback
+                    assert (
+                        client._ToolboxClient__transport._protocol_version
+                        != Protocol.MCP_DRAFT.value
+                    )
 
     async def test_run_tool_wrong_param_type(self, get_n_rows_tool: ToolboxTool):
         """Invoke a tool with wrong param type."""
@@ -492,7 +535,13 @@ async def test_mcp_default_protocol(toolbox_server_url: str):
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("toolbox_server")
 async def test_mcp_draft_fallback(toolbox_server_url: str):
-    """Verify that explicitly using MCP_DRAFT against a server that doesn't support it falls back successfully."""
+    """Verify that explicitly using MCP_DRAFT against a server that doesn't support it falls back successfully.
+
+    Note: When MCP_DRAFT == MCP_LATEST (no unreleased draft spec), both stable (5000) and draft (5001)
+    servers support the protocol natively. When a future experimental draft version (e.g. DRAFT-2027-v1)
+    is introduced, stable servers (5000) will reject it with HTTP 400, automatically triggering fallback
+    to MCP_LATEST.
+    """
     async with ToolboxClient(toolbox_server_url, protocol=Protocol.MCP_DRAFT) as client:
         tool = await client.load_tool("get-n-rows")
         response = await tool(num_rows="1")
@@ -531,6 +580,9 @@ async def test_mcp_custom_protocols_list(toolbox_server_url: str):
         tool = await client.load_tool("get-n-rows")
         response = await tool(num_rows="1")
         assert "row1" in response
+        # When MCP_DRAFT == MCP_LATEST, both assertions evaluate to MCP_LATEST.value.
+        # When a future draft (e.g. DRAFT-2027-v1) is introduced, the stable server (5000)
+        # falls back to MCP_LATEST while the draft server (5001) negotiates MCP_DRAFT.
         if toolbox_server_url == TOOLBOX_SERVER_URL_STABLE:
             assert (
                 client._ToolboxClient__transport._protocol_version
