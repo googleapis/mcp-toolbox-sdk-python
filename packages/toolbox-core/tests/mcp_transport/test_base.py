@@ -21,7 +21,7 @@ import pytest_asyncio
 from aiohttp import ClientSession
 
 from toolbox_core.mcp_transport.transport_base import _McpHttpTransportBase
-from toolbox_core.protocol import TelemetryAttributes, ToolSchema
+from toolbox_core.protocol import Protocol, TelemetryAttributes, ToolSchema
 
 
 class ConcreteTransport(_McpHttpTransportBase):
@@ -207,7 +207,8 @@ class TestMcpHttpTransportBase:
         assert p_obj.additionalProperties.type == "integer"
 
     def test_convert_tool_schema_with_auth_metadata(self, transport):
-        """Test converting tool schema with auth metadata fields."""
+        """Test converting tool schema with legacy toolbox auth metadata fields on pre-2026 version."""
+        transport._protocol_version = Protocol.MCP_v20251125.value
         raw_tool = {
             "name": "auth_tool",
             "description": "Tool with auth params",
@@ -226,13 +227,85 @@ class TestMcpHttpTransportBase:
         schema = transport._convert_tool_schema(raw_tool)
 
         assert isinstance(schema, ToolSchema)
-
-        # Check that authRequired (from toolbox/authInvoke) was populated
         assert schema.authRequired == ["my-auth-invoke"]
-
-        # Check that authSources (from toolbox/authParam) was populated on the parameter
         p_api_key = next(p for p in schema.parameters if p.name == "apiKey")
         assert p_api_key.authSources == ["my-auth-source"]
+
+    def test_convert_tool_schema_with_com_google_cloud_auth_metadata(self, transport):
+        """Test converting tool schema with 2026+ com.google.cloud auth metadata fields."""
+        transport._protocol_version = Protocol.MCP_v20260728.value
+        raw_tool = {
+            "name": "auth_tool_2026",
+            "description": "Tool with 2026 auth params",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "apiKey": {"type": "string"},
+                },
+            },
+            "_meta": {
+                "com.google.cloud/authParam": {"apiKey": ["google-auth-source"]},
+                "com.google.cloud/authInvoke": ["google-auth-invoke"],
+            },
+        }
+
+        schema = transport._convert_tool_schema(raw_tool)
+
+        assert isinstance(schema, ToolSchema)
+        assert schema.authRequired == ["google-auth-invoke"]
+        p_api_key = next(p for p in schema.parameters if p.name == "apiKey")
+        assert p_api_key.authSources == ["google-auth-source"]
+
+    def test_convert_tool_schema_legacy_ignored_on_2026(self, transport):
+        """Test that legacy toolbox vendor prefix is ignored when active protocol version is 2026+."""
+        transport._protocol_version = Protocol.MCP_v20260728.value
+        raw_tool = {
+            "name": "auth_tool_legacy_on_2026",
+            "description": "Tool with legacy auth params on 2026 version",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "apiKey": {"type": "string"},
+                },
+            },
+            "_meta": {
+                "toolbox/authParam": {"apiKey": ["legacy-source"]},
+                "toolbox/authInvoke": ["legacy-invoke"],
+            },
+        }
+
+        schema = transport._convert_tool_schema(raw_tool)
+
+        assert isinstance(schema, ToolSchema)
+        assert schema.authRequired == []
+        p_api_key = next(p for p in schema.parameters if p.name == "apiKey")
+        assert p_api_key.authSources is None
+
+    def test_convert_tool_schema_with_malformed_auth_metadata(self, transport):
+        """Test robust handling of malformed or invalid types in _meta."""
+        raw_tool = {
+            "name": "auth_tool_malformed",
+            "description": "Tool with malformed _meta",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "apiKey": {"type": "string"},
+                },
+            },
+            "_meta": {
+                "com.google.cloud/authParam": "invalid_string_instead_of_dict",
+                "com.google.cloud/authInvoke": "invalid_string_instead_of_list",
+                "toolbox/authParam": 12345,
+                "toolbox/authInvoke": True,
+            },
+        }
+
+        schema = transport._convert_tool_schema(raw_tool)
+
+        assert isinstance(schema, ToolSchema)
+        assert schema.authRequired == []
+        p_api_key = next(p for p in schema.parameters if p.name == "apiKey")
+        assert p_api_key.authSources is None
 
     @pytest.mark.asyncio
     async def test_close_managed_session(self, mocker):

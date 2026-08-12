@@ -17,7 +17,7 @@ from warnings import warn
 
 from aiohttp import ClientSession
 from toolbox_core.client import ToolboxClient as ToolboxCoreClient
-from toolbox_core.protocol import Protocol
+from toolbox_core.protocol import Protocol, TelemetryAttributes
 
 from .async_tools import AsyncToolboxTool
 from .version import __version__
@@ -63,6 +63,7 @@ class AsyncToolboxClient:
         auth_tokens: Optional[dict[str, Callable[[], str]]] = None,
         auth_headers: Optional[dict[str, Callable[[], str]]] = None,
         bound_params: dict[str, Union[Any, Callable[[], Any]]] = {},
+        telemetry_attributes: Optional[TelemetryAttributes] = None,
     ) -> AsyncToolboxTool:
         """
         Loads the tool with the given tool name from the Toolbox service.
@@ -75,6 +76,8 @@ class AsyncToolboxClient:
             auth_headers: Deprecated. Use `auth_token_getters` instead.
             bound_params: An optional mapping of parameter names to their
                 bound values.
+            telemetry_attributes: Optional telemetry attributes (model, user
+                id, agent id) sent to the server with every tool invocation.
 
         Returns:
             A tool loaded from the Toolbox.
@@ -110,6 +113,8 @@ class AsyncToolboxClient:
             auth_token_getters=auth_token_getters,
             bound_params=bound_params,
         )
+        if telemetry_attributes is not None:
+            core_tool = core_tool.add_telemetry_attributes(telemetry_attributes)
         return AsyncToolboxTool(core_tool=core_tool)
 
     async def aload_toolset(
@@ -120,6 +125,7 @@ class AsyncToolboxClient:
         auth_headers: Optional[dict[str, Callable[[], str]]] = None,
         bound_params: dict[str, Union[Any, Callable[[], Any]]] = {},
         strict: bool = False,
+        telemetry_attributes: Optional[TelemetryAttributes] = None,
     ) -> list[AsyncToolboxTool]:
         """
         Loads tools from the Toolbox service, optionally filtered by toolset
@@ -139,6 +145,8 @@ class AsyncToolboxClient:
                 provided). If False (default), raises an error only if a
                 user-provided parameter or auth token cannot be applied to *any*
                 loaded tool across the set.
+            telemetry_attributes: Optional telemetry attributes (model, user
+                id, agent id) sent to the server with every tool invocation.
 
         Returns:
             A list of all tools loaded from the Toolbox.
@@ -178,6 +186,8 @@ class AsyncToolboxClient:
 
         tools = []
         for core_tool in core_tools:
+            if telemetry_attributes is not None:
+                core_tool = core_tool.add_telemetry_attributes(telemetry_attributes)
             tools.append(AsyncToolboxTool(core_tool=core_tool))
         return tools
 

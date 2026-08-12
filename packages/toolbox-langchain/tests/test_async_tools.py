@@ -20,6 +20,7 @@ import pytest_asyncio
 from pydantic import ValidationError
 from toolbox_core.itransport import ITransport
 from toolbox_core.protocol import ParameterSchema as CoreParameterSchema
+from toolbox_core.protocol import TelemetryAttributes
 from toolbox_core.tool import ToolboxTool as ToolboxCoreTool
 
 
@@ -316,6 +317,30 @@ class TestAsyncToolboxTool:
         transport = core_tool._ToolboxTool__transport
         transport.tool_invoke_mock.assert_awaited_once_with(
             "test_tool", {"param2": 123}, {"test-auth-source_token": "test-token"}
+        )
+
+    async def test_toolbox_tool_call_with_telemetry_attributes(self, toolbox_tool):
+        attrs = TelemetryAttributes(llm_model="gemini-3.5-flash", user_id="user-1")
+        core_tool = toolbox_tool._AsyncToolboxTool__core_tool
+
+        with patch.object(
+            core_tool,
+            "add_telemetry_attributes",
+            wraps=core_tool.add_telemetry_attributes,
+        ) as mock_add_telemetry_attributes:
+            tool = toolbox_tool.add_telemetry_attributes(attrs)
+
+        mock_add_telemetry_attributes.assert_called_once_with(attrs)
+        result = await tool.ainvoke({"param1": "test-value", "param2": 123})
+
+        assert result == "test-result"
+        derived_core_tool = tool._AsyncToolboxTool__core_tool
+        transport = derived_core_tool._ToolboxTool__transport
+        transport.tool_invoke_mock.assert_awaited_once_with(
+            "test_tool",
+            {"param1": "test-value", "param2": 123},
+            {},
+            telemetry_attributes=attrs,
         )
 
     async def test_toolbox_tool_call_with_invalid_input(self, toolbox_tool):

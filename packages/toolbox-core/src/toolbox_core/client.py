@@ -30,7 +30,7 @@ from .mcp_transport import (
     McpHttpTransportV20250326,
     McpHttpTransportV20250618,
     McpHttpTransportV20251125,
-    McpHttpTransportV20260618,
+    McpHttpTransportV20260728,
 )
 from .protocol import Protocol, ToolSchema
 from .tool import ToolboxTool
@@ -66,8 +66,8 @@ class _McpTransportProxy(ITransport):
     def _create_transport(self, protocol: Protocol) -> ITransport:
         self._current_protocol = protocol
         match protocol:
-            case Protocol.MCP_DRAFT:
-                return McpHttpTransportV20260618(
+            case Protocol.MCP_v20260728:
+                return McpHttpTransportV20260728(
                     self._url,
                     self._session,
                     protocol,
@@ -242,17 +242,25 @@ class ToolboxClient:
             ]
 
             supported_mcp_versions = Protocol.get_supported_mcp_versions()
-            for p in user_protocols:
-                if p not in supported_mcp_versions:
-                    raise ValueError(
-                        f"Invalid protocol version '{p}'. Must be one of: {supported_mcp_versions}"
-                    )
+            unrecognized = [
+                p for p in user_protocols if p not in supported_mcp_versions
+            ]
+            if unrecognized:
+                logging.warning(
+                    f"Ignoring unrecognized protocol version(s) in request list: {unrecognized}. "
+                    f"Supported versions: {supported_mcp_versions}"
+                )
 
             user_protocols_set = set(user_protocols)
             # Intersect with the globally sorted list to strictly enforce newest-to-oldest ordering
             supported_protocols = [
                 v for v in supported_mcp_versions if v in user_protocols_set
             ]
+            if not supported_protocols:
+                raise ValueError(
+                    f"No supported protocol version found in '{user_protocols}'. "
+                    f"Must include at least one of: {supported_mcp_versions}"
+                )
             initial_protocol = Protocol(supported_protocols[0])
         else:
             supported_protocols = None

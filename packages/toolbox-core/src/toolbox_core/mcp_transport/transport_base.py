@@ -49,7 +49,7 @@ class _McpHttpTransportBase(ITransport, ABC):
         path = parsed.path
         if path.endswith("/mcp"):
             path += "/"
-        elif not path.endswith("/mcp/") and "/mcp/" not in path:
+        elif "/mcp/" not in path:
             path = path.rstrip("/") + "/mcp/"
 
         # Reconstruct the URL with the updated path, preserving query parameters
@@ -168,14 +168,29 @@ class _McpHttpTransportBase(ITransport, ABC):
 
         if "_meta" in tool_data and isinstance(tool_data["_meta"], dict):
             meta = tool_data["_meta"]
-            if "toolbox/authParam" in meta and isinstance(
-                meta["toolbox/authParam"], dict
-            ):
-                param_auth = meta["toolbox/authParam"]
-            if "toolbox/authInvoke" in meta and isinstance(
-                meta["toolbox/authInvoke"], list
-            ):
-                invoke_auth = meta["toolbox/authInvoke"]
+
+            is_2026_or_newer = Protocol._is_version_at_least(
+                self._protocol_version,
+                Protocol.MCP_v20260728.value,
+            )
+            if is_2026_or_newer:
+                if "com.google.cloud/authParam" in meta and isinstance(
+                    meta["com.google.cloud/authParam"], dict
+                ):
+                    param_auth = meta["com.google.cloud/authParam"]
+                if "com.google.cloud/authInvoke" in meta and isinstance(
+                    meta["com.google.cloud/authInvoke"], list
+                ):
+                    invoke_auth = meta["com.google.cloud/authInvoke"]
+            else:
+                if "toolbox/authParam" in meta and isinstance(
+                    meta["toolbox/authParam"], dict
+                ):
+                    param_auth = meta["toolbox/authParam"]
+                if "toolbox/authInvoke" in meta and isinstance(
+                    meta["toolbox/authInvoke"], list
+                ):
+                    invoke_auth = meta["toolbox/authInvoke"]
 
         parameters = []
         input_schema = tool_data.get("inputSchema", {})
