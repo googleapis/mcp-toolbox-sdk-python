@@ -14,6 +14,7 @@
 
 import asyncio
 import json
+import urllib.parse
 from abc import ABC, abstractmethod
 from typing import Any, Mapping, Optional, Union
 
@@ -44,7 +45,15 @@ class _McpHttpTransportBase(ITransport, ABC):
         telemetry_enabled: bool = False,
         supported_protocols: Optional[list[str]] = None,
     ):
-        self._mcp_base_url = f"{base_url}/mcp/"
+        parsed = urllib.parse.urlparse(base_url)
+        path = parsed.path
+        if path.endswith("/mcp"):
+            path += "/"
+        elif "/mcp/" not in path:
+            path = path.rstrip("/") + "/mcp/"
+
+        # Reconstruct the URL with the updated path, preserving query parameters
+        self._mcp_base_url = urllib.parse.urlunparse(parsed._replace(path=path))
         self._protocol_version = protocol.value
         self._server_version: Optional[str] = None
 
@@ -159,14 +168,29 @@ class _McpHttpTransportBase(ITransport, ABC):
 
         if "_meta" in tool_data and isinstance(tool_data["_meta"], dict):
             meta = tool_data["_meta"]
-            if "toolbox/authParam" in meta and isinstance(
-                meta["toolbox/authParam"], dict
-            ):
-                param_auth = meta["toolbox/authParam"]
-            if "toolbox/authInvoke" in meta and isinstance(
-                meta["toolbox/authInvoke"], list
-            ):
-                invoke_auth = meta["toolbox/authInvoke"]
+
+            is_2026_or_newer = Protocol._is_version_at_least(
+                self._protocol_version,
+                Protocol.MCP_v20260728.value,
+            )
+            if is_2026_or_newer:
+                if "com.google.cloud/authParam" in meta and isinstance(
+                    meta["com.google.cloud/authParam"], dict
+                ):
+                    param_auth = meta["com.google.cloud/authParam"]
+                if "com.google.cloud/authInvoke" in meta and isinstance(
+                    meta["com.google.cloud/authInvoke"], list
+                ):
+                    invoke_auth = meta["com.google.cloud/authInvoke"]
+            else:
+                if "toolbox/authParam" in meta and isinstance(
+                    meta["toolbox/authParam"], dict
+                ):
+                    param_auth = meta["toolbox/authParam"]
+                if "toolbox/authInvoke" in meta and isinstance(
+                    meta["toolbox/authInvoke"], list
+                ):
+                    invoke_auth = meta["toolbox/authInvoke"]
 
         parameters = []
         input_schema = tool_data.get("inputSchema", {})

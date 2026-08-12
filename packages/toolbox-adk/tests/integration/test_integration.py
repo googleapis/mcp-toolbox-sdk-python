@@ -454,6 +454,29 @@ class TestBasicE2E:
         finally:
             await toolset.close()
 
+    async def test_run_tool_url_binding(self):
+        """Tests URL Parameter Binding natively handled by the server."""
+        toolset = ToolboxToolset(
+            server_url=f"{TOOLBOX_SERVER_URL_STABLE}?num_rows=2",
+            tool_names=["get-n-rows"],
+            credentials=CredentialStrategy.toolbox_identity(),
+        )
+        try:
+            tools = await toolset.get_tools()
+            tool = tools[0]
+            assert isinstance(tool, ToolboxTool)
+
+            ctx = MagicMock()
+            # 'num_rows' is filtered from the schema and automatically injected by the server
+            response = await tool.run_async({}, ctx)
+
+            assert isinstance(response, str)
+            assert "row1" in response
+            assert "row2" in response
+            assert "row3" not in response
+        finally:
+            await toolset.close()
+
     async def test_run_tool_missing_params(self):
         """Invoke a tool with missing params."""
         toolset = ToolboxToolset(

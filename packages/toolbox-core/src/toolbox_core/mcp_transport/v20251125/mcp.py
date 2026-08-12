@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import time
+import urllib.parse
 from typing import Mapping, Optional, TypeVar
 
 from pydantic import BaseModel
@@ -245,7 +246,11 @@ class McpHttpTransportV20251125(_McpHttpTransportBase):
         """Lists available tools from the server using the MCP protocol."""
         await self._ensure_initialized(headers=headers)
 
-        url = self._mcp_base_url + (toolset_name if toolset_name else "")
+        url = self._mcp_base_url
+        if toolset_name:
+            parsed = urllib.parse.urlparse(url)
+            new_path = parsed.path.rstrip("/") + "/" + toolset_name
+            url = urllib.parse.urlunparse(parsed._replace(path=new_path))
 
         meta: Optional[types.MCPMeta] = None
 

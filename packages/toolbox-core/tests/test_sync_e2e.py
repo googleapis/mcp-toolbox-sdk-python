@@ -79,6 +79,19 @@ class TestBasicE2E:
         with pytest.raises(TypeError, match="missing a required argument: 'num_rows'"):
             get_n_rows_tool()
 
+    def test_run_tool_url_binding(self):
+        """Tests URL Parameter Binding natively handled by the server."""
+        with ToolboxSyncClient(f"{TOOLBOX_SERVER_URL_STABLE}?num_rows=2") as toolbox:
+            tool = toolbox.load_tool("get-n-rows")
+
+            # 'num_rows' is filtered from the schema and automatically injected by the server
+            response = tool()
+
+            assert isinstance(response, str)
+            assert "row1" in response
+            assert "row2" in response
+            assert "row3" not in response
+
     def test_run_tool_wrong_param_type(self, get_n_rows_tool: ToolboxSyncTool):
         """Invoke a tool with wrong param type."""
         with pytest.raises(

@@ -78,7 +78,7 @@ def test_get_supported_mcp_versions():
     sorted from newest to oldest.
     """
     expected_versions = [
-        "DRAFT-2026-v1",
+        "2026-07-28",
         "2025-11-25",
         "2025-06-18",
         "2025-03-26",
@@ -89,6 +89,29 @@ def test_get_supported_mcp_versions():
     assert supported_versions == expected_versions
     # Also verify that the non-MCP members are not included
     assert "toolbox" not in supported_versions
+
+
+def test_is_version_at_least():
+    """Tests Protocol._is_version_at_least for valid comparisons and error handling."""
+    # Equal version
+    assert Protocol._is_version_at_least("2026-07-28", "2026-07-28") is True
+    # Newer vs older
+    assert Protocol._is_version_at_least("2026-07-28", "2025-11-25") is True
+    assert Protocol._is_version_at_least("2025-11-25", "2024-11-05") is True
+    # Older vs newer
+    assert Protocol._is_version_at_least("2024-11-05", "2026-07-28") is False
+    assert Protocol._is_version_at_least("2025-03-26", "2025-11-25") is False
+
+    # Unrecognized current version raises ValueError
+    with pytest.raises(ValueError, match="Unrecognized protocol version"):
+        Protocol._is_version_at_least("2027-01-01", "2026-07-28")
+
+    with pytest.raises(ValueError, match="Unrecognized protocol version"):
+        Protocol._is_version_at_least("invalid-version", "2026-07-28")
+
+    # Unrecognized min_version raises ValueError
+    with pytest.raises(ValueError, match="Unrecognized target protocol version"):
+        Protocol._is_version_at_least("2026-07-28", "unknown-target")
 
 
 def test_parameter_schema_float():
