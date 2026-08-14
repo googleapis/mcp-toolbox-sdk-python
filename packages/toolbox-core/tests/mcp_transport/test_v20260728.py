@@ -547,7 +547,7 @@ class TestMcpHttpTransportV20260728:
         assert "sample_tool" in manifest.tools
 
     async def test_result_meta_optional_server_info(self, transport):
-        """Test that missing _meta or missing serverInfo falls back to default version '0.0.0'."""
+        """Test that missing _meta or missing serverInfo falls back to empty version."""
         mock_response = AsyncMock()
         mock_response.ok = True
         mock_response.status = 200
@@ -564,7 +564,7 @@ class TestMcpHttpTransportV20260728:
         transport._session.post.return_value.__aenter__.return_value = mock_response
 
         manifest = await transport.tools_list()
-        assert manifest.serverVersion == "0.0.0"
+        assert manifest.serverVersion == ""
 
     async def test_result_type_parsing_and_fallback(self, transport):
         """Test that resultType defaults to 'complete' if missing in response result."""
