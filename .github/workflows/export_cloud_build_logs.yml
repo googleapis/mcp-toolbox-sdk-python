@@ -16,8 +16,6 @@ name: Export Cloud Build Failure Logs
 permissions: 
   contents: read
   checks: read
-  issues: write 
-  pull-requests: write 
 
 on:
   check_suite:
@@ -150,6 +148,9 @@ jobs:
   post-pr-comment:
     needs: [detect-build-failure, process-failed-builds]
     runs-on: ubuntu-latest
+    permissions:
+      issues: write 
+      pull-requests: write 
     if: always()
     steps:
       - name: Compose and post PR comment with artifact links
