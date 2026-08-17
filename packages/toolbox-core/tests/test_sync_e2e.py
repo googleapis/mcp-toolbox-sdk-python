@@ -199,8 +199,5 @@ class TestAuth:
             "get-row-by-content-auth",
             auth_token_getters={"my-test-auth": lambda: auth_token1},
         )
-        with pytest.raises(
-            Exception,
-            match="no field named row_data in claims",
-        ):
-            tool()
+        response = tool()
+        assert "no field named row_data in claims" in response

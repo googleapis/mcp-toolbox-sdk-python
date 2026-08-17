@@ -17,7 +17,7 @@ from unittest.mock import Mock, patch
 import pytest
 from pydantic import BaseModel
 from toolbox_core.protocol import ParameterSchema as CoreParameterSchema
-from toolbox_core.protocol import Protocol
+from toolbox_core.protocol import Protocol, TelemetryAttributes
 from toolbox_core.sync_tool import ToolboxSyncTool as ToolboxCoreSyncTool
 from toolbox_core.utils import params_to_pydantic_model
 
@@ -170,6 +170,42 @@ class TestToolboxClient:
         mock_core_load_toolset.assert_called_once_with(
             name=None, auth_token_getters={}, bound_params={}, strict=False
         )
+
+    @patch("toolbox_core.sync_client.ToolboxSyncClient.load_tool")
+    def test_load_tool_with_telemetry_attributes(
+        self, mock_core_load_tool, toolbox_client
+    ):
+        mock_core_tool_instance = create_mock_core_sync_tool()
+        telemetry_core_tool = create_mock_core_sync_tool(name="telemetry_tool")
+        mock_core_tool_instance.add_telemetry_attributes.return_value = (
+            telemetry_core_tool
+        )
+        mock_core_load_tool.return_value = mock_core_tool_instance
+        attrs = TelemetryAttributes(llm_model="gemini-3.5-flash")
+
+        langchain_tool = toolbox_client.load_tool(
+            "test_tool", telemetry_attributes=attrs
+        )
+
+        mock_core_tool_instance.add_telemetry_attributes.assert_called_once_with(attrs)
+        assert langchain_tool._ToolboxTool__core_tool is telemetry_core_tool
+
+    @patch("toolbox_core.sync_client.ToolboxSyncClient.load_toolset")
+    def test_load_toolset_with_telemetry_attributes(
+        self, mock_core_load_toolset, toolbox_client
+    ):
+        mock_core_tool_instance = create_mock_core_sync_tool()
+        telemetry_core_tool = create_mock_core_sync_tool(name="telemetry_tool")
+        mock_core_tool_instance.add_telemetry_attributes.return_value = (
+            telemetry_core_tool
+        )
+        mock_core_load_toolset.return_value = [mock_core_tool_instance]
+        attrs = TelemetryAttributes(llm_model="gemini-3.5-flash")
+
+        tools = toolbox_client.load_toolset(telemetry_attributes=attrs)
+
+        mock_core_tool_instance.add_telemetry_attributes.assert_called_once_with(attrs)
+        assert tools[0]._ToolboxTool__core_tool is telemetry_core_tool
 
     @pytest.mark.asyncio
     @patch("toolbox_core.sync_client.ToolboxSyncClient.load_tool")
