@@ -575,3 +575,91 @@ class TestMcpHttpTransportV20260728:
             {"tools": [], "resultType": "input_required"}
         )
         assert res_custom.result_type == "input_required"
+
+    async def test_client_capabilities_secure_parameters(self):
+        """Test that ClientCapabilities advertises toolbox.v1 secure_parameters support."""
+        caps = types.ClientCapabilities()
+        assert caps.extensions is not None
+        assert "com.google.cloud/toolbox.v1" in caps.extensions
+        assert caps.extensions["com.google.cloud/toolbox.v1"] == {}
+
+    async def test_tools_list_parses_secure_input_schema(self, transport):
+        """Test that secureInputSchema is parsed into ToolSchema.secure_parameters."""
+        mock_response = AsyncMock()
+        mock_response.ok = True
+        mock_response.status = 200
+        mock_response.content = Mock()
+        mock_response.content.at_eof.return_value = False
+        mock_response.json.return_value = {
+            "jsonrpc": "2.0",
+            "id": "1",
+            "result": {
+                "tools": [
+                    {
+                        "name": "secure_tool",
+                        "description": "Tool with secure input schema",
+                        "inputSchema": {
+                            "type": "object",
+                            "properties": {
+                                "query": {
+                                    "type": "string",
+                                    "description": "search query",
+                                }
+                            },
+                            "required": ["query"],
+                        },
+                        "secureInputSchema": {
+                            "type": "object",
+                            "properties": {
+                                "api_key": {
+                                    "type": "string",
+                                    "description": "Secret API Key",
+                                }
+                            },
+                            "required": ["api_key"],
+                        },
+                    }
+                ]
+            },
+        }
+        transport._session.post.return_value.__aenter__.return_value = mock_response
+
+        manifest = await transport.tools_list()
+        assert "secure_tool" in manifest.tools
+        tool = manifest.tools["secure_tool"]
+        assert len(tool.parameters) == 1
+        assert tool.parameters[0].name == "query"
+        assert len(tool.secure_parameters) == 1
+        assert tool.secure_parameters[0].name == "api_key"
+        assert tool.secure_parameters[0].required is True
+        assert tool.secure_parameters[0].description == "Secret API Key"
+
+    async def test_tool_invoke_with_secure_arguments(self, transport):
+        """Test that tool_invoke sends secure_arguments in CallToolRequestParams."""
+        mock_response = AsyncMock()
+        mock_response.ok = True
+        mock_response.status = 200
+        mock_response.content = Mock()
+        mock_response.content.at_eof.return_value = False
+        mock_response.json.return_value = {
+            "jsonrpc": "2.0",
+            "id": "1",
+            "result": {"content": [{"type": "text", "text": "invocation success"}]},
+        }
+        transport._session.post.return_value.__aenter__.return_value = mock_response
+
+        result = await transport.tool_invoke(
+            "secure_tool",
+            {"query": "search term"},
+            {"custom-header": "value"},
+            secure_arguments={"api_key": "sec-val-999"},
+        )
+        assert result == "invocation success"
+
+        call_args = transport._session.post.call_args
+        sent_json = call_args.kwargs["json"]
+        assert sent_json["method"] == "tools/call"
+        params = sent_json["params"]
+        assert params["name"] == "secure_tool"
+        assert params["arguments"] == {"query": "search term"}
+        assert params["secureArguments"] == {"api_key": "sec-val-999"}

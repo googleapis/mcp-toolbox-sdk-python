@@ -187,6 +187,7 @@ class ToolSchema(BaseModel):
 
     description: str
     parameters: list[ParameterSchema]
+    secure_parameters: list[ParameterSchema] = []
     authRequired: list[str] = []
 
 

@@ -52,6 +52,7 @@ class ITransport(ABC):
         arguments: dict,
         headers: Mapping[str, str],
         telemetry_attributes: Optional[TelemetryAttributes] = None,
+        secure_arguments: Optional[dict] = None,
     ) -> str:
         """Invokes a specific tool on the server."""
         pass

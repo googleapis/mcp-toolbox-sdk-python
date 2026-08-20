@@ -624,3 +624,15 @@ class TestMcpHttpTransportV20250618:
 
         with pytest.raises(ProtocolNegotiationError):
             await transport._send_request("http://test.local/messages", request)
+
+    async def test_tool_invoke_rejects_secure_arguments(self, transport):
+        with pytest.raises(
+            NotImplementedError,
+            match="Secure parameters are not supported in MCP protocol version '2025-06-18'",
+        ):
+            await transport.tool_invoke(
+                "my_tool",
+                {"arg": "val"},
+                headers=None,
+                secure_arguments={"secret": "value"},
+            )

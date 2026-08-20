@@ -205,9 +205,21 @@ class _McpHttpTransportBase(ITransport, ABC):
 
             parameters.append(param_schema)
 
+        secure_parameters = []
+        secure_input_schema = tool_data.get("secureInputSchema")
+        if isinstance(secure_input_schema, dict):
+            sec_properties = secure_input_schema.get("properties", {})
+            sec_required = secure_input_schema.get("required", [])
+            for name, schema in sec_properties.items():
+                param_schema = self._convert_parameter_schema(
+                    name, schema, sec_required
+                )
+                secure_parameters.append(param_schema)
+
         return ToolSchema(
             description=tool_data.get("description") or "",
             parameters=parameters,
+            secure_parameters=secure_parameters,
             authRequired=invoke_auth,
         )
 

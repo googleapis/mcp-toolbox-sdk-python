@@ -293,6 +293,7 @@ class McpHttpTransportV20260728(_McpHttpTransportBase):
         arguments: dict,
         headers: Optional[Mapping[str, str]],
         telemetry_attributes: Optional[TelemetryAttributes] = None,
+        secure_arguments: Optional[dict] = None,
     ) -> str:
         """Invokes a specific tool on the server using the MCP protocol."""
         await self._ensure_initialized(headers=headers)
@@ -332,7 +333,10 @@ class McpHttpTransportV20260728(_McpHttpTransportBase):
                 url=self._mcp_base_url,
                 request=types.CallToolRequest(
                     params=types.CallToolRequestParams(
-                        name=tool_name, arguments=arguments, field_meta=meta
+                        name=tool_name,
+                        arguments=arguments,
+                        secure_arguments=secure_arguments or None,
+                        field_meta=meta,
                     )
                 ),
                 headers=headers,
