@@ -63,7 +63,9 @@ class TestAsyncToolboxClient:
     def mock_core_client_instance(self, mock_session):
         mock = AsyncMock(spec=ToolboxCoreClient)
 
-        async def mock_load_tool_impl(name, auth_token_getters, bound_params):
+        async def mock_load_tool_impl(
+            name, auth_token_getters, bound_params, secure_params={}
+        ):
             tool_schema_dict = MANIFEST_JSON["tools"].get(name)
             if not tool_schema_dict:
                 raise ValueError(f"Tool '{name}' not in mock manifest_dict")
@@ -83,7 +85,7 @@ class TestAsyncToolboxClient:
         mock.load_tool = AsyncMock(side_effect=mock_load_tool_impl)
 
         async def mock_load_toolset_impl(
-            name, auth_token_getters, bound_params, strict
+            name, auth_token_getters, bound_params, strict, secure_params={}
         ):
             core_tools_list = []
             for tool_name_iter, tool_schema_dict in MANIFEST_JSON["tools"].items():
@@ -423,3 +425,35 @@ class TestAsyncToolboxClient:
         )
         call_kwargs = mock_core_client_constructor.call_args[1]
         assert call_kwargs["telemetry_enabled"] == telemetry_enabled
+
+    async def test_aload_tool_with_secure_params(
+        self, mock_client, mock_core_client_instance
+    ):
+        sec_params = {"api_key": "secret_key"}
+        tool = await mock_client.aload_tool("test_tool_1", secure_params=sec_params)
+
+        assert isinstance(tool, AsyncToolboxTool)
+        mock_core_client_instance.load_tool.assert_called_once_with(
+            name="test_tool_1",
+            auth_token_getters={},
+            bound_params={},
+            secure_params=sec_params,
+        )
+
+    async def test_aload_toolset_with_secure_params(
+        self, mock_client, mock_core_client_instance
+    ):
+        sec_params = {"api_key": "secret_key"}
+        tools = await mock_client.aload_toolset(
+            "my_set", secure_params=sec_params, strict=True
+        )
+
+        assert len(tools) == 2
+        assert isinstance(tools[0], AsyncToolboxTool)
+        mock_core_client_instance.load_toolset.assert_called_once_with(
+            name="my_set",
+            auth_token_getters={},
+            bound_params={},
+            strict=True,
+            secure_params=sec_params,
+        )
