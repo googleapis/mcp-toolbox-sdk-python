@@ -176,6 +176,57 @@ class TestAsyncToolboxTool:
             for bound_param_name in params_to_bind.keys():
                 assert bound_param_name not in new_core_tool_signature_params
 
+    async def test_toolbox_tool_bind_param(self, toolbox_tool):
+        new_langchain_tool = toolbox_tool.bind_param("param1", "bound-value")
+        assert isinstance(
+            new_langchain_tool._AsyncToolboxTool__core_tool, ToolboxCoreTool
+        )
+        new_core_tool_signature_params = (
+            new_langchain_tool._AsyncToolboxTool__core_tool.__signature__.parameters
+        )
+        assert "param1" not in new_core_tool_signature_params
+
+    async def test_toolbox_tool_bind_secure_params(self, toolbox_tool):
+        original_core_tool = toolbox_tool._AsyncToolboxTool__core_tool
+        with patch.object(
+            original_core_tool,
+            "bind_secure_params",
+            wraps=original_core_tool.bind_secure_params,
+        ) as mock_core_bind:
+            # Inject a secure param to test binding
+            from toolbox_core.protocol import ParameterSchema
+
+            original_core_tool._ToolboxTool__secure_params = [
+                ParameterSchema(
+                    name="api_key",
+                    type="string",
+                    description="key",
+                    required=True,
+                )
+            ]
+            new_langchain_tool = toolbox_tool.bind_secure_params({"api_key": "sec123"})
+            mock_core_bind.assert_called_once_with({"api_key": "sec123"})
+            assert isinstance(
+                new_langchain_tool._AsyncToolboxTool__core_tool, ToolboxCoreTool
+            )
+
+    async def test_toolbox_tool_bind_secure_param(self, toolbox_tool):
+        original_core_tool = toolbox_tool._AsyncToolboxTool__core_tool
+        from toolbox_core.protocol import ParameterSchema
+
+        original_core_tool._ToolboxTool__secure_params = [
+            ParameterSchema(
+                name="api_key", type="string", description="key", required=True
+            )
+        ]
+        new_langchain_tool = toolbox_tool.bind_secure_param("api_key", "sec123")
+        assert isinstance(
+            new_langchain_tool._AsyncToolboxTool__core_tool, ToolboxCoreTool
+        )
+        assert new_langchain_tool._AsyncToolboxTool__core_tool._bound_secure_params == {
+            "api_key": "sec123"
+        }
+
     async def test_toolbox_tool_bind_params_invalid(self, toolbox_tool):
         with pytest.raises(
             ValueError, match="unable to bind parameters: no parameter named param3"
