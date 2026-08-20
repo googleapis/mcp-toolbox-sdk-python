@@ -64,6 +64,7 @@ class AsyncToolboxClient:
         auth_headers: Optional[dict[str, Callable[[], str]]] = None,
         bound_params: dict[str, Union[Any, Callable[[], Any]]] = {},
         telemetry_attributes: Optional[TelemetryAttributes] = None,
+        secure_params: dict[str, Union[Any, Callable[[], Any]]] = {},
     ) -> AsyncToolboxTool:
         """
         Loads the tool with the given tool name from the Toolbox service.
@@ -78,6 +79,8 @@ class AsyncToolboxClient:
                 bound values.
             telemetry_attributes: Optional telemetry attributes (model, user
                 id, agent id) sent to the server with every tool invocation.
+            secure_params: An optional mapping of secure parameter names to their
+                bound values.
 
         Returns:
             A tool loaded from the Toolbox.
@@ -108,10 +111,15 @@ class AsyncToolboxClient:
                 )
                 auth_token_getters = auth_headers
 
+        kwargs: dict[str, Any] = {}
+        if secure_params:
+            kwargs["secure_params"] = secure_params
+
         core_tool = await self.__core_client.load_tool(
             name=tool_name,
             auth_token_getters=auth_token_getters,
             bound_params=bound_params,
+            **kwargs,
         )
         if telemetry_attributes is not None:
             core_tool = core_tool.add_telemetry_attributes(telemetry_attributes)
@@ -126,6 +134,7 @@ class AsyncToolboxClient:
         bound_params: dict[str, Union[Any, Callable[[], Any]]] = {},
         strict: bool = False,
         telemetry_attributes: Optional[TelemetryAttributes] = None,
+        secure_params: dict[str, Union[Any, Callable[[], Any]]] = {},
     ) -> list[AsyncToolboxTool]:
         """
         Loads tools from the Toolbox service, optionally filtered by toolset
@@ -141,12 +150,14 @@ class AsyncToolboxClient:
             bound_params: An optional mapping of parameter names to their
                 bound values.
             strict: If True, raises an error if *any* loaded tool instance fails
-                to utilize at least one provided parameter or auth token (if any
+                to utilize all of the given parameters, auth tokens, or secure parameters (if any
                 provided). If False (default), raises an error only if a
-                user-provided parameter or auth token cannot be applied to *any*
+                user-provided parameter, auth token, or secure parameter cannot be applied to *any*
                 loaded tool across the set.
             telemetry_attributes: Optional telemetry attributes (model, user
                 id, agent id) sent to the server with every tool invocation.
+            secure_params: An optional mapping of secure parameter names to their
+                bound values.
 
         Returns:
             A list of all tools loaded from the Toolbox.
@@ -177,11 +188,16 @@ class AsyncToolboxClient:
                 )
                 auth_token_getters = auth_headers
 
+        kwargs: dict[str, Any] = {}
+        if secure_params:
+            kwargs["secure_params"] = secure_params
+
         core_tools = await self.__core_client.load_toolset(
             name=toolset_name,
             auth_token_getters=auth_token_getters,
             bound_params=bound_params,
             strict=strict,
+            **kwargs,
         )
 
         tools = []
@@ -198,6 +214,7 @@ class AsyncToolboxClient:
         auth_tokens: Optional[dict[str, Callable[[], str]]] = None,
         auth_headers: Optional[dict[str, Callable[[], str]]] = None,
         bound_params: dict[str, Union[Any, Callable[[], Any]]] = {},
+        secure_params: dict[str, Union[Any, Callable[[], Any]]] = {},
     ) -> AsyncToolboxTool:
         raise NotImplementedError("Synchronous methods not supported by async client.")
 
@@ -209,6 +226,7 @@ class AsyncToolboxClient:
         auth_headers: Optional[dict[str, Callable[[], str]]] = None,
         bound_params: dict[str, Union[Any, Callable[[], Any]]] = {},
         strict: bool = False,
+        secure_params: dict[str, Union[Any, Callable[[], Any]]] = {},
     ) -> list[AsyncToolboxTool]:
         raise NotImplementedError("Synchronous methods not supported by async client.")
 

@@ -141,6 +141,8 @@ class TestToolboxTool:
             return_value=new_mock_instance_for_methods
         )
         sync_mock.bind_params = Mock(return_value=new_mock_instance_for_methods)
+        sync_mock.bind_secure_param = Mock(return_value=new_mock_instance_for_methods)
+        sync_mock.bind_secure_params = Mock(return_value=new_mock_instance_for_methods)
         sync_mock.add_telemetry_attributes = Mock(
             return_value=new_mock_instance_for_methods
         )
@@ -180,6 +182,8 @@ class TestToolboxTool:
             return_value=new_mock_instance_for_methods
         )
         sync_mock.bind_params = Mock(return_value=new_mock_instance_for_methods)
+        sync_mock.bind_secure_param = Mock(return_value=new_mock_instance_for_methods)
+        sync_mock.bind_secure_params = Mock(return_value=new_mock_instance_for_methods)
         return sync_mock
 
     @pytest.fixture
@@ -233,6 +237,25 @@ class TestToolboxTool:
         new_llamaindex_tool = toolbox_tool.bind_param("param1", "bound-value")
 
         mock_core_tool.bind_params.assert_called_once_with({"param1": "bound-value"})
+        assert isinstance(new_llamaindex_tool, ToolboxTool)
+        assert new_llamaindex_tool._ToolboxTool__core_tool == returned_core_tool_mock
+
+    def test_toolbox_tool_bind_secure_param(self, toolbox_tool, mock_core_tool):
+        returned_core_tool_mock = mock_core_tool.bind_secure_params.return_value
+        new_llamaindex_tool = toolbox_tool.bind_secure_param("api_key", "secret123")
+
+        mock_core_tool.bind_secure_params.assert_called_once_with(
+            {"api_key": "secret123"}
+        )
+        assert isinstance(new_llamaindex_tool, ToolboxTool)
+        assert new_llamaindex_tool._ToolboxTool__core_tool == returned_core_tool_mock
+
+    def test_toolbox_tool_bind_secure_params(self, toolbox_tool, mock_core_tool):
+        returned_core_tool_mock = mock_core_tool.bind_secure_params.return_value
+        sec_dict = {"api_key": "secret123", "db_pass": "pass"}
+        new_llamaindex_tool = toolbox_tool.bind_secure_params(sec_dict)
+
+        mock_core_tool.bind_secure_params.assert_called_once_with(sec_dict)
         assert isinstance(new_llamaindex_tool, ToolboxTool)
         assert new_llamaindex_tool._ToolboxTool__core_tool == returned_core_tool_mock
 

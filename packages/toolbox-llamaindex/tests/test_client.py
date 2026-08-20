@@ -635,3 +635,39 @@ class TestToolboxClient:
             bound_params=bound_params,
             strict=False,
         )
+
+    @patch("toolbox_llamaindex.client.ToolboxCoreSyncClient")
+    def test_load_tool_with_secure_params(self, mock_core_client_constructor):
+        mock_core_client = mock_core_client_constructor.return_value
+        mock_core_client.load_tool.return_value = create_mock_core_sync_tool()
+
+        client = ToolboxClient(URL)
+        sec_params = {"api_key": "secret_key"}
+        tool = client.load_tool("my_tool", secure_params=sec_params)
+
+        assert isinstance(tool, ToolboxTool)
+        mock_core_client.load_tool.assert_called_once_with(
+            name="my_tool",
+            auth_token_getters={},
+            bound_params={},
+            secure_params=sec_params,
+        )
+
+    @patch("toolbox_llamaindex.client.ToolboxCoreSyncClient")
+    def test_load_toolset_with_secure_params(self, mock_core_client_constructor):
+        mock_core_client = mock_core_client_constructor.return_value
+        mock_core_client.load_toolset.return_value = [create_mock_core_sync_tool()]
+
+        client = ToolboxClient(URL)
+        sec_params = {"api_key": "secret_key"}
+        tools = client.load_toolset("my_set", secure_params=sec_params, strict=True)
+
+        assert len(tools) == 1
+        assert isinstance(tools[0], ToolboxTool)
+        mock_core_client.load_toolset.assert_called_once_with(
+            name="my_set",
+            auth_token_getters={},
+            bound_params={},
+            strict=True,
+            secure_params=sec_params,
+        )

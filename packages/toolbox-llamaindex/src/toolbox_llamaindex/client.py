@@ -59,6 +59,7 @@ class ToolboxClient:
         auth_headers: Optional[dict[str, Callable[[], str]]] = None,
         bound_params: dict[str, Union[Any, Callable[[], Any]]] = {},
         telemetry_attributes: Optional[TelemetryAttributes] = None,
+        secure_params: dict[str, Union[Any, Callable[[], Any]]] = {},
     ) -> ToolboxTool:
         """
         Loads the tool with the given tool name from the Toolbox service.
@@ -73,6 +74,8 @@ class ToolboxClient:
                 bound values.
             telemetry_attributes: Optional telemetry attributes (model, user
                 id, agent id) sent to the server with every tool invocation.
+            secure_params: An optional mapping of secure parameter names to their
+                bound values.
 
         Returns:
             A tool loaded from the Toolbox.
@@ -103,11 +106,16 @@ class ToolboxClient:
                 )
                 auth_token_getters = auth_headers
 
+        kwargs: dict[str, Any] = {}
+        if secure_params:
+            kwargs["secure_params"] = secure_params
+
         core_tool = await to_thread(
             self.__core_client.load_tool,
             name=tool_name,
             auth_token_getters=auth_token_getters,
             bound_params=bound_params,
+            **kwargs,
         )
         if telemetry_attributes is not None:
             core_tool = core_tool.add_telemetry_attributes(telemetry_attributes)
@@ -122,6 +130,7 @@ class ToolboxClient:
         bound_params: dict[str, Union[Any, Callable[[], Any]]] = {},
         strict: bool = False,
         telemetry_attributes: Optional[TelemetryAttributes] = None,
+        secure_params: dict[str, Union[Any, Callable[[], Any]]] = {},
     ) -> list[ToolboxTool]:
         """
         Loads tools from the Toolbox service, optionally filtered by toolset
@@ -137,12 +146,14 @@ class ToolboxClient:
             bound_params: An optional mapping of parameter names to their
                 bound values.
             strict: If True, raises an error if *any* loaded tool instance fails
-                to utilize at least one provided parameter or auth token (if any
+                to utilize all of the given parameters, auth tokens, or secure parameters (if any
                 provided). If False (default), raises an error only if a
-                user-provided parameter or auth token cannot be applied to *any*
+                user-provided parameter, auth token, or secure parameter cannot be applied to *any*
                 loaded tool across the set.
             telemetry_attributes: Optional telemetry attributes (model, user
                 id, agent id) sent to the server with every tool invocation.
+            secure_params: An optional mapping of secure parameter names to their
+                bound values.
 
         Returns:
             A list of all tools loaded from the Toolbox.
@@ -173,12 +184,17 @@ class ToolboxClient:
                 )
                 auth_token_getters = auth_headers
 
+        kwargs: dict[str, Any] = {}
+        if secure_params:
+            kwargs["secure_params"] = secure_params
+
         core_tools = await to_thread(
             self.__core_client.load_toolset,
             name=toolset_name,
             auth_token_getters=auth_token_getters,
             bound_params=bound_params,
             strict=strict,
+            **kwargs,
         )
 
         tools = []
@@ -196,6 +212,7 @@ class ToolboxClient:
         auth_headers: Optional[dict[str, Callable[[], str]]] = None,
         bound_params: dict[str, Union[Any, Callable[[], Any]]] = {},
         telemetry_attributes: Optional[TelemetryAttributes] = None,
+        secure_params: dict[str, Union[Any, Callable[[], Any]]] = {},
     ) -> ToolboxTool:
         """
         Loads the tool with the given tool name from the Toolbox service.
@@ -210,6 +227,8 @@ class ToolboxClient:
                 bound values.
             telemetry_attributes: Optional telemetry attributes (model, user
                 id, agent id) sent to the server with every tool invocation.
+            secure_params: An optional mapping of secure parameter names to their
+                bound values.
 
         Returns:
             A tool loaded from the Toolbox.
@@ -240,10 +259,15 @@ class ToolboxClient:
                 )
                 auth_token_getters = auth_headers
 
+        kwargs: dict[str, Any] = {}
+        if secure_params:
+            kwargs["secure_params"] = secure_params
+
         core_sync_tool = self.__core_client.load_tool(
             name=tool_name,
             auth_token_getters=auth_token_getters,
             bound_params=bound_params,
+            **kwargs,
         )
         if telemetry_attributes is not None:
             core_sync_tool = core_sync_tool.add_telemetry_attributes(
@@ -260,6 +284,7 @@ class ToolboxClient:
         bound_params: dict[str, Union[Any, Callable[[], Any]]] = {},
         strict: bool = False,
         telemetry_attributes: Optional[TelemetryAttributes] = None,
+        secure_params: dict[str, Union[Any, Callable[[], Any]]] = {},
     ) -> list[ToolboxTool]:
         """
         Loads tools from the Toolbox service, optionally filtered by toolset
@@ -275,12 +300,14 @@ class ToolboxClient:
             bound_params: An optional mapping of parameter names to their
                 bound values.
             strict: If True, raises an error if *any* loaded tool instance fails
-                to utilize at least one provided parameter or auth token (if any
+                to utilize all of the given parameters, auth tokens, or secure parameters (if any
                 provided). If False (default), raises an error only if a
-                user-provided parameter or auth token cannot be applied to *any*
+                user-provided parameter, auth token, or secure parameter cannot be applied to *any*
                 loaded tool across the set.
             telemetry_attributes: Optional telemetry attributes (model, user
                 id, agent id) sent to the server with every tool invocation.
+            secure_params: An optional mapping of secure parameter names to their
+                bound values.
 
         Returns:
             A list of all tools loaded from the Toolbox.
@@ -311,11 +338,16 @@ class ToolboxClient:
                 )
                 auth_token_getters = auth_headers
 
+        kwargs: dict[str, Any] = {}
+        if secure_params:
+            kwargs["secure_params"] = secure_params
+
         core_sync_tools = self.__core_client.load_toolset(
             name=toolset_name,
             auth_token_getters=auth_token_getters,
             bound_params=bound_params,
             strict=strict,
+            **kwargs,
         )
 
         tools = []
