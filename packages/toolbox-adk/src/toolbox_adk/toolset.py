@@ -42,6 +42,7 @@ class ToolboxToolset(BaseToolset):
             Dict[str, Union[str, Callable[[], str], Callable[[], Awaitable[str]]]]
         ] = None,
         bound_params: Optional[Mapping[str, Union[Callable[[], Any], Any]]] = None,
+        secure_params: Optional[Mapping[str, Union[Callable[[], Any], Any]]] = None,
         auth_token_getters: Optional[
             Mapping[
                 str,
@@ -72,6 +73,7 @@ class ToolboxToolset(BaseToolset):
             credentials: Authentication configuration.
             additional_headers: Extra headers (static or dynamic).
             bound_params: Parameters to bind globally to loaded tools.
+            secure_params: Secure parameters to bind globally to loaded tools.
             auth_token_getters: Mapping of auth service names to token getters.
             telemetry_attributes: Telemetry attributes (model, user id, agent
                 id) sent to the server with each tool invocation. Either a
@@ -89,6 +91,7 @@ class ToolboxToolset(BaseToolset):
         self.__toolset_name = toolset_name
         self.__tool_names = tool_names
         self.__bound_params = bound_params
+        self.__secure_params = secure_params
         self.__auth_token_getters = auth_token_getters
         self.__telemetry_attributes = telemetry_attributes
 
@@ -112,10 +115,14 @@ class ToolboxToolset(BaseToolset):
 
         tools = []
         # 1. Load specific toolset if requested
+        load_kwargs: dict[str, Any] = {"bound_params": self.__bound_params or {}}
+        if self.__secure_params is not None:
+            load_kwargs["secure_params"] = self.__secure_params
+
         if self.__toolset_name:
             core_tools = await self.client.load_toolset(
                 self.__toolset_name,
-                bound_params=self.__bound_params or {},
+                **load_kwargs,
             )
             tools.extend(core_tools)
 
@@ -124,7 +131,7 @@ class ToolboxToolset(BaseToolset):
             for name in self.__tool_names:
                 core_tool = await self.client.load_tool(
                     name,
-                    bound_params=self.__bound_params or {},
+                    **load_kwargs,
                 )
                 tools.append(core_tool)
 
@@ -132,7 +139,7 @@ class ToolboxToolset(BaseToolset):
         if not self.__toolset_name and not self.__tool_names:
             core_tools = await self.client.load_toolset(
                 None,
-                bound_params=self.__bound_params or {},
+                **load_kwargs,
             )
             tools.extend(core_tools)
 
