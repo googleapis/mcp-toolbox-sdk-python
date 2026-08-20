@@ -546,3 +546,52 @@ class TestToolboxTool:
         tool = ToolboxTool(core_tool)
         assert tool.name == "valid_tool"
         assert tool.description == "valid description"
+
+    def test_bind_param(self):
+        core_tool = MagicMock()
+        core_tool.__name__ = "valid_tool"
+        core_tool.__doc__ = "valid doc"
+        new_core_tool = MagicMock()
+        new_core_tool.__name__ = "valid_tool"
+        new_core_tool.__doc__ = "valid doc"
+        core_tool.bind_params.return_value = new_core_tool
+
+        tool = ToolboxTool(core_tool)
+        bound_tool = tool.bind_param("param_a", "val_a")
+
+        core_tool.bind_params.assert_called_once_with({"param_a": "val_a"})
+        assert isinstance(bound_tool, ToolboxTool)
+        assert bound_tool._core_tool is new_core_tool
+
+    def test_bind_secure_param(self):
+        core_tool = MagicMock()
+        core_tool.__name__ = "valid_tool"
+        core_tool.__doc__ = "valid doc"
+        new_core_tool = MagicMock()
+        new_core_tool.__name__ = "valid_tool"
+        new_core_tool.__doc__ = "valid doc"
+        core_tool.bind_secure_params.return_value = new_core_tool
+
+        tool = ToolboxTool(core_tool)
+        bound_tool = tool.bind_secure_param("api_key", "secret123")
+
+        core_tool.bind_secure_params.assert_called_once_with({"api_key": "secret123"})
+        assert isinstance(bound_tool, ToolboxTool)
+        assert bound_tool._core_tool is new_core_tool
+
+    def test_bind_secure_params(self):
+        core_tool = MagicMock()
+        core_tool.__name__ = "valid_tool"
+        core_tool.__doc__ = "valid doc"
+        new_core_tool = MagicMock()
+        new_core_tool.__name__ = "valid_tool"
+        new_core_tool.__doc__ = "valid doc"
+        core_tool.bind_secure_params.return_value = new_core_tool
+
+        tool = ToolboxTool(core_tool)
+        sec_dict = {"api_key": "secret123", "db_pass": "pass"}
+        bound_tool = tool.bind_secure_params(sec_dict)
+
+        core_tool.bind_secure_params.assert_called_once_with(sec_dict)
+        assert isinstance(bound_tool, ToolboxTool)
+        assert bound_tool._core_tool is new_core_tool
