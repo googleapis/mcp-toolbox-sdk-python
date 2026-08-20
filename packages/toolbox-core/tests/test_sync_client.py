@@ -15,7 +15,7 @@
 
 import inspect
 from typing import Mapping, Optional
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import AsyncMock, MagicMock, Mock, create_autospec, patch
 
 import pytest
 
@@ -29,6 +29,7 @@ from toolbox_core.protocol import (
 )
 from toolbox_core.sync_client import ToolboxSyncClient
 from toolbox_core.sync_tool import ToolboxSyncTool
+from toolbox_core.tool import ToolboxTool
 
 TEST_BASE_URL = "http://toolbox.example.com"
 
@@ -65,6 +66,7 @@ class MockSyncTransport(ITransport):
         arguments: dict,
         headers: Mapping[str, str],
         telemetry_attributes: Optional[TelemetryAttributes] = None,
+        secure_arguments: Optional[dict] = None,
     ) -> str:
         return await self.tool_invoke_mock(tool_name, arguments, headers)
 
@@ -578,3 +580,40 @@ def test_sync_client_init_with_client_info(sync_client_environment):
         _, kwargs = mock_async_client_cls.call_args
         assert kwargs["client_name"] == client_name
         assert kwargs["client_version"] == client_version
+
+
+def test_sync_client_load_tool_with_secure_params(sync_client_environment):
+    """Tests load_tool forwards secure_params to async client."""
+    client = ToolboxSyncClient(TEST_BASE_URL)
+    with patch.object(
+        client._ToolboxSyncClient__async_client, "load_tool", new_callable=AsyncMock
+    ) as mock_load:
+        mock_tool = create_autospec(ToolboxTool, instance=True)
+        mock_tool.__name__ = "my_tool"
+        mock_load.return_value = mock_tool
+
+        sec_params = {"api_key": "secret123"}
+        tool = client.load_tool("my_tool", secure_params=sec_params)
+
+        mock_load.assert_called_once_with("my_tool", {}, {}, sec_params)
+        assert isinstance(tool, ToolboxSyncTool)
+
+
+def test_sync_client_load_toolset_with_secure_params(sync_client_environment):
+    """Tests load_toolset forwards secure_params to async client."""
+    client = ToolboxSyncClient(TEST_BASE_URL)
+    with patch.object(
+        client._ToolboxSyncClient__async_client,
+        "load_toolset",
+        new_callable=AsyncMock,
+    ) as mock_load:
+        mock_tool = create_autospec(ToolboxTool, instance=True)
+        mock_tool.__name__ = "my_tool"
+        mock_load.return_value = [mock_tool]
+
+        sec_params = {"api_key": "secret123"}
+        tools = client.load_toolset("my_set", secure_params=sec_params)
+
+        mock_load.assert_called_once_with("my_set", {}, {}, False, sec_params)
+        assert len(tools) == 1
+        assert isinstance(tools[0], ToolboxSyncTool)
