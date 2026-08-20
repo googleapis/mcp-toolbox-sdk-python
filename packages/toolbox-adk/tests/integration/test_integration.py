@@ -417,7 +417,6 @@ class TestBasicE2E:
         )
         try:
             tools = await toolset.get_tools()
-            assert len(tools) == 7
             tool_names = {tool.name for tool in tools}
             expected_tools = [
                 "get-row-by-content-auth",
@@ -427,7 +426,9 @@ class TestBasicE2E:
                 "get-n-rows",
                 "search-rows",
                 "process-data",
+                "my-secure-tool",
             ]
+            assert len(tools) == len(expected_tools)
             assert tool_names == set(expected_tools)
         finally:
             await toolset.close()
@@ -920,3 +921,104 @@ class TestAgentIntegration:
 
         assert event_count > 0
         assert success, "Agent failed to use the tool successfully"
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("toolbox_server")
+class TestSecureParamsE2E:
+    """End-to-end integration tests for ADK with secure parameters."""
+
+    async def test_adk_toolset_with_secure_params(self):
+        """Tests ToolboxToolset loading by toolset_name and running tools with secure parameters."""
+        toolset = ToolboxToolset(
+            server_url=TOOLBOX_SERVER_URL_STABLE,
+            toolset_name="my-secure-toolset",
+            credentials=CredentialStrategy.toolbox_identity(),
+            secure_params={"name": "Alice"},
+        )
+        try:
+            tools = await toolset.get_tools()
+            by_name = {t.name: t for t in tools}
+            assert "my-secure-tool" in by_name
+            tool = by_name["my-secure-tool"]
+            ctx = MagicMock()
+            result = await tool.run_async({"id": 1}, ctx)
+            assert isinstance(result, str)
+            assert "Alice" in result
+        finally:
+            await toolset.close()
+
+    async def test_adk_tool_bind_secure_param(self):
+        """Tests binding a secure parameter on an individual ADK ToolboxTool."""
+        toolset = ToolboxToolset(
+            server_url=TOOLBOX_SERVER_URL_STABLE,
+            toolset_name="my-secure-toolset",
+            credentials=CredentialStrategy.toolbox_identity(),
+        )
+        try:
+            tools = await toolset.get_tools()
+            by_name = {t.name: t for t in tools}
+            assert "my-secure-tool" in by_name
+            tool = by_name["my-secure-tool"]
+            bound_tool = tool.bind_secure_param("name", "Alice")
+            ctx = MagicMock()
+            result = await bound_tool.run_async({"id": 1}, ctx)
+            assert isinstance(result, str)
+            assert "Alice" in result
+        finally:
+            await toolset.close()
+
+    async def test_adk_dynamic_callable_re_evaluation_per_invocation(self):
+        """Tests that dynamic callables are re-evaluated per invocation in ADK."""
+        counter = 0
+
+        def dynamic_name():
+            nonlocal counter
+            counter += 1
+            return f"User{counter}"
+
+        toolset = ToolboxToolset(
+            server_url=TOOLBOX_SERVER_URL_STABLE,
+            toolset_name="my-secure-toolset",
+            credentials=CredentialStrategy.toolbox_identity(),
+            secure_params={"name": dynamic_name},
+        )
+        try:
+            tools = await toolset.get_tools()
+            by_name = {t.name: t for t in tools}
+            assert "my-secure-tool" in by_name
+            tool = by_name["my-secure-tool"]
+            ctx = MagicMock()
+
+            # First invocation -> counter = 1 -> "User1"
+            res1 = await tool.run_async({"id": 1}, ctx)
+            assert isinstance(res1, str)
+            assert "User1" in res1
+
+            # Second invocation -> counter = 2 -> "User2"
+            res2 = await tool.run_async({"id": 1}, ctx)
+            assert isinstance(res2, str)
+            assert "User2" in res2
+        finally:
+            await toolset.close()
+
+    async def test_adk_secure_param_declaration_isolation(self):
+        """Tests that secure parameters are excluded from ADK Gemini function declaration."""
+        toolset = ToolboxToolset(
+            server_url=TOOLBOX_SERVER_URL_STABLE,
+            toolset_name="my-secure-toolset",
+            credentials=CredentialStrategy.toolbox_identity(),
+        )
+        try:
+            tools = await toolset.get_tools()
+            by_name = {t.name: t for t in tools}
+            assert "my-secure-tool" in by_name
+            tool = by_name["my-secure-tool"]
+            declaration = tool._get_declaration()
+            assert declaration is not None
+            assert declaration.parameters is not None
+            assert hasattr(declaration.parameters, "properties")
+            assert "id" in declaration.parameters.properties
+            assert "name" not in declaration.parameters.properties
+        finally:
+            await toolset.close()

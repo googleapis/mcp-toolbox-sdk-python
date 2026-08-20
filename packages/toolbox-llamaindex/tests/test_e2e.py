@@ -82,8 +82,7 @@ class TestE2EClientAsync:
 
     async def test_aload_toolset_all(self, toolbox):
         toolset = await toolbox.aload_toolset()
-        assert len(toolset) == 7
-        tool_names = [
+        expected_tools = [
             "get-n-rows",
             "get-row-by-id",
             "get-row-by-id-auth",
@@ -91,10 +90,12 @@ class TestE2EClientAsync:
             "get-row-by-content-auth",
             "search-rows",
             "process-data",
+            "my-secure-tool",
         ]
-        for tool in toolset:
-            name = tool._ToolboxTool__core_tool.__name__
-            assert name in tool_names
+        assert len(toolset) == len(expected_tools)
+        assert {t._ToolboxTool__core_tool.__name__ for t in toolset} == set(
+            expected_tools
+        )
 
     async def test_aload_toolset_explicit_protocol(self):
         toolbox = ToolboxClient(
@@ -254,10 +255,9 @@ class TestE2EClientSync:
             name = tool._ToolboxTool__core_tool.__name__
             assert name in expected_tools
 
-    def test_aload_toolset_all(self, toolbox):
+    def test_load_toolset_all(self, toolbox):
         toolset = toolbox.load_toolset()
-        assert len(toolset) == 7
-        tool_names = [
+        expected_tools = [
             "get-n-rows",
             "get-row-by-id",
             "get-row-by-id-auth",
@@ -265,10 +265,12 @@ class TestE2EClientSync:
             "get-row-by-content-auth",
             "search-rows",
             "process-data",
+            "my-secure-tool",
         ]
-        for tool in toolset:
-            name = tool._ToolboxTool__core_tool.__name__
-            assert name in tool_names
+        assert len(toolset) == len(expected_tools)
+        assert {t._ToolboxTool__core_tool.__name__ for t in toolset} == set(
+            expected_tools
+        )
 
     def test_load_toolset_explicit_protocol(self):
         toolbox = ToolboxClient(
@@ -392,3 +394,31 @@ class TestE2EClientSync:
             'provided parameters were invalid: error parsing authenticated parameter "data": no field named row_data in claims'
             in response.content
         )
+
+
+@pytest.mark.usefixtures("toolbox_server")
+class TestSecureParamsE2E:
+    @pytest.mark.asyncio
+    async def test_async_run_tool_with_secure_param(self):
+        """Tests LlamaIndex AsyncToolboxTool with secure parameters."""
+        toolbox = ToolboxClient(TOOLBOX_SERVER_URL_STABLE)
+        try:
+            tool = await toolbox.aload_tool("my-secure-tool")
+            bound_tool = tool.bind_secure_param("name", "Alice")
+            response = await bound_tool.acall(id=1)
+            assert isinstance(response.content, str)
+            assert "Alice" in response.content
+        finally:
+            toolbox.close()
+
+    def test_sync_run_tool_with_secure_param(self):
+        """Tests LlamaIndex ToolboxTool with secure parameters."""
+        toolbox = ToolboxClient(TOOLBOX_SERVER_URL_STABLE)
+        try:
+            tool = toolbox.load_tool("my-secure-tool")
+            bound_tool = tool.bind_secure_param("name", "Alice")
+            response = bound_tool.call(id=1)
+            assert isinstance(response.content, str)
+            assert "Alice" in response.content
+        finally:
+            toolbox.close()
