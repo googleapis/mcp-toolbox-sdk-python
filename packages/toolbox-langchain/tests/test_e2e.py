@@ -213,11 +213,11 @@ class TestE2EClientAsync:
             "get-row-by-content-auth",
             auth_token_getters={"my-test-auth": lambda: auth_token1},
         )
-        with pytest.raises(
-            Exception,
-            match='provided parameters were invalid: error parsing authenticated parameter "data": no field named row_data in claims',
-        ):
-            await tool.ainvoke({})
+        response = await tool.ainvoke({})
+        assert (
+            'provided parameters were invalid: error parsing authenticated parameter "data": no field named row_data in claims'
+            in response
+        )
 
 
 @pytest.mark.usefixtures("toolbox_server")
@@ -387,8 +387,8 @@ class TestE2EClientSync:
             "get-row-by-content-auth",
             auth_token_getters={"my-test-auth": lambda: auth_token1},
         )
-        with pytest.raises(
-            Exception,
-            match='provided parameters were invalid: error parsing authenticated parameter "data": no field named row_data in claims',
-        ):
-            tool.invoke({})
+        response = tool.invoke({})
+        assert (
+            'provided parameters were invalid: error parsing authenticated parameter "data": no field named row_data in claims'
+            in response
+        )
