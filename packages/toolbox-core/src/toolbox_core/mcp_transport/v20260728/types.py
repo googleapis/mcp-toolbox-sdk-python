@@ -74,7 +74,9 @@ class ClientCapabilities(_BaseMCPModel):
     roots: dict[str, Any] | None = None
     sampling: SamplingCapabilities | None = None
     elicitation: ElicitationCapabilities | None = None
-    extensions: dict[str, Any] | None = None
+    extensions: dict[str, Any] | None = Field(
+        default_factory=lambda: {"com.google.cloud/toolbox.v1": {}}
+    )
 
 
 class Implementation(_BaseMCPModel):
@@ -166,6 +168,9 @@ class ListToolsRequest(MCPRequest[ListToolsResult]):
 class CallToolRequestParams(_BaseMCPModel):
     name: str
     arguments: dict[str, Any]
+    secure_arguments: dict[str, Any] | None = Field(
+        default=None, serialization_alias="secureArguments"
+    )
     field_meta: MCPMeta = Field(..., serialization_alias="_meta")
 
 

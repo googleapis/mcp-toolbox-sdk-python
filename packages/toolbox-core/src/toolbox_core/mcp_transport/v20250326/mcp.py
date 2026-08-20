@@ -368,8 +368,15 @@ class McpHttpTransportV20250326(_McpHttpTransportBase):
         arguments: dict,
         headers: Optional[Mapping[str, str]],
         telemetry_attributes: Optional[TelemetryAttributes] = None,
+        secure_arguments: Optional[dict] = None,
     ) -> str:
         """Invokes a specific tool on the server using the MCP protocol."""
+        if secure_arguments:
+            raise NotImplementedError(
+                f"Secure parameters are not supported in MCP protocol version '{self._protocol_version}'. "
+                "Please use protocol version '2026-07-28' or newer."
+            )
+
         await self._ensure_initialized(headers=headers)
 
         payload = self._build_telemetry_payload(telemetry_attributes)
