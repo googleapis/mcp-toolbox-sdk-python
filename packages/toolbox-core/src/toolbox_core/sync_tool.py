@@ -102,10 +102,20 @@ class ToolboxSyncTool:
         return self.__async_tool._params
 
     @property
+    def _secure_params(self) -> Sequence[ParameterSchema]:
+        return self.__async_tool._secure_params
+
+    @property
     def _bound_params(
         self,
     ) -> Mapping[str, Union[Callable[[], Any], Callable[[], Awaitable[Any]], Any]]:
         return self.__async_tool._bound_params
+
+    @property
+    def _bound_secure_params(
+        self,
+    ) -> Mapping[str, Union[Callable[[], Any], Callable[[], Awaitable[Any]], Any]]:
+        return self.__async_tool._bound_secure_params
 
     @property
     def _required_authn_params(self) -> Mapping[str, list[str]]:
@@ -240,6 +250,51 @@ class ToolboxSyncTool:
 
         """
         return self.bind_params({param_name: param_value})
+
+    def bind_secure_params(
+        self,
+        bound_secure_params: Mapping[
+            str, Union[Callable[[], Any], Callable[[], Awaitable[Any]], Any]
+        ],
+    ) -> "ToolboxSyncTool":
+        """
+        Binds secure parameters to values or callables that produce values.
+
+        Args:
+            bound_secure_params: A mapping of secure parameter names to values or
+                callables that produce values.
+
+        Returns:
+            A new ToolboxSyncTool instance with the specified secure parameters bound.
+
+        Raises:
+            ValueError: If a parameter is already bound or is not defined as a
+                secure parameter by the tool's definition.
+        """
+        new_async_tool = self.__async_tool.bind_secure_params(bound_secure_params)
+        return ToolboxSyncTool(new_async_tool, self.__loop, self.__thread)
+
+    def bind_secure_param(
+        self,
+        param_name: str,
+        param_value: Union[Callable[[], Any], Callable[[], Awaitable[Any]], Any],
+    ) -> "ToolboxSyncTool":
+        """
+        Binds a secure parameter to the value or callable that produces the value.
+
+        Args:
+            param_name: The name of the secure parameter to bind.
+            param_value: The value of the bound secure parameter, or a callable that
+                returns the value.
+
+        Returns:
+            A new ToolboxSyncTool instance with the specified secure parameter bound.
+
+        Raises:
+            ValueError: If the parameter is already bound or is not defined as a
+                secure parameter by the tool's definition.
+        """
+        return self.bind_secure_params({param_name: param_value})
 
     def add_telemetry_attributes(
         self, telemetry_attributes: TelemetryAttributes
