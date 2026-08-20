@@ -59,6 +59,10 @@ class ToolboxTool:
         client_headers: Mapping[
             str, Union[Callable[[], str], Callable[[], Awaitable[str]], str]
         ],
+        secure_params: Sequence[ParameterSchema] = (),
+        bound_secure_params: Mapping[
+            str, Union[Callable[[], Any], Callable[[], Awaitable[Any]], Any]
+        ] = {},
     ):
         """
         Initializes a callable that will trigger the tool invocation through the
@@ -78,11 +82,16 @@ class ToolboxTool:
             bound_params: A mapping of parameter names to bind to specific
                 values or callables that are called to produce values as needed.
             client_headers: Client specific headers bound to the tool.
+            secure_params: The secure parameters of the tool.
+            bound_secure_params: A mapping of secure parameter names to bind to
+                specific values or callables.
         """
         # used to invoke the toolbox API
         self.__transport = transport
         self.__description = description
         self.__params = params
+        self.__secure_params = secure_params
+        self.__bound_secure_params = bound_secure_params
         self.__pydantic_model = params_to_pydantic_model(name, self.__params)
 
         # Separate parameters into those without a default and those with a
@@ -134,10 +143,20 @@ class ToolboxTool:
         return copy.deepcopy(self.__params)
 
     @property
+    def _secure_params(self) -> Sequence[ParameterSchema]:
+        return copy.deepcopy(self.__secure_params)
+
+    @property
     def _bound_params(
         self,
     ) -> Mapping[str, Union[Callable[[], Any], Callable[[], Awaitable[Any]], Any]]:
         return MappingProxyType(self.__bound_parameters)
+
+    @property
+    def _bound_secure_params(
+        self,
+    ) -> Mapping[str, Union[Callable[[], Any], Callable[[], Awaitable[Any]], Any]]:
+        return MappingProxyType(self.__bound_secure_params)
 
     @property
     def _required_authn_params(self) -> Mapping[str, list[str]]:
@@ -177,6 +196,10 @@ class ToolboxTool:
             Mapping[str, Union[Callable[[], str], Callable[[], Awaitable[str]], str]]
         ] = None,
         telemetry_attributes: Optional[TelemetryAttributes] = None,
+        secure_params: Optional[Sequence[ParameterSchema]] = None,
+        bound_secure_params: Optional[
+            Mapping[str, Union[Callable[[], Any], Callable[[], Awaitable[Any]], Any]]
+        ] = None,
     ) -> "ToolboxTool":
         """
         Creates a copy of the ToolboxTool, overriding specific fields.
@@ -197,6 +220,9 @@ class ToolboxTool:
             client_headers: Client specific headers bound to the tool.
             telemetry_attributes: Telemetry attributes for the derived tool.
                 Set directly on the new instance (not exposed via __init__).
+            secure_params: The secure parameters of the tool.
+            bound_secure_params: A mapping of secure parameter names to bind to
+                specific values or callables.
         """
         check = lambda val, default: val if val is not None else default
         new_tool = ToolboxTool(
@@ -215,6 +241,8 @@ class ToolboxTool:
             ),
             bound_params=check(bound_params, self.__bound_parameters),
             client_headers=check(client_headers, self.__client_headers),
+            secure_params=check(secure_params, self.__secure_params),
+            bound_secure_params=check(bound_secure_params, self.__bound_secure_params),
         )
         new_tool.__telemetry_attributes = check(
             telemetry_attributes, self.__telemetry_attributes
@@ -255,6 +283,19 @@ class ToolboxTool:
                 f": {','.join(req_auth_services)}"
             )
 
+        # validate missing required secure parameters
+        missing_secure = [
+            p.name
+            for p in self.__secure_params
+            if p.required
+            and p.default is None
+            and p.name not in self.__bound_secure_params
+        ]
+        if missing_secure:
+            raise ValueError(
+                f"Missing required secure parameter(s) {missing_secure} for tool '{self.__name__}'"
+            )
+
         # validate inputs to this call using the signature
         all_args = self.__signature__.bind(*args, **kwargs)
 
@@ -274,6 +315,13 @@ class ToolboxTool:
         # error if it receives a None value, which it cannot convert.
         payload = OrderedDict({k: v for k, v in payload.items() if v is not None})
 
+        # resolve secure bound parameters
+        secure_payload = {}
+        for param, value in self.__bound_secure_params.items():
+            resolved = await resolve_value(value)
+            if resolved is not None:
+                secure_payload[param] = resolved
+
         # create headers for auth services
         headers = {}
         for client_header_name, client_header_val in self.__client_headers.items():
@@ -287,17 +335,17 @@ class ToolboxTool:
 
         warn_if_http_and_headers(self.__transport.base_url, headers)
 
+        kwargs_to_pass: dict[str, Any] = {}
         if self.__telemetry_attributes is not None:
-            return await self.__transport.tool_invoke(
-                self.__name__,
-                payload,
-                headers,
-                telemetry_attributes=self.__telemetry_attributes,
-            )
+            kwargs_to_pass["telemetry_attributes"] = self.__telemetry_attributes
+        if secure_payload:
+            kwargs_to_pass["secure_arguments"] = secure_payload
+
         return await self.__transport.tool_invoke(
             self.__name__,
             payload,
             headers,
+            **kwargs_to_pass,
         )
 
     def add_telemetry_attributes(
@@ -431,15 +479,23 @@ class ToolboxTool:
             A new ToolboxTool instance with the specified parameters bound.
 
         Raises:
-            ValueError: If a parameter is already bound or is not defined by the
-                tool's definition.
+            ValueError: If a parameter is already bound, is not defined by the
+                tool's definition, or is a secure parameter.
 
         """
         param_names = set(p.name for p in self.__params)
+        secure_param_names = set(p.name for p in self.__secure_params) | set(
+            self.__bound_secure_params.keys()
+        )
         for name in bound_params.keys():
             if name in self.__bound_parameters:
                 raise ValueError(
                     f"cannot re-bind parameter: parameter '{name}' is already bound"
+                )
+
+            if name in secure_param_names:
+                raise ValueError(
+                    f"parameter '{name}' is a secure parameter; use bind_secure_param/bind_secure_params instead"
                 )
 
             if name not in param_names:
@@ -476,8 +532,82 @@ class ToolboxTool:
             A new ToolboxTool instance with the specified parameter bound.
 
         Raises:
-            ValueError: If the parameter is already bound or is not defined by
-                the tool's definition.
+            ValueError: If the parameter is already bound, is not defined by
+                the tool's definition, or is a secure parameter.
 
         """
         return self.bind_params({param_name: param_value})
+
+    def bind_secure_params(
+        self,
+        bound_secure_params: Mapping[
+            str, Union[Callable[[], Any], Callable[[], Awaitable[Any]], Any]
+        ],
+    ) -> "ToolboxTool":
+        """
+        Binds secure parameters to values or callables that produce values.
+
+        Args:
+            bound_secure_params: A mapping of secure parameter names to values or
+                callables that produce values.
+
+        Returns:
+            A new ToolboxTool instance with the specified secure parameters bound.
+
+        Raises:
+            ValueError: If a secure parameter is already bound, is a regular parameter,
+                or is not defined by the tool's secure parameter definition.
+        """
+        secure_param_names = set(p.name for p in self.__secure_params)
+        regular_param_names = set(p.name for p in self.__params) | set(
+            self.__bound_parameters.keys()
+        )
+        for name in bound_secure_params.keys():
+            if name in self.__bound_secure_params:
+                raise ValueError(
+                    f"cannot re-bind secure parameter: secure parameter '{name}' is already bound"
+                )
+
+            if name in regular_param_names:
+                raise ValueError(
+                    f"parameter '{name}' is a regular parameter; use bind_param/bind_params instead"
+                )
+
+            if name not in secure_param_names:
+                raise ValueError(
+                    f"unable to bind secure parameters: no secure parameter named {name}"
+                )
+
+        new_secure_params = []
+        for p in self.__secure_params:
+            if p.name not in bound_secure_params:
+                new_secure_params.append(p)
+        all_bound_secure_params = dict(self.__bound_secure_params)
+        all_bound_secure_params.update(bound_secure_params)
+
+        return self.__copy(
+            secure_params=new_secure_params,
+            bound_secure_params=MappingProxyType(all_bound_secure_params),
+        )
+
+    def bind_secure_param(
+        self,
+        param_name: str,
+        param_value: Union[Callable[[], Any], Callable[[], Awaitable[Any]], Any],
+    ) -> "ToolboxTool":
+        """
+        Binds a secure parameter to the value or callable that produces the value.
+
+        Args:
+            param_name: The name of the bound secure parameter.
+            param_value: The value of the bound secure parameter, or a callable that
+                returns the value.
+
+        Returns:
+            A new ToolboxTool instance with the specified secure parameter bound.
+
+        Raises:
+            ValueError: If the secure parameter is already bound, is a regular parameter,
+                or is not defined by the tool's definition.
+        """
+        return self.bind_secure_params({param_name: param_value})

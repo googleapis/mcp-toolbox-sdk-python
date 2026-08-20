@@ -27,6 +27,7 @@ from toolbox_core.utils import (
     identify_auth_requirements,
     params_to_pydantic_model,
     resolve_value,
+    validate_unused_requirements,
     warn_if_http_and_headers,
 )
 
@@ -508,3 +509,72 @@ def test_warn_if_http_and_headers_https():
         warnings.simplefilter("always")
         warn_if_http_and_headers(url, headers)
         assert len(w) == 0
+
+
+def test_validate_unused_requirements_all_used():
+    """Test when all provided requirements are used."""
+    # Should not raise
+    validate_unused_requirements(
+        provided_auth_keys={"auth1"},
+        provided_bound_keys={"bound1"},
+        used_auth_keys={"auth1"},
+        used_bound_keys={"bound1"},
+        name="test_tool",
+        is_toolset=False,
+        provided_secure_keys={"sec1"},
+        used_secure_keys={"sec1"},
+    )
+
+
+def test_validate_unused_requirements_unused_secure_params_single_tool():
+    """Test unused secure parameter error formatting for a single tool."""
+    with pytest.raises(
+        ValueError,
+        match=r"Validation failed for tool 'my_tool': unused secure parameters: sec1, sec2\.",
+    ):
+        validate_unused_requirements(
+            provided_auth_keys=set(),
+            provided_bound_keys=set(),
+            used_auth_keys=set(),
+            used_bound_keys=set(),
+            name="my_tool",
+            is_toolset=False,
+            provided_secure_keys={"sec1", "sec2"},
+            used_secure_keys=set(),
+        )
+
+
+def test_validate_unused_requirements_unused_secure_params_toolset():
+    """Test unused secure parameter error formatting for a toolset."""
+    with pytest.raises(
+        ValueError,
+        match=r"Validation failed for toolset 'my_toolset': unused secure parameters could not be applied to any tool: sec1\.",
+    ):
+        validate_unused_requirements(
+            provided_auth_keys=set(),
+            provided_bound_keys=set(),
+            used_auth_keys=set(),
+            used_bound_keys=set(),
+            name="my_toolset",
+            is_toolset=True,
+            provided_secure_keys={"sec1"},
+            used_secure_keys=set(),
+        )
+
+
+def test_validate_unused_requirements_combined_unused():
+    """Test combined unused auth, bound, and secure parameters."""
+    with pytest.raises(
+        ValueError,
+        match=r"Validation failed for tool 'my_tool': unused auth tokens: auth1; unused bound parameters: bound1; unused secure parameters: sec1\.",
+    ):
+        validate_unused_requirements(
+            provided_auth_keys={"auth1"},
+            provided_bound_keys={"bound1"},
+            used_auth_keys=set(),
+            used_bound_keys=set(),
+            name="my_tool",
+            is_toolset=False,
+            provided_secure_keys={"sec1"},
+            used_secure_keys=set(),
+        )

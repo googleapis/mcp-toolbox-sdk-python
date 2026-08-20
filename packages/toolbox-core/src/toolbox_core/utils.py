@@ -21,6 +21,7 @@ from typing import (
     Callable,
     Iterable,
     Mapping,
+    Optional,
     Sequence,
     Type,
     Union,
@@ -177,32 +178,46 @@ def validate_unused_requirements(
     name: str,
     is_toolset: bool = False,
     target_type: str | None = None,
+    provided_secure_keys: Optional[set[str]] = None,
+    used_secure_keys: Optional[set[str]] = None,
 ) -> None:
     """
-    Validates that no provided authentication tokens or bound parameters went unused.
+    Validates that no provided authentication tokens, bound parameters, or secure parameters went unused.
     Raises a ValueError if any unused requirements are found, formatted appropriately
     for either a single tool or a full toolset.
     """
     unused_auth = provided_auth_keys - used_auth_keys
     unused_bound = provided_bound_keys - used_bound_keys
+    unused_secure = (provided_secure_keys or set()) - (used_secure_keys or set())
 
-    if unused_auth or unused_bound:
+    if unused_auth or unused_bound or unused_secure:
         error_messages = []
         if unused_auth:
             if is_toolset:
                 error_messages.append(
-                    f"unused auth tokens could not be applied to any tool: {', '.join(unused_auth)}"
+                    f"unused auth tokens could not be applied to any tool: {', '.join(sorted(unused_auth))}"
                 )
             else:
-                error_messages.append(f"unused auth tokens: {', '.join(unused_auth)}")
+                error_messages.append(
+                    f"unused auth tokens: {', '.join(sorted(unused_auth))}"
+                )
         if unused_bound:
             if is_toolset:
                 error_messages.append(
-                    f"unused bound parameters could not be applied to any tool: {', '.join(unused_bound)}"
+                    f"unused bound parameters could not be applied to any tool: {', '.join(sorted(unused_bound))}"
                 )
             else:
                 error_messages.append(
-                    f"unused bound parameters: {', '.join(unused_bound)}"
+                    f"unused bound parameters: {', '.join(sorted(unused_bound))}"
+                )
+        if unused_secure:
+            if is_toolset:
+                error_messages.append(
+                    f"unused secure parameters could not be applied to any tool: {', '.join(sorted(unused_secure))}"
+                )
+            else:
+                error_messages.append(
+                    f"unused secure parameters: {', '.join(sorted(unused_secure))}"
                 )
 
         final_target_type = (
