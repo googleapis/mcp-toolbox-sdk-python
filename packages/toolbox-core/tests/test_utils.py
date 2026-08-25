@@ -44,6 +44,12 @@ def create_param_mock(name: str, description: str, annotation: Type) -> Mock:
     mock_param_info.annotation = annotation
 
     param_mock.to_param.return_value = mock_param_info
+    param_mock.get_python_safe_field_name.return_value = ParameterSchema(
+        name=name,
+        type="string",
+        description=description,
+        required=param_mock.required,
+    ).get_python_safe_field_name()
     return param_mock
 
 
