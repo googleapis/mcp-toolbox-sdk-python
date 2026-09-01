@@ -9,15 +9,6 @@
 * **llamaindex:** support secure parameters in llamaindex tools and clients ([a2c7079](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/a2c7079ace0179e3f88575415b9c0303efad7c6c))
 
 
-### Miscellaneous Chores
-
-* **deps-dev:** bump pillow in /packages/toolbox-llamaindex ([#725](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/725)) ([3388067](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/338806771a83b4f5e5eb43c9a92e51db7bc8766e))
-* **deps:** bump aiohttp in /packages/toolbox-llamaindex ([#767](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/767)) ([31cb695](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/31cb695f6ca617f35a5365ad562b2d03988fe696))
-* **deps:** update mcp toolbox server version in integration tests to v1.9.0 ([#770](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/770)) ([fefc2c6](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/fefc2c656ade41c8671c98103d4a03cb896c6bd3))
-* release 1.3.1 ([#759](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/759)) ([4b9dd77](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/4b9dd77bf752edaefc084894367cd3fab4cfb1be))
-* **toolbox-core:** release 1.4.0 ([#788](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/788)) ([6250f24](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/6250f2421a2889c962988014495fa9aa10343182))
-* **toolbox-llamaindex:** release 0.9.0 ([#789](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/789)) ([c576592](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/c576592a5b78b253c520f0137f33066ea5ad6377))
-
 ## [0.8.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-llamaindex-v0.7.0...toolbox-llamaindex-v0.8.0) (2026-07-29)
 
 
