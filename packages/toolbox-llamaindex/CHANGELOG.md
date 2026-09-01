@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.9.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-llamaindex-v0.8.0...toolbox-llamaindex-v0.9.0) (2026-09-01)
+
+
+### Features
+
+* **llamaindex:** pass telemetry attributes ([#741](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/741)) ([2babdf2](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/2babdf2fd77fc5ce0b31ac930f1a9766170b3a1f))
+* **llamaindex:** support secure parameters in llamaindex tools and clients ([a2c7079](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/a2c7079ace0179e3f88575415b9c0303efad7c6c))
+
+> [!NOTE]
+> For additional changelogs of the underlying toolbox-core package, visit: https://github.com/googleapis/mcp-toolbox-sdk-python/releases/tag/toolbox-core-v1.4.0
+
+
 ## [0.8.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-llamaindex-v0.7.0...toolbox-llamaindex-v0.8.0) (2026-07-29)
 
 
