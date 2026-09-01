@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.4.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-langchain-v1.3.0...toolbox-langchain-v1.4.0) (2026-09-01)
+
+
+### Features
+
+* **langchain:** pass telemetry attributes ([#740](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/740)) ([c74c7e0](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/c74c7e0ef00632cea4a82aaf6c14926900d4d4b9))
+* **langchain:** support secure parameters in langchain tools and clients ([bff0b2f](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/bff0b2ff9d5fde705a821ed650d451422151b992))
+
+
+> [!NOTE]
+> For additional changelogs of the underlying `toolbox-core` package, visit: https://github.com/googleapis/mcp-toolbox-sdk-python/releases/tag/toolbox-core-v1.4.0
+
 ## [1.3.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-langchain-v1.2.0...toolbox-langchain-v1.3.0) (2026-07-28)
 
 
