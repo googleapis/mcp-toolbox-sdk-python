@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.4.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-adk-v1.3.1...toolbox-adk-v1.4.0) (2026-09-01)
+
+
+### Features
+
+* **adk:** support secure parameters in ADK tools and toolset ([50fa8d5](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/50fa8d573589696b2831af900f17b496e50b8d4e))
+
+
+### Miscellaneous Chores
+
+* **deps:** update mcp toolbox server version in integration tests to v1.9.0 ([#770](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/770)) ([fefc2c6](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/fefc2c656ade41c8671c98103d4a03cb896c6bd3))
+* **toolbox-core:** release 1.4.0 ([#788](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/788)) ([6250f24](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/6250f2421a2889c962988014495fa9aa10343182))
+
 ## [1.3.1](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-adk-v1.3.0...toolbox-adk-v1.3.1) (2026-07-29)
 
 
