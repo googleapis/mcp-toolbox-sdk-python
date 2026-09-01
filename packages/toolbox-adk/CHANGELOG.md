@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-adk-v1.4.0...toolbox-adk-v0.9.0) (2026-09-01)
+
+
+### Miscellaneous Chores
+
+* **toolbox-llamaindex:** release 0.9.0 ([#789](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/789)) ([c576592](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/c576592a5b78b253c520f0137f33066ea5ad6377))
+
 ## [1.4.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-adk-v1.3.1...toolbox-adk-v1.4.0) (2026-09-01)
 
 
