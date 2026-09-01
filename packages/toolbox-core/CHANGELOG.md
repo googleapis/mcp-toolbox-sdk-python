@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.4.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v1.3.0...toolbox-core-v1.4.0) (2026-09-01)
+
+
+### Features
+
+* **core:** client tool and toolset loading with secure parameters ([0d1358e](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/0d1358ef3b1e9e14876ca9a6a43b7023637e710d))
+* **core:** protocol and wire transport support for secure parameters ([a184f91](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/a184f91a7c7128421dbf629d4d5e6d21054260fb))
+* **core:** tool-level secure parameter binding, fast-fail and validation ([2bb1ab1](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/2bb1ab17a5e81428120d6e9ba8a3d434220ee718))
+
+
+### Bug Fixes
+
+* **core:** clean up draft protocol alias and remove hardcoded server version fallback ([#773](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/773)) ([7598805](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/7598805f1df91edd2fdcb9bbc7c874b8c03f3939))
+* **core:** strict 1:1 vendor prefix reading based on protocol version ([#747](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/747)) ([6d2f61d](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/6d2f61d0147f4199fd3fca224b4ee3fbfefb4957))
+
+
 ## [1.3.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v1.2.0...toolbox-core-v1.3.0) (2026-07-28)
 
 
