@@ -422,3 +422,64 @@ class TestSecureParamsE2E:
             assert "Alice" in response
         finally:
             toolbox.close()
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        ("method_name", "param_name", "param_val", "expected_match"),
+        [
+            (
+                "bind_param",
+                "name",
+                "Alice",
+                "parameter 'name' is a secure parameter; use bind_secure_param/bind_secure_params instead",
+            ),
+            (
+                "bind_secure_param",
+                "id",
+                1,
+                "parameter 'id' is a regular parameter; use bind_param/bind_params instead",
+            ),
+        ],
+    )
+    async def test_async_cross_binding_guidance_error(
+        self, method_name, param_name, param_val, expected_match
+    ):
+        """Tests that cross-binding on LangChain async tool raises guidance error."""
+        toolbox = ToolboxClient(TOOLBOX_SERVER_URL_STABLE)
+        try:
+            tool = await toolbox.aload_tool("my-secure-tool")
+            method = getattr(tool, method_name)
+            with pytest.raises(ValueError, match=expected_match):
+                method(param_name, param_val)
+        finally:
+            toolbox.close()
+
+    @pytest.mark.parametrize(
+        ("method_name", "param_name", "param_val", "expected_match"),
+        [
+            (
+                "bind_param",
+                "name",
+                "Alice",
+                "parameter 'name' is a secure parameter; use bind_secure_param/bind_secure_params instead",
+            ),
+            (
+                "bind_secure_param",
+                "id",
+                1,
+                "parameter 'id' is a regular parameter; use bind_param/bind_params instead",
+            ),
+        ],
+    )
+    def test_sync_cross_binding_guidance_error(
+        self, method_name, param_name, param_val, expected_match
+    ):
+        """Tests that cross-binding on LangChain sync tool raises guidance error."""
+        toolbox = ToolboxClient(TOOLBOX_SERVER_URL_STABLE)
+        try:
+            tool = toolbox.load_tool("my-secure-tool")
+            method = getattr(tool, method_name)
+            with pytest.raises(ValueError, match=expected_match):
+                method(param_name, param_val)
+        finally:
+            toolbox.close()

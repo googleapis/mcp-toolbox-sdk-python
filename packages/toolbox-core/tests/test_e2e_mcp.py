@@ -749,3 +749,42 @@ class TestSecureParamsE2E:
         assert "id" in sig.parameters
         assert "name" not in sig.parameters
         assert "name" not in (tool.__doc__ or "")
+
+    @pytest.mark.parametrize(
+        ("method_name", "param_name", "param_val", "expected_match"),
+        [
+            (
+                "bind_param",
+                "name",
+                "Alice",
+                "parameter 'name' is a secure parameter; use bind_secure_param/bind_secure_params instead",
+            ),
+            (
+                "bind_secure_param",
+                "id",
+                1,
+                "parameter 'id' is a regular parameter; use bind_param/bind_params instead",
+            ),
+        ],
+    )
+    async def test_cross_binding_guidance_error(
+        self,
+        toolbox: ToolboxClient,
+        method_name: str,
+        param_name: str,
+        param_val: Any,
+        expected_match: str,
+    ):
+        """Tests that cross-binding (bind_param on secure or bind_secure_param on regular) raises guidance error."""
+        protocol_version = toolbox._ToolboxClient__transport._protocol_version
+        if not Protocol._is_version_at_least(
+            protocol_version, Protocol.MCP_v20260728.value
+        ):
+            with pytest.raises(ValueError, match="Tool 'my-secure-tool' not found"):
+                await toolbox.load_tool("my-secure-tool")
+            return
+
+        tool = await toolbox.load_tool("my-secure-tool")
+        method = getattr(tool, method_name)
+        with pytest.raises(ValueError, match=expected_match):
+            method(param_name, param_val)

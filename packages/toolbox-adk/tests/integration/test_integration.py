@@ -1022,3 +1022,45 @@ class TestSecureParamsE2E:
             assert "name" not in declaration.parameters.properties
         finally:
             await toolset.close()
+
+    @pytest.mark.parametrize(
+        ("method_name", "param_name", "param_val", "expected_match"),
+        [
+            (
+                "bind_param",
+                "name",
+                "Alice",
+                "parameter 'name' is a secure parameter; use bind_secure_param/bind_secure_params instead",
+            ),
+            (
+                "bind_secure_param",
+                "id",
+                1,
+                "parameter 'id' is a regular parameter; use bind_param/bind_params instead",
+            ),
+        ],
+    )
+    async def test_adk_cross_binding_guidance_error(
+        self,
+        method_name,
+        param_name,
+        param_val,
+        expected_match,
+    ):
+        """Tests that cross-binding on ADK tool raises guidance error."""
+        toolset = ToolboxToolset(
+            server_url=TOOLBOX_SERVER_URL_STABLE,
+            toolset_name="my-secure-toolset",
+            credentials=CredentialStrategy.toolbox_identity(),
+        )
+        try:
+            tools = await toolset.get_tools()
+            by_name = {t.name: t for t in tools}
+            if "my-secure-tool" not in by_name:
+                pytest.skip("my-secure-tool not found in my-secure-toolset")
+            tool = by_name["my-secure-tool"]
+            method = getattr(tool, method_name)
+            with pytest.raises(ValueError, match=expected_match):
+                method(param_name, param_val)
+        finally:
+            await toolset.close()
