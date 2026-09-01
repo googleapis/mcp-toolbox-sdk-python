@@ -317,6 +317,37 @@ class TestMcpHttpTransportBase:
         mock_close.assert_called_once()
 
     @pytest.mark.asyncio
+    async def test_close_managed_session_after_cancelled_initialization(self):
+        transport = ConcreteTransport("http://fake-server.com")
+        transport._init_task = asyncio.create_task(asyncio.sleep(0))
+        transport._init_task.cancel()
+
+        with pytest.raises(asyncio.CancelledError):
+            await transport._init_task
+
+        try:
+            await transport.close()
+            assert transport._session.closed
+        finally:
+            if not transport._session.closed:
+                await transport._session.close()
+
+    @pytest.mark.asyncio
+    async def test_close_managed_session_after_initialization_error(self):
+        async def fail_initialization():
+            raise RuntimeError("initialization failed")
+
+        transport = ConcreteTransport("http://fake-server.com")
+        transport._init_task = asyncio.create_task(fail_initialization())
+
+        try:
+            await transport.close()
+            assert transport._session.closed
+        finally:
+            if not transport._session.closed:
+                await transport._session.close()
+
+    @pytest.mark.asyncio
     async def test_close_unmanaged_session(self):
         mock_session = AsyncMock(spec=ClientSession)
         transport = ConcreteTransport("http://fake-server.com", session=mock_session)
