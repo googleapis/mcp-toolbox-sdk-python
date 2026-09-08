@@ -19,6 +19,7 @@ import pytest_asyncio
 from aiohttp import ClientSession
 from aioresponses import aioresponses
 
+from toolbox_core.exceptions import ToolInvocationError
 from toolbox_core.mcp_transport.v20260728 import types
 from toolbox_core.mcp_transport.v20260728.mcp import McpHttpTransportV20260728
 from toolbox_core.protocol import ManifestSchema, Protocol
@@ -392,6 +393,23 @@ class TestMcpHttpTransportV20260728:
         )
         result = await transport.tool_invoke("tool", {}, {})
         assert result == "Result"
+
+    async def test_tool_invoke_error_result(self, transport, mocker):
+        mocker.patch.object(transport, "_ensure_initialized", new_callable=AsyncMock)
+        mocker.patch.object(
+            transport,
+            "_send_request",
+            new_callable=AsyncMock,
+            return_value=types.CallToolResult(
+                content=[types.TextContent(type="text", text="tool failed")],
+                isError=True,
+            ),
+        )
+
+        with pytest.raises(ToolInvocationError, match="tool failed") as exc_info:
+            await transport.tool_invoke("tool", {}, {})
+
+        assert exc_info.value.content == "tool failed"
 
     async def test_send_request_400_with_json_rpc_error(self, transport):
         # Test that an HTTP 400 with a non-negotiation JSON-RPC error is parsed properly.
