@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.9.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-langchain-v1.4.0...toolbox-langchain-v0.9.0) (2026-09-08)
+
+
+### Miscellaneous Chores
+
+* **deps:** update dependency version ([#795](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/795)) ([c87c55c](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/c87c55ce9d553d437ab5f38fa1e395d34c68fa34))
+* **toolbox-llamaindex:** release 0.9.0 ([#789](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/789)) ([c576592](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/c576592a5b78b253c520f0137f33066ea5ad6377))
+
 ## [1.4.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-langchain-v1.3.0...toolbox-langchain-v1.4.0) (2026-09-01)
 
 
