@@ -152,6 +152,40 @@ class TestMcpHttpTransportBase:
 
         transport._initialize_session.assert_called_once()
 
+    @pytest.mark.asyncio
+    async def test_cancelled_waiter_does_not_cancel_shared_initialization(self, mocker):
+        """Cancelling one waiter leaves the shared initialization running."""
+        session = AsyncMock(spec=ClientSession)
+        transport = ConcreteTransport("http://fake-server.com", session=session)
+        init_started = asyncio.Event()
+        allow_init = asyncio.Event()
+
+        async def slow_init(*args, **kwargs):
+            init_started.set()
+            await allow_init.wait()
+
+        mocker.patch.object(
+            transport,
+            "_initialize_session",
+            new_callable=AsyncMock,
+            side_effect=slow_init,
+        )
+
+        cancelled_waiter = asyncio.create_task(transport._ensure_initialized())
+        await init_started.wait()
+        surviving_waiter = asyncio.create_task(transport._ensure_initialized())
+        await asyncio.sleep(0)
+
+        cancelled_waiter.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await cancelled_waiter
+
+        allow_init.set()
+        assert await asyncio.gather(surviving_waiter, return_exceptions=True) == [None]
+
+        await transport._ensure_initialized()
+        transport._initialize_session.assert_awaited_once()
+
     def test_convert_tool_schema_valid(self, transport):
         """Test converting a valid MCP tool schema."""
         raw_tool = {
