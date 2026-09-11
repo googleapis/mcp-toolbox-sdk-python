@@ -483,6 +483,23 @@ async def test_resolve_value_async_callable():
     assert await resolve_value(another_async_func) == {"key": "value"}
 
 
+@pytest.mark.asyncio
+async def test_resolve_value_callable_returning_awaitable():
+    """Test resolving callables that return an awaitable/coroutine, such as callable objects or lambdas."""
+
+    class CallableAsyncGetter:
+        async def __call__(self) -> str:
+            return "callable_instance_result"
+
+    async def async_func() -> str:
+        return "lambda_result"
+
+    lambda_getter = lambda: async_func()
+
+    assert await resolve_value(CallableAsyncGetter()) == "callable_instance_result"
+    assert await resolve_value(lambda_getter) == "lambda_result"
+
+
 def test_warn_if_http_and_headers_triggers():
     """Test that a warning is emitted for HTTP URLs with headers."""
     url = "http://example.com"
