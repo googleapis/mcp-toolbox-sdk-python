@@ -61,7 +61,7 @@ test = [
     "google-cloud-storage==3.10.1",
     "aioresponses==0.7.8",
     "toolbox-core[telemetry]",
-    "numpy<2", # Pinned to <2 to prevent mypy syntax errors on python 3.10 with numpy 2.x stubs
+    "numpy<3", # Pinned to <2 to prevent mypy syntax errors on python 3.10 with numpy 2.x stubs
 ]
 [build-system]
 requires = ["setuptools"]
