@@ -92,7 +92,7 @@ class _McpHttpTransportBase(ITransport, ABC):
                 self._init_task = asyncio.create_task(
                     self._initialize_session(headers=headers)
                 )
-        await self._init_task
+        await asyncio.shield(self._init_task)
 
     @property
     def base_url(self) -> str:
