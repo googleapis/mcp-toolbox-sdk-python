@@ -21,6 +21,7 @@ from typing import Any, Mapping, Optional, Union
 from aiohttp import ClientSession
 
 from .. import version
+from ..exceptions import ToolInvocationError
 from ..itransport import ITransport
 from ..protocol import (
     AdditionalPropertiesSchema,
@@ -98,20 +99,26 @@ class _McpHttpTransportBase(ITransport, ABC):
     def base_url(self) -> str:
         return self._mcp_base_url
 
-    def _process_tool_result_content(self, content: list) -> str:
+    def _process_tool_result_content(
+        self, content: list, *, is_error: bool = False
+    ) -> str:
         """Processes the tool result content, handling multiple JSON objects."""
         texts = [c.text for c in content if getattr(c, "type", "") == "text"]
 
+        result = "".join(texts) or "null"
         if len(texts) > 1:
             try:
                 # Check if all chunks are valid JSON objects (dictionaries)
                 if all(isinstance(json.loads(t), dict) for t in texts):
-                    return f"[{','.join(texts)}]"
+                    result = f"[{','.join(texts)}]"
             except (ValueError, TypeError):
                 # Not valid JSON or not objects, fall back to simple concatenation
                 pass
 
-        return "".join(texts) or "null"
+        if is_error:
+            raise ToolInvocationError(result)
+
+        return result
 
     def _convert_parameter_schema(
         self, name: str, schema: dict, required_fields: list[str]

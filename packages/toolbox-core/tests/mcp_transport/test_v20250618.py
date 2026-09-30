@@ -18,7 +18,7 @@ import pytest
 import pytest_asyncio
 from aiohttp import ClientSession
 
-from toolbox_core.exceptions import ProtocolNegotiationError
+from toolbox_core.exceptions import ProtocolNegotiationError, ToolInvocationError
 from toolbox_core.mcp_transport.v20250618 import types
 from toolbox_core.mcp_transport.v20250618.mcp import McpHttpTransportV20250618
 from toolbox_core.protocol import ManifestSchema, Protocol, TelemetryAttributes
@@ -463,6 +463,23 @@ class TestMcpHttpTransportV20250618:
         )
         result = await transport.tool_invoke("tool", {}, {})
         assert result == "Result"
+
+    async def test_tool_invoke_error_result(self, transport, mocker):
+        mocker.patch.object(transport, "_ensure_initialized", new_callable=AsyncMock)
+        mocker.patch.object(
+            transport,
+            "_send_request",
+            new_callable=AsyncMock,
+            return_value=types.CallToolResult(
+                content=[types.TextContent(type="text", text="tool failed")],
+                isError=True,
+            ),
+        )
+
+        with pytest.raises(ToolInvocationError, match="tool failed") as exc_info:
+            await transport.tool_invoke("tool", {}, {})
+
+        assert exc_info.value.content == "tool failed"
 
     async def test_tool_get_success(self, transport, mocker):
         mocker.patch.object(transport, "_ensure_initialized", new_callable=AsyncMock)
