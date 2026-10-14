@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.9.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v1.4.0...toolbox-core-v0.9.0) (2026-10-14)
+
+
+### Bug Fixes
+
+* **core:** isolate shared initialization cancellation ([#745](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/745)) ([e68bdb6](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/e68bdb67a329edb0fc157eecf8a87188d97f236e))
+
+
+### Miscellaneous Chores
+
+* **toolbox-llamaindex:** release 0.9.0 ([#789](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/789)) ([c576592](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/c576592a5b78b253c520f0137f33066ea5ad6377))
+
 ## [1.4.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v1.3.0...toolbox-core-v1.4.0) (2026-09-01)
 
 
