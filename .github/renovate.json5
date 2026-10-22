@@ -63,6 +63,16 @@
         '.kokoro/**',
       ],
     },
+    {
+      description: 'Keep numpy <2: numpy 2.x stubs use Python 3.12 syntax, which breaks mypy with python_version = "3.10"',
+      matchPackageNames: [
+        'numpy',
+      ],
+      matchUpdateTypes: [
+        'major',
+      ],
+      enabled: false,
+    },
   ],
   customManagers: [
     {
