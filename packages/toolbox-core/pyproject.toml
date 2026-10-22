@@ -61,7 +61,9 @@ test = [
     "google-cloud-storage==3.10.1",
     "aioresponses==0.7.8",
     "toolbox-core[telemetry]",
-    "numpy<2", # Pinned to <2 to prevent mypy syntax errors on python 3.10 with numpy 2.x stubs
+    # numpy 2.x stubs use the Python 3.12 `type` statement; mypy rejects them on older Pythons.
+    "numpy<2; python_version < '3.12'",
+    "numpy<3; python_version >= '3.12'",
 ]
 [build-system]
 requires = ["setuptools"]
@@ -74,6 +76,5 @@ target-version = ['py310']
 profile = "black"
 
 [tool.mypy]
-python_version = "3.10"
 warn_unused_configs = true
 disallow_incomplete_defs = true

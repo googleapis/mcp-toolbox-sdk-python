@@ -63,6 +63,14 @@
         '.kokoro/**',
       ],
     },
+    {
+      description: 'Disable numpy updates for Python < 3.12 (numpy 2.x stubs break mypy there)',
+      matchPackageNames: [
+        'numpy',
+      ],
+      matchCurrentValue: '/^<2$/',
+      enabled: false,
+    },
   ],
   customManagers: [
     {
