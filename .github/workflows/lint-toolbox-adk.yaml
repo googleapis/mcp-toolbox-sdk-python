@@ -13,7 +13,7 @@
 # limitations under the License.
 
 name: adk
-# zizmor flags workflow_run, but this is safe because it only deploys internal branches and is strictly gated to the base repository.
+# zizmor flags pull_request_target, but it is safely gated by the 'tests: run' label manually applied by maintainers.
 on: # zizmor: ignore[dangerous-triggers]
   pull_request:
     paths:
@@ -26,23 +26,14 @@ on: # zizmor: ignore[dangerous-triggers]
 permissions: read-all
 
 jobs:
-  lint:
-    if: "${{ github.event.action != 'labeled' || github.event.label.name == 'tests: run' }}"
-    name: lint
+  remove-label:
+    if: "${{ github.event.action == 'labeled' && github.event.label.name == 'tests: run' }}"
     runs-on: ubuntu-latest
-    concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}
-      cancel-in-progress: true
-    defaults:
-      run:
-        working-directory: ./packages/toolbox-adk
     permissions:
-      contents: 'read'
       issues: 'write'
       pull-requests: 'write'
     steps:
       - name: Remove PR Label
-        if: "${{ github.event.action == 'labeled' && github.event.label.name == 'tests: run' }}"
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -57,13 +48,29 @@ jobs:
             } catch (e) {
               console.log('Failed to remove label. Another job may have already removed it!');
             }
+
+  lint:
+    if: "${{ github.event.action != 'labeled' || github.event.label.name == 'tests: run' }}"
+    name: lint
+    runs-on: ubuntu-latest
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
+    defaults:
+      run:
+        working-directory: ./packages/toolbox-adk
+    permissions:
+      contents: 'read'
+    steps:
       - name: Checkout code
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
-          token: ${{ secrets.GITHUB_TOKEN }}
           persist-credentials: false
+          # Checking out fork code is gated behind the 'tests: run' label,
+          # which requires maintainer review before this workflow runs.
+          allow-unsafe-pr-checkout: true
       - name: Setup Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
