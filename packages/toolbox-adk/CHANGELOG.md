@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.9.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-adk-v1.4.0...toolbox-adk-v0.9.0) (2026-10-26)
+
+
+### Miscellaneous Chores
+
+* **deps:** allow numpy 2 on Python 3.12+ and disable numpy updates for older Pythons ([#816](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/816)) ([051501a](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/051501a7a1c4c6d673f9fb989a2c9c642da6b207))
+* **deps:** update mcp toolbox server version in integration tests to v1.14.0 to v1.14.0 ([#798](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/798)) ([beee057](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/beee0576d50a170f787ea49a96b9a8eae23f5ccc))
+* **deps:** update mcp toolbox server version in integration tests to v1.15.0 to v1.15.0 ([#819](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/819)) ([6df684f](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/6df684ffff3e8cae558e0a794a1a5a8126239753))
+* **toolbox-llamaindex:** release 0.9.0 ([#789](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/789)) ([c576592](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/c576592a5b78b253c520f0137f33066ea5ad6377))
+
 ## [1.4.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-adk-v1.3.1...toolbox-adk-v1.4.0) (2026-09-01)
 
 
