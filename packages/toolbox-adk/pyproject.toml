@@ -41,7 +41,9 @@ test = [
     "pytest-asyncio==1.4.0",
     "pytest-cov==7.1.0",
     "pytest-mock==3.15.1",
-    "numpy<2", # Pinned to <2 to prevent mypy syntax errors on python 3.10 with numpy 2.x stubs,
+    # numpy 2.x stubs use the Python 3.12 `type` statement; mypy rejects them on older Pythons.
+    "numpy<2; python_version < '3.12'",
+    "numpy<3; python_version >= '3.12'",
 ]
 
 # Tells setuptools that packages are under the 'src' directory
@@ -65,3 +67,10 @@ profile = "black"
 python_version = "3.10"
 warn_unused_configs = true
 disallow_incomplete_defs = true
+
+[[tool.mypy.overrides]]
+# numpy 2.x stubs use the Python 3.12 `type` statement, which mypy rejects
+# under python_version = "3.10". Skip analyzing numpy instead of pinning it.
+module = ["numpy", "numpy.*"]
+follow_imports = "skip"
+follow_imports_for_stubs = true
