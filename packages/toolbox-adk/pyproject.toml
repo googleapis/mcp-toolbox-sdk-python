@@ -36,11 +36,11 @@ Changelog = "https://github.com/googleapis/mcp-toolbox-sdk-python/blob/main/pack
 test = [
     "black[jupyter]==26.5.1",
     "isort==8.0.1",
-    "mypy==2.1.0",
-    "pytest==9.0.3",
-    "pytest-asyncio==1.4.0",
+    "mypy==2.4.1",
+    "pytest==9.2.0",
+    "pytest-asyncio==1.4.1",
     "pytest-cov==7.1.0",
-    "pytest-mock==3.15.1",
+    "pytest-mock==3.17.0",
     # numpy 2.x stubs use the Python 3.12 `type` statement; mypy rejects them on older Pythons.
     "numpy<2; python_version < '3.12'",
     "numpy<3; python_version >= '3.12'",
