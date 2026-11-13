@@ -171,3 +171,26 @@ class TestToolboxToolset:
         mock_client_cls.assert_called_once()
         call_kwargs = mock_client_cls.call_args[1]
         assert call_kwargs["protocol"] == Protocol.MCP
+
+    @patch("toolbox_adk.toolset.ToolboxClient")
+    @pytest.mark.asyncio
+    async def test_get_tools_with_secure_params(self, mock_client_cls):
+        """Test that secure_params is passed to load_toolset."""
+        mock_client = mock_client_cls.return_value
+        t1 = MagicMock()
+        t1.__name__ = "tool1"
+        t1.__doc__ = "doc1"
+        mock_client.load_toolset = AsyncMock(return_value=[t1])
+
+        sec_params = {"api_key": "secret123"}
+        toolset = ToolboxToolset(
+            "url", toolset_name="my_toolset", secure_params=sec_params
+        )
+        tools = await toolset.get_tools()
+
+        assert len(tools) == 1
+        mock_client.load_toolset.assert_awaited_with(
+            "my_toolset",
+            bound_params={},
+            secure_params=sec_params,
+        )

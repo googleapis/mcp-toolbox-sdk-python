@@ -52,7 +52,6 @@ class Protocol(str, Enum):
     MCP_v20241105 = "2024-11-05"
     MCP_v20251125 = "2025-11-25"
     MCP_v20260728 = "2026-07-28"
-    MCP_v2026_DRAFT = "2026-07-28"
 
     MCP = MCP_v20260728
     MCP_LATEST = MCP_v20260728
@@ -188,6 +187,7 @@ class ToolSchema(BaseModel):
 
     description: str
     parameters: list[ParameterSchema]
+    secure_parameters: list[ParameterSchema] = []
     authRequired: list[str] = []
 
 

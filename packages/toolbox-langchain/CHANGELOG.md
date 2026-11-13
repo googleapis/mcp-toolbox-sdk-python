@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.4.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-langchain-v1.3.0...toolbox-langchain-v1.4.0) (2026-09-01)
+
+
+### Features
+
+* **langchain:** pass telemetry attributes ([#740](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/740)) ([c74c7e0](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/c74c7e0ef00632cea4a82aaf6c14926900d4d4b9))
+* **langchain:** support secure parameters in langchain tools and clients ([bff0b2f](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/bff0b2ff9d5fde705a821ed650d451422151b992))
+
+
+> [!NOTE]
+> For additional changelogs of the underlying `toolbox-core` package, visit: https://github.com/googleapis/mcp-toolbox-sdk-python/releases/tag/toolbox-core-v1.4.0
+
+## [1.3.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-langchain-v1.2.0...toolbox-langchain-v1.3.0) (2026-07-28)
+
+
+### Features
+
+* **core:** preserve query parameters in connection URLs for toolset binding ([#717](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/717)) ([e439ad5](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/e439ad5243ff1ae579492ca3ae040bc1797de81b))
+* **core:** promote MCP draft protocol to official 2026-07-28 version ([#731](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/731)) ([88cc795](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/88cc7959d9c7ebc1d92dedeae90e56fb10d2a943))
+
+
 ## [1.2.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-langchain-v1.0.1...toolbox-langchain-v1.2.0) (2026-07-09)
 
 

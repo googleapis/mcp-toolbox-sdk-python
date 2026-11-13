@@ -292,7 +292,10 @@ class ToolboxClient:
         client_headers: Mapping[
             str, Union[Callable[[], str], Callable[[], Awaitable[str]], str]
         ],
-    ) -> tuple[ToolboxTool, set[str], set[str]]:
+        secure_params: Mapping[
+            str, Union[Callable[[], Any], Callable[[], Awaitable[Any]], Any]
+        ] = {},
+    ) -> tuple[ToolboxTool, set[str], set[str], set[str]]:
         """Internal helper to create a callable tool from its schema."""
         # sort into reg, authn, and bound params
         params = []
@@ -307,6 +310,17 @@ class ToolboxClient:
                 bound_params[p.name] = all_bound_params[p.name]
             else:  # regular parameter
                 params.append(p)
+
+        remaining_secure_params = []
+        bound_sec_params: dict[
+            str, Union[Callable[[], Any], Callable[[], Awaitable[Any]], Any]
+        ] = {}
+        for sp in schema.secure_parameters:
+            if sp.name in secure_params:
+                bound_sec_params[sp.name] = secure_params[sp.name]
+            else:
+                remaining_secure_params.append(sp)
+        used_secure_keys = set(bound_sec_params.keys())
 
         authn_params, authz_tokens, used_auth_keys = identify_auth_requirements(
             authn_params,
@@ -325,11 +339,13 @@ class ToolboxClient:
             auth_service_token_getters=MappingProxyType(auth_token_getters),
             bound_params=MappingProxyType(bound_params),
             client_headers=MappingProxyType(client_headers),
+            secure_params=tuple(remaining_secure_params),
+            bound_secure_params=MappingProxyType(bound_sec_params),
         )
 
         used_bound_keys = set(bound_params.keys())
 
-        return tool, used_auth_keys, used_bound_keys
+        return tool, used_auth_keys, used_bound_keys, used_secure_keys
 
     async def __aenter__(self):
         """
@@ -371,6 +387,9 @@ class ToolboxClient:
         bound_params: Mapping[
             str, Union[Callable[[], Any], Callable[[], Awaitable[Any]], Any]
         ] = {},
+        secure_params: Mapping[
+            str, Union[Callable[[], Any], Callable[[], Awaitable[Any]], Any]
+        ] = {},
     ) -> ToolboxTool:
         """
         Asynchronously loads a tool from the server.
@@ -385,6 +404,8 @@ class ToolboxClient:
                 callables that return the corresponding authentication token.
             bound_params: A mapping of parameter names to bind to specific values or
                 callables that are called to produce values as needed.
+            secure_params: A mapping of secure parameter names to bind to specific
+                values or callables.
 
         Returns:
             ToolboxTool: A callable object representing the loaded tool, ready
@@ -393,7 +414,7 @@ class ToolboxClient:
 
         Raises:
             ValueError: If the loaded tool instance fails to utilize at least
-                one provided parameter or auth token (if any provided).
+                one provided parameter, auth token, or secure parameter (if any provided).
         """
         # Resolve client headers
         resolved_headers = {
@@ -409,16 +430,18 @@ class ToolboxClient:
         if name not in manifest.tools:
             # TODO: Better exception
             raise ValueError(f"Tool '{name}' not found!")
-        tool, used_auth_keys, used_bound_keys = self.__parse_tool(
+        tool, used_auth_keys, used_bound_keys, used_secure_keys = self.__parse_tool(
             name,
             manifest.tools[name],
             auth_token_getters,
             bound_params,
             self.__client_headers,
+            secure_params,
         )
 
         provided_auth_keys = set(auth_token_getters.keys())
         provided_bound_keys = set(bound_params.keys())
+        provided_secure_keys = set(secure_params.keys())
 
         validate_unused_requirements(
             provided_auth_keys,
@@ -427,6 +450,8 @@ class ToolboxClient:
             used_bound_keys,
             name,
             is_toolset=False,
+            provided_secure_keys=provided_secure_keys,
+            used_secure_keys=used_secure_keys,
         )
 
         return tool
@@ -441,6 +466,9 @@ class ToolboxClient:
             str, Union[Callable[[], Any], Callable[[], Awaitable[Any]], Any]
         ] = {},
         strict: bool = False,
+        secure_params: Mapping[
+            str, Union[Callable[[], Any], Callable[[], Awaitable[Any]], Any]
+        ] = {},
     ) -> list[ToolboxTool]:
         """
         Asynchronously fetches a toolset and loads all tools defined within it.
@@ -452,10 +480,12 @@ class ToolboxClient:
             bound_params: A mapping of parameter names to bind to specific values or
                 callables that are called to produce values as needed.
             strict: If True, raises an error if *any* loaded tool instance fails
-                to utilize all of the given parameters or auth tokens. (if any
+                to utilize all of the given parameters, auth tokens, or secure parameters (if any
                 provided). If False (default), raises an error only if a
-                user-provided parameter or auth token cannot be applied to *any*
+                user-provided parameter, auth token, or secure parameter cannot be applied to *any*
                 loaded tool across the set.
+            secure_params: A mapping of secure parameter names to bind to specific values or
+                callables that are called to produce values as needed.
 
         Returns:
             list[ToolboxTool]: A list of callables, one for each tool defined
@@ -479,17 +509,20 @@ class ToolboxClient:
         tools: list[ToolboxTool] = []
         overall_used_auth_keys: set[str] = set()
         overall_used_bound_params: set[str] = set()
+        overall_used_secure_params: set[str] = set()
         provided_auth_keys = set(auth_token_getters.keys())
         provided_bound_keys = set(bound_params.keys())
+        provided_secure_keys = set(secure_params.keys())
 
         # parse each tool's name and schema into a list of ToolboxTools
         for tool_name, schema in manifest.tools.items():
-            tool, used_auth_keys, used_bound_keys = self.__parse_tool(
+            tool, used_auth_keys, used_bound_keys, used_secure_keys = self.__parse_tool(
                 tool_name,
                 schema,
                 auth_token_getters,
                 bound_params,
                 self.__client_headers,
+                secure_params,
             )
             tools.append(tool)
 
@@ -501,10 +534,13 @@ class ToolboxClient:
                     used_bound_keys,
                     tool_name,
                     is_toolset=False,
+                    provided_secure_keys=provided_secure_keys,
+                    used_secure_keys=used_secure_keys,
                 )
             else:
                 overall_used_auth_keys.update(used_auth_keys)
                 overall_used_bound_params.update(used_bound_keys)
+                overall_used_secure_params.update(used_secure_keys)
 
         validate_unused_requirements(
             provided_auth_keys,
@@ -513,6 +549,8 @@ class ToolboxClient:
             overall_used_bound_params,
             name or "default",
             is_toolset=True,
+            provided_secure_keys=provided_secure_keys,
+            used_secure_keys=overall_used_secure_params,
         )
 
         return tools

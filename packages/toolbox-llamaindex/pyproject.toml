@@ -9,7 +9,7 @@ authors = [
     {name = "Google LLC", email = "googleapis-packages@google.com"}
 ]
 dependencies = [
-    "toolbox-core==1.1.0",
+    "toolbox-core==1.4.0",
     "llama-index-core>=0.12.0,<1.0.0",
     "PyYAML>=6.0.1,<7.0.0",
     "pydantic>=2.8.0,<3.0.0",
@@ -50,10 +50,12 @@ test = [
     "pytest-asyncio==1.4.0",
     "pytest==9.0.3",
     "pytest-cov==7.1.0",
-    "Pillow==12.2.0; python_version >= '3.10'",
+    "Pillow==12.3.0; python_version >= '3.10'",
     "google-cloud-secret-manager==2.28.0",
     "google-cloud-storage==3.10.1",
-    "numpy<2", # Pinned to <2 to prevent mypy syntax errors on python 3.10 with numpy 2.x stubs
+    # numpy 2.x stubs use the Python 3.12 `type` statement; mypy rejects them on older Pythons.
+    "numpy<2; python_version < '3.12'",
+    "numpy<3; python_version >= '3.12'",
 ]
 
 [build-system]
@@ -70,3 +72,10 @@ profile = "black"
 python_version = "3.10"
 warn_unused_configs = true
 disallow_incomplete_defs = true
+
+[[tool.mypy.overrides]]
+# numpy 2.x stubs use the Python 3.12 `type` statement, which mypy rejects
+# under python_version = "3.10". Skip analyzing numpy instead of pinning it.
+module = ["numpy", "numpy.*"]
+follow_imports = "skip"
+follow_imports_for_stubs = true

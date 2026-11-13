@@ -68,6 +68,7 @@ class MockTransport(ITransport):
         arguments: dict,
         headers: Mapping[str, str],
         telemetry_attributes: Optional[TelemetryAttributes] = None,
+        secure_arguments: Optional[dict] = None,
     ) -> str:
         return await self.tool_invoke_mock(tool_name, arguments, headers)
 
@@ -1030,3 +1031,152 @@ async def test_multistep_cascading_fallback():
         assert mock_create.call_count == 2
         assert mock_create.call_args_list[0][0][0] == Protocol.MCP_v20251125
         assert mock_create.call_args_list[1][0][0] == Protocol.MCP_v20241105
+
+
+class TestClientSecureParams:
+    """Tests for secure parameters support in ToolboxClient."""
+
+    @pytest.mark.asyncio
+    async def test_load_tool_with_secure_params_success(self, mock_transport):
+        schema = ToolSchema(
+            description="A tool with secure parameters",
+            parameters=[
+                ParameterSchema(
+                    name="query",
+                    type="string",
+                    description="search query",
+                    required=True,
+                )
+            ],
+            secure_parameters=[
+                ParameterSchema(
+                    name="api_token",
+                    type="string",
+                    description="API Token",
+                    required=True,
+                )
+            ],
+        )
+        mock_transport.tool_get_mock.return_value = ManifestSchema(
+            serverVersion="1.0.0", tools={"my_tool": schema}
+        )
+
+        client = ToolboxClient(TEST_BASE_URL)
+        client._ToolboxClient__transport = mock_transport
+
+        tool = await client.load_tool(
+            "my_tool",
+            secure_params={"api_token": "token-123"},
+        )
+
+        assert tool._bound_secure_params == {"api_token": "token-123"}
+        assert len(tool._secure_params) == 0
+
+    @pytest.mark.asyncio
+    async def test_load_tool_with_unused_secure_params_raises(self, mock_transport):
+        schema = ToolSchema(
+            description="A tool with secure parameters",
+            parameters=[
+                ParameterSchema(
+                    name="query",
+                    type="string",
+                    description="search query",
+                    required=True,
+                )
+            ],
+            secure_parameters=[
+                ParameterSchema(
+                    name="api_token",
+                    type="string",
+                    description="API Token",
+                    required=True,
+                )
+            ],
+        )
+        mock_transport.tool_get_mock.return_value = ManifestSchema(
+            serverVersion="1.0.0", tools={"my_tool": schema}
+        )
+
+        client = ToolboxClient(TEST_BASE_URL)
+        client._ToolboxClient__transport = mock_transport
+
+        with pytest.raises(
+            ValueError,
+            match=r"Validation failed for tool 'my_tool': unused secure parameters: extra_token\.",
+        ):
+            await client.load_tool(
+                "my_tool",
+                secure_params={"api_token": "token-123", "extra_token": "extra"},
+            )
+
+    @pytest.mark.asyncio
+    async def test_load_toolset_with_secure_params_success(self, mock_transport):
+        schema1 = ToolSchema(
+            description="Tool 1",
+            parameters=[],
+            secure_parameters=[
+                ParameterSchema(
+                    name="api_token",
+                    type="string",
+                    description="API Token",
+                    required=True,
+                )
+            ],
+        )
+        schema2 = ToolSchema(
+            description="Tool 2",
+            parameters=[],
+            secure_parameters=[
+                ParameterSchema(
+                    name="db_pass",
+                    type="string",
+                    description="DB Password",
+                    required=False,
+                )
+            ],
+        )
+        mock_transport.tools_list_mock.return_value = ManifestSchema(
+            serverVersion="1.0.0", tools={"tool1": schema1, "tool2": schema2}
+        )
+
+        client = ToolboxClient(TEST_BASE_URL)
+        client._ToolboxClient__transport = mock_transport
+
+        tools = await client.load_toolset(
+            "my_set",
+            secure_params={"api_token": "token-123", "db_pass": "pass-123"},
+        )
+
+        assert len(tools) == 2
+        assert tools[0]._bound_secure_params == {"api_token": "token-123"}
+        assert tools[1]._bound_secure_params == {"db_pass": "pass-123"}
+
+    @pytest.mark.asyncio
+    async def test_load_toolset_with_unused_secure_params_raises(self, mock_transport):
+        schema1 = ToolSchema(
+            description="Tool 1",
+            parameters=[],
+            secure_parameters=[
+                ParameterSchema(
+                    name="api_token",
+                    type="string",
+                    description="API Token",
+                    required=True,
+                )
+            ],
+        )
+        mock_transport.tools_list_mock.return_value = ManifestSchema(
+            serverVersion="1.0.0", tools={"tool1": schema1}
+        )
+
+        client = ToolboxClient(TEST_BASE_URL)
+        client._ToolboxClient__transport = mock_transport
+
+        with pytest.raises(
+            ValueError,
+            match=r"Validation failed for toolset 'my_set': unused secure parameters could not be applied to any tool: unused_sec\.",
+        ):
+            await client.load_toolset(
+                "my_set",
+                secure_params={"api_token": "token-123", "unused_sec": "unused"},
+            )

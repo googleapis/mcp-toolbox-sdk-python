@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.9.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-llamaindex-v0.8.0...toolbox-llamaindex-v0.9.0) (2026-09-01)
+
+
+### Features
+
+* **llamaindex:** pass telemetry attributes ([#741](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/741)) ([2babdf2](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/2babdf2fd77fc5ce0b31ac930f1a9766170b3a1f))
+* **llamaindex:** support secure parameters in llamaindex tools and clients ([a2c7079](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/a2c7079ace0179e3f88575415b9c0303efad7c6c))
+
+> [!NOTE]
+> For additional changelogs of the underlying toolbox-core package, visit: https://github.com/googleapis/mcp-toolbox-sdk-python/releases/tag/toolbox-core-v1.4.0
+
+
+## [0.8.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-llamaindex-v0.7.0...toolbox-llamaindex-v0.8.0) (2026-07-29)
+
+
+### Features
+
+* add support for stateless MCP 2026 draft and protocol negotiation fallback ([#699](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/699)) ([68263e1](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/68263e138e37125249584ca410f1c1bcf562602a))
+  * Stateless MCP Support (SEP-2575)
+  * Protocol Version Auto-Negotiation & Fallback
+  * Routing Headers (SEP-2243)
+  * Testing Enhancements
+
+* **core:** preserve query parameters in connection URLs for toolset binding ([#717](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/717)) ([e439ad5](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/e439ad5243ff1ae579492ca3ae040bc1797de81b))
+* **core:** promote MCP draft protocol to official 2026-07-28 version ([#731](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/731)) ([88cc795](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/88cc7959d9c7ebc1d92dedeae90e56fb10d2a943))
+
+
 ## [0.7.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-llamaindex-v0.6.0...toolbox-llamaindex-v0.7.0) (2026-05-18)
 
 

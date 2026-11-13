@@ -77,7 +77,6 @@ class TestBasicE2E:
     async def test_load_toolset_default(self, toolbox: ToolboxClient):
         """Load the default toolset, i.e. all tools."""
         toolset = await toolbox.load_toolset()
-        assert len(toolset) == 7
         tool_names = {tool.__name__ for tool in toolset}
         expected_tools = [
             "get-row-by-content-auth",
@@ -88,6 +87,14 @@ class TestBasicE2E:
             "search-rows",
             "process-data",
         ]
+
+        protocol_version = toolbox._ToolboxClient__transport._protocol_version
+        if Protocol._is_version_at_least(
+            protocol_version, Protocol.MCP_v20260728.value
+        ):
+            expected_tools.append("my-secure-tool")
+
+        assert len(toolset) == len(expected_tools)
         assert tool_names == set(expected_tools)
 
     async def test_run_tool(self, get_n_rows_tool: ToolboxTool):
@@ -295,11 +302,8 @@ class TestAuth:
             "get-row-by-content-auth",
             auth_token_getters={"my-test-auth": lambda: auth_token1},
         )
-        with pytest.raises(
-            Exception,
-            match="no field named row_data in claims",
-        ):
-            await tool()
+        response = await tool()
+        assert "no field named row_data in claims" in response
 
 
 @pytest.mark.asyncio
@@ -593,3 +597,194 @@ async def test_mcp_custom_protocols_list(toolbox_server_url: str):
                 client._ToolboxClient__transport._protocol_version
                 == Protocol.MCP_DRAFT.value
             )
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("toolbox_server")
+class TestSecureParamsE2E:
+    async def test_run_tool_with_secure_param(self, toolbox: ToolboxClient):
+        """Tests loading and invoking a tool with a secure parameter."""
+        protocol_version = toolbox._ToolboxClient__transport._protocol_version
+        if not Protocol._is_version_at_least(
+            protocol_version, Protocol.MCP_v20260728.value
+        ):
+            with pytest.raises(ValueError, match="Tool 'my-secure-tool' not found"):
+                await toolbox.load_tool("my-secure-tool")
+            return
+
+        tool = await toolbox.load_tool("my-secure-tool")
+        bound_tool = tool.bind_secure_param("name", "Alice")
+        response = await bound_tool(id=1)
+        assert isinstance(response, str)
+        assert "Alice" in response
+
+    async def test_run_tool_with_secure_params_plural(self, toolbox: ToolboxClient):
+        """Tests batch binding with bind_secure_params."""
+        protocol_version = toolbox._ToolboxClient__transport._protocol_version
+        if not Protocol._is_version_at_least(
+            protocol_version, Protocol.MCP_v20260728.value
+        ):
+            with pytest.raises(ValueError, match="Tool 'my-secure-tool' not found"):
+                await toolbox.load_tool("my-secure-tool")
+            return
+
+        tool = await toolbox.load_tool("my-secure-tool")
+        bound_tool = tool.bind_secure_params({"name": "Alice"})
+        response = await bound_tool(id=1)
+        assert isinstance(response, str)
+        assert "Alice" in response
+
+    async def test_run_tool_with_secure_param_callable_sync(
+        self, toolbox: ToolboxClient
+    ):
+        """Tests dynamic sync callable resolution during live tool execution."""
+        protocol_version = toolbox._ToolboxClient__transport._protocol_version
+        if not Protocol._is_version_at_least(
+            protocol_version, Protocol.MCP_v20260728.value
+        ):
+            with pytest.raises(ValueError, match="Tool 'my-secure-tool' not found"):
+                await toolbox.load_tool("my-secure-tool")
+            return
+
+        tool = await toolbox.load_tool("my-secure-tool")
+        bound_tool = tool.bind_secure_param("name", lambda: "Alice")
+        response = await bound_tool(id=1)
+        assert isinstance(response, str)
+        assert "Alice" in response
+
+    async def test_run_tool_with_secure_param_callable_async(
+        self, toolbox: ToolboxClient
+    ):
+        """Tests dynamic async coroutine resolution during live tool execution."""
+        protocol_version = toolbox._ToolboxClient__transport._protocol_version
+        if not Protocol._is_version_at_least(
+            protocol_version, Protocol.MCP_v20260728.value
+        ):
+            with pytest.raises(ValueError, match="Tool 'my-secure-tool' not found"):
+                await toolbox.load_tool("my-secure-tool")
+            return
+
+        tool = await toolbox.load_tool("my-secure-tool")
+
+        async def fetch_secret():
+            return "Alice"
+
+        bound_tool = tool.bind_secure_param("name", fetch_secret)
+        response = await bound_tool(id=1)
+        assert isinstance(response, str)
+        assert "Alice" in response
+
+    async def test_secure_param_callable_exception_propagates(
+        self, toolbox: ToolboxClient
+    ):
+        """Tests that exceptions in dynamic callables propagate to caller."""
+        protocol_version = toolbox._ToolboxClient__transport._protocol_version
+        if not Protocol._is_version_at_least(
+            protocol_version, Protocol.MCP_v20260728.value
+        ):
+            with pytest.raises(ValueError, match="Tool 'my-secure-tool' not found"):
+                await toolbox.load_tool("my-secure-tool")
+            return
+
+        tool = await toolbox.load_tool("my-secure-tool")
+
+        def failing_secret():
+            raise PermissionError("token expired")
+
+        bound_tool = tool.bind_secure_param("name", failing_secret)
+        with pytest.raises(PermissionError, match="token expired"):
+            await bound_tool(id=1)
+
+    async def test_load_tool_with_secure_params(self, toolbox: ToolboxClient):
+        """Tests load_tool with secure_params passed during loading."""
+        protocol_version = toolbox._ToolboxClient__transport._protocol_version
+        if not Protocol._is_version_at_least(
+            protocol_version, Protocol.MCP_v20260728.value
+        ):
+            with pytest.raises(ValueError, match="Tool 'my-secure-tool' not found"):
+                await toolbox.load_tool(
+                    "my-secure-tool", secure_params={"name": "Alice"}
+                )
+            return
+
+        tool = await toolbox.load_tool(
+            "my-secure-tool", secure_params={"name": "Alice"}
+        )
+        response = await tool(id=1)
+        assert isinstance(response, str)
+        assert "Alice" in response
+
+    async def test_load_toolset_with_secure_params(self, toolbox: ToolboxClient):
+        """Tests load_toolset with secure_params distributed across tools."""
+        protocol_version = toolbox._ToolboxClient__transport._protocol_version
+        if not Protocol._is_version_at_least(
+            protocol_version, Protocol.MCP_v20260728.value
+        ):
+            toolset = await toolbox.load_toolset("my-secure-toolset")
+            assert len(toolset) == 0
+            return
+
+        toolset = await toolbox.load_toolset(
+            "my-secure-toolset", secure_params={"name": "Alice"}
+        )
+        by_name = {t.__name__: t for t in toolset}
+        assert "my-secure-tool" in by_name
+        tool = by_name["my-secure-tool"]
+        response = await tool(id=1)
+        assert isinstance(response, str)
+        assert "Alice" in response
+
+    async def test_secure_param_schema_isolation_e2e(self, toolbox: ToolboxClient):
+        """Tests that secure parameters from server are stripped from __signature__ and docstring."""
+        protocol_version = toolbox._ToolboxClient__transport._protocol_version
+        if not Protocol._is_version_at_least(
+            protocol_version, Protocol.MCP_v20260728.value
+        ):
+            with pytest.raises(ValueError, match="Tool 'my-secure-tool' not found"):
+                await toolbox.load_tool("my-secure-tool")
+            return
+
+        tool = await toolbox.load_tool("my-secure-tool")
+        sig = signature(tool)
+        assert "id" in sig.parameters
+        assert "name" not in sig.parameters
+        assert "name" not in (tool.__doc__ or "")
+
+    @pytest.mark.parametrize(
+        ("method_name", "param_name", "param_val", "expected_match"),
+        [
+            (
+                "bind_param",
+                "name",
+                "Alice",
+                "parameter 'name' is a secure parameter; use bind_secure_param/bind_secure_params instead",
+            ),
+            (
+                "bind_secure_param",
+                "id",
+                1,
+                "parameter 'id' is a regular parameter; use bind_param/bind_params instead",
+            ),
+        ],
+    )
+    async def test_cross_binding_guidance_error(
+        self,
+        toolbox: ToolboxClient,
+        method_name: str,
+        param_name: str,
+        param_val: Any,
+        expected_match: str,
+    ):
+        """Tests that cross-binding (bind_param on secure or bind_secure_param on regular) raises guidance error."""
+        protocol_version = toolbox._ToolboxClient__transport._protocol_version
+        if not Protocol._is_version_at_least(
+            protocol_version, Protocol.MCP_v20260728.value
+        ):
+            with pytest.raises(ValueError, match="Tool 'my-secure-tool' not found"):
+                await toolbox.load_tool("my-secure-tool")
+            return
+
+        tool = await toolbox.load_tool("my-secure-tool")
+        method = getattr(tool, method_name)
+        with pytest.raises(ValueError, match=expected_match):
+            method(param_name, param_val)

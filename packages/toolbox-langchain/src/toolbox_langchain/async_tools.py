@@ -16,6 +16,7 @@ from typing import Any, Callable, Union
 
 from deprecated import deprecated
 from langchain_core.tools import BaseTool
+from toolbox_core.protocol import TelemetryAttributes
 from toolbox_core.tool import ToolboxTool as ToolboxCoreTool
 from toolbox_core.utils import params_to_pydantic_model
 
@@ -165,3 +166,66 @@ class AsyncToolboxTool(BaseTool):
             ValueError: If the provided bound param is already bound.
         """
         return self.bind_params({param_name: param_value})
+
+    def bind_secure_params(
+        self,
+        bound_secure_params: dict[str, Union[Any, Callable[[], Any]]],
+    ) -> "AsyncToolboxTool":
+        """
+        Registers values or functions to retrieve the value for the
+        corresponding bound secure parameters.
+
+        Args:
+            bound_secure_params: A dictionary of the bound secure parameter name to the
+                value or function of the bound secure value.
+
+        Returns:
+            A new AsyncToolboxTool instance that is a deep copy of the current
+            instance, with added bound secure params.
+
+        Raises:
+            ValueError: If any of the provided bound secure params is already bound.
+        """
+        new_core_tool = self.__core_tool.bind_secure_params(bound_secure_params)
+        return AsyncToolboxTool(core_tool=new_core_tool)
+
+    def bind_secure_param(
+        self,
+        param_name: str,
+        param_value: Union[Any, Callable[[], Any]],
+    ) -> "AsyncToolboxTool":
+        """
+        Registers a value or a function to retrieve the value for a given bound
+        secure parameter.
+
+        Args:
+            param_name: The name of the bound secure parameter.
+            param_value: The value of the bound secure parameter, or a callable that
+                returns the value.
+
+        Returns:
+            A new AsyncToolboxTool instance that is a deep copy of the current
+            instance, with added bound secure param.
+
+        Raises:
+            ValueError: If the provided bound secure param is already bound.
+        """
+        return self.bind_secure_params({param_name: param_value})
+
+    def add_telemetry_attributes(
+        self, telemetry_attributes: TelemetryAttributes
+    ) -> "AsyncToolboxTool":
+        """
+        Sets telemetry attributes (model, user id, agent id) that are sent to
+        the server with every invocation of the returned tool. A second call
+        replaces (does not merge with) the previous attributes.
+
+        Args:
+            telemetry_attributes: The telemetry attributes to attach.
+
+        Returns:
+            A new AsyncToolboxTool instance that is a deep copy of the current
+            instance, with the telemetry attributes attached.
+        """
+        new_core_tool = self.__core_tool.add_telemetry_attributes(telemetry_attributes)
+        return AsyncToolboxTool(core_tool=new_core_tool)

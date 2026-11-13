@@ -21,7 +21,7 @@ from unittest.mock import MagicMock, Mock, create_autospec, patch
 
 import pytest
 
-from toolbox_core.protocol import TelemetryAttributes
+from toolbox_core.protocol import ParameterSchema, TelemetryAttributes
 from toolbox_core.sync_tool import ToolboxSyncTool
 from toolbox_core.tool import ToolboxTool
 
@@ -46,6 +46,7 @@ def mock_async_tool() -> MagicMock:
         ToolboxTool, instance=True
     )
     tool.bind_params.return_value = create_autospec(ToolboxTool, instance=True)
+    tool.bind_secure_params.return_value = create_autospec(ToolboxTool, instance=True)
     tool.add_telemetry_attributes.return_value = create_autospec(
         ToolboxTool, instance=True
     )
@@ -363,3 +364,58 @@ def test_toolbox_sync_tool_add_telemetry_attributes(
     assert new_sync_tool._ToolboxSyncTool__async_tool is new_mock_async_tool
     assert new_sync_tool._ToolboxSyncTool__loop is event_loop
     assert new_sync_tool._ToolboxSyncTool__thread is mock_thread
+
+
+def test_toolbox_sync_tool_secure_params_properties(
+    toolbox_sync_tool: ToolboxSyncTool,
+    mock_async_tool: MagicMock,
+):
+    """Tests _secure_params and _bound_secure_params properties."""
+    mock_async_tool._secure_params = [
+        ParameterSchema(
+            name="sec_param",
+            type="string",
+            description="desc",
+            required=True,
+        )
+    ]
+    mock_async_tool._bound_secure_params = {"bound_sec": "val"}
+
+    assert len(toolbox_sync_tool._secure_params) == 1
+    assert toolbox_sync_tool._secure_params[0].name == "sec_param"
+    assert toolbox_sync_tool._bound_secure_params == {"bound_sec": "val"}
+
+
+def test_toolbox_sync_tool_bind_secure_param(
+    toolbox_sync_tool: ToolboxSyncTool,
+    mock_async_tool: MagicMock,
+    event_loop: asyncio.AbstractEventLoop,
+    mock_thread: MagicMock,
+):
+    """Tests bind_secure_param delegates to the wrapped async tool."""
+    new_mock_async_tool = mock_async_tool.bind_secure_params.return_value
+    new_mock_async_tool.__name__ = "bound_async_tool"
+
+    new_sync_tool = toolbox_sync_tool.bind_secure_param("api_key", "secret123")
+
+    mock_async_tool.bind_secure_params.assert_called_once_with({"api_key": "secret123"})
+    assert isinstance(new_sync_tool, ToolboxSyncTool)
+    assert new_sync_tool._ToolboxSyncTool__async_tool is new_mock_async_tool
+
+
+def test_toolbox_sync_tool_bind_secure_params(
+    toolbox_sync_tool: ToolboxSyncTool,
+    mock_async_tool: MagicMock,
+    event_loop: asyncio.AbstractEventLoop,
+    mock_thread: MagicMock,
+):
+    """Tests bind_secure_params delegates to the wrapped async tool."""
+    new_mock_async_tool = mock_async_tool.bind_secure_params.return_value
+    new_mock_async_tool.__name__ = "bound_async_tool"
+
+    params_to_bind = {"api_key": "secret", "db_pass": "pass"}
+    new_sync_tool = toolbox_sync_tool.bind_secure_params(params_to_bind)
+
+    mock_async_tool.bind_secure_params.assert_called_once_with(params_to_bind)
+    assert isinstance(new_sync_tool, ToolboxSyncTool)
+    assert new_sync_tool._ToolboxSyncTool__async_tool is new_mock_async_tool

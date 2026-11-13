@@ -929,3 +929,306 @@ async def test_telemetry_does_not_collide_with_param_named_telemetry_attributes(
     assert args[0] == "weird_tool"
     assert args[1] == {"telemetry_attributes": "user-data"}
     assert kwargs["telemetry_attributes"] is attrs
+
+
+# --- Secure Parameters Tests ---
+
+
+@pytest.fixture
+def sample_secure_params() -> list[ParameterSchema]:
+    return [
+        ParameterSchema(
+            name="api_key",
+            type="string",
+            required=True,
+            description="API secret key",
+        ),
+        ParameterSchema(
+            name="db_password",
+            type="string",
+            required=False,
+            description="Database password",
+        ),
+    ]
+
+
+@pytest.mark.asyncio
+async def test_tool_with_secure_parameters(
+    sample_tool_params: list[ParameterSchema],
+    sample_secure_params: list[ParameterSchema],
+    sample_tool_description: str,
+):
+    transport = MockTransport(HTTPS_BASE_URL)
+    tool = ToolboxTool(
+        transport=transport,
+        name=TEST_TOOL_NAME,
+        description=sample_tool_description,
+        params=sample_tool_params,
+        required_authn_params={},
+        required_authz_tokens=[],
+        auth_service_token_getters={},
+        bound_params={},
+        client_headers={},
+        secure_params=sample_secure_params,
+    )
+
+    assert len(tool._secure_params) == 2
+    assert tool._secure_params[0].name == "api_key"
+    assert tool._bound_secure_params == {}
+    # Secure parameters must NOT appear in public signature
+    sig_param_names = list(tool.__signature__.parameters.keys())
+    assert "api_key" not in sig_param_names
+    assert "db_password" not in sig_param_names
+
+
+@pytest.mark.asyncio
+async def test_bind_secure_param_success(
+    sample_tool_params: list[ParameterSchema],
+    sample_secure_params: list[ParameterSchema],
+    sample_tool_description: str,
+):
+    transport = MockTransport(HTTPS_BASE_URL)
+    tool = ToolboxTool(
+        transport=transport,
+        name=TEST_TOOL_NAME,
+        description=sample_tool_description,
+        params=sample_tool_params,
+        required_authn_params={},
+        required_authz_tokens=[],
+        auth_service_token_getters={},
+        bound_params={},
+        client_headers={},
+        secure_params=sample_secure_params,
+    )
+
+    bound_tool = tool.bind_secure_param("api_key", "secret-123")
+
+    assert len(bound_tool._secure_params) == 1
+    assert bound_tool._secure_params[0].name == "db_password"
+    assert bound_tool._bound_secure_params == {"api_key": "secret-123"}
+    # Immutability: original tool unchanged
+    assert len(tool._secure_params) == 2
+    assert tool._bound_secure_params == {}
+
+    # Invoke tool and verify secure_arguments passed to transport
+    transport.tool_invoke_mock.return_value = "Success"
+    await bound_tool(message="hello", count=5)
+
+    transport.tool_invoke_mock.assert_awaited_once_with(
+        TEST_TOOL_NAME,
+        {"message": "hello", "count": 5},
+        {},
+        secure_arguments={"api_key": "secret-123"},
+    )
+
+
+@pytest.mark.asyncio
+async def test_bind_secure_params_with_callable(
+    sample_tool_params: list[ParameterSchema],
+    sample_secure_params: list[ParameterSchema],
+    sample_tool_description: str,
+):
+    transport = MockTransport(HTTPS_BASE_URL)
+    tool = ToolboxTool(
+        transport=transport,
+        name=TEST_TOOL_NAME,
+        description=sample_tool_description,
+        params=sample_tool_params,
+        required_authn_params={},
+        required_authz_tokens=[],
+        auth_service_token_getters={},
+        bound_params={},
+        client_headers={},
+        secure_params=sample_secure_params,
+    )
+
+    async def get_db_pass():
+        return "async-secret-pass"
+
+    bound_tool = tool.bind_secure_params(
+        {"api_key": lambda: "dynamic-api-key", "db_password": get_db_pass}
+    )
+
+    transport.tool_invoke_mock.return_value = "Success"
+    await bound_tool(message="hello", count=1)
+
+    transport.tool_invoke_mock.assert_awaited_once_with(
+        TEST_TOOL_NAME,
+        {"message": "hello", "count": 1},
+        {},
+        secure_arguments={
+            "api_key": "dynamic-api-key",
+            "db_password": "async-secret-pass",
+        },
+    )
+
+
+@pytest.mark.asyncio
+async def test_bind_secure_param_chaining(
+    sample_tool_params: list[ParameterSchema],
+    sample_secure_params: list[ParameterSchema],
+    sample_tool_description: str,
+):
+    transport = MockTransport(HTTPS_BASE_URL)
+    tool = ToolboxTool(
+        transport=transport,
+        name=TEST_TOOL_NAME,
+        description=sample_tool_description,
+        params=sample_tool_params,
+        required_authn_params={},
+        required_authz_tokens=[],
+        auth_service_token_getters={},
+        bound_params={},
+        client_headers={},
+        secure_params=sample_secure_params,
+    )
+
+    bound_tool = tool.bind_secure_param("api_key", "key1").bind_secure_param(
+        "db_password", "pass1"
+    )
+    assert len(bound_tool._secure_params) == 0
+    assert bound_tool._bound_secure_params == {
+        "api_key": "key1",
+        "db_password": "pass1",
+    }
+
+
+@pytest.mark.asyncio
+async def test_bind_secure_param_already_bound(
+    sample_tool_params: list[ParameterSchema],
+    sample_secure_params: list[ParameterSchema],
+    sample_tool_description: str,
+):
+    transport = MockTransport(HTTPS_BASE_URL)
+    tool = ToolboxTool(
+        transport=transport,
+        name=TEST_TOOL_NAME,
+        description=sample_tool_description,
+        params=sample_tool_params,
+        required_authn_params={},
+        required_authz_tokens=[],
+        auth_service_token_getters={},
+        bound_params={},
+        client_headers={},
+        secure_params=sample_secure_params,
+    )
+
+    bound_tool = tool.bind_secure_param("api_key", "secret1")
+    with pytest.raises(
+        ValueError,
+        match="cannot re-bind secure parameter: secure parameter 'api_key' is already bound",
+    ):
+        bound_tool.bind_secure_param("api_key", "secret2")
+
+
+@pytest.mark.asyncio
+async def test_bind_param_collision_with_secure_param(
+    sample_tool_params: list[ParameterSchema],
+    sample_secure_params: list[ParameterSchema],
+    sample_tool_description: str,
+):
+    transport = MockTransport(HTTPS_BASE_URL)
+    tool = ToolboxTool(
+        transport=transport,
+        name=TEST_TOOL_NAME,
+        description=sample_tool_description,
+        params=sample_tool_params,
+        required_authn_params={},
+        required_authz_tokens=[],
+        auth_service_token_getters={},
+        bound_params={},
+        client_headers={},
+        secure_params=sample_secure_params,
+    )
+
+    # Calling bind_param on a secure parameter should raise ValueError with guidance
+    with pytest.raises(
+        ValueError,
+        match="parameter 'api_key' is a secure parameter; use bind_secure_param/bind_secure_params instead",
+    ):
+        tool.bind_param("api_key", "val")
+
+
+@pytest.mark.asyncio
+async def test_bind_secure_param_collision_with_regular_param(
+    sample_tool_params: list[ParameterSchema],
+    sample_secure_params: list[ParameterSchema],
+    sample_tool_description: str,
+):
+    transport = MockTransport(HTTPS_BASE_URL)
+    tool = ToolboxTool(
+        transport=transport,
+        name=TEST_TOOL_NAME,
+        description=sample_tool_description,
+        params=sample_tool_params,
+        required_authn_params={},
+        required_authz_tokens=[],
+        auth_service_token_getters={},
+        bound_params={},
+        client_headers={},
+        secure_params=sample_secure_params,
+    )
+
+    # Calling bind_secure_param on a regular parameter should raise ValueError with guidance
+    with pytest.raises(
+        ValueError,
+        match="parameter 'message' is a regular parameter; use bind_param/bind_params instead",
+    ):
+        tool.bind_secure_param("message", "val")
+
+
+@pytest.mark.asyncio
+async def test_bind_secure_param_unknown(
+    sample_tool_params: list[ParameterSchema],
+    sample_secure_params: list[ParameterSchema],
+    sample_tool_description: str,
+):
+    transport = MockTransport(HTTPS_BASE_URL)
+    tool = ToolboxTool(
+        transport=transport,
+        name=TEST_TOOL_NAME,
+        description=sample_tool_description,
+        params=sample_tool_params,
+        required_authn_params={},
+        required_authz_tokens=[],
+        auth_service_token_getters={},
+        bound_params={},
+        client_headers={},
+        secure_params=sample_secure_params,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="unable to bind secure parameters: no secure parameter named nonexistent",
+    ):
+        tool.bind_secure_param("nonexistent", "val")
+
+
+@pytest.mark.asyncio
+async def test_missing_required_secure_parameter_fast_fail(
+    sample_tool_params: list[ParameterSchema],
+    sample_secure_params: list[ParameterSchema],
+    sample_tool_description: str,
+):
+    transport = MockTransport(HTTPS_BASE_URL)
+    tool = ToolboxTool(
+        transport=transport,
+        name=TEST_TOOL_NAME,
+        description=sample_tool_description,
+        params=sample_tool_params,
+        required_authn_params={},
+        required_authz_tokens=[],
+        auth_service_token_getters={},
+        bound_params={},
+        client_headers={},
+        secure_params=sample_secure_params,
+    )
+
+    # api_key is required and not bound -> invoke should fail fast before transport call
+    with pytest.raises(
+        ValueError,
+        match=r"Missing required secure parameter\(s\) \['api_key'\] for tool 'sample_tool'",
+    ):
+        await tool(message="hello", count=1)
+
+    transport.tool_invoke_mock.assert_not_called()

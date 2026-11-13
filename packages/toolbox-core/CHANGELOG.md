@@ -1,5 +1,36 @@
 # Changelog
 
+## [1.4.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v1.3.0...toolbox-core-v1.4.0) (2026-09-01)
+
+
+### Features
+
+* **core:** client tool and toolset loading with secure parameters ([0d1358e](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/0d1358ef3b1e9e14876ca9a6a43b7023637e710d))
+* **core:** protocol and wire transport support for secure parameters ([a184f91](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/a184f91a7c7128421dbf629d4d5e6d21054260fb))
+* **core:** tool-level secure parameter binding, fast-fail and validation ([2bb1ab1](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/2bb1ab17a5e81428120d6e9ba8a3d434220ee718))
+
+
+### Bug Fixes
+
+* **core:** clean up draft protocol alias and remove hardcoded server version fallback ([#773](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/773)) ([7598805](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/7598805f1df91edd2fdcb9bbc7c874b8c03f3939))
+* **core:** strict 1:1 vendor prefix reading based on protocol version ([#747](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/747)) ([6d2f61d](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/6d2f61d0147f4199fd3fca224b4ee3fbfefb4957))
+
+
+## [1.3.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v1.2.0...toolbox-core-v1.3.0) (2026-07-28)
+
+
+### Features
+
+* **core:** preserve query parameters in connection URLs for toolset binding ([#717](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/717)) ([e439ad5](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/e439ad5243ff1ae579492ca3ae040bc1797de81b))
+* **core:** promote MCP draft protocol to official 2026-07-28 version ([#731](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/731)) ([88cc795](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/88cc7959d9c7ebc1d92dedeae90e56fb10d2a943))
+* **core:** support multi-step cascading fallback loop in client ([#722](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/722)) ([3e18b88](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/3e18b88f845fef1bd12616732345465edf8884ba))
+* **core:** support response _meta serverInfo and resultType in draft protocol ([#730](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/730)) ([c6e88df](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/c6e88dfd4147e162f7469f995a87ca07ae3535a8))
+
+
+### Documentation
+
+* **core:** remove outdated protocol negotiation link from README ([#724](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/724)) ([edc6060](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/edc6060a7a7ea9096f8a5e9c10f69086fa540f8b))
+
 ## [1.2.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v1.1.0...toolbox-core-v1.2.0) (2026-07-09)
 
 

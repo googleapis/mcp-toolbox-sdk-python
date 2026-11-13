@@ -17,12 +17,18 @@ name: "API Reference Deployment"
 on:
   push:
     branches: [ 'main' ]
-    tags: [ '**' ]
+    # release-please pushes this alongside each release; it builds nothing and
+    # only costs a queue slot.
+    tags-ignore: [ 'release-please-*' ]
   workflow_dispatch:
 
+# One group: runs share the site root and each package's releases/latest files,
+# and the deploy action pushes without retrying. queue: max holds 100 pending
+# runs; the default of 1 silently dropped seven released versions.
 concurrency:
   group: api-docs-deploy
   cancel-in-progress: false
+  queue: max
 
 jobs:
   deploy:
@@ -33,7 +39,7 @@ jobs:
       contents: write
     steps:
       - name: Checkout Code
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           submodules: recursive
           fetch-depth: 0
@@ -73,7 +79,8 @@ jobs:
           # Route the git ref to the package(s) and version to build.
           # A per-package tag builds that one package; pushes to main (and manual
           # dispatch) build all four as "dev". Python release tags are
-          # toolbox-<name>-vX.Y.Z; release-please-* and any other tag are skipped.
+          # toolbox-<name>-vX.Y.Z; any other tag resolves to no package and
+          # skips the build.
           REF="${GITHUB_REF}"
           case "$REF" in
             refs/tags/toolbox-core-v*)       echo "packages=core"                          >> "$GITHUB_OUTPUT"; echo "version=${REF#refs/tags/toolbox-core-}"       >> "$GITHUB_OUTPUT" ;;

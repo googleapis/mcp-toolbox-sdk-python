@@ -19,7 +19,7 @@ import pytest
 from aiohttp import ClientSession
 from toolbox_core.client import ToolboxClient as ToolboxCoreClient
 from toolbox_core.protocol import ParameterSchema as CoreParameterSchema
-from toolbox_core.protocol import Protocol
+from toolbox_core.protocol import Protocol, TelemetryAttributes
 from toolbox_core.tool import ToolboxTool as ToolboxCoreTool
 
 from toolbox_llamaindex.async_client import AsyncToolboxClient
@@ -63,7 +63,9 @@ class TestAsyncToolboxClient:
     def mock_core_client_instance(self, mock_session):
         mock = AsyncMock(spec=ToolboxCoreClient)
 
-        async def mock_load_tool_impl(name, auth_token_getters, bound_params):
+        async def mock_load_tool_impl(
+            name, auth_token_getters, bound_params, secure_params={}
+        ):
             tool_schema_dict = MANIFEST_JSON["tools"].get(name)
             if not tool_schema_dict:
                 raise ValueError(f"Tool '{name}' not in mock manifest_dict")
@@ -83,7 +85,7 @@ class TestAsyncToolboxClient:
         mock.load_tool = AsyncMock(side_effect=mock_load_tool_impl)
 
         async def mock_load_toolset_impl(
-            name, auth_token_getters, bound_params, strict
+            name, auth_token_getters, bound_params, strict, secure_params={}
         ):
             core_tools_list = []
             for tool_name_iter, tool_schema_dict in MANIFEST_JSON["tools"].items():
@@ -139,6 +141,30 @@ class TestAsyncToolboxClient:
         assert (
             tool.metadata.name == tool_name
         )  # AsyncToolboxTool gets its name from the core_tool
+
+    async def test_aload_tool_with_telemetry_attributes(self, mock_client):
+        tool_name = "test_tool_1"
+        attrs = TelemetryAttributes(llm_model="gemini-3.5-flash")
+        core_tool = AsyncMock(spec=ToolboxCoreTool)
+        core_tool.__name__ = tool_name
+        core_tool.__doc__ = "Test Tool 1 Description"
+        core_tool._name = tool_name
+        core_tool._params = [
+            CoreParameterSchema(name="param1", type="string", description="Param 1")
+        ]
+        telemetry_core_tool = AsyncMock(spec=ToolboxCoreTool)
+        telemetry_core_tool.__name__ = tool_name
+        telemetry_core_tool.__doc__ = "Test Tool 1 Description"
+        telemetry_core_tool._name = tool_name
+        telemetry_core_tool._params = core_tool._params
+        core_tool.add_telemetry_attributes.return_value = telemetry_core_tool
+        mock_client._AsyncToolboxClient__core_client.load_tool.side_effect = None
+        mock_client._AsyncToolboxClient__core_client.load_tool.return_value = core_tool
+
+        tool = await mock_client.aload_tool(tool_name, telemetry_attributes=attrs)
+
+        core_tool.add_telemetry_attributes.assert_called_once_with(attrs)
+        assert tool._AsyncToolboxTool__core_tool is telemetry_core_tool
 
     async def test_aload_tool_auth_headers_deprecated(self, mock_client):
         tool_name = "test_tool_1"
@@ -238,6 +264,31 @@ class TestAsyncToolboxClient:
         for tool in tools:
             assert isinstance(tool, AsyncToolboxTool)
             assert tool.metadata.name in ["test_tool_1", "test_tool_2"]
+
+    async def test_aload_toolset_with_telemetry_attributes(self, mock_client):
+        attrs = TelemetryAttributes(llm_model="gemini-3.5-flash")
+        core_tool = AsyncMock(spec=ToolboxCoreTool)
+        core_tool.__name__ = "test_tool_1"
+        core_tool.__doc__ = "Test Tool 1 Description"
+        core_tool._name = "test_tool_1"
+        core_tool._params = [
+            CoreParameterSchema(name="param1", type="string", description="Param 1")
+        ]
+        telemetry_core_tool = AsyncMock(spec=ToolboxCoreTool)
+        telemetry_core_tool.__name__ = "test_tool_1"
+        telemetry_core_tool.__doc__ = "Test Tool 1 Description"
+        telemetry_core_tool._name = "test_tool_1"
+        telemetry_core_tool._params = core_tool._params
+        core_tool.add_telemetry_attributes.return_value = telemetry_core_tool
+        mock_client._AsyncToolboxClient__core_client.load_toolset.side_effect = None
+        mock_client._AsyncToolboxClient__core_client.load_toolset.return_value = [
+            core_tool
+        ]
+
+        tools = await mock_client.aload_toolset(telemetry_attributes=attrs)
+
+        core_tool.add_telemetry_attributes.assert_called_once_with(attrs)
+        assert tools[0]._AsyncToolboxTool__core_tool is telemetry_core_tool
 
     async def test_aload_toolset_with_toolset_name(self, mock_client):
         toolset_name = "test_toolset_1"
@@ -374,3 +425,35 @@ class TestAsyncToolboxClient:
         )
         call_kwargs = mock_core_client_constructor.call_args[1]
         assert call_kwargs["telemetry_enabled"] == telemetry_enabled
+
+    async def test_aload_tool_with_secure_params(
+        self, mock_client, mock_core_client_instance
+    ):
+        sec_params = {"api_key": "secret_key"}
+        tool = await mock_client.aload_tool("test_tool_1", secure_params=sec_params)
+
+        assert isinstance(tool, AsyncToolboxTool)
+        mock_core_client_instance.load_tool.assert_called_once_with(
+            name="test_tool_1",
+            auth_token_getters={},
+            bound_params={},
+            secure_params=sec_params,
+        )
+
+    async def test_aload_toolset_with_secure_params(
+        self, mock_client, mock_core_client_instance
+    ):
+        sec_params = {"api_key": "secret_key"}
+        tools = await mock_client.aload_toolset(
+            "my_set", secure_params=sec_params, strict=True
+        )
+
+        assert len(tools) == 2
+        assert isinstance(tools[0], AsyncToolboxTool)
+        mock_core_client_instance.load_toolset.assert_called_once_with(
+            name="my_set",
+            auth_token_getters={},
+            bound_params={},
+            strict=True,
+            secure_params=sec_params,
+        )

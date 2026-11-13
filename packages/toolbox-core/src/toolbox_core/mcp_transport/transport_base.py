@@ -92,7 +92,7 @@ class _McpHttpTransportBase(ITransport, ABC):
                 self._init_task = asyncio.create_task(
                     self._initialize_session(headers=headers)
                 )
-        await self._init_task
+        await asyncio.shield(self._init_task)
 
     @property
     def base_url(self) -> str:
@@ -173,27 +173,24 @@ class _McpHttpTransportBase(ITransport, ABC):
                 self._protocol_version,
                 Protocol.MCP_v20260728.value,
             )
-            if (
-                is_2026_or_newer
-                and "com.google.cloud/authParam" in meta
-                and isinstance(meta["com.google.cloud/authParam"], dict)
-            ):
-                param_auth = meta["com.google.cloud/authParam"]
-            elif "toolbox/authParam" in meta and isinstance(
-                meta["toolbox/authParam"], dict
-            ):
-                param_auth = meta["toolbox/authParam"]
-
-            if (
-                is_2026_or_newer
-                and "com.google.cloud/authInvoke" in meta
-                and isinstance(meta["com.google.cloud/authInvoke"], list)
-            ):
-                invoke_auth = meta["com.google.cloud/authInvoke"]
-            elif "toolbox/authInvoke" in meta and isinstance(
-                meta["toolbox/authInvoke"], list
-            ):
-                invoke_auth = meta["toolbox/authInvoke"]
+            if is_2026_or_newer:
+                if "com.google.cloud/authParam" in meta and isinstance(
+                    meta["com.google.cloud/authParam"], dict
+                ):
+                    param_auth = meta["com.google.cloud/authParam"]
+                if "com.google.cloud/authInvoke" in meta and isinstance(
+                    meta["com.google.cloud/authInvoke"], list
+                ):
+                    invoke_auth = meta["com.google.cloud/authInvoke"]
+            else:
+                if "toolbox/authParam" in meta and isinstance(
+                    meta["toolbox/authParam"], dict
+                ):
+                    param_auth = meta["toolbox/authParam"]
+                if "toolbox/authInvoke" in meta and isinstance(
+                    meta["toolbox/authInvoke"], list
+                ):
+                    invoke_auth = meta["toolbox/authInvoke"]
 
         parameters = []
         input_schema = tool_data.get("inputSchema", {})
@@ -208,9 +205,21 @@ class _McpHttpTransportBase(ITransport, ABC):
 
             parameters.append(param_schema)
 
+        secure_parameters = []
+        secure_input_schema = tool_data.get("secureInputSchema")
+        if isinstance(secure_input_schema, dict):
+            sec_properties = secure_input_schema.get("properties", {})
+            sec_required = secure_input_schema.get("required", [])
+            for name, schema in sec_properties.items():
+                param_schema = self._convert_parameter_schema(
+                    name, schema, sec_required
+                )
+                secure_parameters.append(param_schema)
+
         return ToolSchema(
             description=tool_data.get("description") or "",
             parameters=parameters,
+            secure_parameters=secure_parameters,
             authRequired=invoke_auth,
         )
 

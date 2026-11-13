@@ -20,6 +20,7 @@ import pytest_asyncio
 from pydantic import ValidationError
 from toolbox_core.itransport import ITransport
 from toolbox_core.protocol import ParameterSchema as CoreParameterSchema
+from toolbox_core.protocol import TelemetryAttributes
 from toolbox_core.tool import ToolboxTool as ToolboxCoreTool
 
 
@@ -175,6 +176,57 @@ class TestAsyncToolboxTool:
             for bound_param_name in params_to_bind.keys():
                 assert bound_param_name not in new_core_tool_signature_params
 
+    async def test_toolbox_tool_bind_param(self, toolbox_tool):
+        new_langchain_tool = toolbox_tool.bind_param("param1", "bound-value")
+        assert isinstance(
+            new_langchain_tool._AsyncToolboxTool__core_tool, ToolboxCoreTool
+        )
+        new_core_tool_signature_params = (
+            new_langchain_tool._AsyncToolboxTool__core_tool.__signature__.parameters
+        )
+        assert "param1" not in new_core_tool_signature_params
+
+    async def test_toolbox_tool_bind_secure_params(self, toolbox_tool):
+        original_core_tool = toolbox_tool._AsyncToolboxTool__core_tool
+        with patch.object(
+            original_core_tool,
+            "bind_secure_params",
+            wraps=original_core_tool.bind_secure_params,
+        ) as mock_core_bind:
+            # Inject a secure param to test binding
+            from toolbox_core.protocol import ParameterSchema
+
+            original_core_tool._ToolboxTool__secure_params = [
+                ParameterSchema(
+                    name="api_key",
+                    type="string",
+                    description="key",
+                    required=True,
+                )
+            ]
+            new_langchain_tool = toolbox_tool.bind_secure_params({"api_key": "sec123"})
+            mock_core_bind.assert_called_once_with({"api_key": "sec123"})
+            assert isinstance(
+                new_langchain_tool._AsyncToolboxTool__core_tool, ToolboxCoreTool
+            )
+
+    async def test_toolbox_tool_bind_secure_param(self, toolbox_tool):
+        original_core_tool = toolbox_tool._AsyncToolboxTool__core_tool
+        from toolbox_core.protocol import ParameterSchema
+
+        original_core_tool._ToolboxTool__secure_params = [
+            ParameterSchema(
+                name="api_key", type="string", description="key", required=True
+            )
+        ]
+        new_langchain_tool = toolbox_tool.bind_secure_param("api_key", "sec123")
+        assert isinstance(
+            new_langchain_tool._AsyncToolboxTool__core_tool, ToolboxCoreTool
+        )
+        assert new_langchain_tool._AsyncToolboxTool__core_tool._bound_secure_params == {
+            "api_key": "sec123"
+        }
+
     async def test_toolbox_tool_bind_params_invalid(self, toolbox_tool):
         with pytest.raises(
             ValueError, match="unable to bind parameters: no parameter named param3"
@@ -300,6 +352,30 @@ class TestAsyncToolboxTool:
         transport = core_tool._ToolboxTool__transport
         transport.tool_invoke_mock.assert_awaited_once_with(
             "test_tool", {"param2": 123}, {"test-auth-source_token": "test-token"}
+        )
+
+    async def test_toolbox_tool_call_with_telemetry_attributes(self, toolbox_tool):
+        attrs = TelemetryAttributes(llm_model="gemini-3.5-flash", user_id="user-1")
+        core_tool = toolbox_tool._AsyncToolboxTool__core_tool
+
+        with patch.object(
+            core_tool,
+            "add_telemetry_attributes",
+            wraps=core_tool.add_telemetry_attributes,
+        ) as mock_add_telemetry_attributes:
+            tool = toolbox_tool.add_telemetry_attributes(attrs)
+
+        mock_add_telemetry_attributes.assert_called_once_with(attrs)
+        result = await tool.ainvoke({"param1": "test-value", "param2": 123})
+
+        assert result == "test-result"
+        derived_core_tool = tool._AsyncToolboxTool__core_tool
+        transport = derived_core_tool._ToolboxTool__transport
+        transport.tool_invoke_mock.assert_awaited_once_with(
+            "test_tool",
+            {"param1": "test-value", "param2": 123},
+            {},
+            telemetry_attributes=attrs,
         )
 
     async def test_toolbox_tool_call_with_invalid_input(self, toolbox_tool):

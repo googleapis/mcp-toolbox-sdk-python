@@ -199,8 +199,51 @@ class TestAuth:
             "get-row-by-content-auth",
             auth_token_getters={"my-test-auth": lambda: auth_token1},
         )
-        with pytest.raises(
-            Exception,
-            match="no field named row_data in claims",
-        ):
-            tool()
+        response = tool()
+        assert "no field named row_data in claims" in response
+
+
+@pytest.mark.usefixtures("toolbox_server")
+class TestSyncSecureParamsE2E:
+    def test_sync_run_tool_with_secure_param(self, toolbox: ToolboxSyncClient):
+        """Tests synchronous loading and invoking a tool with a secure parameter."""
+        tool = toolbox.load_tool("my-secure-tool")
+        bound_tool = tool.bind_secure_param("name", "Alice")
+        response = bound_tool(id=1)
+        assert isinstance(response, str)
+        assert "Alice" in response
+
+    def test_sync_run_tool_with_secure_params_plural(self, toolbox: ToolboxSyncClient):
+        """Tests synchronous batch binding with bind_secure_params."""
+        tool = toolbox.load_tool("my-secure-tool")
+        bound_tool = tool.bind_secure_params({"name": "Alice"})
+        response = bound_tool(id=1)
+        assert isinstance(response, str)
+        assert "Alice" in response
+
+    def test_sync_run_tool_with_secure_param_callable(self, toolbox: ToolboxSyncClient):
+        """Tests synchronous loading and invoking a tool with a dynamic callable secure parameter."""
+        tool = toolbox.load_tool("my-secure-tool")
+        bound_tool = tool.bind_secure_param("name", lambda: "Alice")
+        response = bound_tool(id=1)
+        assert isinstance(response, str)
+        assert "Alice" in response
+
+    def test_sync_load_tool_with_secure_params(self, toolbox: ToolboxSyncClient):
+        """Tests synchronous load_tool with secure_params passed during loading."""
+        tool = toolbox.load_tool("my-secure-tool", secure_params={"name": "Alice"})
+        response = tool(id=1)
+        assert isinstance(response, str)
+        assert "Alice" in response
+
+    def test_sync_load_toolset_with_secure_params(self, toolbox: ToolboxSyncClient):
+        """Tests synchronous load_toolset with secure_params distributed across tools."""
+        toolset = toolbox.load_toolset(
+            "my-secure-toolset", secure_params={"name": "Alice"}
+        )
+        by_name = {t.__name__: t for t in toolset}
+        assert "my-secure-tool" in by_name
+        tool = by_name["my-secure-tool"]
+        response = tool(id=1)
+        assert isinstance(response, str)
+        assert "Alice" in response

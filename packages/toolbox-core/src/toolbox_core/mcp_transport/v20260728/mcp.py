@@ -244,14 +244,15 @@ class McpHttpTransportV20260728(_McpHttpTransportBase):
 
             tools_map = {t["name"]: self._convert_tool_schema(t) for t in result.tools}
 
-            server_version = (
-                result.field_meta.server_info.version
-                if (result.field_meta and result.field_meta.server_info)
-                else "0.0.0"
-            )
+            if (
+                result.field_meta
+                and result.field_meta.server_info
+                and result.field_meta.server_info.version
+            ):
+                self._server_version = result.field_meta.server_info.version
 
             return ManifestSchema(
-                serverVersion=server_version,
+                serverVersion=self._server_version or "",
                 tools=tools_map,
             )
 
@@ -292,6 +293,7 @@ class McpHttpTransportV20260728(_McpHttpTransportBase):
         arguments: dict,
         headers: Optional[Mapping[str, str]],
         telemetry_attributes: Optional[TelemetryAttributes] = None,
+        secure_arguments: Optional[dict] = None,
     ) -> str:
         """Invokes a specific tool on the server using the MCP protocol."""
         await self._ensure_initialized(headers=headers)
@@ -331,7 +333,10 @@ class McpHttpTransportV20260728(_McpHttpTransportBase):
                 url=self._mcp_base_url,
                 request=types.CallToolRequest(
                     params=types.CallToolRequestParams(
-                        name=tool_name, arguments=arguments, field_meta=meta
+                        name=tool_name,
+                        arguments=arguments,
+                        secure_arguments=secure_arguments or None,
+                        field_meta=meta,
                     )
                 ),
                 headers=headers,

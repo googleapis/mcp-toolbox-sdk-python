@@ -395,3 +395,21 @@ class ToolboxTool(BaseTool):
             adk_token_getters=self._adk_token_getters,
             telemetry_attributes=self._telemetry_attributes,
         )
+
+    def bind_param(self, param_name: str, param_value: Any) -> "ToolboxTool":
+        """Allows runtime binding of a parameter, delegating to core tool."""
+        return self.bind_params({param_name: param_value})
+
+    def bind_secure_params(self, bound_secure_params: Dict[str, Any]) -> "ToolboxTool":
+        """Allows runtime binding of secure parameters, delegating to core tool."""
+        new_core_tool = self._core_tool.bind_secure_params(bound_secure_params)
+        return ToolboxTool(
+            core_tool=new_core_tool,
+            auth_config=self._auth_config,
+            adk_token_getters=self._adk_token_getters,
+            telemetry_attributes=self._telemetry_attributes,
+        )
+
+    def bind_secure_param(self, param_name: str, param_value: Any) -> "ToolboxTool":
+        """Allows runtime binding of a secure parameter, delegating to core tool."""
+        return self.bind_secure_params({param_name: param_value})
