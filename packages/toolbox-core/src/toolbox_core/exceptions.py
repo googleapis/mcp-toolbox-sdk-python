@@ -19,6 +19,14 @@ class ToolboxError(Exception):
     pass
 
 
+class ToolInvocationError(ToolboxError):
+    """Raised when an MCP server reports that a tool invocation failed."""
+
+    def __init__(self, content: str):
+        self.content = content
+        super().__init__(content)
+
+
 class ProtocolNegotiationError(ToolboxError):
     """Raised when the server requires a different protocol version during a stateless request."""
 

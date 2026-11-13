@@ -347,7 +347,9 @@ class McpHttpTransportV20260728(_McpHttpTransportBase):
                     f"Failed to invoke tool '{tool_name}': No response from server."
                 )
 
-            return self._process_tool_result_content(result.content)
+            return self._process_tool_result_content(
+                result.content, is_error=result.isError
+            )
         except Exception as e:
             error = e
             raise
