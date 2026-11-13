@@ -63,7 +63,7 @@ jobs:
       # Build entirely from the tag: its source and the docs tooling (docs-site/,
       # scripts/) all ship in the release, so no overlay from main is needed.
       - name: Checkout tagged source
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: refs/tags/toolbox-${{ inputs.package }}-${{ inputs.version }}
           submodules: recursive
@@ -71,7 +71,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: '3.13'
 
