@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.9.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v1.4.0...toolbox-core-v0.9.0) (2026-11-13)
+
+
+### Bug Fixes
+
+* **core:** allow load_toolset strict success when all params are used ([#735](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/735)) ([d3b163a](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/d3b163a1f294c0b5b41236afacc306209673777c))
+* **core:** await coroutines returned by callable token getters and bound params ([#736](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/736)) ([d8bae57](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/d8bae577a5ab07296f905e15753d66e4ec081b9f))
+* **core:** close session after cancelled initialization ([#746](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/746)) ([79f6276](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/79f62767506eaba85be5983cecd516059f1b667c))
+* **core:** isolate shared initialization cancellation ([#745](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/745)) ([e68bdb6](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/e68bdb67a329edb0fc157eecf8a87188d97f236e))
+
+
+### Miscellaneous Chores
+
+* **deps:** allow numpy 2 on Python 3.12+ and disable numpy updates for older Pythons ([#816](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/816)) ([051501a](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/051501a7a1c4c6d673f9fb989a2c9c642da6b207))
+* **deps:** bump aiohttp in /packages/toolbox-core ([#806](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/806)) ([e900752](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/e9007520380d795a3ef0e9b41ca02db7e907f97b))
+* **deps:** update mcp toolbox server version in integration tests to v1.14.0 to v1.14.0 ([#798](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/798)) ([beee057](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/beee0576d50a170f787ea49a96b9a8eae23f5ccc))
+* **deps:** update mcp toolbox server version in integration tests to v1.15.0 to v1.15.0 ([#819](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/819)) ([6df684f](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/6df684ffff3e8cae558e0a794a1a5a8126239753))
+* **toolbox-llamaindex:** release 0.9.0 ([#789](https://github.com/googleapis/mcp-toolbox-sdk-python/issues/789)) ([c576592](https://github.com/googleapis/mcp-toolbox-sdk-python/commit/c576592a5b78b253c520f0137f33066ea5ad6377))
+
 ## [1.4.0](https://github.com/googleapis/mcp-toolbox-sdk-python/compare/toolbox-core-v1.3.0...toolbox-core-v1.4.0) (2026-09-01)
 
 
