@@ -71,6 +71,15 @@
       matchCurrentValue: '/^<2$/',
       enabled: false,
     },
+    {
+      description: 'Disable Pillow updates for Python < 3.11 (Pillow 13 requires Python >= 3.11)',
+      matchPackageNames: [
+        'Pillow',
+        'pillow',
+      ],
+      matchCurrentValue: '/^==12\\./',
+      enabled: false,
+    },
   ],
   customManagers: [
     {
