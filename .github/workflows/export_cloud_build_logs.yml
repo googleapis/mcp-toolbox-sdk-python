@@ -35,7 +35,7 @@ jobs:
       pr_number: ${{ steps.detect_pr_number.outputs.pr_number }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
 
@@ -139,7 +139,7 @@ jobs:
           STEPS_PARSE_BUILD_INFO_OUTPUTS_BUILD_ID: ${{ steps.parse_build_info.outputs.build_id }}
           STEPS_PARSE_BUILD_INFO_OUTPUTS_PROJECT_ID: ${{ steps.parse_build_info.outputs.project_id }}
       - name: Upload Logs as Artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: logs-${{ matrix.name }}-${{ steps.parse_build_info.outputs.build_id }}
           path: ${{ steps.fetch_cloud_build_logs.outputs.log_file_name }}
