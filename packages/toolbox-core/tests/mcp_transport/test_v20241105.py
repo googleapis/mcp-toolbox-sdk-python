@@ -461,7 +461,25 @@ class TestMcpHttpTransportV20241105:
         result = await transport.tool_invoke("tool", {}, {})
         assert result == "Result"
 
-    async def test_tool_invoke_error_result(self, transport, mocker):
+    async def test_tool_invoke_error_result_returns_text(self, transport, mocker):
+        mocker.patch.object(transport, "_ensure_initialized", new_callable=AsyncMock)
+        mocker.patch.object(
+            transport,
+            "_send_request",
+            new_callable=AsyncMock,
+            return_value=types.CallToolResult(
+                content=[types.TextContent(type="text", text="tool failed")],
+                isError=True,
+            ),
+        )
+
+        result = await transport.tool_invoke("tool", {}, {})
+        assert result == "tool failed"
+
+    async def test_tool_invoke_error_result_raises_with_raise_on_error(
+        self, transport, mocker
+    ):
+        mocker.patch.object(transport, "_raise_on_error", True)
         mocker.patch.object(transport, "_ensure_initialized", new_callable=AsyncMock)
         mocker.patch.object(
             transport,

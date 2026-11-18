@@ -54,6 +54,7 @@ class _McpTransportProxy(ITransport):
         client_version: Optional[str],
         telemetry_enabled: bool,
         supported_protocols: Optional[list[str]] = None,
+        raise_on_error: bool = False,
     ):
         self._url = url
         self._session = session
@@ -61,6 +62,7 @@ class _McpTransportProxy(ITransport):
         self._client_version = client_version
         self._telemetry_enabled = telemetry_enabled
         self._supported_protocols = supported_protocols
+        self._raise_on_error = raise_on_error
         self._active_transport = self._create_transport(protocol)
 
     def _create_transport(self, protocol: Protocol) -> ITransport:
@@ -75,6 +77,7 @@ class _McpTransportProxy(ITransport):
                     self._client_version,
                     telemetry_enabled=self._telemetry_enabled,
                     supported_protocols=self._supported_protocols,
+                    raise_on_error=self._raise_on_error,
                 )
             case Protocol.MCP_v20251125:
                 return McpHttpTransportV20251125(
@@ -85,6 +88,7 @@ class _McpTransportProxy(ITransport):
                     self._client_version,
                     telemetry_enabled=self._telemetry_enabled,
                     supported_protocols=self._supported_protocols,
+                    raise_on_error=self._raise_on_error,
                 )
             case Protocol.MCP_v20250618:
                 return McpHttpTransportV20250618(
@@ -95,6 +99,7 @@ class _McpTransportProxy(ITransport):
                     self._client_version,
                     telemetry_enabled=self._telemetry_enabled,
                     supported_protocols=self._supported_protocols,
+                    raise_on_error=self._raise_on_error,
                 )
             case Protocol.MCP_v20250326:
                 return McpHttpTransportV20250326(
@@ -105,6 +110,7 @@ class _McpTransportProxy(ITransport):
                     self._client_version,
                     telemetry_enabled=self._telemetry_enabled,
                     supported_protocols=self._supported_protocols,
+                    raise_on_error=self._raise_on_error,
                 )
             case Protocol.MCP_v20241105:
                 return McpHttpTransportV20241105(
@@ -115,6 +121,7 @@ class _McpTransportProxy(ITransport):
                     self._client_version,
                     telemetry_enabled=self._telemetry_enabled,
                     supported_protocols=self._supported_protocols,
+                    raise_on_error=self._raise_on_error,
                 )
             case _:
                 raise ValueError(f"Unsupported MCP protocol version: {protocol}")
@@ -213,6 +220,7 @@ class ToolboxClient:
         client_name: Optional[str] = None,
         client_version: Optional[str] = None,
         telemetry_enabled: bool = False,
+        raise_on_error: bool = False,
     ):
         """
         Initializes the ToolboxClient.
@@ -232,6 +240,9 @@ class ToolboxClient:
             client_name: Optional client name for identification.
             client_version: Optional client version for identification.
             telemetry_enabled: Whether to enable OpenTelemetry tracing and metrics. (Default: False)
+            raise_on_error: Whether a tool call raises `ToolInvocationError` when the
+                server marks its result as an error, instead of returning the error
+                text. (Default: False)
         """
 
         if isinstance(protocol, list):
@@ -274,6 +285,7 @@ class ToolboxClient:
             client_version,
             telemetry_enabled,
             supported_protocols,
+            raise_on_error=raise_on_error,
         )
 
         self.__client_headers = client_headers if client_headers is not None else {}
