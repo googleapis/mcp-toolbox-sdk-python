@@ -176,145 +176,161 @@ class ToolboxTool(BaseTool):
         # later invocations skip the auth check and run with that caller's
         # credentials.
         target_tool = self._core_tool
-
-        # Check if USER_IDENTITY is configured
         reset_token = None
 
-        if self._auth_config and self._auth_config.type == CredentialType.USER_IDENTITY:
-            requires_auth = (
-                len(target_tool._required_authn_params) > 0
-                or len(target_tool._required_authz_tokens) > 0
-            )
+        try:
+            if self._adk_token_getters:
+                # Pre-filter toolset getters to avoid unused-token errors from the core tool.
+                # Binding ADK getters first updates remaining auth requirements before 3LO OAuth,
+                # and passing one map registers alternative auth sources atomically.
+                needed_services = set()
+                for reqs in target_tool._required_authn_params.values():
+                    needed_services.update(reqs)
+                needed_services.update(target_tool._required_authz_tokens)
 
-            if requires_auth:
-                if (
-                    not self._auth_config.client_id
-                    or not self._auth_config.client_secret
-                ):
-                    raise ValueError(
-                        "USER_IDENTITY requires client_id and client_secret"
-                    )
+                adk_getters: Dict[str, Any] = {}
+                for service, getter in self._adk_token_getters.items():
+                    if (
+                        service in needed_services
+                        and service not in target_tool._auth_service_token_getters
+                    ):
+                        sig = inspect.signature(getter)
 
-                # Construct ADK AuthConfig
-                scopes = self._auth_config.scopes or ["openid", "profile", "email"]
-                scope_dict = {s: "" for s in scopes}
-
-                auth_config_adk = AuthConfig(
-                    auth_scheme=OAuth2(
-                        flows=OAuthFlows(
-                            authorizationCode=OAuthFlowAuthorizationCode(
-                                authorizationUrl="https://accounts.google.com/o/oauth2/auth",
-                                tokenUrl="https://oauth2.googleapis.com/token",
-                                scopes=scope_dict,
+                        if len(sig.parameters) == 1:
+                            bound_getter: Any = lambda t=getter, ctx=tool_context: t(
+                                ctx
                             )
-                        )
-                    ),
-                    raw_auth_credential=AuthCredential(
-                        auth_type=AuthCredentialTypes.OAUTH2,
-                        oauth2=OAuth2Auth(
-                            client_id=self._auth_config.client_id,
-                            client_secret=self._auth_config.client_secret,
-                        ),
-                    ),
+                        else:
+                            bound_getter = getter
+
+                        adk_getters[service] = bound_getter
+
+                if adk_getters:
+                    target_tool = target_tool.add_auth_token_getters(adk_getters)
+
+            # Check if USER_IDENTITY is configured
+            if (
+                self._auth_config
+                and self._auth_config.type == CredentialType.USER_IDENTITY
+            ):
+                requires_auth = (
+                    len(target_tool._required_authn_params) > 0
+                    or len(target_tool._required_authz_tokens) > 0
                 )
 
-                # Check if we already have credentials from a previous exchange
-                try:
-                    # Try to load credential from credential service first (persists across sessions)
-                    creds = None
-                    try:
-                        if tool_context._invocation_context.credential_service:
-                            creds = await tool_context._invocation_context.credential_service.load_credential(
-                                auth_config=auth_config_adk,
-                                callback_context=tool_context,
-                            )
-                    except ValueError:
-                        # Credential service might not be initialized
-                        pass
-
-                    if not creds:
-                        # Fallback to session state (get_auth_response returns AuthCredential if found)
-                        creds = tool_context.get_auth_response(auth_config_adk)
-
-                    if creds and creds.oauth2 and creds.oauth2.access_token:
-                        reset_token = USER_TOKEN_CONTEXT_VAR.set(
-                            creds.oauth2.access_token
+                if requires_auth:
+                    if (
+                        not self._auth_config.client_id
+                        or not self._auth_config.client_secret
+                    ):
+                        raise ValueError(
+                            "USER_IDENTITY requires client_id and client_secret"
                         )
 
-                        # Bind the token to the per-invocation core tool so it constructs headers properly
-                        needed_services = set()
-                        for requested_service in list(
-                            target_tool._required_authn_params.values()
-                        ) + list(target_tool._required_authz_tokens):
-                            if isinstance(requested_service, list):
-                                needed_services.update(requested_service)
-                            else:
-                                needed_services.add(requested_service)
+                    # Construct ADK AuthConfig
+                    scopes = self._auth_config.scopes or [
+                        "openid",
+                        "profile",
+                        "email",
+                    ]
+                    scope_dict = {s: "" for s in scopes}
 
-                        for s in needed_services:
-                            # Only add if not already registered (prevents ValueError on duplicate params)
-                            if (
-                                not hasattr(target_tool, "_auth_token_getters")
-                                or s not in target_tool._auth_token_getters
-                            ):
-                                target_tool = target_tool.add_auth_token_getter(
-                                    s,
-                                    lambda t=creds.oauth2.id_token or creds.oauth2.access_token: t,
+                    auth_config_adk = AuthConfig(
+                        auth_scheme=OAuth2(
+                            flows=OAuthFlows(
+                                authorizationCode=OAuthFlowAuthorizationCode(
+                                    authorizationUrl="https://accounts.google.com/o/oauth2/auth",
+                                    tokenUrl="https://oauth2.googleapis.com/token",
+                                    scopes=scope_dict,
                                 )
-                        # Once we use it from get_auth_response, save it to the auth service for future use
+                            )
+                        ),
+                        raw_auth_credential=AuthCredential(
+                            auth_type=AuthCredentialTypes.OAUTH2,
+                            oauth2=OAuth2Auth(
+                                client_id=self._auth_config.client_id,
+                                client_secret=self._auth_config.client_secret,
+                            ),
+                        ),
+                    )
+
+                    # Check if we already have credentials from a previous exchange
+                    try:
+                        # Try to load credential from credential service first (persists across sessions)
+                        creds = None
                         try:
                             if tool_context._invocation_context.credential_service:
-                                auth_config_adk.exchanged_auth_credential = creds
-                                await tool_context._invocation_context.credential_service.save_credential(
+                                creds = await tool_context._invocation_context.credential_service.load_credential(
                                     auth_config=auth_config_adk,
                                     callback_context=tool_context,
                                 )
-                        except Exception as e:
-                            logging.debug(f"Failed to save credential to service: {e}")
-                    else:
+                        except ValueError:
+                            # Credential service might not be initialized
+                            pass
+
+                        if not creds:
+                            # Fallback to session state (get_auth_response returns AuthCredential if found)
+                            creds = tool_context.get_auth_response(auth_config_adk)
+
+                        if creds and creds.oauth2 and creds.oauth2.access_token:
+                            reset_token = USER_TOKEN_CONTEXT_VAR.set(
+                                creds.oauth2.access_token
+                            )
+
+                            # Bind the token to the per-invocation core tool so it constructs headers properly
+                            needed_services = set()
+                            for requested_service in list(
+                                target_tool._required_authn_params.values()
+                            ) + list(target_tool._required_authz_tokens):
+                                if isinstance(requested_service, list):
+                                    needed_services.update(requested_service)
+                                else:
+                                    needed_services.add(requested_service)
+
+                            token_val = (
+                                creds.oauth2.id_token or creds.oauth2.access_token
+                            )
+                            oauth_getters = {
+                                s: (lambda t=token_val: t)
+                                for s in needed_services
+                                if s not in target_tool._auth_service_token_getters
+                            }
+                            if oauth_getters:
+                                target_tool = target_tool.add_auth_token_getters(
+                                    oauth_getters
+                                )
+
+                            # Once we use it from get_auth_response, save it to the auth service for future use
+                            try:
+                                if tool_context._invocation_context.credential_service:
+                                    auth_config_adk.exchanged_auth_credential = creds
+                                    await tool_context._invocation_context.credential_service.save_credential(
+                                        auth_config=auth_config_adk,
+                                        callback_context=tool_context,
+                                    )
+                            except Exception as e:
+                                logging.debug(
+                                    f"Failed to save credential to service: {e}"
+                                )
+                        else:
+                            tool_context.request_credential(auth_config_adk)
+                            return {
+                                "error": f"OAuth2 Credentials required for {self.name}. A consent link has been generated for the user. Do NOT attempt to run this tool again until the user confirms they have logged in."
+                            }
+                    except Exception as e:
+                        if "credential" in str(e).lower() or isinstance(e, ValueError):
+                            raise e
+
+                        logging.warning(
+                            f"Unexpected error in get_auth_response during User Identity (OAuth2) retrieval: {e}. "
+                            "Falling back to request_credential.",
+                            exc_info=True,
+                        )
                         tool_context.request_credential(auth_config_adk)
                         return {
                             "error": f"OAuth2 Credentials required for {self.name}. A consent link has been generated for the user. Do NOT attempt to run this tool again until the user confirms they have logged in."
                         }
-                except Exception as e:
-                    if "credential" in str(e).lower() or isinstance(e, ValueError):
-                        raise e
 
-                    logging.warning(
-                        f"Unexpected error in get_auth_response during User Identity (OAuth2) retrieval: {e}. "
-                        "Falling back to request_credential.",
-                        exc_info=True,
-                    )
-                    tool_context.request_credential(auth_config_adk)
-                    return {
-                        "error": f"OAuth2 Credentials required for {self.name}. A consent link has been generated for the user. Do NOT attempt to run this tool again until the user confirms they have logged in."
-                    }
-
-        if self._adk_token_getters:
-            # Pre-filter toolset getters to avoid unused-token errors from the core tool.
-            # This deferred loop also enables dynamic 1-arity `tool_context` injection.
-            needed_services = set()
-            for reqs in target_tool._required_authn_params.values():
-                needed_services.update(reqs)
-            needed_services.update(target_tool._required_authz_tokens)
-
-            for service, getter in self._adk_token_getters.items():
-                if service in needed_services:
-                    sig = inspect.signature(getter)
-
-                    if len(sig.parameters) == 1:
-                        bound_getter = lambda t=getter, ctx=tool_context: t(ctx)
-                    else:
-                        bound_getter = getter
-
-                    target_tool = target_tool.add_auth_token_getter(
-                        service, bound_getter
-                    )
-
-        result: Optional[Any] = None
-        error: Optional[Exception] = None
-
-        try:
             # Resolve telemetry attributes onto the same per-invocation copy of
             # the core tool. Like the auth getters above, this must not be
             # assigned back to self._core_tool: attributes resolved from one
@@ -328,12 +344,7 @@ class ToolboxTool(BaseTool):
                 core_tool = core_tool.add_telemetry_attributes(telemetry_attributes)
 
             # Execute the core tool
-            result = await core_tool(**args)
-            return result
-
-        except Exception as e:
-            error = e
-            raise e
+            return await core_tool(**args)
         finally:
             if reset_token:
                 USER_TOKEN_CONTEXT_VAR.reset(reset_token)

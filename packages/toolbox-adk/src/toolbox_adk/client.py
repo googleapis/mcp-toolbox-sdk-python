@@ -16,7 +16,6 @@ from contextvars import ContextVar
 from typing import Any, Awaitable, Callable, Dict, Optional, Union
 
 import toolbox_core
-from google.auth import compute_engine, transport
 from google.auth.transport import requests
 from toolbox_core import auth_methods
 
@@ -123,16 +122,16 @@ class ToolboxClient:
 
             self._core_client_headers[creds.header_name] = creds.api_key
 
-    def _create_adc_token_getter(self, audience: str) -> Callable[[], str]:
-        """Returns a callable that fetches a Google ID token for `audience` using ADC.
+    def _create_adc_token_getter(self, audience: str) -> Callable[[], Awaitable[str]]:
+        """Returns an async callable that fetches a Google ID token for `audience` using ADC.
 
-        Delegates to `toolbox_core.auth_methods.get_google_id_token`, which only
-        returns OIDC ID tokens and raises if one cannot be obtained. It must
-        never fall back to an OAuth2 access token: an access token is not bound
-        to the Toolbox server's audience and would let the server call Google
-        Cloud APIs as the caller.
+        Delegates to `toolbox_core.auth_methods.aget_google_id_token`, which only
+        returns OIDC ID tokens without blocking the event loop and raises if one
+        cannot be obtained. It must never fall back to an OAuth2 access token:
+        an access token is not bound to the Toolbox server's audience and would
+        let the server call Google Cloud APIs as the caller.
         """
-        return auth_methods.get_google_id_token(audience)
+        return auth_methods.aget_google_id_token(audience)
 
     def _create_creds_token_getter(self, credentials: Any) -> Callable[[], str]:
         def get_token() -> str:

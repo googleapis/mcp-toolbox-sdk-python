@@ -87,7 +87,8 @@ class TestToolboxTool:
         core_tool.__doc__ = "mock doc"
         core_tool._required_authn_params = {"param1": ["service1"]}
         core_tool._required_authz_tokens = ["service2"]
-        core_tool.add_auth_token_getter = MagicMock(return_value=core_tool)
+        core_tool._auth_service_token_getters = {}
+        core_tool.add_auth_token_getters = MagicMock(return_value=core_tool)
 
         def getter1():
             return "token1"
@@ -107,14 +108,8 @@ class TestToolboxTool:
 
         await tool.run_async({}, ctx)
 
-        assert core_tool.add_auth_token_getter.call_count == 2
-
-        args1 = core_tool.add_auth_token_getter.call_args_list[0][0]
-        args2 = core_tool.add_auth_token_getter.call_args_list[1][0]
-
-        # Because we iterate over items(), order might be dependent.
-        # Check that both services were processed and bound correctly
-        bound_getters = {args1[0]: args1[1], args2[0]: args2[1]}
+        core_tool.add_auth_token_getters.assert_called_once()
+        bound_getters = core_tool.add_auth_token_getters.call_args[0][0]
 
         assert "service1" in bound_getters
         assert bound_getters["service1"]() == "token1"
@@ -265,11 +260,12 @@ class TestToolboxTool:
         core_tool.__doc__ = "mock doc"
         # Setup overlapping needed services to test deduplication
         core_tool._required_authn_params = {
-            "mock_param": "mock_service",
-            "another_param": "mock_service",
+            "mock_param": ["mock_service"],
+            "another_param": ["mock_service"],
         }
         core_tool._required_authz_tokens = ["mock_service"]
-        core_tool.add_auth_token_getter = MagicMock(return_value=core_tool)
+        core_tool._auth_service_token_getters = {}
+        core_tool.add_auth_token_getters = MagicMock(return_value=core_tool)
 
         auth_config = CredentialConfig(
             type=CredentialType.USER_IDENTITY, client_id="cid", client_secret="csec"
@@ -300,13 +296,12 @@ class TestToolboxTool:
         # Verify core tool WAS called
         core_tool.assert_called_once()
 
-        # Verify deduplication: add_auth_token_getter should only be called ONCE for "mock_service"
-        core_tool.add_auth_token_getter.assert_called_once()
-        call_args_getter = core_tool.add_auth_token_getter.call_args[0]
-        assert call_args_getter[0] == "mock_service"
+        # Verify deduplication: add_auth_token_getters should be called ONCE with "mock_service"
+        core_tool.add_auth_token_getters.assert_called_once()
+        bound_getters = core_tool.add_auth_token_getters.call_args[0][0]
+        assert list(bound_getters.keys()) == ["mock_service"]
         # Evaluate the getter lambda to ensure it prefers id_token
-        token_getter_lambda = call_args_getter[1]
-        assert token_getter_lambda() == "valid_id_token"
+        assert bound_getters["mock_service"]() == "valid_id_token"
 
         # Verify save_credential was called with the exchanged credential
         mock_cred_service.save_credential.assert_called_once()
@@ -325,9 +320,10 @@ class TestToolboxTool:
         core_tool = AsyncMock(return_value="success")
         core_tool.__name__ = "mock_tool"
         core_tool.__doc__ = "mock doc"
-        core_tool._required_authn_params = {"mock_param": "mock_service"}
+        core_tool._required_authn_params = {"mock_param": ["mock_service"]}
         core_tool._required_authz_tokens = []
-        core_tool.add_auth_token_getter = MagicMock(return_value=core_tool)
+        core_tool._auth_service_token_getters = {}
+        core_tool.add_auth_token_getters = MagicMock(return_value=core_tool)
 
         auth_config = CredentialConfig(
             type=CredentialType.USER_IDENTITY, client_id="cid", client_secret="csec"
@@ -505,6 +501,67 @@ class TestToolboxTool:
             "my-auth_token": "second-user-token"
         }
         assert tool._core_tool is core_tool
+
+    @pytest.mark.asyncio
+    async def test_alternative_auth_sources_and_early_reset_cleanup(self):
+        """Alternative auth sources bind in one map, ADK getters satisfy before 3LO, and contextvar resets on error."""
+        transport = AsyncMock()
+        transport.base_url = "https://toolbox.example.com/mcp/"
+        transport.tool_invoke = AsyncMock(return_value="ok")
+        core_tool = CoreToolboxTool(
+            transport=transport,
+            name="multi_auth_tool",
+            description="Accepts either auth-a or auth-b.",
+            params=[],
+            required_authn_params={"p": ["auth-a", "auth-b"]},
+            required_authz_tokens=["auth-a", "auth-b"],
+            auth_service_token_getters={},
+            bound_params={},
+            client_headers={},
+        )
+        auth_config = CredentialConfig(
+            type=CredentialType.USER_IDENTITY, client_id="cid", client_secret="csec"
+        )
+
+        # 1. Both alternative sources bound via 3LO without unused-source ValueError.
+        tool_3lo = ToolboxTool(core_tool, auth_config=auth_config)
+        creds = MagicMock()
+        creds.oauth2.access_token = "user-access"
+        creds.oauth2.id_token = "user-id"
+        assert await tool_3lo.run_async({}, self._make_3lo_context(creds)) == "ok"
+        assert transport.tool_invoke.await_args.args[2] == {
+            "auth-a_token": "user-id",
+            "auth-b_token": "user-id",
+        }
+
+        # 2. ADK getter for auth-a satisfies the requirement before 3LO runs (no OAuth prompt).
+        tool_adk_first = ToolboxTool(
+            core_tool,
+            auth_config=auth_config,
+            adk_token_getters={"auth-a": lambda ctx: "adk-token"},
+        )
+        unauth_ctx = self._make_3lo_context(None)
+        assert await tool_adk_first.run_async({}, unauth_ctx) == "ok"
+        unauth_ctx.request_credential.assert_not_called()
+
+        # 3. If add_auth_token_getters raises after USER_TOKEN_CONTEXT_VAR.set, contextvar still resets.
+        failing_core = AsyncMock()
+        failing_core.__name__ = "fail_tool"
+        failing_core.__doc__ = "doc"
+        failing_core._required_authn_params = {}
+        failing_core._required_authz_tokens = ["auth-a"]
+        failing_core._auth_service_token_getters = {}
+        failing_core.add_auth_token_getters = MagicMock(
+            side_effect=ValueError("getter registration error")
+        )
+        failing_tool = ToolboxTool(failing_core, auth_config=auth_config)
+        prev = USER_TOKEN_CONTEXT_VAR.set("outer-token")
+        try:
+            with pytest.raises(ValueError, match="getter registration error"):
+                await failing_tool.run_async({}, self._make_3lo_context(creds))
+            assert USER_TOKEN_CONTEXT_VAR.get() == "outer-token"
+        finally:
+            USER_TOKEN_CONTEXT_VAR.reset(prev)
 
     def test_param_type_to_schema_type(self):
         core_tool = MagicMock()
