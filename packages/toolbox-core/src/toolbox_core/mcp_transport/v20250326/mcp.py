@@ -263,9 +263,8 @@ class McpHttpTransportV20250326(_McpHttpTransportBase):
         headers: Optional[Mapping[str, str]] = None,
     ) -> ManifestSchema:
         """Lists available tools from the server using the MCP protocol."""
-        await self._ensure_initialized(headers=headers)
-
         url = self._build_toolset_url(toolset_name)
+        await self._ensure_initialized(headers=headers)
 
         meta: Optional[types.MCPMeta] = None
 

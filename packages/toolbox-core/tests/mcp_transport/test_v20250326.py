@@ -499,17 +499,18 @@ class TestMcpHttpTransportV20250326:
 
         assert transport._send_request.call_args.kwargs["url"] == expected_url
 
-    @pytest.mark.parametrize("toolset_name", [".", ".."])
+    @pytest.mark.parametrize("toolset_name", [".", "..", ".\ud800."])
     async def test_tools_list_rejects_dot_segment_toolset_name(
         self, transport, mocker, toolset_name
     ):
-        """Test that '.' and '..' are rejected as toolset names."""
+        """Test that invalid toolset names fail before session initialization."""
         mocker.patch.object(transport, "_ensure_initialized", new_callable=AsyncMock)
         mocker.patch.object(transport, "_send_request", new_callable=AsyncMock)
 
         with pytest.raises(ValueError, match="Invalid toolset name"):
             await transport.tools_list(toolset_name=toolset_name)
 
+        transport._ensure_initialized.assert_not_called()
         transport._send_request.assert_not_called()
 
     async def test_tool_invoke_success(self, transport, mocker):

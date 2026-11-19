@@ -58,7 +58,7 @@ class _McpHttpTransportBase(ITransport, ABC):
         telemetry_enabled: bool = False,
         supported_protocols: Optional[list[str]] = None,
     ):
-        parsed = urllib.parse.urlparse(base_url)
+        parsed = urllib.parse.urlsplit(base_url)
         path = parsed.path
         if path.endswith("/mcp"):
             path += "/"
@@ -66,7 +66,7 @@ class _McpHttpTransportBase(ITransport, ABC):
             path = path.rstrip("/") + "/mcp/"
 
         # Reconstruct the URL with the updated path, preserving query parameters
-        self._mcp_base_url = urllib.parse.urlunparse(parsed._replace(path=path))
+        self._mcp_base_url = urllib.parse.urlunsplit(parsed._replace(path=path))
         self._protocol_version = protocol.value
         self._server_version: Optional[str] = None
 
@@ -120,14 +120,18 @@ class _McpHttpTransportBase(ITransport, ABC):
         """
         if not toolset_name:
             return self._mcp_base_url
+        try:
+            toolset_name.encode("utf-8")
+        except UnicodeEncodeError as e:
+            raise ValueError(f"Invalid toolset name: {e}") from e
         if toolset_name in (".", ".."):
             # Dot segments are left unchanged by percent-encoding and would be
             # resolved against the base path during URL normalization.
             raise ValueError(f"Invalid toolset name: '{toolset_name}'")
-        parsed = urllib.parse.urlparse(self._mcp_base_url)
+        parsed = urllib.parse.urlsplit(self._mcp_base_url)
         segment = toolset_name.translate(_TOOLSET_NAME_ESCAPES)
         new_path = parsed.path.rstrip("/") + "/" + segment
-        return urllib.parse.urlunparse(parsed._replace(path=new_path))
+        return urllib.parse.urlunsplit(parsed._replace(path=new_path))
 
     def _raise_for_redirect(self, response: ClientResponse) -> None:
         """Raises an error if the server responded with an HTTP redirect.

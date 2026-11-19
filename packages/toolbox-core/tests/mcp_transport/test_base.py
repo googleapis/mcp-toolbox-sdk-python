@@ -140,6 +140,16 @@ class TestMcpHttpTransportBase:
             ("http://api.com", ".. ", "http://api.com/mcp/..%20"),
             ("http://api.com", "..\x00\x1f\x7f", "http://api.com/mcp/..%00%1F%7F"),
             ("http://api.com?proj=xyz", "a/b", "http://api.com/mcp/a%2Fb?proj=xyz"),
+            (
+                "http://api.com/base;v=1/mcp/",
+                "my_toolset",
+                "http://api.com/base;v=1/mcp/my_toolset",
+            ),
+            (
+                "http://api.com/base;v=1;p=2",
+                "my_toolset",
+                "http://api.com/base;v=1;p=2/mcp/my_toolset",
+            ),
         ],
     )
     async def test_build_toolset_url(self, input_url, toolset_name, expected):
@@ -170,9 +180,11 @@ class TestMcpHttpTransportBase:
         url = URL(transport._build_toolset_url(toolset_name))
         assert url.raw_path == expected_path
 
-    @pytest.mark.parametrize("toolset_name", [".", ".."])
+    @pytest.mark.parametrize(
+        "toolset_name", [".", "..", ".\ud800.", "\ud800", "\udfff"]
+    )
     def test_build_toolset_url_rejects_dot_segments(self, transport, toolset_name):
-        """Test that dot segments, which encoding cannot neutralize, are rejected."""
+        """Test that dot segments and lone UTF-16 surrogates are rejected."""
         with pytest.raises(ValueError, match="Invalid toolset name"):
             transport._build_toolset_url(toolset_name)
 
