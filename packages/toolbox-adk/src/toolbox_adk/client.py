@@ -15,11 +15,10 @@
 from contextvars import ContextVar
 from typing import Any, Awaitable, Callable, Dict, Optional, Union
 
-import google.auth
 import toolbox_core
 from google.auth import compute_engine, transport
 from google.auth.transport import requests
-from google.oauth2 import id_token
+from toolbox_core import auth_methods
 
 from .credentials import CredentialConfig, CredentialType
 
@@ -125,27 +124,15 @@ class ToolboxClient:
             self._core_client_headers[creds.header_name] = creds.api_key
 
     def _create_adc_token_getter(self, audience: str) -> Callable[[], str]:
-        """Returns a callable that fetches a fresh ID token using ADC."""
+        """Returns a callable that fetches a Google ID token for `audience` using ADC.
 
-        def get_token() -> str:
-            request = requests.Request()
-            try:
-                # Try fetching ID token directly (e.g. on Cloud Run/GKE with metadata server)
-                token = id_token.fetch_id_token(request, audience)
-                return f"Bearer {token}"
-            except Exception:
-                # Fallback to default credentials (e.g. local gcloud auth)
-                creds, _ = google.auth.default()
-                if not creds.valid:
-                    creds.refresh(request)
-
-                if hasattr(creds, "id_token") and creds.id_token:
-                    return f"Bearer {creds.id_token}"
-
-                curr_token = getattr(creds, "token", None)
-                return f"Bearer {curr_token}" if curr_token else ""
-
-        return get_token
+        Delegates to `toolbox_core.auth_methods.get_google_id_token`, which only
+        returns OIDC ID tokens and raises if one cannot be obtained. It must
+        never fall back to an OAuth2 access token: an access token is not bound
+        to the Toolbox server's audience and would let the server call Google
+        Cloud APIs as the caller.
+        """
+        return auth_methods.get_google_id_token(audience)
 
     def _create_creds_token_getter(self, credentials: Any) -> Callable[[], str]:
         def get_token() -> str:

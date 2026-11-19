@@ -169,13 +169,21 @@ class ToolboxTool(BaseTool):
         args: Dict[str, Any],
         tool_context: ToolContext,
     ) -> Any:
+        # Auth token getters resolved for this invocation are bound onto a
+        # per-invocation copy of the core tool. They must never be assigned
+        # back to self._core_tool: a ToolboxTool instance can be shared across
+        # users and sessions, and persisting one caller's getter would let
+        # later invocations skip the auth check and run with that caller's
+        # credentials.
+        target_tool = self._core_tool
+
         # Check if USER_IDENTITY is configured
         reset_token = None
 
         if self._auth_config and self._auth_config.type == CredentialType.USER_IDENTITY:
             requires_auth = (
-                len(self._core_tool._required_authn_params) > 0
-                or len(self._core_tool._required_authz_tokens) > 0
+                len(target_tool._required_authn_params) > 0
+                or len(target_tool._required_authz_tokens) > 0
             )
 
             if requires_auth:
@@ -233,23 +241,23 @@ class ToolboxTool(BaseTool):
                             creds.oauth2.access_token
                         )
 
-                        # Bind the token to the underlying core_tool so it constructs headers properly
+                        # Bind the token to the per-invocation core tool so it constructs headers properly
                         needed_services = set()
                         for requested_service in list(
-                            self._core_tool._required_authn_params.values()
-                        ) + list(self._core_tool._required_authz_tokens):
+                            target_tool._required_authn_params.values()
+                        ) + list(target_tool._required_authz_tokens):
                             if isinstance(requested_service, list):
                                 needed_services.update(requested_service)
                             else:
                                 needed_services.add(requested_service)
 
                         for s in needed_services:
-                            # Only add if not already registered (prevents ValueError on duplicate params or subsequent runs)
+                            # Only add if not already registered (prevents ValueError on duplicate params)
                             if (
-                                not hasattr(self._core_tool, "_auth_token_getters")
-                                or s not in self._core_tool._auth_token_getters
+                                not hasattr(target_tool, "_auth_token_getters")
+                                or s not in target_tool._auth_token_getters
                             ):
-                                self._core_tool = self._core_tool.add_auth_token_getter(
+                                target_tool = target_tool.add_auth_token_getter(
                                     s,
                                     lambda t=creds.oauth2.id_token or creds.oauth2.access_token: t,
                                 )
@@ -286,9 +294,9 @@ class ToolboxTool(BaseTool):
             # Pre-filter toolset getters to avoid unused-token errors from the core tool.
             # This deferred loop also enables dynamic 1-arity `tool_context` injection.
             needed_services = set()
-            for reqs in self._core_tool._required_authn_params.values():
+            for reqs in target_tool._required_authn_params.values():
                 needed_services.update(reqs)
-            needed_services.update(self._core_tool._required_authz_tokens)
+            needed_services.update(target_tool._required_authz_tokens)
 
             for service, getter in self._adk_token_getters.items():
                 if service in needed_services:
@@ -299,7 +307,7 @@ class ToolboxTool(BaseTool):
                     else:
                         bound_getter = getter
 
-                    self._core_tool = self._core_tool.add_auth_token_getter(
+                    target_tool = target_tool.add_auth_token_getter(
                         service, bound_getter
                     )
 
@@ -307,12 +315,12 @@ class ToolboxTool(BaseTool):
         error: Optional[Exception] = None
 
         try:
-            # Resolve telemetry attributes onto a per-invocation copy of the
-            # core tool. Unlike the auth getters above, this must not be
+            # Resolve telemetry attributes onto the same per-invocation copy of
+            # the core tool. Like the auth getters above, this must not be
             # assigned back to self._core_tool: attributes resolved from one
             # ToolContext (e.g. a user id) would otherwise persist and leak
             # into later invocations served by this same tool instance.
-            core_tool = self._core_tool
+            core_tool = target_tool
             telemetry_attributes = await self._resolve_telemetry_attributes(
                 tool_context
             )

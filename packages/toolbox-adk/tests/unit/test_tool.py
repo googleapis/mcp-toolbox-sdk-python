@@ -12,11 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from google.genai.types import Type
 from toolbox_core.protocol import TelemetryAttributes
+from toolbox_core.tool import ToolboxTool as CoreToolboxTool
 
 from toolbox_adk.client import USER_TOKEN_CONTEXT_VAR
 from toolbox_adk.credentials import CredentialConfig, CredentialType
@@ -411,6 +413,98 @@ class TestToolboxTool:
         # Should catch RuntimeError, call request_credential, and return error map
         assert isinstance(result, dict) and "error" in result
         ctx.request_credential.assert_called_once()
+
+    @staticmethod
+    def _make_real_core_tool(transport: AsyncMock) -> CoreToolboxTool:
+        """Builds a real toolbox-core tool that requires the `my-auth` service."""
+        transport.base_url = "https://toolbox.example.com/mcp/"
+        transport.tool_invoke = AsyncMock(return_value="ok")
+        return CoreToolboxTool(
+            transport=transport,
+            name="get_my_salary",
+            description="Returns the caller's salary.",
+            params=[],
+            required_authn_params={},
+            required_authz_tokens=["my-auth"],
+            auth_service_token_getters={},
+            bound_params={},
+            client_headers={},
+        )
+
+    @staticmethod
+    def _make_3lo_context(creds: Any) -> MagicMock:
+        ctx = MagicMock()
+        ctx.get_auth_response.return_value = creds
+        cred_service = MagicMock()
+        cred_service.load_credential = AsyncMock(return_value=None)
+        cred_service.save_credential = AsyncMock(return_value=None)
+        ctx._invocation_context = MagicMock()
+        ctx._invocation_context.credential_service = cred_service
+        return ctx
+
+    @pytest.mark.asyncio
+    async def test_3lo_token_not_shared_across_invocations(self):
+        """A user's 3LO token must not leak to later callers of a shared tool."""
+        transport = AsyncMock()
+        core_tool = self._make_real_core_tool(transport)
+        auth_config = CredentialConfig(
+            type=CredentialType.USER_IDENTITY, client_id="cid", client_secret="csec"
+        )
+        tool = ToolboxTool(core_tool, auth_config=auth_config)
+
+        alice_creds = MagicMock()
+        alice_creds.oauth2.access_token = "alice-access-token"
+        alice_creds.oauth2.id_token = "alice-id-token"
+        assert await tool.run_async({}, self._make_3lo_context(alice_creds)) == "ok"
+        assert transport.tool_invoke.await_args.args[2] == {
+            "my-auth_token": "alice-id-token"
+        }
+
+        # The shared tool still requires auth after Alice's invocation.
+        assert tool._core_tool is core_tool
+        assert list(tool._core_tool._required_authz_tokens) == ["my-auth"]
+
+        # Bob has not logged in: he must be asked to authenticate instead of
+        # running the tool with Alice's token.
+        bob_ctx = self._make_3lo_context(None)
+        result = await tool.run_async({}, bob_ctx)
+        assert isinstance(result, dict) and "error" in result
+        bob_ctx.request_credential.assert_called_once()
+        assert transport.tool_invoke.await_count == 1
+
+        # Once Bob logs in, his own token is used.
+        bob_creds = MagicMock()
+        bob_creds.oauth2.access_token = "bob-access-token"
+        bob_creds.oauth2.id_token = "bob-id-token"
+        assert await tool.run_async({}, self._make_3lo_context(bob_creds)) == "ok"
+        assert transport.tool_invoke.await_args.args[2] == {
+            "my-auth_token": "bob-id-token"
+        }
+
+    @pytest.mark.asyncio
+    async def test_adk_token_getter_bound_per_invocation(self):
+        """Context-aware ADK token getters must resolve from each invocation's context."""
+        transport = AsyncMock()
+        core_tool = self._make_real_core_tool(transport)
+        tool = ToolboxTool(
+            core_tool,
+            adk_token_getters={"my-auth": lambda ctx: ctx.state["user_token"]},
+        )
+
+        first_ctx = MagicMock()
+        first_ctx.state = {"user_token": "first-user-token"}
+        assert await tool.run_async({}, first_ctx) == "ok"
+        assert transport.tool_invoke.await_args.args[2] == {
+            "my-auth_token": "first-user-token"
+        }
+
+        second_ctx = MagicMock()
+        second_ctx.state = {"user_token": "second-user-token"}
+        assert await tool.run_async({}, second_ctx) == "ok"
+        assert transport.tool_invoke.await_args.args[2] == {
+            "my-auth_token": "second-user-token"
+        }
+        assert tool._core_tool is core_tool
 
     def test_param_type_to_schema_type(self):
         core_tool = MagicMock()
