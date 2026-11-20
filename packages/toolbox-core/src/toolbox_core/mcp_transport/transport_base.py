@@ -21,6 +21,7 @@ from typing import Any, Mapping, Optional, Union
 from aiohttp import ClientSession
 
 from .. import version
+from ..exceptions import ToolInvocationError
 from ..itransport import ITransport
 from ..protocol import (
     AdditionalPropertiesSchema,
@@ -44,6 +45,7 @@ class _McpHttpTransportBase(ITransport, ABC):
         client_version: Optional[str] = None,
         telemetry_enabled: bool = False,
         supported_protocols: Optional[list[str]] = None,
+        raise_on_error: bool = False,
     ):
         parsed = urllib.parse.urlparse(base_url)
         path = parsed.path
@@ -63,6 +65,7 @@ class _McpHttpTransportBase(ITransport, ABC):
         self._supported_protocols = (
             supported_protocols or Protocol.get_supported_mcp_versions()
         )
+        self._raise_on_error = raise_on_error
 
         self._tracer: Optional[telemetry.Tracer] = None
         self._operation_duration_histogram: Optional[telemetry.Histogram] = None
@@ -98,20 +101,30 @@ class _McpHttpTransportBase(ITransport, ABC):
     def base_url(self) -> str:
         return self._mcp_base_url
 
-    def _process_tool_result_content(self, content: list) -> str:
-        """Processes the tool result content, handling multiple JSON objects."""
+    def _process_tool_result_content(
+        self, content: list, *, is_error: bool = False
+    ) -> str:
+        """Processes the tool result content, handling multiple JSON objects.
+
+        If the server marked the result as an error and ``raise_on_error`` is
+        set, raises ``ToolInvocationError`` with the text instead of returning it.
+        """
         texts = [c.text for c in content if getattr(c, "type", "") == "text"]
 
+        result = "".join(texts) or "null"
         if len(texts) > 1:
             try:
                 # Check if all chunks are valid JSON objects (dictionaries)
                 if all(isinstance(json.loads(t), dict) for t in texts):
-                    return f"[{','.join(texts)}]"
+                    result = f"[{','.join(texts)}]"
             except (ValueError, TypeError):
                 # Not valid JSON or not objects, fall back to simple concatenation
                 pass
 
-        return "".join(texts) or "null"
+        if is_error and self._raise_on_error:
+            raise ToolInvocationError(result)
+
+        return result
 
     def _convert_parameter_schema(
         self, name: str, schema: dict, required_fields: list[str]

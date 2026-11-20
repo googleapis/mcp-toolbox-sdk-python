@@ -686,6 +686,23 @@ def test_sync_client_init_with_client_info(sync_client_environment):
         assert kwargs["client_version"] == client_version
 
 
+@pytest.mark.parametrize(
+    "kwargs, expected", [({}, False), ({"raise_on_error": True}, True)]
+)
+def test_sync_client_init_passes_raise_on_error(
+    sync_client_environment, kwargs, expected
+):
+    """Tests that raise_on_error is passed to the async ToolboxClient."""
+    with patch("toolbox_core.sync_client.ToolboxClient") as mock_async_client_cls:
+        mock_async_client_cls.return_value = Mock(spec=ToolboxClient)
+
+        ToolboxSyncClient(TEST_BASE_URL, **kwargs)
+
+        mock_async_client_cls.assert_called_once()
+        _, call_kwargs = mock_async_client_cls.call_args
+        assert call_kwargs["raise_on_error"] is expected
+
+
 def test_sync_client_load_tool_with_secure_params(sync_client_environment):
     """Tests load_tool forwards secure_params to async client."""
     client = ToolboxSyncClient(TEST_BASE_URL)

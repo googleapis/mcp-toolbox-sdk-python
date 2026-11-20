@@ -46,6 +46,7 @@ class ToolboxSyncClient:
         client_name: Optional[str] = None,
         client_version: Optional[str] = None,
         telemetry_enabled: bool = False,
+        raise_on_error: bool = False,
     ):
         """
         Initializes the ToolboxSyncClient.
@@ -60,6 +61,9 @@ class ToolboxSyncClient:
             client_name: Optional client name for identification.
             client_version: Optional client version for identification.
             telemetry_enabled: Whether to enable OpenTelemetry tracing and metrics. (Default: False)
+            raise_on_error: Whether a tool call raises `ToolInvocationError` when the
+                server marks its result as an error, instead of returning the error
+                text. (Default: False)
         """
         # Running a loop in a background thread allows us to support async
         # methods from non-async environments.
@@ -80,6 +84,7 @@ class ToolboxSyncClient:
                 client_name=client_name,
                 client_version=client_version,
                 telemetry_enabled=telemetry_enabled,
+                raise_on_error=raise_on_error,
             )
 
         self.__async_client = run_coroutine_threadsafe(
