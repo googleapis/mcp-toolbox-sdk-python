@@ -18,7 +18,7 @@ import urllib.parse
 from abc import ABC, abstractmethod
 from typing import Any, Mapping, Optional, Union
 
-from aiohttp import ClientSession
+from aiohttp import ClientResponse, ClientSession
 
 from .. import version
 from ..itransport import ITransport
@@ -30,6 +30,19 @@ from ..protocol import (
     ToolSchema,
 )
 from . import telemetry
+
+# Characters percent-encoded (uppercase hex) in toolset names, so that a name
+# always stays a single URL path segment: "%", "/", "\", "?" and "#" change how
+# the URL is parsed, and URL parsers delete or trim spaces and ASCII control
+# characters (for example ".\t." would become a ".." segment). Every other
+# character is left for aiohttp to encode exactly as before, because the
+# Toolbox server matches the raw path segment.
+_TOOLSET_NAME_ESCAPES = str.maketrans(
+    {
+        char: f"%{ord(char):02X}"
+        for char in ["%", "/", "\\", "?", "#", " ", "\x7f", *map(chr, range(0x20))]
+    }
+)
 
 
 class _McpHttpTransportBase(ITransport, ABC):
@@ -45,7 +58,7 @@ class _McpHttpTransportBase(ITransport, ABC):
         telemetry_enabled: bool = False,
         supported_protocols: Optional[list[str]] = None,
     ):
-        parsed = urllib.parse.urlparse(base_url)
+        parsed = urllib.parse.urlsplit(base_url)
         path = parsed.path
         if path.endswith("/mcp"):
             path += "/"
@@ -53,7 +66,7 @@ class _McpHttpTransportBase(ITransport, ABC):
             path = path.rstrip("/") + "/mcp/"
 
         # Reconstruct the URL with the updated path, preserving query parameters
-        self._mcp_base_url = urllib.parse.urlunparse(parsed._replace(path=path))
+        self._mcp_base_url = urllib.parse.urlunsplit(parsed._replace(path=path))
         self._protocol_version = protocol.value
         self._server_version: Optional[str] = None
 
@@ -97,6 +110,44 @@ class _McpHttpTransportBase(ITransport, ABC):
     @property
     def base_url(self) -> str:
         return self._mcp_base_url
+
+    def _build_toolset_url(self, toolset_name: Optional[str]) -> str:
+        """Returns the MCP endpoint URL for the given toolset.
+
+        Only the characters in `_TOOLSET_NAME_ESCAPES` are percent-encoded. This
+        keeps the name a single path segment that cannot escape the MCP endpoint
+        path, while all other characters are sent exactly as before.
+        """
+        if not toolset_name:
+            return self._mcp_base_url
+        try:
+            toolset_name.encode("utf-8")
+        except UnicodeEncodeError as e:
+            raise ValueError(f"Invalid toolset name: {e}") from e
+        if toolset_name in (".", ".."):
+            # Dot segments are left unchanged by percent-encoding and would be
+            # resolved against the base path during URL normalization.
+            raise ValueError(f"Invalid toolset name: '{toolset_name}'")
+        parsed = urllib.parse.urlsplit(self._mcp_base_url)
+        segment = toolset_name.translate(_TOOLSET_NAME_ESCAPES)
+        new_path = parsed.path.rstrip("/") + "/" + segment
+        return urllib.parse.urlunsplit(parsed._replace(path=new_path))
+
+    def _raise_for_redirect(self, response: ClientResponse) -> None:
+        """Raises an error if the server responded with an HTTP redirect.
+
+        Requests are sent with `allow_redirects=False` so that credentials in
+        the request headers and body are never re-sent to another URL. aiohttp
+        treats 3xx responses as `ok`, so they must be rejected explicitly.
+        """
+        if response.status in range(300, 400):
+            location = response.headers.get("Location")
+            target = f" to {location}" if location else ""
+            raise RuntimeError(
+                f"Toolbox server responded with HTTP {response.status} redirect"
+                f"{target}; automatic redirects are disabled for security. "
+                "Configure the client with the final server URL."
+            )
 
     def _process_tool_result_content(self, content: list) -> str:
         """Processes the tool result content, handling multiple JSON objects."""
