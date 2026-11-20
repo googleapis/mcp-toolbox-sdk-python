@@ -30,13 +30,15 @@ as toolbox:
 """
 
 import asyncio
+import threading
 from datetime import datetime, timedelta, timezone
 from typing import Any, Callable, Coroutine, Dict, Optional
 
 import google.auth
+from google.auth import compute_engine, external_account, impersonated_credentials
 from google.auth.exceptions import GoogleAuthError
 from google.auth.transport.requests import AuthorizedSession, Request
-from google.oauth2 import id_token
+from google.oauth2 import id_token, service_account
 
 # --- Constants ---
 BEARER_TOKEN_PREFIX = "Bearer "
@@ -55,14 +57,16 @@ DEFAULT_CLOCK_SKEW = 0
 # entry and never mix with audience-specific entries.
 _CacheKey = Optional[str]
 _token_cache: Dict[_CacheKey, Dict[str, Any]] = {}
+_token_cache_lock = threading.RLock()
 
 
 def _is_token_valid(cache_key: _CacheKey) -> bool:
     """Checks if a cached token for the given key exists and is not nearing expiry."""
-    entry = _token_cache.get(cache_key)
-    if not entry or not entry.get("token"):
-        return False
-    return datetime.now(timezone.utc) < (entry["expires_at"] - CACHE_REFRESH_MARGIN)
+    with _token_cache_lock:
+        entry = _token_cache.get(cache_key)
+        if not entry or not entry.get("token"):
+            return False
+        return datetime.now(timezone.utc) < (entry["expires_at"] - CACHE_REFRESH_MARGIN)
 
 
 def _update_cache(
@@ -93,15 +97,88 @@ def _update_cache(
         if not expiry_timestamp:
             raise ValueError("Token does not contain an 'exp' claim.")
 
-        _token_cache[cache_key] = {
-            "token": new_token,
-            "expires_at": datetime.fromtimestamp(expiry_timestamp, tz=timezone.utc),
-        }
+        with _token_cache_lock:
+            _token_cache[cache_key] = {
+                "token": new_token,
+                "expires_at": datetime.fromtimestamp(expiry_timestamp, tz=timezone.utc),
+            }
 
     except (ValueError, GoogleAuthError) as e:
         # Drop this key's entry on failure to prevent using a stale/invalid token
-        _token_cache.pop(cache_key, None)
+        with _token_cache_lock:
+            _token_cache.pop(cache_key, None)
         raise ValueError(f"Failed to validate and cache the new token: {e}") from e
+
+
+def _mint_id_token_from_default_credentials(
+    credentials: Any, audience: Optional[str], fetch_err: Optional[Exception]
+) -> str:
+    """Mints an OIDC ID token from ADC credentials without falling back to access tokens."""
+    if audience is not None:
+        id_creds: Optional[Any] = None
+        if isinstance(credentials, service_account.Credentials):
+            id_creds = service_account.IDTokenCredentials(
+                credentials._signer,
+                credentials.service_account_email,
+                credentials._token_uri,
+                target_audience=audience,
+                quota_project_id=credentials.quota_project_id,
+                universe_domain=credentials.universe_domain,
+            )
+        elif isinstance(credentials, impersonated_credentials.Credentials):
+            id_creds = impersonated_credentials.IDTokenCredentials(
+                target_credentials=credentials,
+                target_audience=audience,
+                include_email=True,
+            )
+        elif isinstance(credentials, external_account.Credentials):
+            if not credentials._should_initialize_impersonated_credentials():
+                raise GoogleAuthError(
+                    f"Failed to fetch Google ID token for audience '{audience}': "
+                    "external account credentials without service account impersonation cannot mint ID tokens."
+                ) from fetch_err
+            id_creds = impersonated_credentials.IDTokenCredentials(
+                target_credentials=credentials._initialize_impersonated_credentials(),
+                target_audience=audience,
+                include_email=True,
+            )
+        elif isinstance(credentials, compute_engine.Credentials):
+            raise GoogleAuthError(
+                f"Failed to fetch Google ID token for audience '{audience}': {fetch_err}"
+            ) from fetch_err
+
+        if id_creds is not None:
+            id_creds.refresh(Request())
+            if not id_creds.token:
+                raise GoogleAuthError(
+                    f"Failed to fetch Google ID token for audience '{audience}'."
+                )
+            return str(id_creds.token)
+
+    if not isinstance(
+        credentials,
+        (
+            service_account.Credentials,
+            impersonated_credentials.Credentials,
+            external_account.Credentials,
+            compute_engine.Credentials,
+        ),
+    ):
+        session = AuthorizedSession(credentials)
+        credentials.refresh(Request(session))
+        new_id_token = getattr(credentials, "id_token", None)
+        if new_id_token:
+            return str(new_id_token)
+
+    if audience is None:
+        raise Exception(
+            "You are not authenticating using User Credentials."
+            " Please set the audience string to the Toolbox service URL to get the Google ID token."
+        )
+
+    raise GoogleAuthError(
+        f"Failed to fetch Google ID token for audience '{audience}': {fetch_err}"
+    ) from fetch_err
 
 
 def get_google_token_from_aud(
@@ -115,38 +192,33 @@ def get_google_token_from_aud(
 
     cache_key: _CacheKey = audience
 
-    if _is_token_valid(cache_key):
-        return BEARER_TOKEN_PREFIX + _token_cache[cache_key]["token"]
+    with _token_cache_lock:
+        if _is_token_valid(cache_key):
+            return BEARER_TOKEN_PREFIX + _token_cache[cache_key]["token"]
 
-    # Get local user credentials
-    credentials, _ = google.auth.default()
-    session = AuthorizedSession(credentials)
-    request = Request(session)
-    credentials.refresh(request)
+        fetch_err: Optional[GoogleAuthError] = None
+        if audience is not None:
+            try:
+                new_token = id_token.fetch_id_token(Request(), audience)
+                _update_cache(cache_key, new_token, clock_skew_in_seconds)
+                return BEARER_TOKEN_PREFIX + _token_cache[cache_key]["token"]
+            except GoogleAuthError as e:
+                fetch_err = e
 
-    if hasattr(credentials, "id_token"):
-        new_id_token = getattr(credentials, "id_token", None)
-        if new_id_token:
-            _update_cache(cache_key, new_id_token, clock_skew_in_seconds)
-            return BEARER_TOKEN_PREFIX + new_id_token
+        try:
+            credentials, _ = google.auth.default()
+            new_token = _mint_id_token_from_default_credentials(
+                credentials, audience, fetch_err
+            )
+        except GoogleAuthError as e:
+            if audience is not None and fetch_err is not None and e is not fetch_err:
+                raise GoogleAuthError(
+                    f"Failed to fetch Google ID token for audience '{audience}': {e}"
+                ) from e
+            raise
 
-    if audience is None:
-        raise Exception(
-            "You are not authenticating using User Credentials."
-            " Please set the audience string to the Toolbox service URL to get the Google ID token."
-        )
-
-    # Get credentials for Google Cloud environments or for service account key files
-    try:
-        request = Request()
-        new_token = id_token.fetch_id_token(request, audience)
         _update_cache(cache_key, new_token, clock_skew_in_seconds)
         return BEARER_TOKEN_PREFIX + _token_cache[cache_key]["token"]
-
-    except GoogleAuthError as e:
-        raise GoogleAuthError(
-            f"Failed to fetch Google ID token for audience '{audience}': {e}"
-        ) from e
 
 
 def get_google_id_token(

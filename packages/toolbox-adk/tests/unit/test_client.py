@@ -12,13 +12,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import time
 import unittest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import ANY, AsyncMock, MagicMock, patch
 
 import pytest
+from google.auth.exceptions import GoogleAuthError
+from toolbox_core import auth_methods
 
 from toolbox_adk import CredentialStrategy, ToolboxClient
 from toolbox_adk.client import CredentialConfig, CredentialType
+
+
+@pytest.fixture(autouse=True)
+def reset_id_token_cache():
+    """Isolates tests from the toolbox-core ID token cache (keyed by audience)."""
+    original_cache = auth_methods._token_cache.copy()
+    auth_methods._token_cache.clear()
+    yield
+    auth_methods._token_cache.clear()
+    auth_methods._token_cache.update(original_cache)
 
 
 @pytest.mark.asyncio
@@ -40,104 +53,138 @@ class TestToolboxClientAuth:
         assert kwargs["client_version"] is not None
 
     @patch("toolbox_adk.client.toolbox_core.ToolboxClient")
-    @patch("toolbox_adk.client.id_token.fetch_id_token")
-    @patch("toolbox_adk.client.google.auth.default")
-    @patch("toolbox_adk.client.transport.requests.Request")
+    @patch("toolbox_adk.client.auth_methods.aget_google_id_token")
+    async def test_init_adc_delegates_to_core_id_token_getter(
+        self, mock_aget_id_token, mock_core_client
+    ):
+        """Test ADC strategy uses the async toolbox-core ID token getter for the audience."""
+        core_getter = AsyncMock(return_value="Bearer id-token-123")
+        mock_aget_id_token.return_value = core_getter
+
+        creds = CredentialStrategy.application_default_credentials(
+            target_audience="aud"
+        )
+        ToolboxClient(server_url="http://test", credentials=creds)
+
+        mock_aget_id_token.assert_called_once_with("aud")
+        headers = mock_core_client.call_args[1]["client_headers"]
+        assert headers["Authorization"] is core_getter
+        assert await headers["Authorization"]() == "Bearer id-token-123"
+
+    @patch("toolbox_adk.client.toolbox_core.ToolboxClient")
+    @patch("toolbox_core.auth_methods.id_token.verify_oauth2_token")
+    @patch("toolbox_core.auth_methods.id_token.fetch_id_token")
+    @patch("toolbox_core.auth_methods.google.auth.default")
     async def test_init_adc_success_fetch_id_token(
-        self, mock_req, mock_default, mock_fetch_id, mock_core_client
+        self, mock_default, mock_fetch_id, mock_verify, mock_core_client
     ):
-        """Test ADC strategy where fetch_id_token succeeds."""
+        """Test ADC strategy fetches audience-bound ID token first without refreshing default creds."""
         mock_fetch_id.return_value = "id-token-123"
+        mock_verify.return_value = {"exp": int(time.time()) + 3600}
 
         creds = CredentialStrategy.application_default_credentials(
             target_audience="aud"
         )
-        client = ToolboxClient(server_url="http://test", credentials=creds)
-
-        _, kwargs = mock_core_client.call_args
-        headers = kwargs["client_headers"]
-        assert "Authorization" in headers
-        token_getter = headers["Authorization"]
-        assert callable(token_getter)
-
-        # Call the getter
-        token_val = token_getter()
-        assert token_val == "Bearer id-token-123"
-        mock_fetch_id.assert_called()
-
-    @patch("toolbox_adk.client.toolbox_core.ToolboxClient")
-    @patch("toolbox_adk.client.id_token.fetch_id_token")
-    @patch("toolbox_adk.client.google.auth.default")
-    @patch("toolbox_adk.client.transport.requests.Request")
-    async def test_init_adc_fallback_creds(
-        self, mock_req, mock_default, mock_fetch_id, mock_core_client
-    ):
-        """Test ADC strategy fallback to default() when fetch_id_token fails."""
-        mock_fetch_id.side_effect = Exception("No metadata server")
-
-        # Mock default creds
-        mock_creds = MagicMock()
-        mock_creds.valid = False
-        mock_creds.id_token = "fallback-id-token"
-        mock_default.return_value = (mock_creds, "proj")
-
-        creds = CredentialStrategy.application_default_credentials(
-            target_audience="aud"
-        )
-        client = ToolboxClient(server_url="http://test", credentials=creds)
+        ToolboxClient(server_url="http://test", credentials=creds)
 
         token_getter = mock_core_client.call_args[1]["client_headers"]["Authorization"]
-        token = token_getter()
-        assert token == "Bearer fallback-id-token"
-        mock_creds.refresh.assert_called()  # Because we set valid=False
+        assert await token_getter() == "Bearer id-token-123"
+        mock_fetch_id.assert_called_once_with(ANY, "aud")
+        mock_default.assert_not_called()
 
     @patch("toolbox_adk.client.toolbox_core.ToolboxClient")
-    @patch("toolbox_adk.client.id_token.fetch_id_token")
-    @patch("toolbox_adk.client.google.auth.default")
-    @patch("toolbox_adk.client.transport.requests.Request")
-    async def test_init_adc_fallback_creds_token(
-        self, mock_req, mock_default, mock_fetch_id, mock_core_client
+    @patch("toolbox_core.auth_methods.id_token.verify_oauth2_token")
+    @patch("toolbox_core.auth_methods.id_token.fetch_id_token")
+    @patch("toolbox_core.auth_methods.google.auth.default")
+    async def test_init_adc_local_user_credentials_id_token(
+        self, mock_default, mock_fetch_id, mock_verify, mock_core_client
     ):
-        """Test ADC fallback when creds have .token but no .id_token."""
-        mock_fetch_id.side_effect = Exception("No metadata server")
+        """Test ADC strategy falls back to local user credentials that carry an ID token."""
+        from google.oauth2 import credentials as oauth2_credentials
 
-        mock_creds = MagicMock()
-        mock_creds.valid = True
-        del mock_creds.id_token  # Simulate no id_token attr or None
-        mock_creds.token = "access-token-123"  # e.g. user creds
-        mock_default.return_value = (mock_creds, "proj")
+        user_creds = oauth2_credentials.Credentials(
+            token="access-tok",
+            refresh_token="refresh-tok",
+            id_token="user-id-token",
+            token_uri="https://oauth2.googleapis.com/token",
+            client_id="cid",
+            client_secret="csec",
+        )
+        mock_fetch_id.side_effect = GoogleAuthError("No metadata server")
+        mock_default.return_value = (user_creds, "proj")
+        mock_verify.return_value = {"exp": int(time.time()) + 3600}
 
         creds = CredentialStrategy.application_default_credentials(
             target_audience="aud"
         )
-        client = ToolboxClient(server_url="http://test", credentials=creds)
+        ToolboxClient(server_url="http://test", credentials=creds)
+
         token_getter = mock_core_client.call_args[1]["client_headers"]["Authorization"]
-        assert token_getter() == "Bearer access-token-123"
+        with patch.object(user_creds, "refresh"):
+            assert await token_getter() == "Bearer user-id-token"
 
     @patch("toolbox_adk.client.toolbox_core.ToolboxClient")
-    @patch("toolbox_adk.client.id_token.fetch_id_token")
-    @patch("toolbox_adk.client.google.auth.default")
-    @patch("toolbox_adk.client.transport.requests.Request")
-    async def test_init_adc_fallback_no_token(
-        self, mock_req, mock_default, mock_fetch_id, mock_core_client
+    @patch("toolbox_core.auth_methods.id_token.verify_oauth2_token")
+    @patch("toolbox_core.auth_methods.id_token.fetch_id_token")
+    @patch("toolbox_core.auth_methods.google.auth.default")
+    async def test_init_adc_real_impersonated_credentials(
+        self, mock_default, mock_fetch_id, mock_verify, mock_core_client
     ):
-        """Test ADC fallback when no token is available at all."""
-        mock_fetch_id.side_effect = Exception("No metadata server")
+        """Test ADC strategy mints an ID token from real impersonated_credentials.Credentials."""
+        from google.auth import impersonated_credentials
+        from google.oauth2 import credentials as oauth2_credentials
 
-        mock_creds = MagicMock()
-        mock_creds.valid = True
-        # Simulate absence of tokens
-        mock_creds.id_token = None
-        mock_creds.token = None
+        source_creds = oauth2_credentials.Credentials(token="source-access-token")
+        imp_creds = impersonated_credentials.Credentials(
+            source_credentials=source_creds,
+            target_principal="svc@proj.iam.gserviceaccount.com",
+            target_scopes=["https://www.googleapis.com/auth/cloud-platform"],
+        )
+        mock_fetch_id.side_effect = GoogleAuthError("No metadata server")
+        mock_default.return_value = (imp_creds, "proj")
+        mock_verify.return_value = {"exp": int(time.time()) + 3600}
 
-        mock_default.return_value = (mock_creds, "proj")
+        def fake_refresh(self_id_creds, request):
+            self_id_creds.token = "impersonated-id-token"
 
         creds = CredentialStrategy.application_default_credentials(
             target_audience="aud"
         )
-        client = ToolboxClient(server_url="http://test", credentials=creds)
+        ToolboxClient(server_url="http://test", credentials=creds)
+
         token_getter = mock_core_client.call_args[1]["client_headers"]["Authorization"]
-        assert token_getter() == ""
+        with patch.object(
+            impersonated_credentials.IDTokenCredentials, "refresh", fake_refresh
+        ):
+            assert await token_getter() == "Bearer impersonated-id-token"
+
+    @pytest.mark.parametrize(
+        "access_token",
+        ["fake-access-token-123", None],
+        ids=["access_token_present", "no_token"],
+    )
+    @patch("toolbox_adk.client.toolbox_core.ToolboxClient")
+    @patch("toolbox_core.auth_methods.id_token.fetch_id_token")
+    @patch("toolbox_core.auth_methods.google.auth.default")
+    async def test_init_adc_never_falls_back_to_access_token(
+        self, mock_default, mock_fetch_id, mock_core_client, access_token
+    ):
+        """Test ADC strategy raises instead of sending an OAuth2 access token."""
+        from google.auth import compute_engine
+
+        gce_creds = compute_engine.Credentials()
+        gce_creds.token = access_token
+        mock_default.return_value = (gce_creds, "proj")
+        mock_fetch_id.side_effect = GoogleAuthError("No metadata server")
+
+        creds = CredentialStrategy.application_default_credentials(
+            target_audience="aud"
+        )
+        ToolboxClient(server_url="http://test", credentials=creds)
+
+        token_getter = mock_core_client.call_args[1]["client_headers"]["Authorization"]
+        with pytest.raises(GoogleAuthError, match="No metadata server"):
+            await token_getter()
 
     @patch("toolbox_adk.client.toolbox_core.ToolboxClient")
     async def test_init_api_key(self, mock_core_client):
