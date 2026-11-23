@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import time
-import urllib.parse
 from typing import Mapping, Optional, TypeVar
 
 from pydantic import BaseModel
@@ -52,8 +51,9 @@ class McpHttpTransportV20241105(_McpHttpTransportBase):
         payload = rpc_msg.model_dump(mode="json", exclude_none=True)
 
         async with self._session.post(
-            url, json=payload, headers=dict(headers or {})
+            url, json=payload, headers=dict(headers or {}), allow_redirects=False
         ) as response:
+            self._raise_for_redirect(response)
             json_resp = None
             if not response.ok:
                 try:
@@ -239,13 +239,8 @@ class McpHttpTransportV20241105(_McpHttpTransportBase):
         headers: Optional[Mapping[str, str]] = None,
     ) -> ManifestSchema:
         """Lists available tools from the server using the MCP protocol."""
+        url = self._build_toolset_url(toolset_name)
         await self._ensure_initialized(headers=headers)
-
-        url = self._mcp_base_url
-        if toolset_name:
-            parsed = urllib.parse.urlparse(url)
-            new_path = parsed.path.rstrip("/") + "/" + toolset_name
-            url = urllib.parse.urlunparse(parsed._replace(path=new_path))
 
         meta: Optional[types.MCPMeta] = None
 

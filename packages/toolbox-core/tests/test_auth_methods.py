@@ -63,7 +63,7 @@ class TestAsyncAuthMethods:
         token_getter = auth_methods.aget_google_id_token(MOCK_AUDIENCE)
         token = await token_getter()
 
-        mock_default.assert_called_once()
+        mock_default.assert_not_called()
         mock_fetch.assert_called_once_with(ANY, MOCK_AUDIENCE)
         assert token == f"{auth_methods.BEARER_TOKEN_PREFIX}{MOCK_ID_TOKEN}"
         assert auth_methods._token_cache[MOCK_CACHE_KEY]["token"] == MOCK_ID_TOKEN
@@ -109,7 +109,7 @@ class TestAsyncAuthMethods:
         token_getter = auth_methods.aget_google_id_token(MOCK_AUDIENCE)
         token = await token_getter()
 
-        mock_default.assert_called_once()
+        mock_default.assert_not_called()
         mock_fetch.assert_called_once()
         assert token == f"{auth_methods.BEARER_TOKEN_PREFIX}{MOCK_ID_TOKEN}"
         assert auth_methods._token_cache[MOCK_CACHE_KEY]["token"] == MOCK_ID_TOKEN
@@ -162,18 +162,41 @@ class TestAsyncAuthMethods:
         mock_default.assert_called_once()
         mock_fetch.assert_not_called()
 
+    @patch("toolbox_core.auth_methods.id_token.verify_oauth2_token")
+    @patch("toolbox_core.auth_methods.id_token.fetch_id_token")
+    async def test_aget_google_id_token_concurrent_calls_locked(
+        self, mock_fetch, mock_verify
+    ):
+        """Concurrent async calls for the same audience share one locked fetch."""
+        import asyncio
+
+        def slow_fetch(request, audience):
+            time.sleep(0.02)
+            return MOCK_ID_TOKEN
+
+        mock_fetch.side_effect = slow_fetch
+        mock_verify.return_value = {"exp": MOCK_EXPIRY_TIMESTAMP}
+
+        getter = auth_methods.aget_google_id_token(MOCK_AUDIENCE)
+        results = await asyncio.gather(*(getter() for _ in range(5)))
+
+        assert results == [f"Bearer {MOCK_ID_TOKEN}"] * 5
+        assert mock_fetch.call_count == 1
+
 
 class TestSyncAuthMethods:
     """Tests for synchronous Google ID token fetching."""
 
     @patch("toolbox_core.auth_methods.id_token.verify_oauth2_token")
+    @patch("toolbox_core.auth_methods.id_token.fetch_id_token")
     @patch("toolbox_core.auth_methods.Request")
     @patch("toolbox_core.auth_methods.AuthorizedSession")
     @patch("toolbox_core.auth_methods.google.auth.default")
     def test_get_google_id_token_success_local_creds(
-        self, mock_default, mock_session, mock_request, mock_verify
+        self, mock_default, mock_session, mock_request, mock_fetch, mock_verify
     ):
-        """Tests successful fetching via local credentials."""
+        """Tests successful fetching via local credentials when fetch_id_token fails."""
+        mock_fetch.side_effect = GoogleAuthError("No metadata server")
         mock_creds = MagicMock()
         mock_creds.id_token = MOCK_ID_TOKEN
         mock_default.return_value = (mock_creds, MOCK_PROJECT_ID)
@@ -186,6 +209,7 @@ class TestSyncAuthMethods:
         token_getter = auth_methods.get_google_id_token(MOCK_AUDIENCE)
         token = token_getter()
 
+        mock_fetch.assert_called_once_with(ANY, MOCK_AUDIENCE)
         mock_default.assert_called_once_with()
         mock_session.assert_called_once_with(mock_creds)
         mock_creds.refresh.assert_called_once_with(mock_request_instance)
@@ -267,3 +291,88 @@ class TestSyncAuthMethods:
 
         mock_default.assert_called_once()
         mock_fetch.assert_not_called()
+
+    @patch("toolbox_core.auth_methods.id_token.verify_oauth2_token")
+    @patch("toolbox_core.auth_methods.id_token.fetch_id_token")
+    @patch("toolbox_core.auth_methods.google.auth.default")
+    def test_get_google_id_token_real_service_account_credentials(
+        self, mock_default, mock_fetch, mock_verify
+    ):
+        """Mints an ID token from real service_account.Credentials without refreshing access tokens."""
+        from google.auth import crypt
+        from google.oauth2 import service_account
+
+        signer = MagicMock(spec=crypt.Signer)
+        sa_creds = service_account.Credentials(
+            signer=signer,
+            service_account_email="sa@test.iam.gserviceaccount.com",
+            token_uri="https://oauth2.googleapis.com/token",
+        )
+        mock_fetch.side_effect = GoogleAuthError("No metadata server")
+        mock_default.return_value = (sa_creds, MOCK_PROJECT_ID)
+        mock_verify.return_value = {"exp": MOCK_EXPIRY_TIMESTAMP}
+
+        def fake_id_refresh(self_id_creds, request):
+            assert self_id_creds._target_audience == MOCK_AUDIENCE
+            self_id_creds.token = "sa-id-token"
+
+        with (
+            patch.object(
+                service_account.Credentials,
+                "refresh",
+                side_effect=AssertionError("must not refresh SA access token"),
+            ),
+            patch.object(
+                service_account.IDTokenCredentials, "refresh", fake_id_refresh
+            ),
+        ):
+            token = auth_methods.get_google_id_token(MOCK_AUDIENCE)()
+
+        assert token == "Bearer sa-id-token"
+
+    @patch("toolbox_core.auth_methods.id_token.verify_oauth2_token")
+    @patch("toolbox_core.auth_methods.id_token.fetch_id_token")
+    @patch("toolbox_core.auth_methods.google.auth.default")
+    def test_get_google_id_token_external_account_with_and_without_impersonation(
+        self, mock_default, mock_fetch, mock_verify
+    ):
+        """External account credentials mint ID tokens via SA impersonation and reject STS-only mode."""
+        from google.auth import impersonated_credentials
+        from google.auth.identity_pool import Credentials as IdentityPoolCredentials
+
+        mock_fetch.side_effect = GoogleAuthError("No metadata server")
+        mock_verify.return_value = {"exp": MOCK_EXPIRY_TIMESTAMP}
+
+        ext_no_imp = IdentityPoolCredentials(
+            audience="//iam.googleapis.com/projects/1/locations/global/workloadIdentityPools/p/providers/pr",
+            subject_token_type="urn:ietf:params:oauth:token-type:jwt",
+            token_url="https://sts.googleapis.com/v1/token",
+            credential_source={"file": "/tmp/nonexistent"},
+        )
+        mock_default.return_value = (ext_no_imp, MOCK_PROJECT_ID)
+        with pytest.raises(GoogleAuthError, match="external account"):
+            auth_methods.get_google_id_token(MOCK_AUDIENCE)()
+
+        ext_with_imp = IdentityPoolCredentials(
+            audience="//iam.googleapis.com/projects/1/locations/global/workloadIdentityPools/p/providers/pr",
+            subject_token_type="urn:ietf:params:oauth:token-type:jwt",
+            token_url="https://sts.googleapis.com/v1/token",
+            credential_source={"file": "/tmp/nonexistent"},
+            service_account_impersonation_url=(
+                "https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/"
+                "sa@test.iam.gserviceaccount.com:generateAccessToken"
+            ),
+        )
+        mock_default.return_value = (ext_with_imp, MOCK_PROJECT_ID)
+
+        def fake_imp_refresh(self_id_creds, request):
+            assert self_id_creds._target_audience == MOCK_AUDIENCE
+            self_id_creds.token = "wif-impersonated-id-token"
+
+        with patch.object(
+            impersonated_credentials.IDTokenCredentials, "refresh", fake_imp_refresh
+        ):
+            assert (
+                auth_methods.get_google_id_token(MOCK_AUDIENCE)()
+                == "Bearer wif-impersonated-id-token"
+            )

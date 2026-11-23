@@ -228,6 +228,33 @@ class TestMcpHttpTransportV20260728:
         assert headers["Mcp-Method"] == "resources/read"
         assert headers["Mcp-Name"] == "file:///test.txt"
 
+    async def test_send_request_does_not_follow_redirects(self, transport):
+        """Test that redirects are not followed and raise a clear error."""
+        mock_response = AsyncMock()
+        mock_response.ok = True  # aiohttp treats 3xx responses as ok.
+        mock_response.status = 307
+        mock_response.headers = {"Location": "https://evil.example/"}
+        transport._session.post.return_value.__aenter__.return_value = mock_response
+
+        class TestResult(types.BaseModel):
+            pass
+
+        class TestRequest(types.MCPRequest[TestResult]):
+            method: str = "method"
+            params: dict = {}
+
+            def get_result_model(self):
+                return TestResult
+
+        with pytest.raises(
+            RuntimeError, match=r"HTTP 307 redirect to https://evil\.example/;"
+        ):
+            await transport._send_request("url", TestRequest())
+
+        assert transport._session.post.call_count == 1
+        assert transport._session.post.call_args.kwargs["allow_redirects"] is False
+        mock_response.json.assert_not_called()
+
     # --- Version Negotiation Tests ---
 
     async def test_version_negotiation_raises_fallback(self, transport):
@@ -380,6 +407,43 @@ class TestMcpHttpTransportV20260728:
             assert call_args.kwargs["url"] == expected_url
         finally:
             await transport.close()
+
+    @pytest.mark.parametrize(
+        "toolset_name, expected_url",
+        [
+            ("a/b", "http://fake-server.com/mcp/a%2Fb"),
+            ("../../admin", "http://fake-server.com/mcp/..%2F..%2Fadmin"),
+        ],
+    )
+    async def test_tools_list_encodes_toolset_name(
+        self, transport, mocker, toolset_name, expected_url
+    ):
+        """Test that the toolset name is encoded as a single URL path segment."""
+        mocker.patch.object(transport, "_ensure_initialized", new_callable=AsyncMock)
+        mocker.patch.object(
+            transport,
+            "_send_request",
+            new_callable=AsyncMock,
+            return_value=create_fake_tools_list_result(),
+        )
+
+        await transport.tools_list(toolset_name=toolset_name)
+
+        assert transport._send_request.call_args.kwargs["url"] == expected_url
+
+    @pytest.mark.parametrize("toolset_name", [".", "..", ".\ud800."])
+    async def test_tools_list_rejects_dot_segment_toolset_name(
+        self, transport, mocker, toolset_name
+    ):
+        """Test that invalid toolset names fail before session initialization."""
+        mocker.patch.object(transport, "_ensure_initialized", new_callable=AsyncMock)
+        mocker.patch.object(transport, "_send_request", new_callable=AsyncMock)
+
+        with pytest.raises(ValueError, match="Invalid toolset name"):
+            await transport.tools_list(toolset_name=toolset_name)
+
+        transport._ensure_initialized.assert_not_called()
+        transport._send_request.assert_not_called()
 
     async def test_tool_invoke_success(self, transport, mocker):
         mocker.patch.object(transport, "_ensure_initialized", new_callable=AsyncMock)

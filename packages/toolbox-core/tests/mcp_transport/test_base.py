@@ -14,11 +14,12 @@
 
 import asyncio
 from typing import Any
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 import pytest_asyncio
 from aiohttp import ClientSession
+from yarl import URL
 
 from toolbox_core.mcp_transport.transport_base import _McpHttpTransportBase
 from toolbox_core.protocol import Protocol, TelemetryAttributes, ToolSchema
@@ -111,6 +112,108 @@ class TestMcpHttpTransportBase:
             assert t.base_url == expected
         finally:
             await t.close()
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "input_url,toolset_name,expected",
+        [
+            ("http://api.com", None, "http://api.com/mcp/"),
+            ("http://api.com", "", "http://api.com/mcp/"),
+            ("http://api.com", "my_toolset", "http://api.com/mcp/my_toolset"),
+            ("http://api.com", "a/b", "http://api.com/mcp/a%2Fb"),
+            ("http://api.com", "../../admin", "http://api.com/mcp/..%2F..%2Fadmin"),
+            ("http://api.com", "..\\admin", "http://api.com/mcp/..%5Cadmin"),
+            ("http://api.com", "a b?c=d#e", "http://api.com/mcp/a%20b%3Fc=d%23e"),
+            ("http://api.com", "%2e%2e", "http://api.com/mcp/%252e%252e"),
+            (
+                "http://api.com",
+                "a+b:c@d=e;f,g$h&i!j'k(l)m*n",
+                "http://api.com/mcp/a+b:c@d=e;f,g$h&i!j'k(l)m*n",
+            ),
+            ("http://api.com", "工具", "http://api.com/mcp/工具"),
+            ("http://api.com", ".\t.", "http://api.com/mcp/.%09."),
+            ("http://api.com", "\t..", "http://api.com/mcp/%09.."),
+            ("http://api.com", "..\n", "http://api.com/mcp/..%0A"),
+            ("http://api.com", ".\r.", "http://api.com/mcp/.%0D."),
+            ("http://api.com", ".\t", "http://api.com/mcp/.%09"),
+            ("http://api.com", "a\tb", "http://api.com/mcp/a%09b"),
+            ("http://api.com", ".. ", "http://api.com/mcp/..%20"),
+            ("http://api.com", "..\x00\x1f\x7f", "http://api.com/mcp/..%00%1F%7F"),
+            ("http://api.com?proj=xyz", "a/b", "http://api.com/mcp/a%2Fb?proj=xyz"),
+            (
+                "http://api.com/base;v=1/mcp/",
+                "my_toolset",
+                "http://api.com/base;v=1/mcp/my_toolset",
+            ),
+            (
+                "http://api.com/base;v=1;p=2",
+                "my_toolset",
+                "http://api.com/base;v=1;p=2/mcp/my_toolset",
+            ),
+        ],
+    )
+    async def test_build_toolset_url(self, input_url, toolset_name, expected):
+        """Test that the toolset name is encoded as a single path segment."""
+        t = ConcreteTransport(input_url)
+        try:
+            assert t._build_toolset_url(toolset_name) == expected
+        finally:
+            await t.close()
+
+    @pytest.mark.parametrize(
+        "toolset_name,expected_path",
+        [
+            (".\t.", "/mcp/.%09."),
+            ("\t..", "/mcp/%09.."),
+            ("..\n", "/mcp/..%0A"),
+            (".\r.", "/mcp/.%0D."),
+            (".. ", "/mcp/..%20"),
+            ("a b", "/mcp/a%20b"),
+            ("a+b:c@d=e", "/mcp/a+b:c@d=e"),
+            ("工具", "/mcp/%E5%B7%A5%E5%85%B7"),
+        ],
+    )
+    def test_build_toolset_url_survives_url_parsing(
+        self, transport, toolset_name, expected_path
+    ):
+        """Test the path aiohttp sends: one segment that URL parsing cannot collapse."""
+        url = URL(transport._build_toolset_url(toolset_name))
+        assert url.raw_path == expected_path
+
+    @pytest.mark.parametrize(
+        "toolset_name", [".", "..", ".\ud800.", "\ud800", "\udfff"]
+    )
+    def test_build_toolset_url_rejects_dot_segments(self, transport, toolset_name):
+        """Test that dot segments and lone UTF-16 surrogates are rejected."""
+        with pytest.raises(ValueError, match="Invalid toolset name"):
+            transport._build_toolset_url(toolset_name)
+
+    @pytest.mark.parametrize("status", [301, 302, 303, 307, 308])
+    def test_raise_for_redirect(self, transport, status):
+        """Test that a redirect response raises an error naming its target."""
+        response = Mock(status=status, headers={"Location": "https://evil.example/"})
+        with pytest.raises(RuntimeError) as exc_info:
+            transport._raise_for_redirect(response)
+        assert str(exc_info.value) == (
+            f"Toolbox server responded with HTTP {status} redirect to "
+            "https://evil.example/; automatic redirects are disabled for security. "
+            "Configure the client with the final server URL."
+        )
+
+    def test_raise_for_redirect_without_location(self, transport):
+        """Test that a 3xx response without a Location header still raises."""
+        response = Mock(status=300, headers={})
+        with pytest.raises(
+            RuntimeError,
+            match="^Toolbox server responded with HTTP 300 redirect; automatic",
+        ):
+            transport._raise_for_redirect(response)
+
+    @pytest.mark.parametrize("status", [200, 204, 400, 500])
+    def test_raise_for_redirect_ignores_other_statuses(self, transport, status):
+        """Test that non-3xx responses are left to the regular handling."""
+        response = Mock(status=status, headers={"Location": "https://evil.example/"})
+        transport._raise_for_redirect(response)
 
     @pytest.mark.asyncio
     async def test_ensure_initialized_calls_initialize(self, transport, mocker):
