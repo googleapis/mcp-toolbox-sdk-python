@@ -14,6 +14,15 @@ title = "MCP Toolbox Python API"
     version = "dev"
     url = "/core/dev/"
   [[params.versions.core]]
+    version = "v1.4.0"
+    url = "/core/v1.4.0/"
+  [[params.versions.core]]
+    version = "v1.3.0"
+    url = "/core/v1.3.0/"
+  [[params.versions.core]]
+    version = "v1.2.0"
+    url = "/core/v1.2.0/"
+  [[params.versions.core]]
     version = "v1.1.0"
     url = "/core/v1.1.0/"
   [[params.versions.core]]
@@ -26,6 +35,18 @@ title = "MCP Toolbox Python API"
     version = "dev"
     url = "/adk/dev/"
   [[params.versions.adk]]
+    version = "v1.4.0"
+    url = "/adk/v1.4.0/"
+  [[params.versions.adk]]
+    version = "v1.3.1"
+    url = "/adk/v1.3.1/"
+  [[params.versions.adk]]
+    version = "v1.3.0"
+    url = "/adk/v1.3.0/"
+  [[params.versions.adk]]
+    version = "v1.2.0"
+    url = "/adk/v1.2.0/"
+  [[params.versions.adk]]
     version = "v1.0.1"
     url = "/adk/v1.0.1/"
   [[params.versions.adk]]
@@ -37,6 +58,15 @@ title = "MCP Toolbox Python API"
   [[params.versions.langchain]]
     version = "dev"
     url = "/langchain/dev/"
+  [[params.versions.langchain]]
+    version = "v1.4.0"
+    url = "/langchain/v1.4.0/"
+  [[params.versions.langchain]]
+    version = "v1.3.0"
+    url = "/langchain/v1.3.0/"
+  [[params.versions.langchain]]
+    version = "v1.2.0"
+    url = "/langchain/v1.2.0/"
   [[params.versions.langchain]]
     version = "v1.0.1"
     url = "/langchain/v1.0.1/"
@@ -52,6 +82,12 @@ title = "MCP Toolbox Python API"
   [[params.versions.llamaindex]]
     version = "v1.0.0"
     url = "/llamaindex/v1.0.0/"
+  [[params.versions.llamaindex]]
+    version = "v0.9.0"
+    url = "/llamaindex/v0.9.0/"
+  [[params.versions.llamaindex]]
+    version = "v0.8.0"
+    url = "/llamaindex/v0.8.0/"
   [[params.versions.llamaindex]]
     version = "v0.7.0"
     url = "/llamaindex/v0.7.0/"
