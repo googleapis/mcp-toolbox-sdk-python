@@ -21,6 +21,7 @@ from pydantic import ValidationError
 
 from tests.constants import TOOLBOX_SERVER_URL_DRAFT, TOOLBOX_SERVER_URL_STABLE
 from toolbox_core.client import ToolboxClient
+from toolbox_core.exceptions import ToolInvocationError
 from toolbox_core.protocol import Protocol
 from toolbox_core.tool import ToolboxTool
 
@@ -37,6 +38,23 @@ async def toolbox(request):
     # 'patch_toolbox_client_url' fixture to run against both
     # the STABLE (5000) and DRAFT (5001) servers.
     toolbox = ToolboxClient(TOOLBOX_SERVER_URL_STABLE, protocol=Protocol(request.param))
+    try:
+        yield toolbox
+    finally:
+        await toolbox.close()
+
+
+@pytest_asyncio.fixture(
+    scope="function",
+    params=[v for v in Protocol.get_supported_mcp_versions()],
+)
+async def toolbox_raise_on_error(request):
+    """Creates a ToolboxClient that raises ToolInvocationError on tool errors."""
+    toolbox = ToolboxClient(
+        TOOLBOX_SERVER_URL_STABLE,
+        protocol=Protocol(request.param),
+        raise_on_error=True,
+    )
     try:
         yield toolbox
     finally:
@@ -304,6 +322,19 @@ class TestAuth:
         )
         response = await tool()
         assert "no field named row_data in claims" in response
+
+    async def test_run_tool_param_auth_no_field_raise_on_error(
+        self, toolbox_raise_on_error: ToolboxClient, auth_token1: str
+    ):
+        """Tests that raise_on_error=True raises the same error instead of returning it."""
+        tool = await toolbox_raise_on_error.load_tool(
+            "get-row-by-content-auth",
+            auth_token_getters={"my-test-auth": lambda: auth_token1},
+        )
+        with pytest.raises(
+            ToolInvocationError, match="no field named row_data in claims"
+        ):
+            await tool()
 
 
 @pytest.mark.asyncio

@@ -942,6 +942,30 @@ def test_toolbox_client_custom_protocols_unrecognized_warning(caplog):
             assert args[6] == ["2025-11-25"]
 
 
+@pytest.mark.parametrize(
+    "kwargs, expected", [({}, False), ({"raise_on_error": True}, True)]
+)
+def test_toolbox_client_passes_raise_on_error(kwargs, expected):
+    """Test that raise_on_error reaches the transport proxy and is off by default."""
+    with patch("toolbox_core.client._McpTransportProxy") as mock_proxy:
+        ToolboxClient(TOOLBOX_SERVER_URL_STABLE, **kwargs)
+        _, proxy_kwargs = mock_proxy.call_args
+        assert proxy_kwargs["raise_on_error"] is expected
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("protocol", Protocol.get_supported_mcp_versions())
+async def test_transport_proxy_passes_raise_on_error(protocol):
+    """Test that the proxy passes raise_on_error to the transport for each protocol."""
+    proxy = _McpTransportProxy(
+        "http://mock", None, Protocol(protocol), None, None, False, raise_on_error=True
+    )
+    try:
+        assert proxy._active_transport._raise_on_error is True
+    finally:
+        await proxy.close()
+
+
 @pytest.mark.asyncio
 async def test_artificial_array():
     """The Artificial Array Test: simulate server returning 2025-03-26, should fallback to 2024-11-05."""
