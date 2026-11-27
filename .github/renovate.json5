@@ -12,9 +12,11 @@
   minimumReleaseAge: '3',
   rebaseWhen: 'conflicted',
   configMigration: true,
-  dependencyDashboardLabels: [
-    'type: process',
-  ],
+  dependencyDashboard: {
+    labels: [
+      'type: process',
+    ],
+  },
   packageRules: [
     {
       groupName: 'GitHub Actions',
